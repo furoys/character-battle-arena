@@ -13,6 +13,7 @@ export const charactersTable = pgTable("characters", {
   specialAbility: text("special_ability").notNull(),
   weaknesses: text("weaknesses").notNull(),
   description: text("description").notNull(),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

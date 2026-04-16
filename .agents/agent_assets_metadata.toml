@@ -1,0 +1,38 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "YAhfNjXvGiw84abYCLqny"
+uri = "file://artifacts/fight-club/public/characters/superman.png"
+type = "image"
+title = "superman portrait"
+
+[[generated]]
+id = "ljv0qGIGqN0iX57_7Fbt4"
+uri = "file://artifacts/fight-club/public/characters/goku.png"
+type = "image"
+title = "goku portrait"
+
+[[generated]]
+id = "Ez_CyKm8LoTRi4rpNvkvk"
+uri = "file://artifacts/fight-club/public/characters/wonder-woman.png"
+type = "image"
+title = "wonder woman portrait"
+
+[[generated]]
+id = "tevrw8cFV72fHxG8Lff7J"
+uri = "file://artifacts/fight-club/public/characters/naruto.png"
+type = "image"
+title = "naruto portrait"
+
+[[generated]]
+id = "-dPJLZ-BTKCoUhvvhQgaP"
+uri = "file://artifacts/fight-club/public/characters/sherlock-holmes.png"
+type = "image"
+title = "sherlock holmes portrait"
+
+[[generated]]
+id = "1YkOafG6w5ixSG-5Tz_Iv"
+uri = "file://artifacts/fight-club/public/characters/gandalf.png"
+type = "image"
+title = "gandalf portrait"

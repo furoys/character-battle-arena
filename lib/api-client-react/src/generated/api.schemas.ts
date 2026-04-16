@@ -28,6 +28,7 @@ export interface Character {
   specialAbility: string;
   weaknesses: string;
   description: string;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
