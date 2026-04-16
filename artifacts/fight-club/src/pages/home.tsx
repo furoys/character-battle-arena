@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useListCharacters, useSimulateFight } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { CharacterCard } from "@/components/character-card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FightResultModal } from "@/components/fight-result-modal";
+import { FightScreen } from "@/components/fight-screen";
 import { Swords, X } from "lucide-react";
 
 function TeamPortrait({ character, team, onRemove }: { character: Character; team: 1 | 2; onRemove: () => void }) {
@@ -207,11 +206,13 @@ export function Home() {
         </div>
       )}
 
-      <FightResultModal
+      <FightScreen
         open={showModal}
-        onOpenChange={setShowModal}
+        onClose={() => setShowModal(false)}
         result={simulateFight.data || null}
         isSimulating={simulateFight.isPending}
+        team1Names={team1.map(c => c.name)}
+        team2Names={team2.map(c => c.name)}
       />
     </div>
   );

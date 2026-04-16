@@ -3,7 +3,6 @@ import { useListCharacters, useGetCharacterStats, useDeleteCharacter, getListCha
 import { CharacterCard } from "@/components/character-card";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Trash2, Swords, Zap, Brain } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
