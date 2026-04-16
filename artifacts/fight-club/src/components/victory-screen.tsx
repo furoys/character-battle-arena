@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Character, FightResult } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Swords } from "lucide-react";
+import { AvaLogo } from "@/components/ava-logo";
 
 interface VictoryScreenProps {
   result: FightResult;
@@ -232,7 +233,7 @@ export function VictoryScreen({ result, onClose }: VictoryScreenProps) {
 
         {/* Buttons */}
         {phase >= 5 && (
-          <div className="victory-fade-up flex gap-4 mt-2" style={{ animationDelay: "0ms" }}>
+          <div className="victory-fade-up flex flex-col items-center gap-4 mt-2" style={{ animationDelay: "0ms" }}>
             <button
               onClick={onClose}
               className="flex items-center gap-2 font-display text-sm uppercase tracking-widest px-6 py-3 border-2 transition-all duration-200 hover:scale-105"
@@ -246,6 +247,7 @@ export function VictoryScreen({ result, onClose }: VictoryScreenProps) {
               <Swords className="h-4 w-4" />
               Fight Again
             </button>
+            <AvaLogo className="h-8 w-auto opacity-40" />
           </div>
         )}
       </div>

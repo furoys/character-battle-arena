@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Badge } from "@/components/ui/badge";
-import { Swords, X, Zap, Shield, Brain, Heart } from "lucide-react";
+import { X, Zap, Shield, Brain, Heart } from "lucide-react";
+import { AvaLogo } from "@/components/ava-logo";
 
 interface RosterFlipCardProps {
   character: Character;
@@ -100,14 +101,9 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
 
         {/* ── BACK ── */}
         <div className="roster-flip-face roster-flip-back border-2 border-primary/40 bg-card overflow-hidden flex flex-col">
-          {/* A.v.A Header */}
-          <div className="flex flex-col items-center justify-center py-3 border-b border-primary/20 bg-primary/5 flex-shrink-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <Swords className="h-3 w-3 text-primary" />
-              <span className="font-display text-xs uppercase tracking-[0.35em] text-primary">A.v.A</span>
-              <Swords className="h-3 w-3 text-primary scale-x-[-1]" />
-            </div>
-            <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground">Anyone vs Anyone</span>
+          {/* A.v.A Logo Header */}
+          <div className="flex items-center justify-center py-2 border-b border-primary/20 bg-primary/5 flex-shrink-0">
+            <AvaLogo className="h-9 w-auto" />
           </div>
 
           {/* Small portrait + name */}
