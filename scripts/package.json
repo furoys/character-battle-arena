@@ -8,6 +8,7 @@
     "seed-characters": "tsx ./src/seed-characters.ts",
     "seed-action": "tsx ./src/seed-action.ts",
     "seed-new-batch": "tsx ./src/seed-new-batch.ts",
+    "seed-obscure-and-games": "tsx ./src/seed-obscure-and-games.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
