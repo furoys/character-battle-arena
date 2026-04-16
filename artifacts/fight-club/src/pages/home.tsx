@@ -301,6 +301,8 @@ export function Home() {
         isSimulating={simulateFight.isPending}
         team1Names={team1.map(c => c.name)}
         team2Names={team2.map(c => c.name)}
+        team1Images={team1.map(c => c.imageUrl)}
+        team2Images={team2.map(c => c.imageUrl)}
       />
     </div>
   );
