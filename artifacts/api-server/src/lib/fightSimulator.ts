@@ -631,6 +631,10 @@ function getWeaknessMatchNote(
     return pickRandom([
       `Against a being of ${d}'s scale, that attack makes a mark. A small mark on an incomprehensibly large target — but something.`,
       `${d} registers the hit. Notes it. Files it away somewhere between inconvenience and mild concern.`,
+      `The hit connects. ${d} doesn't slow down.`,
+      `${d} takes it. Keeps moving. The damage is real — it's just not enough.`,
+      `That would end anyone else. ${d} rolls their neck and looks back at ${n}.`,
+      `${d} felt that one. Whether ${d} cares about it is a different question.`,
     ]);
 
   // Poison vs biological weakness
@@ -707,6 +711,11 @@ function buildAttackAction(attacker: Character, atkTags: Set<string>, variant: n
       `applies ${move} the way a planet applies gravity: inevitably`,
       `hits them with ${move} — the surrounding landscape craters outward`,
       `fires ${move} with the casual indifference of something that eats stars`,
+      `unleashes ${move} — the shockwave alone flattens everything within range`,
+      `channels ${move} and the output is measured in geological damage`,
+      `lets ${move} loose at close range — there was no surviving that gap`,
+      `slams ${move} down like a verdict — no appeal, no block, no answer`,
+      `hammers them with ${move} — the arena registers it before they do`,
     ]);
   }
   if (atkTags.has("speedster")) {
@@ -887,7 +896,7 @@ const rangedOpeningTemplates = [
   (atk: string, def: string, action: string, env: string) =>
     `${atk} doesn't advance. The moment both sides land on ${env}, ${atk} ${action}. ${def} is hit before they've taken a step — driven backward into the terrain.`,
   (atk: string, def: string, action: string, env: string) =>
-    `${def} barely touches ${env} before ${atk} ${action}. The shot arrives before ${def} can track the source. They land hard and wonder if closing the gap is even possible.`,
+    `${def} barely sets foot on ${env} before ${atk} ${action}. The shot arrives before ${def} can track the source. They land hard and wonder if closing the gap is even possible.`,
   (atk: string, def: string, action: string, env: string) =>
     `${atk} doesn't move. ${atk} ${action} from full range the instant ${def} appears on ${env}. The impact kicks up a crater. ${def} hits something solid.`,
   (atk: string, def: string, action: string, env: string) =>
@@ -947,7 +956,7 @@ const brutalMidTemplates = [
   (atk: string, def: string, action: string, env: string) =>
     `${def} tries to reset. ${atk} ${action} before the reset finishes. The second hit is worse than the first. ${env} registers every impact.`,
   (atk: string, def: string, action: string, env: string) =>
-    `${atk} and ${def} trade. ${atk} is winning the trade. ${atk} ${action} and the math of this exchange only goes one way. ${def} is absorbing more than they're landing.`,
+    `${atk} and ${def} trade. ${atk} is winning the trade. ${atk} ${action} and the math of this exchange only goes one way. ${def} is taking more hits than they're landing.`,
   (atk: string, def: string, action: string, env: string) =>
     `${atk} ${action}. No technique — just damage. ${def} has no clever answer because there isn't one. The hit lands like a structural problem.`,
   (atk: string, def: string, action: string, env: string) =>
@@ -1003,7 +1012,7 @@ const environmentalMidTemplates = [
   (atk: string, def: string, action: string, env: string) =>
     `${atk} shoves ${def} into ${env}. The arena does some of the work. ${atk} ${action} at the same moment. ${def} was fighting two things at once.`,
   (atk: string, def: string, action: string, env: string) =>
-    `${env} opens up under ${def}'s feet. ${atk} doesn't wait for them to recover — ${atk} ${action} before ${def} can get their footing back.`,
+    `The ground on ${env} shifts under ${def}'s feet. ${atk} doesn't wait for them to recover — ${atk} ${action} before ${def} can get their footing back.`,
   (atk: string, def: string, action: string, env: string) =>
     `${atk} drives ${def} toward the worst part of ${env} on purpose. When the arena delivers its hazard, ${atk} ${action} in the same instant. ${def} takes both hits.`,
   (atk: string, def: string, action: string, env: string) =>
