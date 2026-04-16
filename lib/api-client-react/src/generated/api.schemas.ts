@@ -8,3 +8,109 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface Character {
+  id: number;
+  name: string;
+  universe: string;
+  /** 1-100 */
+  strength: number;
+  /** 1-100 */
+  speed: number;
+  /** 1-100 */
+  intelligence: number;
+  /** 1-100 */
+  durability: number;
+  specialAbility: string;
+  weaknesses: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface CreateCharacterBody {
+  name: string;
+  universe: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  strength: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  speed: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  intelligence: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  durability: number;
+  specialAbility: string;
+  weaknesses: string;
+  description: string;
+}
+
+export type CharacterStatsSummaryUniverseBreakdownItem = {
+  universe: string;
+  count: number;
+};
+
+export interface CharacterStatsSummary {
+  totalCharacters: number;
+  topStrength?: Character;
+  topSpeed?: Character;
+  topIntelligence?: Character;
+  universeBreakdown: CharacterStatsSummaryUniverseBreakdownItem[];
+}
+
+export interface SimulateFightBody {
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team1: number[];
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team2: number[];
+}
+
+export interface FightRound {
+  round: number;
+  attacker: string;
+  defender: string;
+  attackType: string;
+  narrative: string;
+  team1Hp: number;
+  team2Hp: number;
+}
+
+export interface FightResult {
+  id: number;
+  team1: Character[];
+  team2: Character[];
+  /** 1 or 2 indicating which team won */
+  winner: number;
+  rounds: FightRound[];
+  summary: string;
+  simulatedAt: string;
+}
+
+export interface FightRecord {
+  id: number;
+  team1Names: string[];
+  team2Names: string[];
+  winner: number;
+  summary: string;
+  simulatedAt: string;
+}

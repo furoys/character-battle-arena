@@ -5,18 +5,30 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  Character,
+  CharacterStatsSummary,
+  CreateCharacterBody,
+  ErrorResponse,
+  FightRecord,
+  FightResult,
+  HealthStatus,
+  SimulateFightBody,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +111,571 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List all characters
+ */
+export const getListCharactersUrl = () => {
+  return `/api/characters`;
+};
+
+export const listCharacters = async (
+  options?: RequestInit,
+): Promise<Character[]> => {
+  return customFetch<Character[]>(getListCharactersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCharactersQueryKey = () => {
+  return [`/api/characters`] as const;
+};
+
+export const getListCharactersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCharacters>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCharacters>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCharactersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCharacters>>> = ({
+    signal,
+  }) => listCharacters({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCharacters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCharactersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCharacters>>
+>;
+export type ListCharactersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all characters
+ */
+
+export function useListCharacters<
+  TData = Awaited<ReturnType<typeof listCharacters>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCharacters>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCharactersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new character
+ */
+export const getCreateCharacterUrl = () => {
+  return `/api/characters`;
+};
+
+export const createCharacter = async (
+  createCharacterBody: CreateCharacterBody,
+  options?: RequestInit,
+): Promise<Character> => {
+  return customFetch<Character>(getCreateCharacterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCharacterBody),
+  });
+};
+
+export const getCreateCharacterMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCharacter>>,
+    TError,
+    { data: BodyType<CreateCharacterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCharacter>>,
+  TError,
+  { data: BodyType<CreateCharacterBody> },
+  TContext
+> => {
+  const mutationKey = ["createCharacter"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCharacter>>,
+    { data: BodyType<CreateCharacterBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCharacter(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCharacterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCharacter>>
+>;
+export type CreateCharacterMutationBody = BodyType<CreateCharacterBody>;
+export type CreateCharacterMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a new character
+ */
+export const useCreateCharacter = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCharacter>>,
+    TError,
+    { data: BodyType<CreateCharacterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCharacter>>,
+  TError,
+  { data: BodyType<CreateCharacterBody> },
+  TContext
+> => {
+  return useMutation(getCreateCharacterMutationOptions(options));
+};
+
+/**
+ * @summary Get a character by ID
+ */
+export const getGetCharacterUrl = (id: number) => {
+  return `/api/characters/${id}`;
+};
+
+export const getCharacter = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Character> => {
+  return customFetch<Character>(getGetCharacterUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCharacterQueryKey = (id: number) => {
+  return [`/api/characters/${id}`] as const;
+};
+
+export const getGetCharacterQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCharacter>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCharacter>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCharacterQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCharacter>>> = ({
+    signal,
+  }) => getCharacter(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCharacter>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCharacterQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCharacter>>
+>;
+export type GetCharacterQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a character by ID
+ */
+
+export function useGetCharacter<
+  TData = Awaited<ReturnType<typeof getCharacter>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCharacter>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCharacterQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete a character
+ */
+export const getDeleteCharacterUrl = (id: number) => {
+  return `/api/characters/${id}`;
+};
+
+export const deleteCharacter = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCharacterUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCharacterMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCharacter>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCharacter>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteCharacter"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCharacter>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteCharacter(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCharacterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCharacter>>
+>;
+
+export type DeleteCharacterMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a character
+ */
+export const useDeleteCharacter = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCharacter>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCharacter>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteCharacterMutationOptions(options));
+};
+
+/**
+ * @summary Get character roster stats summary
+ */
+export const getGetCharacterStatsUrl = () => {
+  return `/api/characters/stats/summary`;
+};
+
+export const getCharacterStats = async (
+  options?: RequestInit,
+): Promise<CharacterStatsSummary> => {
+  return customFetch<CharacterStatsSummary>(getGetCharacterStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCharacterStatsQueryKey = () => {
+  return [`/api/characters/stats/summary`] as const;
+};
+
+export const getGetCharacterStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCharacterStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCharacterStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCharacterStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCharacterStats>>
+  > = ({ signal }) => getCharacterStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCharacterStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCharacterStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCharacterStats>>
+>;
+export type GetCharacterStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get character roster stats summary
+ */
+
+export function useGetCharacterStats<
+  TData = Awaited<ReturnType<typeof getCharacterStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCharacterStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCharacterStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List recent fights
+ */
+export const getListFightsUrl = () => {
+  return `/api/fights`;
+};
+
+export const listFights = async (
+  options?: RequestInit,
+): Promise<FightRecord[]> => {
+  return customFetch<FightRecord[]>(getListFightsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFightsQueryKey = () => {
+  return [`/api/fights`] as const;
+};
+
+export const getListFightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFights>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFightsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listFights>>> = ({
+    signal,
+  }) => listFights({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFights>>
+>;
+export type ListFightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent fights
+ */
+
+export function useListFights<
+  TData = Awaited<ReturnType<typeof listFights>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFightsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Simulate a fight between two teams
+ */
+export const getSimulateFightUrl = () => {
+  return `/api/fights`;
+};
+
+export const simulateFight = async (
+  simulateFightBody: SimulateFightBody,
+  options?: RequestInit,
+): Promise<FightResult> => {
+  return customFetch<FightResult>(getSimulateFightUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(simulateFightBody),
+  });
+};
+
+export const getSimulateFightMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simulateFight>>,
+    TError,
+    { data: BodyType<SimulateFightBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof simulateFight>>,
+  TError,
+  { data: BodyType<SimulateFightBody> },
+  TContext
+> => {
+  const mutationKey = ["simulateFight"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof simulateFight>>,
+    { data: BodyType<SimulateFightBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return simulateFight(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SimulateFightMutationResult = NonNullable<
+  Awaited<ReturnType<typeof simulateFight>>
+>;
+export type SimulateFightMutationBody = BodyType<SimulateFightBody>;
+export type SimulateFightMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Simulate a fight between two teams
+ */
+export const useSimulateFight = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simulateFight>>,
+    TError,
+    { data: BodyType<SimulateFightBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof simulateFight>>,
+  TError,
+  { data: BodyType<SimulateFightBody> },
+  TContext
+> => {
+  return useMutation(getSimulateFightMutationOptions(options));
+};

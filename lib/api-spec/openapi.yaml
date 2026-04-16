@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: characters
+    description: Character management
+  - name: fights
+    description: Fight simulation
 paths:
   /healthz:
     get:
@@ -24,6 +28,140 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /characters:
+    get:
+      operationId: listCharacters
+      tags: [characters]
+      summary: List all characters
+      responses:
+        "200":
+          description: List of characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+    post:
+      operationId: createCharacter
+      tags: [characters]
+      summary: Create a new character
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCharacterBody"
+      responses:
+        "201":
+          description: Created character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /characters/{id}:
+    get:
+      operationId: getCharacter
+      tags: [characters]
+      summary: Get a character by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCharacter
+      tags: [characters]
+      summary: Delete a character
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /characters/stats/summary:
+    get:
+      operationId: getCharacterStats
+      tags: [characters]
+      summary: Get character roster stats summary
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterStatsSummary"
+
+  /fights:
+    get:
+      operationId: listFights
+      tags: [fights]
+      summary: List recent fights
+      responses:
+        "200":
+          description: List of fight records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FightRecord"
+    post:
+      operationId: simulateFight
+      tags: [fights]
+      summary: Simulate a fight between two teams
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateFightBody"
+      responses:
+        "200":
+          description: Fight result with round-by-round narrative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FightResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +172,227 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Character:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        universe:
+          type: string
+        strength:
+          type: integer
+          description: "1-100"
+        speed:
+          type: integer
+          description: "1-100"
+        intelligence:
+          type: integer
+          description: "1-100"
+        durability:
+          type: integer
+          description: "1-100"
+        specialAbility:
+          type: string
+        weaknesses:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - universe
+        - strength
+        - speed
+        - intelligence
+        - durability
+        - specialAbility
+        - weaknesses
+        - description
+        - createdAt
+
+    CreateCharacterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        universe:
+          type: string
+        strength:
+          type: integer
+          minimum: 1
+          maximum: 100
+        speed:
+          type: integer
+          minimum: 1
+          maximum: 100
+        intelligence:
+          type: integer
+          minimum: 1
+          maximum: 100
+        durability:
+          type: integer
+          minimum: 1
+          maximum: 100
+        specialAbility:
+          type: string
+        weaknesses:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+        - universe
+        - strength
+        - speed
+        - intelligence
+        - durability
+        - specialAbility
+        - weaknesses
+        - description
+
+    CharacterStatsSummary:
+      type: object
+      properties:
+        totalCharacters:
+          type: integer
+        topStrength:
+          $ref: "#/components/schemas/Character"
+        topSpeed:
+          $ref: "#/components/schemas/Character"
+        topIntelligence:
+          $ref: "#/components/schemas/Character"
+        universeBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              universe:
+                type: string
+              count:
+                type: integer
+            required:
+              - universe
+              - count
+      required:
+        - totalCharacters
+        - universeBreakdown
+
+    SimulateFightBody:
+      type: object
+      properties:
+        team1:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+        team2:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+      required:
+        - team1
+        - team2
+
+    FightRound:
+      type: object
+      properties:
+        round:
+          type: integer
+        attacker:
+          type: string
+        defender:
+          type: string
+        attackType:
+          type: string
+        narrative:
+          type: string
+        team1Hp:
+          type: number
+        team2Hp:
+          type: number
+      required:
+        - round
+        - attacker
+        - defender
+        - attackType
+        - narrative
+        - team1Hp
+        - team2Hp
+
+    FightResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        team1:
+          type: array
+          items:
+            $ref: "#/components/schemas/Character"
+        team2:
+          type: array
+          items:
+            $ref: "#/components/schemas/Character"
+        winner:
+          type: integer
+          description: "1 or 2 indicating which team won"
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/FightRound"
+        summary:
+          type: string
+        simulatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - team1
+        - team2
+        - winner
+        - rounds
+        - summary
+        - simulatedAt
+
+    FightRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        team1Names:
+          type: array
+          items:
+            type: string
+        team2Names:
+          type: array
+          items:
+            type: string
+        winner:
+          type: integer
+        summary:
+          type: string
+        simulatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - team1Names
+        - team2Names
+        - winner
+        - summary
+        - simulatedAt

@@ -14,3 +14,203 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary List all characters
+ */
+export const ListCharactersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  universe: zod.string(),
+  strength: zod.number().describe("1-100"),
+  speed: zod.number().describe("1-100"),
+  intelligence: zod.number().describe("1-100"),
+  durability: zod.number().describe("1-100"),
+  specialAbility: zod.string(),
+  weaknesses: zod.string(),
+  description: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
+
+/**
+ * @summary Create a new character
+ */
+export const createCharacterBodyStrengthMax = 100;
+
+export const createCharacterBodySpeedMax = 100;
+
+export const createCharacterBodyIntelligenceMax = 100;
+
+export const createCharacterBodyDurabilityMax = 100;
+
+export const CreateCharacterBody = zod.object({
+  name: zod.string(),
+  universe: zod.string(),
+  strength: zod.number().min(1).max(createCharacterBodyStrengthMax),
+  speed: zod.number().min(1).max(createCharacterBodySpeedMax),
+  intelligence: zod.number().min(1).max(createCharacterBodyIntelligenceMax),
+  durability: zod.number().min(1).max(createCharacterBodyDurabilityMax),
+  specialAbility: zod.string(),
+  weaknesses: zod.string(),
+  description: zod.string(),
+});
+
+/**
+ * @summary Get a character by ID
+ */
+export const GetCharacterParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCharacterResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  universe: zod.string(),
+  strength: zod.number().describe("1-100"),
+  speed: zod.number().describe("1-100"),
+  intelligence: zod.number().describe("1-100"),
+  durability: zod.number().describe("1-100"),
+  specialAbility: zod.string(),
+  weaknesses: zod.string(),
+  description: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a character
+ */
+export const DeleteCharacterParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get character roster stats summary
+ */
+export const GetCharacterStatsResponse = zod.object({
+  totalCharacters: zod.number(),
+  topStrength: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      universe: zod.string(),
+      strength: zod.number().describe("1-100"),
+      speed: zod.number().describe("1-100"),
+      intelligence: zod.number().describe("1-100"),
+      durability: zod.number().describe("1-100"),
+      specialAbility: zod.string(),
+      weaknesses: zod.string(),
+      description: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .optional(),
+  topSpeed: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      universe: zod.string(),
+      strength: zod.number().describe("1-100"),
+      speed: zod.number().describe("1-100"),
+      intelligence: zod.number().describe("1-100"),
+      durability: zod.number().describe("1-100"),
+      specialAbility: zod.string(),
+      weaknesses: zod.string(),
+      description: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .optional(),
+  topIntelligence: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      universe: zod.string(),
+      strength: zod.number().describe("1-100"),
+      speed: zod.number().describe("1-100"),
+      intelligence: zod.number().describe("1-100"),
+      durability: zod.number().describe("1-100"),
+      specialAbility: zod.string(),
+      weaknesses: zod.string(),
+      description: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .optional(),
+  universeBreakdown: zod.array(
+    zod.object({
+      universe: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List recent fights
+ */
+export const ListFightsResponseItem = zod.object({
+  id: zod.number(),
+  team1Names: zod.array(zod.string()),
+  team2Names: zod.array(zod.string()),
+  winner: zod.number(),
+  summary: zod.string(),
+  simulatedAt: zod.coerce.date(),
+});
+export const ListFightsResponse = zod.array(ListFightsResponseItem);
+
+/**
+ * @summary Simulate a fight between two teams
+ */
+export const simulateFightBodyTeam1Max = 5;
+
+export const simulateFightBodyTeam2Max = 5;
+
+export const SimulateFightBody = zod.object({
+  team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
+  team2: zod.array(zod.number()).min(1).max(simulateFightBodyTeam2Max),
+});
+
+export const SimulateFightResponse = zod.object({
+  id: zod.number(),
+  team1: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      universe: zod.string(),
+      strength: zod.number().describe("1-100"),
+      speed: zod.number().describe("1-100"),
+      intelligence: zod.number().describe("1-100"),
+      durability: zod.number().describe("1-100"),
+      specialAbility: zod.string(),
+      weaknesses: zod.string(),
+      description: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  team2: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      universe: zod.string(),
+      strength: zod.number().describe("1-100"),
+      speed: zod.number().describe("1-100"),
+      intelligence: zod.number().describe("1-100"),
+      durability: zod.number().describe("1-100"),
+      specialAbility: zod.string(),
+      weaknesses: zod.string(),
+      description: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  winner: zod.number().describe("1 or 2 indicating which team won"),
+  rounds: zod.array(
+    zod.object({
+      round: zod.number(),
+      attacker: zod.string(),
+      defender: zod.string(),
+      attackType: zod.string(),
+      narrative: zod.string(),
+      team1Hp: zod.number(),
+      team2Hp: zod.number(),
+    }),
+  ),
+  summary: zod.string(),
+  simulatedAt: zod.coerce.date(),
+});
