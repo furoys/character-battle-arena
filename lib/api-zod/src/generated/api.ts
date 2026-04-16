@@ -29,6 +29,7 @@ export const ListCharactersResponseItem = zod.object({
   specialAbility: zod.string(),
   weaknesses: zod.string(),
   description: zod.string(),
+  imageUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
@@ -74,6 +75,7 @@ export const GetCharacterResponse = zod.object({
   specialAbility: zod.string(),
   weaknesses: zod.string(),
   description: zod.string(),
+  imageUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -101,6 +103,7 @@ export const GetCharacterStatsResponse = zod.object({
       specialAbility: zod.string(),
       weaknesses: zod.string(),
       description: zod.string(),
+      imageUrl: zod.string().nullish(),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -116,6 +119,7 @@ export const GetCharacterStatsResponse = zod.object({
       specialAbility: zod.string(),
       weaknesses: zod.string(),
       description: zod.string(),
+      imageUrl: zod.string().nullish(),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -131,6 +135,7 @@ export const GetCharacterStatsResponse = zod.object({
       specialAbility: zod.string(),
       weaknesses: zod.string(),
       description: zod.string(),
+      imageUrl: zod.string().nullish(),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -181,6 +186,7 @@ export const SimulateFightResponse = zod.object({
       specialAbility: zod.string(),
       weaknesses: zod.string(),
       description: zod.string(),
+      imageUrl: zod.string().nullish(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -196,6 +202,7 @@ export const SimulateFightResponse = zod.object({
       specialAbility: zod.string(),
       weaknesses: zod.string(),
       description: zod.string(),
+      imageUrl: zod.string().nullish(),
       createdAt: zod.coerce.date(),
     }),
   ),
