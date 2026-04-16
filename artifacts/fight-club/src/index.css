@@ -250,3 +250,69 @@
 .roster-flip-wrapper .roster-flip-inner {
   min-height: 380px;
 }
+
+/* ── Victory animation ── */
+@keyframes victoryPortraitRise {
+  0%   { opacity: 0; transform: translateY(80px) scale(0.85); filter: brightness(0.3); }
+  60%  { opacity: 1; transform: translateY(-12px) scale(1.04); filter: brightness(1.3); }
+  100% { opacity: 1; transform: translateY(0px) scale(1); filter: brightness(1); }
+}
+@keyframes victorySlamIn {
+  0%   { opacity: 0; transform: scale(2.5) translateY(-20px); filter: blur(8px); }
+  60%  { opacity: 1; transform: scale(0.95) translateY(4px); filter: blur(0); }
+  80%  { transform: scale(1.03) translateY(0); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes victoryGlowPulse {
+  0%, 100% { text-shadow: 0 0 20px currentColor, 0 0 60px currentColor; }
+  50%       { text-shadow: 0 0 40px currentColor, 0 0 100px currentColor, 0 0 160px currentColor; }
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-120vh) translateX(var(--drift, 0px)) scale(0.3); opacity: 0; }
+}
+@keyframes flashIn {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+@keyframes victoryFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50%       { transform: translateY(-8px) rotate(5deg); }
+}
+@keyframes lightRay {
+  0%, 100% { opacity: 0.05; transform: scaleX(1); }
+  50%       { opacity: 0.15; transform: scaleX(1.08); }
+}
+
+.victory-portrait-rise {
+  animation: victoryPortraitRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.victory-slam {
+  animation: victorySlamIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.victory-glow-pulse {
+  animation: victoryGlowPulse 2s ease-in-out infinite;
+}
+.victory-fade-up {
+  animation: victoryFadeUp 0.6s ease both;
+}
+.victory-flash {
+  animation: flashIn 0.5s ease both;
+}
+.victory-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFloat linear both;
+}
+.victory-crown {
+  animation: crownBounce 1.4s ease-in-out infinite;
+}
+.victory-light-ray {
+  animation: lightRay 3s ease-in-out infinite;
+}

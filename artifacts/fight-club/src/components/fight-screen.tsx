@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
 import { ChevronLeft, Swords } from "lucide-react";
+import { VictoryScreen } from "@/components/victory-screen";
 
 interface FightScreenProps {
   open: boolean;
@@ -70,18 +71,20 @@ function RoundBlock({ round, index, onDone }: { round: FightRound; index: number
 export function FightScreen({ open, onClose, result, isSimulating, team1Names, team2Names }: FightScreenProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [showVictory, setShowVictory] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open && result && !isSimulating) {
       setVisibleCount(0);
       setIsFinished(false);
-      // Start showing rounds
+      setShowVictory(false);
       setTimeout(() => setVisibleCount(1), 400);
     }
     if (!open) {
       setVisibleCount(0);
       setIsFinished(false);
+      setShowVictory(false);
     }
   }, [open, result, isSimulating]);
 
@@ -91,6 +94,7 @@ export function FightScreen({ open, onClose, result, isSimulating, team1Names, t
       setTimeout(() => setVisibleCount(idx + 2), 1200);
     } else {
       setTimeout(() => setIsFinished(true), 900);
+      setTimeout(() => setShowVictory(true), 2200);
     }
   };
 
@@ -224,6 +228,7 @@ export function FightScreen({ open, onClose, result, isSimulating, team1Names, t
             onClick={() => {
               setVisibleCount(result.rounds.length);
               setTimeout(() => setIsFinished(true), 300);
+              setTimeout(() => setShowVictory(true), 1000);
             }}
             className="text-xs font-bold uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground transition-colors"
           >
@@ -231,7 +236,7 @@ export function FightScreen({ open, onClose, result, isSimulating, team1Names, t
           </button>
         )}
 
-        {isFinished && (
+        {isFinished && !showVictory && (
           <button
             onClick={onClose}
             className="flex items-center gap-2 font-display text-base uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
@@ -241,6 +246,11 @@ export function FightScreen({ open, onClose, result, isSimulating, team1Names, t
           </button>
         )}
       </div>
+
+      {/* Victory overlay */}
+      {showVictory && result && (
+        <VictoryScreen result={result} onClose={onClose} />
+      )}
     </div>
   );
 }
