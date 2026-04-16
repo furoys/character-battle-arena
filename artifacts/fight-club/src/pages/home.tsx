@@ -4,6 +4,7 @@ import { Character } from "@workspace/api-client-react/src/generated/api.schemas
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
+import { AvaLogo } from "@/components/ava-logo";
 import { Swords, X } from "lucide-react";
 
 function TeamPortrait({ character, team, onRemove }: { character: Character; team: 1 | 2; onRemove: () => void }) {
@@ -128,9 +129,8 @@ export function Home() {
       {/* Game HUD - Team selector */}
       <div className="flex-shrink-0 bg-card/95 border-b-2 border-primary/30 backdrop-blur sticky top-0 z-30">
         {/* Title bar */}
-        <div className="flex items-center justify-center gap-2 py-1.5 border-b border-border/30">
-          <Swords className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm uppercase tracking-[0.3em] text-primary">A.v.A — Anyone vs Anyone</span>
+        <div className="flex items-center justify-center py-1 border-b border-border/30">
+          <AvaLogo className="h-10 w-auto" />
         </div>
 
         {/* Teams + Fight */}
