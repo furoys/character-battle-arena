@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useListCharacters, useGetCharacterStats, useDeleteCharacter, getListCharactersQueryKey, getGetCharacterStatsQueryKey } from "@workspace/api-client-react";
-import { CharacterCard } from "@/components/character-card";
+import { RosterFlipCard } from "@/components/roster-flip-card";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Trash2, Swords, Zap, Brain } from "lucide-react";
+import { Search, Filter, Swords, Zap, Brain } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -127,14 +127,11 @@ export function Roster() {
       ) : (
         <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {filteredCharacters?.map(character => (
-            <div key={character.id} className="relative group">
-              <CharacterCard character={character} />
-              <button
-                className="absolute top-2 left-2 w-7 h-7 bg-black/60 border border-destructive/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive z-10"
-                onClick={(e) => { e.stopPropagation(); handleDelete(character.id, character.name); }}
-              >
-                <Trash2 className="h-3.5 w-3.5 text-destructive-foreground" />
-              </button>
+            <div key={character.id} className="group/card">
+              <RosterFlipCard
+                character={character}
+                onDelete={() => handleDelete(character.id, character.name)}
+              />
             </div>
           ))}
           {filteredCharacters?.length === 0 && (
