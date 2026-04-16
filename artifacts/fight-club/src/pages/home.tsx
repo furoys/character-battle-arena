@@ -130,7 +130,7 @@ export function Home() {
         {/* Title bar */}
         <div className="flex items-center justify-center gap-2 py-1.5 border-b border-border/30">
           <Swords className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm uppercase tracking-[0.3em] text-primary">Fight Club Arena</span>
+          <span className="font-display text-sm uppercase tracking-[0.3em] text-primary">A.v.A — Anyone vs Anyone</span>
         </div>
 
         {/* Teams + Fight */}
