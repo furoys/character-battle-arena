@@ -28,9 +28,10 @@ function RoundBlock({ round, index, onDone }: { round: FightRound; index: number
   const [textVisible, setTextVisible] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(true), 80);
-    const t2 = setTimeout(() => { setTextVisible(true); onDone(); }, 600);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t1 = setTimeout(() => setVisible(true), 100);
+    const t2 = setTimeout(() => setTextVisible(true), 350);
+    const t3 = setTimeout(() => onDone(), 2800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
   const isTeam1 = index % 2 === 0;
@@ -91,10 +92,10 @@ export function FightScreen({ open, onClose, result, isSimulating, team1Names, t
   const handleRoundDone = (idx: number) => {
     if (!result) return;
     if (idx + 1 < result.rounds.length) {
-      setTimeout(() => setVisibleCount(idx + 2), 1200);
+      setTimeout(() => setVisibleCount(idx + 2), 500);
     } else {
-      setTimeout(() => setIsFinished(true), 900);
-      setTimeout(() => setShowVictory(true), 2200);
+      setTimeout(() => setIsFinished(true), 800);
+      setTimeout(() => setShowVictory(true), 2400);
     }
   };
 
