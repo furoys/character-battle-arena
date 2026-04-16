@@ -414,115 +414,392 @@ const betrayalJustifications = [
     `The chaos of this arena has cracked something fundamental in ${traitor}'s decision-making.`,
 ];
 
-// ─── Combat Narratives ────────────────────────────────────────────────────────
+// ─── Power Tag System ─────────────────────────────────────────────────────────
 
-const openingTemplates = [
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} doesn't wait. The moment both sides set foot on ${env}, ${ability} tears the air apart. ${def} takes the full hit and is thrown backward, leaving a trench in whatever passes for ground here.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `The ground of ${env} hasn't stopped shaking before ${atk} is already airborne. ${ability} closes the distance in a heartbeat and the impact is catastrophic — ${def} is sent skidding with blood already running.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} reads ${env}, reads ${def}, and moves. ${ability} explodes outward with staggering precision. The crack of impact carries for miles. ${def} hits the environment hard and doesn't bounce.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `Before ${def} can orient themselves on ${env}, ${atk} is already inside their guard. ${ability} detonates at close range — the shockwave flattens the surrounding terrain and ${def} is at its epicenter.`,
+const TAG_PATTERNS: [string, RegExp][] = [
+  ["fire",      /\b(fire|flame|inferno|hellfire|pyro|scorch|ember|heat blast)\b/i],
+  ["ice",       /\b(ice|freeze|cryo|frost|cold|glacial|absolute zero|cryomancer)\b/i],
+  ["lightning", /\b(lightning|thunder|electric|volt|shock|plasma|electrokinesis)\b/i],
+  ["magic",     /\b(magic|sorcery|spell|arcane|mystic|enchant|witch|wizard|curse|hex|dark arts|chaos magic|eldritch)\b/i],
+  ["psychic",   /\b(psychic|telekinesis|telepathy|mind control|mental|psionic|mind reading|thought)\b/i],
+  ["immortal",  /\b(immortal|unkillable|cannot be killed|cannot die|healing factor|regenerat|resurrect|undead|back from the dead|infinite lives|true immortality)\b/i],
+  ["reality",   /\b(reality|dimensional|chaos magic|probability|warp|quantum|rewrite|reshape)\b/i],
+  ["tech",      /\b(power suit|battle suit|cybernetic|android|mech\b|robot|arc reactor|nanotech|exo.?suit|weapons system)\b/i],
+  ["speedster", /\b(speed force|mach \d|supersonic|light speed|fastest alive|zero to|move at light)\b/i],
+  ["giant",     /\b(300 meter|colossal|mountain-sized|planet-wide|kaiju|city block|the size of)\b/i],
+  ["cosmic",    /\b(cosmic|galactic|universe\b|infinity\b|power cosmic|planet.eating|devourer|omnipotent|all-powerful)\b/i],
+  ["vampire",   /\b(vampire|blood drain|daywalker|blood.drinking|undying)\b/i],
+  ["metal",     /\b(magnetic|metal control|magnetism|iron manipulation|adamantium|vibranium control)\b/i],
+  ["poison",    /\b(venom|poison|toxin|acid blood|acid spit|corrosive)\b/i],
+  ["undead",    /\b(undead|lich|necromancy|death magic|death god|death energy|corpse)\b/i],
+  ["soul",      /\b(soul steal|soul drain|soul manipulation|absorb soul|hell.?fire soul|soul power)\b/i],
+  ["time",      /\b(time travel|time stop|temporal|time loop|stop time|rewind time)\b/i],
+  ["shadow",    /\b(shadow|darkness|void|dark energy|shadow manipulation|shade)\b/i],
+  ["water",     /\b(water control|hydrokinesis|ocean|aquatic|tidal|sea power)\b/i],
+  ["wind",      /\b(wind|air control|storm|tornado|hurricane|aerokinesis|gale)\b/i],
 ];
 
-const midTemplates = [
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} drives ${def} backward across ${env}, each blow heavier than the last. ${ability} finally shatters ${def}'s guard entirely — ${def} goes down hard, gasping, blood running freely across the terrain.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} hesitates for half a second. That's all ${atk} needs. ${ability} detonates through the gap with clinical brutality, snapping ${def}'s head back and sending them cartwheeling across ${env}.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} uses ${env} itself as a weapon — using the terrain, the wreckage, the momentum — and amplifies ${ability} into something that shouldn't be possible. ${def} is caught in the full force of it. The surrounding landscape craters.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} feints twice, then commits. ${ability} comes from an angle ${def} had ruled out as impossible. The explosion of force blows a fresh scar into ${env}, and ${def} hits the ground hard enough to leave an outline.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} lands something — barely. ${atk} takes it, uses the pain, and answers with ${ability}. The counter is vicious and precise and ${def} staggers across ${env} with a fresh wound that wasn't there five seconds ago.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} doesn't let ${def} breathe. Moving through ${env} like it was built for this, ${atk} attacks from three vectors before landing the real blow — ${ability} folding ${def} around the point of impact.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `The shockwave from ${atk}'s ${ability} flattens a twenty-meter radius of ${env}. ${def} is at the center of it, emerging from the blast battered, singed, and bleeding from wounds that weren't there before.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} catches ${def} mid-motion — worst possible moment. ${ability} connects and multiplies by ${def}'s own momentum. The collision is sickening. ${def} is driven into the nearest solid thing in ${env}, which does not survive it.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `Blood is already dripping from ${def}'s chin, but ${atk} shows zero interest in slowing down. ${ability} hammers through ${def}'s remaining defense and drives them knee-deep into ${env}.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} grabs ${def} and drives them headfirst into whatever ${env} has to offer. Twice. Then ${ability} fires at point-blank range and sends ${def} tumbling across the battlefield trailing blood and debris.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} commits to what they think is the kill shot. ${atk} absorbs it — barely — pivots, and unleashes ${ability} with every joule of remaining power. ${def} hits the ground of ${env} hard and stays there for a moment.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `The collision of their power levels sends visible shockwaves tearing across ${env}. For three seconds they're locked together, neither giving anything. Then ${ability} finds the edge and ${def} is blown clear, skipping across the ruined landscape.`,
-];
+function getTags(char: Character): Set<string> {
+  // Only index ABILITIES and DESCRIPTION for attacker power tags — NOT weaknesses.
+  // Weaknesses are checked separately on the defender side in getWeaknessMatchNote.
+  const text = `${char.specialAbility} ${char.description}`;
+  const tags = new Set<string>();
+  for (const [tag, pattern] of TAG_PATTERNS) {
+    if (pattern.test(text)) tags.add(tag);
+  }
+  return tags;
+}
 
-const counterTemplates = [
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} thought they had ${atk} on ${env}. They were wrong the entire time. ${atk} was baiting them. ${ability} erupts from an unexpected angle, punching through ${def}'s guard, and ${def}'s landing is not clean.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `Bleeding, winded, against the wall — ${atk} digs deeper than anyone thought possible and detonates ${ability} as a counter. The explosion of force sears a new scar across ${env} and ${def} eats every bit of it.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} moves in for the finish. ${atk} absorbs it, channels the pain, and ${ability} fires as a counter — furious, precise, and from a direction ${def} completely failed to account for. The tables on ${env} have turned.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk} lets ${def} get close. Close enough to be certain. Then ${ability} detonates at zero distance, the shockwave shredding the surrounding terrain of ${env} and leaving ${def} crumpled against whatever the blast drove them into.`,
-];
+// ─── Ability Core Extraction ──────────────────────────────────────────────────
 
-const closingTemplates = [
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} is finished — anyone watching can see it. ${atk} refuses to accept anything short of total. ${ability} surges to its absolute limit and crashes into ${def} with apocalyptic force. ${env} ruptures in a fifty-meter radius. ${def} does not get up.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${atk}'s body is broken. Their armor is gone. Their blood soaks ${env}. None of it matters. One final time, they pull everything into ${ability} — a last, burning act of will — and drive it through ${def} until the fight is over.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `${def} drops to one knee in the ruins of ${env}. ${atk} stands over them and delivers the ending — ${ability} at full power, point-blank, without hesitation or mercy. The shockwave flattens everything within a hundred meters.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `Everything comes down to this single moment on ${env}. ${atk} summons something beyond power — pure, desperate, irrational will — and ${ability} answers the call. The impact is cataclysmic. ${def} is driven into the earth. It's over.`,
-  (atk: string, def: string, ability: string, env: string) =>
-    `Both fighters are still standing. Barely. Then ${atk} reaches deeper than ${def} thought possible — ${ability} ignites beyond its ceiling, a final surge that defies everything. The explosion on ${env} is visible for miles. ${def} goes down and stays there.`,
-];
+// Patterns that indicate a first clause is a TRAIT description, not an attack action
+const TRAIT_ONLY_PATTERNS = /^(true immortality|cannot be killed|cannot die|unkillable|immortal|infinite lives|absolute immortality|virtually unkillable|healing factor|near-total invulnerability|invulnerability|invincible)/i;
 
-// ─── Ability Description ──────────────────────────────────────────────────────
+function getAbilityCore(char: Character): string {
+  const raw = char.specialAbility.trim();
 
-function buildAbilityPhrase(attacker: Character): string {
-  const ability = attacker.specialAbility ?? "";
-  const firstClause = ability.split(/[,;]/)[0]?.trim() ?? `${attacker.name}'s power`;
+  // Try semicolon-delimited clauses first (most characters use these)
+  const semiClauses = raw.split(";").map(c => c.trim()).filter(Boolean);
+  let chosen = semiClauses[0] ?? raw;
 
-  const high = Math.max(attacker.strength, attacker.speed, attacker.intelligence, attacker.durability);
-  const dominant =
-    high === attacker.strength ? "strength" :
-    high === attacker.speed ? "speed" :
-    high === attacker.intelligence ? "intelligence" : "durability";
+  // If the first semicolon-clause is a passive trait, try the second
+  if (TRAIT_ONLY_PATTERNS.test(chosen)) {
+    if (semiClauses.length > 1) {
+      chosen = semiClauses[1]!;
+    } else {
+      // Fall back to comma-separated clauses (e.g. Deadpool-style formatting)
+      const commaClauses = raw.split(",").map(c => c.trim()).filter(c => c.length > 5);
+      const actionClause = commaClauses.find(c => !TRAIT_ONLY_PATTERNS.test(c));
+      if (actionClause) chosen = actionClause;
+    }
+  }
 
+  // Clip very long clauses
+  if (chosen.length > 70) {
+    const comma = chosen.split(",")[0]?.trim();
+    return comma && comma.length > 10 ? comma : chosen.slice(0, 70).trim();
+  }
+  return chosen;
+}
+
+function getDominantStat(char: Character): "strength" | "speed" | "intelligence" | "durability" {
+  const { strength, speed, intelligence, durability } = char;
+  const high = Math.max(strength, speed, intelligence, durability);
+  if (high === strength) return "strength";
+  if (high === speed) return "speed";
+  if (high === intelligence) return "intelligence";
+  return "durability";
+}
+
+// ─── Interaction Detection ────────────────────────────────────────────────────
+
+function getWeaknessMatchNote(
+  attacker: Character,
+  atkTags: Set<string>,
+  defender: Character,
+  defTags: Set<string>,
+): string | null {
+  const defWeakness = defender.weaknesses.toLowerCase();
+  const n = attacker.name;
+  const d = defender.name;
+
+  // Immortal DEFENDER reaction — always fires (most important narrative beat)
+  if (defTags.has("immortal")) {
+    return pickRandom([
+      `${d} gets back up. Of course they do. That's the entire problem.`,
+      `${d} hits the ground — and then stands up while everyone is still processing the last hit. The regeneration is not dramatic. It is simply relentless.`,
+      `The hit lands clean and ${d} takes every bit of it. Then ${d} rolls their neck, cracks their knuckles, and continues. This is the core issue with fighting someone who cannot be killed.`,
+      `${d} absorbs the damage with the calm patience of someone who has died before and found it didn't stick.`,
+      `${d} is down. ${d} is also already getting up. At some point the two facts have to be reconciled.`,
+      `Every wound closes. Every broken bone resets. ${n} is doing real damage — it just refuses to stay done.`,
+    ]);
+  }
+
+  // Gated interactions — only fire ~55% of the time to avoid repetition
+  if (Math.random() > 0.55) return null;
+
+  // Fire vs ice weakness
+  if (atkTags.has("fire") && /fire|heat|flame|burn/.test(defWeakness))
+    return pickRandom([
+      `The fire hits ${d} somewhere that actually matters — listed under known vulnerabilities for a reason.`,
+      `${d}'s defenses weren't designed for this temperature. The difference is visible.`,
+      `Heat at this level gets through in ways that physical resistance can't compensate for.`,
+    ]);
+
+  // Ice vs fire weakness
+  if (atkTags.has("ice") && /ice|cold|freeze|frost/.test(defWeakness))
+    return pickRandom([
+      `The cold gets into ${d} in ways that armor and rage and strength simply can't stop.`,
+      `${d}'s power runs hot. Cold at this magnitude causes cascading failure across all of it.`,
+      `The temperature differential is catastrophic for ${d}. It shows.`,
+    ]);
+
+  // Magic vs magic-vulnerable
+  if (atkTags.has("magic") && /magic|sorcery|mystical|arcane|supernatural/.test(defWeakness))
+    return pickRandom([
+      `The sorcery bypasses everything ${d} trained to defend against — built for physical threats, not this.`,
+      `${d}'s protection has a specific gap shaped exactly like sorcery. ${n} found it.`,
+      `Magic operates on a register ${d}'s defenses were never calibrated for. It shows.`,
+    ]);
+
+  // Lightning vs electrical weakness
+  if (atkTags.has("lightning") && /lightning|electric|shock|emp/.test(defWeakness))
+    return pickRandom([
+      `The electrical discharge finds every gap simultaneously. ${d} has no answer for current that moves faster than thought.`,
+      `${d}'s systems weren't hardened against this. The discharge cascades through everything at once.`,
+      `The conductivity issue is real and immediate. ${d} did not plan for this.`,
+    ]);
+
+  // Psychic vs mind-weak
+  if (atkTags.has("psychic") && /psychic|mind|mental|willpower/.test(defWeakness))
+    return pickRandom([
+      `${d}'s body is prepared. Their mind is not. The psychic assault finds the soft center behind all that power.`,
+      `Physical defense means nothing here. The attack bypasses every layer ${d} ever built.`,
+      `${d} can tank almost anything physical. Almost.`,
+    ]);
+
+  // Cosmic vs cosmic-weak
+  if (atkTags.has("cosmic") && /cosmic|energy|overwhelm/.test(defWeakness))
+    return pickRandom([
+      `Power at the cosmic scale wasn't something ${d} was designed to absorb. The math doesn't work.`,
+      `${d} can survive a lot. This is calibrated at a level that "a lot" doesn't cover.`,
+    ]);
+
+  // Metal control vs tech/armor
+  if (atkTags.has("metal") && (defTags.has("tech") || /armor|metal|iron|steel/.test(defWeakness)))
+    return pickRandom([
+      `${n} doesn't need to touch ${d} — they reach out and rearrange the metal in their armor from a distance.`,
+      `Every ferrous component in ${d}'s setup becomes a liability the moment ${n} focuses on it.`,
+      `The armor meant to protect ${d} is now working against them. That's a ${n} special.`,
+    ]);
+
+  // Reality warping vs non-reality
+  if (atkTags.has("reality") && !defTags.has("reality") && !defTags.has("cosmic"))
+    return pickRandom([
+      `${d} attempts to respond. Reality disagrees. ${n} rewrote the parameters of what ${d}'s attack was allowed to do mid-swing.`,
+      `The rules of the fight just changed. ${d} wasn't consulted. ${n} was.`,
+    ]);
+
+  // Giant vs normal-sized
+  if (atkTags.has("giant") && !defTags.has("giant") && !defTags.has("cosmic"))
+    return pickRandom([
+      `The shockwave from a being of ${n}'s scale alone would end most fights. The actual strike is almost secondary.`,
+      `${d} is operating on a completely different scale of threat. The gap is not theoretical.`,
+    ]);
+
+  // Speedster vs slow
+  if (atkTags.has("speedster") && defender.speed < 65)
+    return pickRandom([
+      `${d} didn't see it start, let alone finish. Complete before any signal traveled from eye to brain to body.`,
+      `Reaction time becomes irrelevant at this velocity. ${d} is defending against something that was already over.`,
+    ]);
+
+  // Cosmic/scale defender vs non-cosmic attacker (reverse: attacker is puny)
+  if (defTags.has("cosmic") && !atkTags.has("cosmic") && !atkTags.has("reality"))
+    return pickRandom([
+      `Against a being of ${d}'s scale, that attack makes a mark. A small mark on an incomprehensibly large target — but something.`,
+      `${d} registers the hit. Notes it. Files it away somewhere between inconvenience and mild concern.`,
+    ]);
+
+  // Poison vs biological weakness
+  if (atkTags.has("poison") && /poison|toxin|biological/.test(defWeakness))
+    return pickRandom([
+      `The toxin finds its way in regardless of armor or power level. Biology doesn't care about fighting ability.`,
+      `${d}'s resilience is physical. The toxin operates at a biological level that physical strength cannot defend.`,
+    ]);
+
+  return null;
+}
+
+// ─── Attack Description Builder ───────────────────────────────────────────────
+
+function buildAttackAction(attacker: Character, atkTags: Set<string>): string {
+  const core = getAbilityCore(attacker);
+  const dominant = getDominantStat(attacker);
+
+  if (atkTags.has("fire")) {
+    return pickRandom([
+      `detonates ${core} in a column of superheated force`,
+      `ignites ${core}, cooking the air between them`,
+      `channels ${core} at point-blank range`,
+      `erupts with ${core}`,
+    ]);
+  }
+  if (atkTags.has("ice")) {
+    return pickRandom([
+      `freezes the moment with ${core}`,
+      `drives ${core} through every gap`,
+      `encases the exchange in ${core}`,
+      `locks down the field with ${core}`,
+    ]);
+  }
+  if (atkTags.has("lightning")) {
+    return pickRandom([
+      `discharges ${core} across the gap instantly`,
+      `arcs ${core} through the air before anyone can track it`,
+      `calls down ${core} with pinpoint accuracy`,
+    ]);
+  }
+  if (atkTags.has("magic") || atkTags.has("reality")) {
+    return pickRandom([
+      `reshapes the local reality with ${core}`,
+      `incants ${core} and the rules of the fight change`,
+      `deploys ${core} with a precision no physical strike can match`,
+      `bends probability with ${core}`,
+    ]);
+  }
+  if (atkTags.has("psychic")) {
+    return pickRandom([
+      `reaches into their mind with ${core}`,
+      `bypasses the body entirely, striking with ${core}`,
+      `lands ${core} where armor cannot reach`,
+    ]);
+  }
+  if (atkTags.has("cosmic")) {
+    return pickRandom([
+      `unleashes ${core} at a scale that rewrites local geography`,
+      `applies ${core} with the casual indifference of a being that eats planets`,
+      `channels ${core} — a force that operates at the scale of solar systems`,
+    ]);
+  }
+  if (atkTags.has("speedster")) {
+    return pickRandom([
+      `delivers ${core} at a velocity that collapses the concept of reaction time`,
+      `laps the arena twice and lands ${core} from an angle that didn't exist a moment ago`,
+      `blurs through the gap and fires ${core} from inside their guard`,
+    ]);
+  }
+  if (atkTags.has("giant")) {
+    return pickRandom([
+      `brings ${core} down from a height that creates its own weather system`,
+      `drives ${core} with the force of a geological event`,
+      `applies ${core} — the impact registers on seismometers`,
+    ]);
+  }
+  if (atkTags.has("metal")) {
+    return pickRandom([
+      `wrenches the arena's metal into a weapon with ${core}`,
+      `tears every ferrous surface apart and directs it with ${core}`,
+    ]);
+  }
+  if (atkTags.has("shadow")) {
+    return pickRandom([
+      `strikes from within the dark with ${core}`,
+      `dissolves into shadow and rematerializes with ${core} already in motion`,
+    ]);
+  }
+  if (atkTags.has("vampire")) {
+    return pickRandom([
+      `closes the distance supernaturally fast and deploys ${core}`,
+      `uses ${core} with the cold precision of something centuries old`,
+    ]);
+  }
+  if (atkTags.has("undead") || atkTags.has("soul")) {
+    return pickRandom([
+      `channels ${core} — power that comes from somewhere beyond the living`,
+      `draws on ${core} with the authority of death itself`,
+    ]);
+  }
+  if (atkTags.has("poison")) {
+    return pickRandom([
+      `delivers ${core} directly into the exchange`,
+      `makes contact — that's enough. ${core} does the rest.`,
+    ]);
+  }
+
+  // Stat-based fallback
   const byDominant: Record<string, string[]> = {
     strength: [
-      `a crushing physical assault channeling ${firstClause}`,
-      `raw unstoppable force through ${firstClause}`,
-      `a titanic power strike fueled by ${firstClause}`,
-      `${firstClause} converted into a devastating physical blow`,
+      `drives ${core} through every layer of resistance`,
+      `slams ${core} home with enough force to dent the terrain`,
+      `crashes ${core} through all defense`,
     ],
-    speed: [
-      `a blindingly fast assault leveraging ${firstClause}`,
-      `${firstClause} at speeds that leave afterimages`,
-      `a blurred series of strikes using ${firstClause}`,
-      `${firstClause} moving faster than perception can track`,
+    speed:        [
+      `lands ${core} from three angles before the first one registers`,
+      `delivers ${core} in a motion too fast to track`,
+      `flashes ${core} from inside their guard`,
     ],
     intelligence: [
-      `a precisely calculated attack exploiting ${firstClause}`,
-      `${firstClause} deployed with surgical tactical timing`,
-      `a masterfully timed application of ${firstClause}`,
-      `${firstClause} targeting an exact structural weakness`,
+      `deploys ${core} at the exact optimal moment — a calculated, guaranteed hit`,
+      `reads the opening and executes ${core} with surgical precision`,
+      `baits them into a gap and answers with ${core}`,
     ],
-    durability: [
-      `unstoppable momentum backed by ${firstClause}`,
-      `${firstClause} sustained through impossible endurance`,
-      `${firstClause} powering through every attempted defense`,
-      `an attrition-breaking surge of ${firstClause}`,
+    durability:   [
+      `absorbs everything thrown at them and counters with ${core}`,
+      `pushes through all resistance and drives ${core} home`,
+      `refuses to stop — ${core} just keeps coming`,
     ],
   };
-
   return pickRandom(byDominant[dominant] ?? byDominant.strength);
 }
 
-// ─── Narrative Selector ───────────────────────────────────────────────────────
+// ─── Combat Narrative Templates (phase-aware) ────────────────────────────────
 
-function pickNarrative(
+const openingTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} doesn't wait. The moment both sides set foot on ${env}, ${atk} ${action}. ${def} takes the full hit and is thrown backward, leaving a trench in whatever passes for ground here.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `The ground of ${env} hasn't stopped shaking before ${atk} is already in motion — ${action}. The impact is catastrophic. ${def} is sent skidding, blood already running.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} reads ${env}, reads ${def}, and moves. ${atk} ${action} with staggering precision. The crack of impact carries for miles. ${def} hits the environment hard and doesn't bounce.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Before ${def} can orient themselves on ${env}, ${atk} is already inside their guard — ${action}. The shockwave flattens the surrounding terrain and ${def} is at its epicenter.`,
+];
+
+const midTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} drives ${def} backward across ${env}, each exchange more brutal than the last. ${atk} ${action} and ${def}'s guard shatters — they go down hard, blood running freely across the terrain.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} hesitates for half a second. That's all ${atk} needs. ${atk} ${action}, snapping ${def}'s head back and sending them cartwheeling across ${env}.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} uses ${env} itself to amplify the moment — and then ${action}. ${def} is caught in the full force of it. The surrounding landscape craters.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} feints twice, then commits — ${action} from an angle ${def} had ruled out as impossible. The explosion of force carves a fresh scar into ${env}, and ${def} hits the ground hard enough to leave an outline.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} lands something — barely. ${atk} takes it, uses the pain, and answers: ${action}. Vicious and precise. ${def} staggers across ${env} with wounds that weren't there five seconds ago.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} doesn't let ${def} breathe. Moving through ${env} like it was built for this, ${atk} ${action} before ${def} can reset their footing. The hit folds ${def} around the point of impact.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `The shockwave as ${atk} ${action} flattens a twenty-meter radius of ${env}. ${def} is at the center of it, emerging from the blast battered, singed, and bleeding from places they didn't know could bleed.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} catches ${def} mid-motion — worst possible moment. ${atk} ${action} and the blow multiplies by ${def}'s own momentum. The collision is sickening. ${def} is driven into the nearest solid thing in ${env}, which does not survive it.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Blood is already dripping from ${def}'s chin, but ${atk} shows zero interest in slowing down. ${atk} ${action} and hammers through ${def}'s remaining defense, driving them knee-deep into ${env}.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} grabs ${def} and drives them headfirst into whatever ${env} has to offer. Twice. Then ${atk} ${action} at point-blank range and ${def} tumbles across the battlefield trailing blood and debris.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} commits to what they think is the kill shot. ${atk} absorbs it — barely — pivots, and ${action} with every joule of remaining power. ${def} hits the ground of ${env} hard and stays there for a moment.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `For three seconds they're locked together, neither giving anything. Then ${atk} ${action}, and the edge is found. ${def} is blown clear, skipping across the ruined landscape of ${env}.`,
+];
+
+const counterTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} thought they had ${atk} on ${env}. They were wrong the entire time. ${atk} was baiting them — and now ${action}, punching through ${def}'s guard from an angle they never covered.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Bleeding, winded, against the wall — ${atk} digs deeper than anyone expected, and then ${action} as a counter. The explosion of force sears a new scar across ${env} and ${def} eats every bit of it.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} moves in for the finish. ${atk} absorbs it, channels the pain, and ${action} as a counter — furious, precise, from a direction ${def} completely failed to account for. The tables on ${env} have turned.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} lets ${def} get close. Close enough to be certain. Then ${action} at zero distance — the shockwave shreds the surrounding terrain of ${env} and leaves ${def} crumpled against whatever the blast drove them into.`,
+];
+
+const closingTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} is finished — everyone watching can see it. ${atk} refuses to accept anything short of total. ${atk} ${action} at absolute ceiling and it crashes into ${def} with apocalyptic force. ${env} ruptures in a fifty-meter radius. ${def} does not get up.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk}'s body is broken. Their blood soaks ${env}. None of it matters. One final time, ${atk} ${action} — a last, burning act of will — and drives it through ${def} until the fight is over.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} drops to one knee in the ruins of ${env}. ${atk} stands over them and delivers the ending — ${action}, point-blank, without hesitation or mercy. The shockwave flattens everything within a hundred meters.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Everything comes down to this moment on ${env}. ${atk} summons something beyond power — pure, desperate will — and ${action}. The impact is cataclysmic. ${def} is driven into the earth. It's over.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Both of them are still standing. Barely. Then ${atk} reaches deeper than ${def} thought possible — ${action} in a final surge that defies all sense. The explosion on ${env} is visible for miles. ${def} goes down and stays there.`,
+];
+
+// ─── Round Narrative Builder ──────────────────────────────────────────────────
+
+function buildRoundNarrative(
   round: number,
   maxRounds: number,
   attacker: Character,
@@ -530,18 +807,28 @@ function pickNarrative(
   arenaName: string,
   arenaFlavors: string[],
 ): string {
-  const ability = buildAbilityPhrase(attacker);
+  const atkTags = getTags(attacker);
+  const defTags = getTags(defender);
+  const action = buildAttackAction(attacker, atkTags);
   const progress = round / maxRounds;
 
-  let template: (a: string, d: string, ab: string, env: string) => string;
+  // Pick phase-appropriate structural template
+  let template: (a: string, d: string, ac: string, env: string) => string;
   if (round === 1) template = pickRandom(openingTemplates);
   else if (progress >= 0.8) template = pickRandom(closingTemplates);
   else if (round % 4 === 0) template = pickRandom(counterTemplates);
   else template = pickRandom(midTemplates);
 
-  const base = template(attacker.name, defender.name, ability, arenaName);
-  if (round % 2 === 0) return `${base} ${pickRandom(arenaFlavors)}`;
-  return base;
+  let narrative = template(attacker.name, defender.name, action, arenaName);
+
+  // Append cause-and-effect interaction note when relevant
+  const interaction = getWeaknessMatchNote(attacker, atkTags, defender, defTags);
+  if (interaction) narrative += ` ${interaction}`;
+
+  // Append arena flavor every other round (don't do it on the same round as an interaction)
+  if (!interaction && round % 2 === 0) narrative += ` ${pickRandom(arenaFlavors)}`;
+
+  return narrative;
 }
 
 // ─── Core Simulation ──────────────────────────────────────────────────────────
@@ -666,13 +953,13 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       hp1 = Math.max(0, hp1 - damage);
     }
 
-    const narrative = pickNarrative(i, maxRounds, attacker, defender, arena.name, arena.flavor);
+    const narrative = buildRoundNarrative(i, maxRounds, attacker, defender, arena.name, arena.flavor);
 
     rounds.push({
       round: i,
       attacker: attacker.name,
       defender: defender.name,
-      attackType: buildAbilityPhrase(attacker).split(" ")[0] ?? "strike",
+      attackType: getAbilityCore(attacker),
       narrative,
       team1Hp: Math.round(hp1),
       team2Hp: Math.round(hp2),
