@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useListCharacters, useSimulateFight } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
-import { Swords, X } from "lucide-react";
+import { Search, Swords, X } from "lucide-react";
 
 function TeamPortrait({ character, team, onRemove }: { character: Character; team: 1 | 2; onRemove: () => void }) {
   const colorClass = team === 1 ? "border-team1 bg-team1/10" : "border-team2 bg-team2/10";
@@ -81,6 +81,32 @@ export function Home() {
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUniverse, setSelectedUniverse] = useState<string | null>(null);
+  const pillsRef = useRef<HTMLDivElement>(null);
+
+  const universes = useMemo(() => {
+    if (!characters) return [];
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const c of characters) {
+      if (c.universe && !seen.has(c.universe)) {
+        seen.add(c.universe);
+        list.push(c.universe);
+      }
+    }
+    return list.sort();
+  }, [characters]);
+
+  const filteredCharacters = useMemo(() => {
+    if (!characters) return [];
+    const q = searchQuery.trim().toLowerCase();
+    return characters.filter(c => {
+      const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q);
+      const matchesUniverse = !selectedUniverse || c.universe === selectedUniverse;
+      return matchesSearch && matchesUniverse;
+    });
+  }, [characters, searchQuery, selectedUniverse]);
 
   const simulateFight = useSimulateFight({
     mutation: {
@@ -175,6 +201,60 @@ export function Home() {
           ${activeTeam === 1 ? "text-team1 bg-team1/5" : "text-team2 bg-team2/5"}`}>
           Picking for Team {activeTeam} — tap a fighter below
         </div>
+
+        {/* Search + Universe filter */}
+        <div className="border-t border-border/20 bg-background/60 backdrop-blur px-3 pt-2 pb-2 space-y-2">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search fighters..."
+              className="w-full bg-muted/30 border border-border/40 text-sm pl-8 pr-8 py-1.5 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Universe pills */}
+          <div
+            ref={pillsRef}
+            className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            <button
+              onClick={() => setSelectedUniverse(null)}
+              className={`flex-shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 border transition-colors
+                ${!selectedUniverse
+                  ? "border-primary bg-primary/20 text-primary"
+                  : "border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
+                }`}
+            >
+              All
+            </button>
+            {universes.map(u => (
+              <button
+                key={u}
+                onClick={() => setSelectedUniverse(prev => prev === u ? null : u)}
+                className={`flex-shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 border transition-colors
+                  ${selectedUniverse === u
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
+                  }`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Character Select Grid */}
@@ -185,7 +265,7 @@ export function Home() {
       ) : (
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {characters?.map(character => (
+            {filteredCharacters.map(character => (
               <CharacterCard
                 key={character.id}
                 character={character}
@@ -198,9 +278,17 @@ export function Home() {
               />
             ))}
           </div>
-          {characters?.length === 0 && (
-            <div className="text-center p-16">
-              <p className="font-display text-xl text-muted-foreground uppercase">No fighters. Add some first.</p>
+          {filteredCharacters.length === 0 && !isLoading && (
+            <div className="text-center p-16 space-y-2">
+              <p className="font-display text-xl text-muted-foreground uppercase">No fighters found</p>
+              {(searchQuery || selectedUniverse) && (
+                <button
+                  onClick={() => { setSearchQuery(""); setSelectedUniverse(null); }}
+                  className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           )}
         </div>
