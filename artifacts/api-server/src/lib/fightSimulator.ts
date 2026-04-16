@@ -928,13 +928,31 @@ function teamPower(team: Character[]): number {
   return team.reduce((sum, c) => sum + c.strength + c.speed + c.intelligence + c.durability, 0);
 }
 
+// Apply a concrete damage bonus when an attacker's power type exploits a defender's known weakness.
+// This makes weaknesses mechanically meaningful, not just narrative flavor.
+function getWeaknessBonus(attacker: Character, defender: Character): number {
+  const atkTags = getTags(attacker);
+  const defWeakness = defender.weaknesses.toLowerCase();
+  let bonus = 0;
+  if (atkTags.has("fire")      && /fire|heat|flame|burn/.test(defWeakness))          bonus += 4;
+  if (atkTags.has("ice")       && /ice|cold|freeze|frost/.test(defWeakness))          bonus += 4;
+  if (atkTags.has("magic")     && /magic|sorcery|mystical|arcane|supernatural/.test(defWeakness)) bonus += 5;
+  if (atkTags.has("lightning") && /lightning|electric|shock|emp/.test(defWeakness))   bonus += 4;
+  if (atkTags.has("psychic")   && /psychic|mind|mental|willpower/.test(defWeakness))  bonus += 5;
+  if (atkTags.has("metal")     && /armor|metal|iron|steel/.test(defWeakness))         bonus += 4;
+  if (atkTags.has("poison")    && /poison|toxin|biological/.test(defWeakness))        bonus += 4;
+  if (atkTags.has("shadow")    && /light|holy|radiant/.test(defWeakness))             bonus += 3;
+  if (atkTags.has("cosmic")    && /cosmic|energy|overwhelm/.test(defWeakness))        bonus += 5;
+  return bonus;
+}
+
 export function simulateFight(team1: Character[], team2: Character[]): FightResult {
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
-  // Power gap: 0 = equal, 1 = team1 completely dominant, -1 = team2 completely dominant
+  // Power gap: 0 = equal, ~±0.35 at extreme mismatch
   const totalPower = base1 + base2;
-  const powerGap = (base1 - base2) / totalPower; // range roughly -0.5 to +0.5
+  const powerGap = (base1 - base2) / totalPower;
 
   let hp1 = 100;
   let hp2 = 100;
@@ -943,35 +961,45 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
   const maxRounds = 14 + Math.floor(Math.random() * 9); // 14–22 rounds
   const arena = pickRandom(arenas);
 
-  // Chaos frequency: more chaos = more level playing field
-  const chaosFrequency = 0.22 + Math.abs(powerGap) * 0.5; // 22-47% per round
-  // Betrayal: chance per round that a character attacks their own team
-  const betrayalChance = 0.06; // 6% per round
+  // ── Chaos tuning ──────────────────────────────────────────────────────────
+  // Chaos fires 12–22% per round (was 22–47%). Still present, but no longer dominant.
+  const chaosFrequency = 0.12 + Math.abs(powerGap) * 0.2;
+  // Betrayal: 3% per round (was 6%). Rare but still possible.
+  const betrayalChance = 0.03;
+  // No back-to-back chaos — after a chaos round, skip the next chaos check.
+  let chaosCooldown = false;
 
   for (let i = 1; i <= maxRounds; i++) {
     if (hp1 <= 0 || hp2 <= 0) break;
 
     // ── Chaos event check ─────────────────────────────────────────────────────
-    if (Math.random() < chaosFrequency) {
+    if (!chaosCooldown && Math.random() < chaosFrequency) {
+      chaosCooldown = true; // suppress next round — no back-to-back
+
       const event = pickRandom(chaosEvents);
-      // Decide which team eats the chaos
-      // If team1 is stronger and event.targetStrong, hit team1; otherwise mix it up
+
+      // Chaos still slightly favors the underdog, but with a softer bias (60% vs 72%).
+      // In extreme mismatches it's even softer — chaos shouldn't fully rescue lost causes.
+      const strongBias = Math.min(0.60, 0.55 + Math.abs(powerGap));
       let chaosHitsTeam1: boolean;
       if (event.targetStrong) {
-        chaosHitsTeam1 = powerGap > 0 ? Math.random() < 0.72 : Math.random() < 0.28;
+        chaosHitsTeam1 = powerGap > 0 ? Math.random() < strongBias : Math.random() < (1 - strongBias);
       } else {
         chaosHitsTeam1 = Math.random() < 0.5;
       }
 
-      const victim = chaosHitsTeam1 ? pickRandom(team1).name : pickRandom(team2).name;
+      const victim      = chaosHitsTeam1 ? pickRandom(team1).name : pickRandom(team2).name;
       const beneficiary = chaosHitsTeam1 ? pickRandom(team2).name : pickRandom(team1).name;
       const chaos = event.narrative(victim, beneficiary, arena.name);
-      const swing = event.hpSwing + Math.floor(Math.random() * 8) - 4;
+
+      // Chaos swings reduced ~35% — significant but not fight-ending.
+      const rawSwing = event.hpSwing + Math.floor(Math.random() * 6) - 3;
+      const swing = Math.round(rawSwing * 0.65);
 
       if (chaosHitsTeam1) {
-        hp1 = Math.max(1, hp1 - swing); // floor at 1 to keep fight alive
+        hp1 = Math.max(2, hp1 - swing);
       } else {
-        hp2 = Math.max(1, hp2 - swing);
+        hp2 = Math.max(2, hp2 - swing);
       }
 
       rounds.push({
@@ -984,27 +1012,29 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
         team2Hp: Math.round(hp2),
       });
       continue;
+    } else {
+      chaosCooldown = false;
     }
 
     // ── Betrayal check ────────────────────────────────────────────────────────
-    // Betrayal only possible if team has 2+ members
     const canBetray1 = team1.length >= 2;
     const canBetray2 = team2.length >= 2;
     if ((canBetray1 || canBetray2) && Math.random() < betrayalChance) {
       const betrayTeam1 = canBetray1 && (!canBetray2 || Math.random() < 0.5);
       const team = betrayTeam1 ? team1 : team2;
       const shuffled = [...team].sort(() => Math.random() - 0.5);
-      const traitor = shuffled[0];
-      const victim = shuffled[1];
-      const template = pickRandom(betrayalTemplates);
+      const traitor = shuffled[0]!;
+      const victim  = shuffled[1]!;
+      const template      = pickRandom(betrayalTemplates);
       const justification = pickRandom(betrayalJustifications)(traitor.name);
-      const narrative = template.narrative(traitor.name, victim.name, justification);
-      const damage = template.hpSwing + Math.floor(Math.random() * 8) - 4;
+      const narrative     = template.narrative(traitor.name, victim.name, justification);
+      // Betrayal damage also modestly reduced
+      const damage = Math.round((template.hpSwing + Math.floor(Math.random() * 6) - 3) * 0.8);
 
       if (betrayTeam1) {
-        hp1 = Math.max(1, hp1 - damage);
+        hp1 = Math.max(2, hp1 - damage);
       } else {
-        hp2 = Math.max(1, hp2 - damage);
+        hp2 = Math.max(2, hp2 - damage);
       }
 
       rounds.push({
@@ -1020,9 +1050,9 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     }
 
     // ── Normal combat ─────────────────────────────────────────────────────────
-    // Base attack probability weighted by power, but chaos has been leveling the field via HP
-    const currentAdvantage = hp1 / (hp1 + hp2); // shifts as chaos hits
-    const team1Attacks = Math.random() < 0.5 + (currentAdvantage - 0.5) * 0.25;
+    // Momentum: the team ahead in HP attacks more often (was 0.25 multiplier, now 0.35).
+    const currentAdvantage = hp1 / (hp1 + hp2);
+    const team1Attacks = Math.random() < 0.5 + (currentAdvantage - 0.5) * 0.35;
 
     let attacker: Character;
     let defender: Character;
@@ -1031,16 +1061,20 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     if (team1Attacks) {
       attacker = pickRandom(team1);
       defender = pickRandom(team2);
-      const statBonus = (attacker.strength + attacker.speed) / 200;
-      const effectiveness = (base1 / totalPower) * 0.45 + Math.random() * 0.35 + statBonus * 0.2;
-      damage = Math.round(effectiveness * 16 + 3);
+      // Power fraction weight raised to 0.55 (was 0.45), random reduced to 0.22 (was 0.35).
+      // Strong teams now reliably hit harder; luck still matters but doesn't dominate.
+      const statBonus   = (attacker.strength + attacker.speed) / 200;
+      const effectiveness = (base1 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23;
+      const weakBonus   = getWeaknessBonus(attacker, defender);
+      damage = Math.round(effectiveness * 17 + 4) + weakBonus;
       hp2 = Math.max(0, hp2 - damage);
     } else {
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
-      const statBonus = (attacker.strength + attacker.speed) / 200;
-      const effectiveness = (base2 / totalPower) * 0.45 + Math.random() * 0.35 + statBonus * 0.2;
-      damage = Math.round(effectiveness * 16 + 3);
+      const statBonus   = (attacker.strength + attacker.speed) / 200;
+      const effectiveness = (base2 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23;
+      const weakBonus   = getWeaknessBonus(attacker, defender);
+      damage = Math.round(effectiveness * 17 + 4) + weakBonus;
       hp1 = Math.max(0, hp1 - damage);
     }
 
