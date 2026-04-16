@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Fictional Fight Club"
+title = "A.v.A — Anyone vs Anyone"
 version = "1.0.0"
 id = "artifacts/fight-club"
 router = "path"
