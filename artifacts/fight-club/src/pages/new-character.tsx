@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -18,39 +17,45 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const characterSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
-  universe: z.string().min(1, "Universe is required").max(100),
+  name: z.string().min(1, "Required").max(100),
+  universe: z.string().min(1, "Required").max(100),
   strength: z.number().min(1).max(100),
   speed: z.number().min(1).max(100),
   intelligence: z.number().min(1).max(100),
   durability: z.number().min(1).max(100),
-  specialAbility: z.string().min(1, "Special ability is required"),
-  weaknesses: z.string().min(1, "Weaknesses are required"),
-  description: z.string().min(1, "Description is required"),
+  specialAbility: z.string().min(1, "Required"),
+  weaknesses: z.string().min(1, "Required"),
+  description: z.string().min(1, "Required"),
 });
 
 type CharacterFormValues = z.infer<typeof characterSchema>;
+
+const STAT_LABELS: Record<string, string> = {
+  strength: "STR",
+  speed: "SPD",
+  intelligence: "INT",
+  durability: "DUR",
+};
 
 export function NewCharacter() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const createCharacter = useCreateCharacter({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Fighter Added", description: "Character added to the roster successfully." });
+        toast({ title: "Fighter Registered", description: "New fighter added to the roster." });
         queryClient.invalidateQueries({ queryKey: getListCharactersQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetCharacterStatsQueryKey() });
         setLocation("/roster");
       },
       onError: (error) => {
-        toast({ title: "Error", description: error.error || "Failed to add character.", variant: "destructive" });
-      }
-    }
+        toast({ title: "Error", description: error.error || "Failed to add fighter.", variant: "destructive" });
+      },
+    },
   });
 
   const form = useForm<CharacterFormValues>({
@@ -73,135 +78,135 @@ export function NewCharacter() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="rounded-none border-2 bg-card">
-        <CardHeader className="border-b-2 border-border pb-6 bg-muted/30">
-          <CardTitle className="font-display text-4xl uppercase tracking-widest text-primary">Add New Fighter</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold uppercase text-xs tracking-widest">Character Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Goku" className="rounded-none border-2 font-display text-xl h-12 uppercase" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="universe"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold uppercase text-xs tracking-widest">Universe / Franchise</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Dragon Ball" className="rounded-none border-2 font-display text-xl h-12 uppercase" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+    <div className="flex flex-col">
+      {/* Page title */}
+      <div className="px-4 pt-4 pb-2 border-b border-border/30">
+        <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Register Fighter</h1>
+      </div>
 
-              <div className="space-y-6 bg-muted/20 p-6 border-2 border-border">
-                <h3 className="font-display text-2xl uppercase text-secondary">Combat Stats (1-100)</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  {(['strength', 'speed', 'intelligence', 'durability'] as const).map((stat) => (
-                    <FormField
-                      key={stat}
-                      control={form.control}
-                      name={stat}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex justify-between items-center mb-2">
-                            <FormLabel className="font-bold uppercase text-xs tracking-widest">{stat}</FormLabel>
-                            <span className="font-display text-xl text-primary">{field.value}</span>
-                          </div>
-                          <FormControl>
-                            <Slider
-                              min={1}
-                              max={100}
-                              step={1}
-                              defaultValue={[field.value]}
-                              onValueChange={(vals) => field.onChange(vals[0])}
-                              className="py-4"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
+      <div className="p-4 overflow-y-auto">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Identity */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Fighter Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Goku" className="rounded-none border-2 font-display text-lg h-11" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="universe"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Universe</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Dragon Ball" className="rounded-none border-2 font-display text-lg h-11" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
+            {/* Stats */}
+            <div className="border-2 border-border/50 bg-card/50 p-4">
+              <h3 className="font-display text-sm uppercase tracking-widest text-muted-foreground mb-4">Combat Stats (1–100)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                {(["strength", "speed", "intelligence", "durability"] as const).map((stat) => (
+                  <FormField
+                    key={stat}
+                    control={form.control}
+                    name={stat}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex justify-between items-center mb-2">
+                          <FormLabel className="font-display text-sm uppercase tracking-wider">{STAT_LABELS[stat]}</FormLabel>
+                          <span className="font-display text-2xl text-primary leading-none">{field.value}</span>
+                        </div>
+                        <FormControl>
+                          <Slider
+                            min={1}
+                            max={100}
+                            step={1}
+                            defaultValue={[field.value]}
+                            onValueChange={(vals) => field.onChange(vals[0])}
+                            className="py-2"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="specialAbility"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold uppercase text-xs tracking-widest">Special Ability</FormLabel>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Special Ability</FormLabel>
                     <FormControl>
-                      <Input placeholder="Signature move or power" className="rounded-none border-2 h-12" {...field} />
+                      <Input placeholder="Signature power or move" className="rounded-none border-2 h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="weaknesses"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold uppercase text-xs tracking-widest">Weaknesses</FormLabel>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Weaknesses</FormLabel>
                     <FormControl>
-                      <Input placeholder="Vulnerabilities or limitations" className="rounded-none border-2 h-12" {...field} />
+                      <Input placeholder="Vulnerabilities or limits" className="rounded-none border-2 h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold uppercase text-xs tracking-widest">Lore / Description</FormLabel>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Lore</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Brief backstory..." 
-                        className="rounded-none border-2 min-h-[100px] resize-y" 
-                        {...field} 
+                      <Textarea
+                        placeholder="Brief backstory..."
+                        className="rounded-none border-2 min-h-[80px] resize-none"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
 
-              <Button 
-                type="submit" 
-                size="lg" 
-                disabled={createCharacter.isPending}
-                className="w-full font-display text-2xl uppercase tracking-widest h-16 rounded-none shadow-[4px_4px_0_0_hsl(var(--primary))] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0_0_hsl(var(--primary))] transition-all"
-              >
-                {createCharacter.isPending ? "Registering..." : "Register Fighter"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={createCharacter.isPending}
+              className="w-full font-display text-xl uppercase tracking-widest h-14 rounded-none"
+            >
+              {createCharacter.isPending ? "Registering..." : "Register Fighter"}
+            </Button>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

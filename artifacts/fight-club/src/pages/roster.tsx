@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useListCharacters, useGetCharacterStats, useDeleteCharacter, getListCharactersQueryKey, getGetCharacterStatsQueryKey } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/character-card";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Trash2 } from "lucide-react";
+import { Search, Filter, Trash2, Swords, Zap, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -13,13 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export function Roster() {
   const [search, setSearch] = useState("");
   const [universeFilter, setUniverseFilter] = useState<string>("all");
-  
+
   const { data: characters, isLoading } = useListCharacters();
   const { data: stats } = useGetCharacterStats();
   const deleteCharacter = useDeleteCharacter();
@@ -27,21 +26,17 @@ export function Roster() {
   const { toast } = useToast();
 
   const handleDelete = async (id: number, name: string) => {
-    if (confirm(`Are you sure you want to delete ${name}?`)) {
+    if (confirm(`Remove ${name} from roster?`)) {
       try {
         await deleteCharacter.mutateAsync({ id });
         queryClient.invalidateQueries({ queryKey: getListCharactersQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetCharacterStatsQueryKey() });
-        toast({ title: "Character Deleted", description: `${name} has been removed from the roster.` });
-      } catch (err) {
-        toast({ title: "Error", description: "Failed to delete character.", variant: "destructive" });
+        toast({ title: "Fighter Removed", description: `${name} has left the arena.` });
+      } catch {
+        toast({ title: "Error", description: "Failed to remove fighter.", variant: "destructive" });
       }
     }
   };
-
-  if (isLoading) {
-    return <div className="p-8 text-center font-display text-2xl animate-pulse">Loading Roster...</div>;
-  }
 
   const universes = Array.from(new Set(characters?.map(c => c.universe) || []));
 
@@ -52,114 +47,102 @@ export function Roster() {
   });
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Stats Section */}
+    <div className="flex flex-col">
+      {/* Page title */}
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-border/30">
+        <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Roster</h1>
+        {stats && (
+          <span className="text-sm font-bold text-muted-foreground">{stats.totalCharacters} fighters</span>
+        )}
+      </div>
+
+      {/* Stat leaders */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="rounded-none border-2 bg-card/50">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Total Fighters</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="font-display text-4xl text-primary">{stats.totalCharacters}</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="rounded-none border-2 bg-card/50">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Top Strength</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="font-display text-2xl text-team2 truncate">{stats.topStrength?.name || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground">{stats.topStrength?.strength} STR</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-none border-2 bg-card/50">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Top Speed</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="font-display text-2xl text-team1 truncate">{stats.topSpeed?.name || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground">{stats.topSpeed?.speed} SPD</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-none border-2 bg-card/50">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Top Intelligence</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="font-display text-2xl text-secondary truncate">{stats.topIntelligence?.name || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground">{stats.topIntelligence?.intelligence} INT</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-3 border-b border-border/30">
+          {[
+            { label: "Strongest", name: stats.topStrength?.name, value: `${stats.topStrength?.strength} STR`, icon: Swords, color: "text-team2" },
+            { label: "Fastest", name: stats.topSpeed?.name, value: `${stats.topSpeed?.speed} SPD`, icon: Zap, color: "text-team1" },
+            { label: "Smartest", name: stats.topIntelligence?.name, value: `${stats.topIntelligence?.intelligence} INT`, icon: Brain, color: "text-secondary" },
+          ].map(s => (
+            <div key={s.label} className="p-3 border-r last:border-r-0 border-border/30 flex flex-col gap-0.5">
+              <div className="flex items-center gap-1">
+                <s.icon className={`h-3 w-3 ${s.color}`} />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{s.label}</span>
+              </div>
+              <p className={`font-display text-sm uppercase truncate ${s.color}`}>{s.name || "N/A"}</p>
+              <p className="text-[9px] text-muted-foreground">{s.value}</p>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Universe Breakdown */}
+      {/* Universe tags */}
       {stats?.universeBreakdown && stats.universeBreakdown.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap">
           {stats.universeBreakdown.map(u => (
-            <Badge key={u.universe} variant="secondary" className="rounded-none px-3 py-1 font-bold text-xs uppercase">
-              {u.universe}: {u.count}
+            <Badge
+              key={u.universe}
+              variant="secondary"
+              className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
+              onClick={() => setUniverseFilter(u.universe === universeFilter ? "all" : u.universe)}
+              style={{ opacity: universeFilter !== "all" && universeFilter !== u.universe ? 0.4 : 1 }}
+            >
+              {u.universe} {u.count}
             </Badge>
           ))}
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center bg-card p-4 border-2 border-border">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder="Search characters..." 
-            className="pl-10 rounded-none border-2 h-12 font-display text-xl tracking-wider uppercase bg-background"
+      {/* Search + Filter */}
+      <div className="flex gap-2 p-3 bg-card/50 border-b border-border/30 sticky top-0 z-20">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search fighters..."
+            className="pl-9 rounded-none border-2 h-10 bg-background text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="w-full sm:w-64">
-          <Select value={universeFilter} onValueChange={setUniverseFilter}>
-            <SelectTrigger className="rounded-none border-2 h-12 font-display text-xl tracking-wider uppercase bg-background">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <SelectValue placeholder="Universe" />
-              </div>
-            </SelectTrigger>
-            <SelectContent className="rounded-none font-display text-lg uppercase tracking-wider">
-              <SelectItem value="all">All Universes</SelectItem>
-              {universes.map(u => (
-                <SelectItem key={u} value={u}>{u}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={universeFilter} onValueChange={setUniverseFilter}>
+          <SelectTrigger className="rounded-none border-2 h-10 w-[140px] bg-background text-xs font-bold uppercase">
+            <div className="flex items-center gap-1">
+              <Filter className="h-3 w-3" />
+              <SelectValue placeholder="Universe" />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="rounded-none font-bold text-xs uppercase">
+            <SelectItem value="all">All Universes</SelectItem>
+            {universes.map(u => (
+              <SelectItem key={u} value={u}>{u}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {filteredCharacters?.map(character => (
-          <div key={character.id} className="relative group">
-            <CharacterCard character={character} />
-            <Button 
-              variant="destructive" 
-              size="icon" 
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-none z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(character.id, character.name);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-      
-      {filteredCharacters?.length === 0 && (
-        <div className="text-center p-12 bg-card border-2 border-border border-dashed">
-          <p className="text-2xl text-muted-foreground font-display uppercase">No characters found matching criteria.</p>
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center p-16">
+          <p className="font-display text-2xl uppercase animate-pulse text-muted-foreground">Loading...</p>
+        </div>
+      ) : (
+        <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {filteredCharacters?.map(character => (
+            <div key={character.id} className="relative group">
+              <CharacterCard character={character} />
+              <button
+                className="absolute top-2 left-2 w-7 h-7 bg-black/60 border border-destructive/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive z-10"
+                onClick={(e) => { e.stopPropagation(); handleDelete(character.id, character.name); }}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive-foreground" />
+              </button>
+            </div>
+          ))}
+          {filteredCharacters?.length === 0 && (
+            <div className="col-span-full text-center p-12">
+              <p className="font-display text-lg text-muted-foreground uppercase">No fighters found.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
