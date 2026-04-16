@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Badge } from "@/components/ui/badge";
-import { X, Zap, Shield, Brain, Heart } from "lucide-react";
+import { X, Zap, Shield, Brain, Heart, Swords } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";
 
 interface RosterFlipCardProps {
