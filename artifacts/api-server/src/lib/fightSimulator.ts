@@ -450,6 +450,29 @@ function getTags(char: Character): Set<string> {
   return tags;
 }
 
+// ─── Fighting Style Detection ─────────────────────────────────────────────────
+
+// Tags whose primary expression is ranged/projected — NOT physical melee
+const RANGED_POWER_TAGS = new Set([
+  "fire", "ice", "lightning", "magic", "psychic", "cosmic",
+  "reality", "wind", "water", "shadow", "time", "undead", "soul",
+]);
+
+// Characters who cannot walk/run — wheelchair, paralysis, etc.
+const IMMOBILE_PATTERNS = /\b(wheelchair|paralyz|cannot walk|confined to|paraplegic|immobile|levitat)\b/i;
+
+function getFightStyle(char: Character, tags: Set<string>): "melee" | "ranged" {
+  for (const t of RANGED_POWER_TAGS) {
+    if (tags.has(t)) return "ranged";
+  }
+  return "melee";
+}
+
+function isImmobile(char: Character): boolean {
+  const text = `${char.description} ${char.specialAbility}`;
+  return IMMOBILE_PATTERNS.test(text);
+}
+
 // ─── Ability Core Extraction ──────────────────────────────────────────────────
 
 // Patterns that indicate a first clause is a TRAIT description, not an attack action
@@ -643,9 +666,10 @@ function buildAttackAction(attacker: Character, atkTags: Set<string>): string {
   if (atkTags.has("magic") || atkTags.has("reality")) {
     return pickRandom([
       `reshapes the local reality with ${core}`,
-      `incants ${core} and the rules of the fight change`,
+      `calls down ${core} in a focused surge of raw arcane force`,
       `deploys ${core} with a precision no physical strike can match`,
       `bends probability with ${core}`,
+      `unleashes ${core} in a cascading surge of arcane force`,
     ]);
   }
   if (atkTags.has("psychic")) {
@@ -797,6 +821,70 @@ const closingTemplates = [
     `Both of them are still standing. Barely. Then ${atk} reaches deeper than ${def} thought possible — ${action} in a final surge that defies all sense. The explosion on ${env} is visible for miles. ${def} goes down and stays there.`,
 ];
 
+// ─── Ranged / Caster Narrative Templates ─────────────────────────────────────
+// Used when the attacker fights at range (magic, psychic, fire, cosmic, etc.)
+// No grabbing, no running, no physical contact from the attacker's side.
+
+const rangedOpeningTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} doesn't advance. The moment both sides arrive on ${env}, ${atk} ${action}. The force travels instantly — ${def} is driven back without ever being touched, leaving a trench in the terrain behind them.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} barely sets foot on ${env} before ${atk} ${action}. The impact is remote and absolute. ${def} is flung backward, landing hard — wondering if closing the gap is even possible against this.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} reads ${env}, reads ${def}, and doesn't bother moving. ${atk} ${action} at full range with staggering precision. The crack of released power carries for miles. ${def} hits something solid and doesn't bounce.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Before ${def} can orient themselves on ${env}, ${atk} has already ${action}. The shockwave flattens the surrounding terrain — without ${atk} taking a single step.`,
+];
+
+const rangedMidTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} doesn't need to close the distance. ${atk} ${action} and ${def} takes every bit of it — there is no defense posture against force that doesn't require proximity.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} hesitates for half a second. That's all ${atk} needs. ${atk} ${action} with clinical precision and ${def} is sent skidding across ${env}, trailing blood.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} reads the geometry of ${env} and ${action}. ${def} is caught at the epicenter with no angle to deflect. The landscape craters outward in every direction.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Distance means nothing here. ${atk} ${action} and ${def} feels every joule of it land as if they were standing face-to-face — because the power doesn't care about the space between them.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} tries to advance. ${atk} doesn't budge. ${atk} ${action} and the attempt is stopped mid-stride, reversed entirely. ${def} slides backward across ${env}.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} doesn't let ${def} dictate the terms. From a fixed position, ${atk} ${action} before ${def} can reset their footing. The hit folds ${def} around the point of impact.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `The shockwave as ${atk} ${action} flattens a twenty-meter radius of ${env}. ${def} is at the center of it, emerging battered and bleeding from places they didn't know could bleed.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} catches ${def} mid-advance — worst possible moment. ${atk} ${action} and the blast multiplies by ${def}'s own momentum. The collision with the resulting force is sickening.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} is bloodied, but ${atk} shows zero interest in slowing down. ${atk} ${action} and hammers through ${def}'s remaining defense, driving them knee-deep into ${env}.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} commits to what they think is the kill shot. ${atk} absorbs it — barely — and ${action} as an answer, channeling everything into a single devastating projection. ${def} hits the ground of ${env} and stays there for a moment.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `For three seconds they're locked in a standoff across ${env}, neither giving ground. Then ${atk} ${action}, and the edge is found. ${def} is blown clear, tumbling across the ruined landscape.`,
+];
+
+const rangedCounterTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} thought they had ${atk} on ${env}. They were wrong the entire time. ${atk} was baiting — and now ${action}, cutting through ${def}'s guard from an angle they never accounted for.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Running on fumes — ${atk} digs deeper than anyone expected, and ${action} as a counter. The detonation sears a new scar across ${env} and ${def} eats every bit of it.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} moves in for the finish. ${atk} answers: ${action} — overwhelming, from a direction ${def} completely failed to account for. The tables on ${env} have turned, violently.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} absorbs one last hit, channels the pain, and ${action} as a counter — furious and exact. The resulting force tears through the landscape and ${def} takes the full weight of it.`,
+];
+
+const rangedClosingTemplates = [
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} is finished — everyone watching can see it. ${atk} doesn't move from their position. ${atk} ${action} at absolute ceiling and it crashes into ${def} with apocalyptic force. ${env} ruptures in a fifty-meter radius. ${def} does not get up.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${atk} is running on fumes. None of it matters. One final time, ${atk} ${action} — the last burning act of concentrated will — and drives it through ${def} until the fight is over.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `${def} drops to one knee in the ruins of ${env}. ${atk} delivers the ending — ${action}, at full power, without hesitation or mercy. The detonation flattens everything within a hundred meters.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Everything comes down to this moment on ${env}. ${atk} summons something beyond power — desperate, focused will — and ${action}. The impact is cataclysmic. ${def} is driven into the earth. It's over.`,
+  (atk: string, def: string, action: string, env: string) =>
+    `Both of them are still standing. Barely. ${atk} reaches deeper than ${def} thought possible — ${action} in a final surge that defies all sense. The explosion on ${env} is visible for miles. ${def} goes down and stays there.`,
+];
+
 // ─── Round Narrative Builder ──────────────────────────────────────────────────
 
 function buildRoundNarrative(
@@ -812,12 +900,15 @@ function buildRoundNarrative(
   const action = buildAttackAction(attacker, atkTags);
   const progress = round / maxRounds;
 
+  // Choose template pool based on how this character actually fights
+  const useRanged = getFightStyle(attacker, atkTags) === "ranged" || isImmobile(attacker);
+
   // Pick phase-appropriate structural template
   let template: (a: string, d: string, ac: string, env: string) => string;
-  if (round === 1) template = pickRandom(openingTemplates);
-  else if (progress >= 0.8) template = pickRandom(closingTemplates);
-  else if (round % 4 === 0) template = pickRandom(counterTemplates);
-  else template = pickRandom(midTemplates);
+  if (round === 1)        template = pickRandom(useRanged ? rangedOpeningTemplates  : openingTemplates);
+  else if (progress >= 0.8) template = pickRandom(useRanged ? rangedClosingTemplates : closingTemplates);
+  else if (round % 4 === 0) template = pickRandom(useRanged ? rangedCounterTemplates : counterTemplates);
+  else                    template = pickRandom(useRanged ? rangedMidTemplates     : midTemplates);
 
   let narrative = template(attacker.name, defender.name, action, arenaName);
 
