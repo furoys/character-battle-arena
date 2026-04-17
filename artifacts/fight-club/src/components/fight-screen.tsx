@@ -117,7 +117,7 @@ interface FightScreenProps {
   team2Names: string[];
   team1Images?: (string | null | undefined)[];
   team2Images?: (string | null | undefined)[];
-  mode?: "fun" | "debate";
+  mode?: "cinematic" | "brutal" | "realistic" | "funny";
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -391,7 +391,7 @@ export function FightScreen({
   open, onClose, onRematch, result, isSimulating,
   team1Names, team2Names,
   team1Images = [], team2Images = [],
-  mode = "fun",
+  mode = "cinematic",
 }: FightScreenProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [allRoundsDone, setAllRoundsDone] = useState(false);
@@ -559,12 +559,24 @@ export function FightScreen({
                       fontWeight: 700,
                       letterSpacing: "0.18em",
                       textTransform: "uppercase",
-                      color: mode === "debate" ? "#00e5ff" : "#ff0055",
-                      border: `1px solid ${mode === "debate" ? "#00e5ff40" : "#ff005540"}`,
+                      color:
+                        mode === "realistic" ? "#00e5ff" :
+                        mode === "brutal"    ? "#ff7a00" :
+                        mode === "funny"     ? "#c8ff00" :
+                                               "#ff0055",
+                      border: `1px solid ${
+                        mode === "realistic" ? "#00e5ff40" :
+                        mode === "brutal"    ? "#ff7a0040" :
+                        mode === "funny"     ? "#c8ff0040" :
+                                               "#ff005540"
+                      }`,
                       borderRadius: 2,
                     }}
                   >
-                    {mode === "debate" ? "⚖ Debate Mode" : "⚡ Fun Mode"}
+                    {mode === "realistic" ? "⚖ Realistic" :
+                     mode === "brutal"    ? "⚔ Brutal"    :
+                     mode === "funny"     ? "☻ Funny"     :
+                                            "✦ Cinematic"}
                   </span>
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>

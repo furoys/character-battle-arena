@@ -30,7 +30,6 @@ export const ListCharactersResponseItem = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
-  behaviorTags: zod.array(zod.string()).nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
@@ -77,7 +76,6 @@ export const GetCharacterResponse = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
-  behaviorTags: zod.array(zod.string()).nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -169,16 +167,16 @@ export const simulateFightBodyTeam1Max = 5;
 
 export const simulateFightBodyTeam2Max = 5;
 
-export const simulateFightBodyModeDefault = `fun`;
+export const simulateFightBodyModeDefault = `cinematic`;
 
 export const SimulateFightBody = zod.object({
   team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
   team2: zod.array(zod.number()).min(1).max(simulateFightBodyTeam2Max),
   mode: zod
-    .enum(["fun", "debate"])
+    .enum(["cinematic", "brutal", "realistic", "funny", "fun", "debate"])
     .default(simulateFightBodyModeDefault)
     .describe(
-      "fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes",
+      "Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun\/debate accepted as legacy aliases of cinematic\/realistic.)",
     ),
 });
 
@@ -232,10 +230,19 @@ export const SimulateFightResponse = zod.object({
   arenaIntro: zod
     .string()
     .optional()
-    .describe("AI-generated arena/setting description shown before the fight begins"),
+    .describe("AI-generated arena description shown before the fight begins"),
   intro: zod
     .string()
     .optional()
-    .describe("AI-generated combatant entrance scene shown after the arena"),
+    .describe(
+      "AI-generated combatant entrance section shown after the setting",
+    ),
   simulatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a single fight record by id
+ */
+export const DeleteFightParams = zod.object({
+  id: zod.coerce.number(),
 });

@@ -235,7 +235,7 @@ export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
-  const [fightMode, setFightMode] = useState<"fun" | "debate">("fun");
+  const [fightMode, setFightMode] = useState<"cinematic" | "brutal" | "realistic" | "funny">("cinematic");
   const [tierFilter, setTierFilter] = useState<string>("all");
 
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
@@ -244,10 +244,13 @@ export function Home() {
       const raw = localStorage.getItem("ava_pending_fight");
       if (!raw) return;
       localStorage.removeItem("ava_pending_fight");
-      const { team1, team2, mode } = JSON.parse(raw) as { team1: Character[]; team2: Character[]; mode: "fun" | "debate" };
+      const { team1, team2, mode } = JSON.parse(raw) as { team1: Character[]; team2: Character[]; mode: string };
       if (team1?.length) setTeam1(team1.slice(0, 5));
       if (team2?.length) setTeam2(team2.slice(0, 5));
-      if (mode === "fun" || mode === "debate") setFightMode(mode);
+      // Accept new tones AND legacy mode aliases
+      if (mode === "cinematic" || mode === "brutal" || mode === "realistic" || mode === "funny") setFightMode(mode);
+      else if (mode === "fun") setFightMode("cinematic");
+      else if (mode === "debate") setFightMode("realistic");
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -488,33 +491,43 @@ export function Home() {
             {/* Power comparison bar */}
             <PowerComparison team1={team1} team2={team2} />
 
-            {/* Mode toggle */}
-            <div className="flex items-center justify-center gap-2 pt-1">
-              {(["fun", "debate"] as const).map((m) => {
-                const active = fightMode === m;
-                const accent = m === "fun" ? "#ff0055" : "#00e5ff";
+            {/* Tone selector — 4 dramatic flavors */}
+            <div className="flex items-center justify-center gap-1 pt-1 flex-wrap">
+              {([
+                { id: "cinematic", label: "✦ CINEMATIC", color: "#ff0055" },
+                { id: "brutal",    label: "⚔ BRUTAL",    color: "#ff7a00" },
+                { id: "realistic", label: "⚖ REALISTIC", color: "#00e5ff" },
+                { id: "funny",     label: "☻ FUNNY",     color: "#c8ff00" },
+              ] as const).map((t) => {
+                const active = fightMode === t.id;
                 return (
                   <button
-                    key={m}
-                    onClick={() => setFightMode(m)}
+                    key={t.id}
+                    onClick={() => setFightMode(t.id)}
+                    title={
+                      t.id === "cinematic" ? "Operatic, theatrical, larger-than-life." :
+                      t.id === "brutal"    ? "Visceral, anatomical, ugly." :
+                      t.id === "realistic" ? "Tight, stat-driven, no chaos." :
+                                             "Absurd, deadpan, no death-final language."
+                    }
                     style={{
                       background: "transparent",
                       borderTop: "none",
                       borderLeft: "none",
                       borderRight: "none",
-                      borderBottom: active ? `1.5px solid ${accent}` : "1.5px solid transparent",
+                      borderBottom: active ? `1.5px solid ${t.color}` : "1.5px solid transparent",
                       borderRadius: 0,
-                      padding: "3px 10px",
-                      color: active ? accent : "rgba(255,255,255,0.3)",
-                      fontSize: 10,
+                      padding: "3px 8px",
+                      color: active ? t.color : "rgba(255,255,255,0.3)",
+                      fontSize: 9.5,
                       fontWeight: 700,
-                      letterSpacing: "0.2em",
+                      letterSpacing: "0.18em",
                       textTransform: "uppercase",
                       cursor: "pointer",
                       transition: "color 0.15s, border-color 0.15s",
                     }}
                   >
-                    {m === "fun" ? "⚡ FUN" : "⚖ DEBATE"}
+                    {t.label}
                   </button>
                 );
               })}
