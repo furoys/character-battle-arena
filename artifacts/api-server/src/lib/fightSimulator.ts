@@ -1859,13 +1859,13 @@ async function generateAINarrative(
       return `(Continued domination. ${moveHint} ${hp} ${loserNames} attempts something — it fails clearly. ${winnerNames} answers harder.)`;
     }
 
-    // SOLID — winner edges ahead, loser gets a few real moments but never threatens.
+    // SOLID — winner is clearly ahead. Loser tries things but they don't work.
     if (mismatch === "SOLID") {
       if (isFirst)
-        return `(Opening. ${moveHint} ${hp} Both sides feel each other out. ${winnerNames} lands the cleaner hit but ${loserNames} stays in it.)`;
+        return `(Opening. ${moveHint} ${hp} ${winnerNames} establishes control immediately with a clean, decisive hit. ${loserNames} attempts a counter — it's read and absorbed.)`;
       if (isLast)
-        return `(Finish. ${moveHint} ${hp} ${winnerNames} closes the gap they'd been building. ${loserNames} fought hard but it was never enough. Pick a specific ending.)`;
-      return `(Middle exchange. ${moveHint} ${hp} ${loserNames} lands one — it doesn't change the trajectory. ${winnerNames} continues to control.)`;
+        return `(Finish. ${moveHint} ${hp} ${winnerNames} closes it out. ${loserNames} never solved the problem. Pick a specific ending — see ENDINGS list.)`;
+      return `(Middle exchange. ${moveHint} ${hp} ${winnerNames} continues to dictate the pace. Anything ${loserNames} tries either misses, gets caught, or barely registers.)`;
     }
 
     // CLOSE / TOSSUP — full back-and-forth.
@@ -2182,9 +2182,18 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     const bMods1 = getTeamBehaviorMods(team1, isRealistic, i);
     const bMods2 = getTeamBehaviorMods(team2, isRealistic, i);
 
-    // Initiative: speed + HP momentum + behavior (aggressive/speedster push initiative).
+    // Initiative: speed + HP momentum + POWER SHARE + behavior.
+    // Power-share matters: an overwhelming team should not let the underdog
+    // attack 50% of the time just because their speed stat is similar.
     const currentAdvantage = hp1 / (hp1 + hp2);
-    const initBase = speedFrac1 * 0.40 + (currentAdvantage - 0.5) * 0.20 + 0.30;
+    const powerShare1      = base1 / totalPower;        // 0..1, 0.5 = even
+    const powerBias        = (powerShare1 - 0.5) * 0.30; // up to ±0.15
+    let initBase = speedFrac1 * 0.30 + (currentAdvantage - 0.5) * 0.15 + powerBias + 0.35;
+    // Dominant matchups: heavily skew initiative to the favored side.
+    if (assessment.forceDominant) {
+      const favorBias = assessment.verdict === 1 ? 0.20 : -0.20;
+      initBase += favorBias;
+    }
     const initAdj  = clamp(initBase + bMods1.initiativeBonus - bMods2.initiativeBonus, 0.05, 0.95);
     const team1Attacks = Math.random() < initAdj;
 
