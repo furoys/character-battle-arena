@@ -7,6 +7,8 @@ interface CharacterCardProps {
   selectedTeam?: 1 | 2 | null;
   onClick?: () => void;
   disabled?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 const TEAM_COLORS = {
@@ -29,7 +31,7 @@ function StatCol({ label, value, color }: { label: string; value: number; color:
   );
 }
 
-export function CharacterCard({ character, selectedTeam, onClick, disabled }: CharacterCardProps) {
+export function CharacterCard({ character, selectedTeam, onClick, disabled, isFavorite, onToggleFavorite }: CharacterCardProps) {
   const [imgError, setImgError] = useState(false);
   const [hovered, setHovered] = useState(false);
   const isSelected = selectedTeam != null;
@@ -118,17 +120,17 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled }: Ch
       </div>
 
       {/* Info panel */}
-      <div className="px-2.5 pt-1.5 pb-2.5 space-y-1.5">
+      <div className="relative px-2.5 pt-1.5 pb-2.5 space-y-1.5">
         {/* Universe */}
         <div
-          className="text-[9px] font-bold uppercase tracking-widest truncate"
+          className="text-[9px] font-bold uppercase tracking-widest truncate pr-5"
           style={{ color: tc ? tc.border : "hsl(var(--primary))" }}
         >
           {character.universe}
         </div>
 
         {/* Name */}
-        <h3 className="font-display text-lg leading-none uppercase truncate text-foreground">
+        <h3 className="font-display text-lg leading-none uppercase truncate text-foreground pr-5">
           {character.name}
         </h3>
 
@@ -139,6 +141,28 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled }: Ch
           <StatCol label="INT" value={character.intelligence} color={tc ? tc.border : "#c084fc"} />
           <StatCol label="DUR" value={character.durability}  color={tc ? tc.border : "#eab308"} />
         </div>
+
+        {/* Favorite star */}
+        {onToggleFavorite && (
+          <button
+            onClick={e => { e.stopPropagation(); onToggleFavorite(); }}
+            className="absolute top-1.5 right-1.5 transition-all duration-150"
+            style={{
+              fontSize: 13,
+              lineHeight: 1,
+              color: isFavorite ? "#fbbf24" : "rgba(255,255,255,0.18)",
+              transform: isFavorite ? "scale(1.15)" : "scale(1)",
+              filter: isFavorite ? "drop-shadow(0 0 4px #fbbf2480)" : "none",
+              background: "none",
+              border: "none",
+              padding: "2px 3px",
+              cursor: "pointer",
+            }}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            ★
+          </button>
+        )}
       </div>
     </div>
   );
