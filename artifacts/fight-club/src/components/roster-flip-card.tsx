@@ -11,6 +11,20 @@ interface RosterFlipCardProps {
 
 const formatStatNum = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
 
+const TAG_COLORS: Record<string, string> = {
+  "aggressive":      "#ff3b30",
+  "arrogant":        "#ff9f0a",
+  "tactical":        "#00f0ff",
+  "sadistic":        "#ff0055",
+  "defensive":       "#30d158",
+  "long-range":      "#64d2ff",
+  "close-quarters":  "#ff6b30",
+  "reality-warper":  "#bf5af2",
+  "regen":           "#30d158",
+  "speedster":       "#ffe234",
+  "stealth":         "#8e8e93",
+};
+
 export function powerAvg(c: Character) {
   return Math.round((c.strength + c.speed + c.intelligence + c.durability) / 4);
 }
@@ -119,6 +133,23 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
               <StatBar label="DUR" value={character.durability}   icon={Shield} color="text-yellow-500" />
             </div>
             <p className="text-[10px] text-primary font-medium line-clamp-2 pt-0.5 leading-relaxed">{character.specialAbility}</p>
+            {character.behaviorTags && character.behaviorTags.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {character.behaviorTags.slice(0, 4).map(tag => (
+                  <span
+                    key={tag}
+                    className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 leading-none"
+                    style={{
+                      color: TAG_COLORS[tag] ?? "rgba(255,255,255,0.4)",
+                      background: `${TAG_COLORS[tag] ?? "rgba(255,255,255,0.2)"}18`,
+                      border: `1px solid ${TAG_COLORS[tag] ?? "rgba(255,255,255,0.2)"}40`,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             <p className="text-[9px] text-muted-foreground/50 text-center mt-0.5 uppercase tracking-widest">Tap to flip</p>
           </div>
         </div>
