@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { PowerAura } from "./power-aura";
 
 interface CharacterCardProps {
   character: Character;
@@ -112,6 +113,8 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled }: Ch
             </span>
           </div>
         )}
+        {/* Power aura — particles, ring, shimmer */}
+        <PowerAura character={character} hovered={hovered && isClickable} />
       </div>
 
       {/* Info panel */}

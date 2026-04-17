@@ -1,6 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* ===== AVA POWER AURA ANIMATIONS ===== */
+@keyframes ava-particle-rise {
+  0%   { transform: translateY(0) scale(1);       opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 0.7; }
+  100% { transform: translateY(-85px) scale(0.25); opacity: 0; }
+}
+
+@keyframes ava-ring-expand {
+  0%   { transform: scale(0.25); opacity: 0.9; }
+  100% { transform: scale(3);    opacity: 0; }
+}
+
+@keyframes ava-shimmer-sweep {
+  0%   { transform: translateX(-200%) skewX(-15deg); }
+  100% { transform: translateX(600%)  skewX(-15deg); }
+}
+
+@keyframes ava-aura-pulse {
+  0%, 100% { opacity: 0.08; }
+  50%       { opacity: 0.28; }
+}
+
+@keyframes ava-card-glow {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
