@@ -230,7 +230,7 @@ const chaosEvents: ChaosEvent[] = [
   {
     name: "a goat",
     narrative: (v, b, arena) =>
-      `CHAOS — A goat appears on ${arena}. Nobody knows where it came from. It headbutts ${v} squarely in the back of the knees with laser-targeted precision, dropping them at a critical moment. The goat trots off with the confident energy of someone who had a very specific task to complete.`,
+      `CHAOS — A goat appears from nowhere. Nobody knows where it came from. It headbutts ${v} squarely in the back of the knees with laser-targeted precision, dropping them at a critical moment. The goat trots off with the confident energy of someone who had a very specific task to complete.`,
     hpSwing: 14,
     targetStrong: false,
   },
@@ -251,21 +251,21 @@ const chaosEvents: ChaosEvent[] = [
   {
     name: "uninvited spectator",
     narrative: (v, b, arena) =>
-      `CHAOS — An elderly man in a fishing hat walks directly into the fight on ${arena}, seemingly lost. ${v} pulls their finishing blow at the last second to avoid hitting him. This hesitation costs them dearly. The old man disappears into a hedge. Nobody finds the hedge later.`,
+      `CHAOS — An elderly man in a fishing hat walks directly into the fight, seemingly lost. ${v} pulls their finishing blow at the last second to avoid hitting him. This hesitation costs them dearly. The old man disappears into a hedge. Nobody finds the hedge later.`,
     hpSwing: 12,
     targetStrong: true,
   },
   {
     name: "gravity inversion",
     narrative: (v, b, arena) =>
-      `CHAOS — Gravity briefly inverts on ${arena}. ${b} — by luck, instinct, or sheer absurdity — had already left the ground at the moment of inversion. ${v}, however, was firmly planted and gets launched ceiling-first into whatever ceiling exists with full gravitational force.`,
+      `CHAOS — Gravity briefly inverts. ${b} — by luck, instinct, or sheer absurdity — had already left the ground at the moment of inversion. ${v}, however, was firmly planted and gets launched ceiling-first into whatever ceiling exists with full gravitational force.`,
     hpSwing: 20,
     targetStrong: true,
   },
   {
     name: "dimensional rift",
     narrative: (v, b, arena) =>
-      `CHAOS — A dimensional rift tears open inches from ${v}'s face on ${arena}. A different, angrier version of ${v} from a parallel timeline reaches through and delivers a single devastating punch before the rift closes. The regular ${v} has now been beaten up by themselves and has a lot of questions.`,
+      `CHAOS — A dimensional rift tears open inches from ${v}'s face. A different, angrier version of ${v} from a parallel timeline reaches through and delivers a single devastating punch before the rift closes. The regular ${v} has now been beaten up by themselves and has a lot of questions.`,
     hpSwing: 24,
     targetStrong: true,
   },
@@ -286,14 +286,14 @@ const chaosEvents: ChaosEvent[] = [
   {
     name: "inspirational music",
     narrative: (v, b, arena) =>
-      `CHAOS — Someone on ${arena}'s perimeter starts playing eye-of-the-tiger on a portable speaker directly at ${b}. The effect is medically inexplicable but impossible to deny — ${b} attacks with sudden, renewed fury while ${v} struggles to focus against the tonal assault.`,
+      `CHAOS — Someone on the sideline starts playing eye-of-the-tiger on a portable speaker directly at ${b}. The effect is medically inexplicable but impossible to deny — ${b} attacks with sudden, renewed fury while ${v} struggles to focus against the tonal assault.`,
     hpSwing: 14,
     targetStrong: true,
   },
   {
     name: "spontaneous sinkholes",
     narrative: (v, b, arena) =>
-      `CHAOS — The ground beneath ${v}'s feet on ${arena} gives way — a sinkhole opens with zero warning and swallows ${v} to the waist. They spend two rounds extracting themselves, during which ${b} respectfully (and then disrespectfully) continues fighting.`,
+      `CHAOS — The ground beneath ${v}'s feet gives way — a sinkhole opens with zero warning and swallows ${v} to the waist. They spend two rounds extracting themselves, during which ${b} respectfully (and then disrespectfully) continues fighting.`,
     hpSwing: 20,
     targetStrong: false,
   },
@@ -307,14 +307,14 @@ const chaosEvents: ChaosEvent[] = [
   {
     name: "intervention from a talking animal",
     narrative: (v, b, arena) =>
-      `CHAOS — A crow lands on a piece of debris on ${arena}, looks directly at ${v}, and says — clearly, in the local language — "Not today." It then divebombs ${v}'s face with surgical precision. The crow has not explained itself and cannot be found for comment. ${b} will remember this crow forever.`,
+      `CHAOS — A crow lands on a piece of nearby debris, looks directly at ${v}, and says — clearly, in the local language — "Not today." It then divebombs ${v}'s face with surgical precision. The crow has not explained itself and cannot be found for comment. ${b} will remember this crow forever.`,
     hpSwing: 15,
     targetStrong: false,
   },
   {
     name: "time hiccup",
     narrative: (v, b, arena) =>
-      `CHAOS — Time stutters on ${arena}. ${v} gets stuck in a 0.8-second loop and throws the same punch at empty air four times in rapid succession while ${b} — who is outside the loop — has an entire uninterrupted window of opportunity and uses all of it.`,
+      `CHAOS — Time stutters. ${v} gets stuck in a 0.8-second loop and throws the same punch at empty air four times in rapid succession while ${b} — who is outside the loop — has an entire uninterrupted window of opportunity and uses all of it.`,
     hpSwing: 22,
     targetStrong: true,
   },
@@ -335,28 +335,28 @@ const chaosEvents: ChaosEvent[] = [
   {
     name: "weather event",
     narrative: (v, b, arena) =>
-      `CHAOS — The weather on ${arena} changes instantaneously from whatever it was to something ${v} is specifically vulnerable to. This is either cosmic irony or targeted atmospheric weaponization — either way, ${v} is dealing with hail, UV radiation, or extreme humidity at exactly the wrong time.`,
+      `CHAOS — The weather changes instantaneously to something ${v} is specifically vulnerable to. This is either cosmic irony or targeted atmospheric weaponization — either way, ${v} is dealing with hail, UV radiation, or extreme humidity at exactly the wrong time.`,
     hpSwing: 19,
     targetStrong: true,
   },
   {
     name: "a second goat",
     narrative: (v, b, arena) =>
-      `CHAOS — The first goat returns. It has brought a friend. They operate as a unit. ${v} is headbutted from two different angles in rapid succession on ${arena}. The goats share a meaningful look, then disperse. The fight continues.`,
+      `CHAOS — The first goat returns. It has brought a friend. They operate as a unit. ${v} is headbutted from two different angles in rapid succession. The goats share a meaningful look, then disperse. The fight continues.`,
     hpSwing: 17,
     targetStrong: false,
   },
   {
     name: "power nullification field",
     narrative: (v, b, arena) =>
-      `CHAOS — A localized power nullification field activates on ${arena} — source unknown. For exactly one round, ${v}'s signature abilities simply don't work. All that training, all those powers — temporarily offline. ${b} has never had a better window. They use it.`,
+      `CHAOS — A localized power nullification field activates — source unknown. For exactly one round, ${v}'s signature abilities simply don't work. All that training, all those powers — temporarily offline. ${b} has never had a better window. They use it.`,
     hpSwing: 30,
     targetStrong: true,
   },
   {
     name: "the floor is actually lava",
     narrative: (v, b, arena) =>
-      `CHAOS — Part of the floor on ${arena} is, at this moment, literally lava. This is not a game. ${v} has just stepped in it. The good news is they're still in the fight. The bad news is everything else about this situation.`,
+      `CHAOS — Part of the floor is, at this moment, literally lava. This is not a game. ${v} has just stepped in it. The good news is they're still in the fight. The bad news is everything else about this situation.`,
     hpSwing: 16,
     targetStrong: false,
   },
@@ -842,51 +842,51 @@ const openingTemplates = [
 ];
 
 const midTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} ${action}. ${def}'s guard shatters. They go down hard, skid across ${env}, and come up bleeding.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} hesitates. ${atk} ${action}, snapping ${def}'s head back. ${def} cartwheels across ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} grabs ${def} and drives them headfirst into ${env}. Twice. Then ${atk} ${action} at point-blank range. ${def} tumbles away trailing blood.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} feints left. ${def} bites. ${atk} ${action} from the right — ${def} never saw it. They hit the ground of ${env} hard.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} ${action}. ${def}'s guard shatters. They go down hard, skid across the ground, and come up bleeding.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} hesitates. ${atk} ${action}, snapping ${def}'s head back. ${def} hits the dirt hard.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} grabs ${def} and drives them headfirst into the ground. Twice. Then ${atk} ${action} at point-blank range. ${def} tumbles away trailing blood.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} feints left. ${def} bites. ${atk} ${action} from the right — ${def} never saw it. They hit the ground hard.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} lands something — barely. ${atk} takes it and answers: ${action}. Faster than the hit ${def} just threw. ${def} staggers with wounds that weren't there two seconds ago.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} catches ${def} mid-swing. ${atk} ${action} and the blow multiplies by ${def}'s own momentum. ${def} is driven into the nearest solid thing ${env} has to offer.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} doesn't let ${def} breathe. ${atk} ${action} before ${def} can reset. The hit folds them around the point of impact and they slide across ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} tries to hold ground. ${atk} ${action} — and ${def} is off their feet. They land twenty meters away on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} commits to what they think is the killing blow. ${atk} sidesteps, ${action}, and ${def} eats all of it. They bounce off the terrain of ${env} and stay down for a beat.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `Three seconds locked together, neither budging. Then ${atk} ${action} — the gap is found. ${def} is blown clear, skipping across ${env}.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} catches ${def} mid-swing. ${atk} ${action} and the blow multiplies by ${def}'s own momentum. ${def} is driven into the nearest solid surface.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} doesn't let ${def} breathe. ${atk} ${action} before ${def} can reset. The hit folds them around the point of impact and they slide across the terrain.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} tries to hold ground. ${atk} ${action} — and ${def} is off their feet. They land twenty meters away.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} commits to what they think is the killing blow. ${atk} sidesteps, ${action}, and ${def} eats all of it. They bounce off the terrain and stay down for a beat.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `Three seconds locked together, neither budging. Then ${atk} ${action} — the gap is found. ${def} is blown clear.`,
 ];
 
 const counterTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} moves in to finish it. ${atk} lets them get close — then ${action} from inside their guard. ${def} never had the angle to defend it. They go down across ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} moves in to finish it. ${atk} lets them get close — then ${action} from inside their guard. ${def} never had the angle to defend it. They go down hard.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} is bleeding, stumbling. ${def} commits to the close-out. ${atk} ${action} at the exact moment ${def} overextends. The counter lands clean and ${def} is sent back the way they came.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} thought they had this. ${atk} was baiting the whole time. ${atk} ${action} through the gap ${def} left while going for the kill — and the tables turn, violently, on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} thought they had this. ${atk} was baiting the whole time. ${atk} ${action} through the gap ${def} left while going for the kill — and the tables turn, violently.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} absorbs one more hit. Takes the pain. ${atk} ${action} as a counter — short, ugly, from a direction ${def} forgot to cover. It lands. ${def} drops.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} goes for the big hit. ${atk} rolls with it, stays on their feet, and ${action} before ${def} can pull back. The reversal is sudden and brutal. Both of them know the fight just shifted on ${env}.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} goes for the big hit. ${atk} rolls with it, stays on their feet, and ${action} before ${def} can pull back. The reversal is sudden and brutal. Both of them know the fight just shifted.`,
 ];
 
 const closingTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} drops to a knee on ${env}. ${atk} ${action} point-blank. ${def} hits the ground and the fight ends there.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} drops to a knee. ${atk} ${action} point-blank. ${def} hits the ground and the fight ends there.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} is battered — doesn't matter. ${atk} ${action} one final time. ${def} goes down and stays down. It's over.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} is finished and they know it. ${atk} ${action} — clean, final, no hesitation. ${def} hits the floor of ${env} and doesn't move.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} grabs ${def}, drives them into ${env} one last time, then ${action} at zero distance. ${def} doesn't get up.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} is finished and they know it. ${atk} ${action} — clean, final, no hesitation. ${def} hits the floor and doesn't move.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} grabs ${def}, drives them into the ground one last time, then ${action} at zero distance. ${def} doesn't get up.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `Both still standing. Barely. ${atk} ${action} in a final surge. ${def} goes down. It's done.`,
 ];
 
@@ -905,62 +905,62 @@ const rangedOpeningTemplates = [
 ];
 
 const rangedMidTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} ${action}. ${def} has no cover. The hit lands clean and ${def} skids across ${env} trailing smoke.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} ${action}. ${def} has no cover. The hit lands clean and ${def} skids backward trailing smoke.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} tries to close the gap. ${atk} ${action} mid-charge. ${def} is stopped cold and thrown backward.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} hesitates for a half-second. ${atk} ${action} during that half-second. ${def} doesn't get a third of the way through the dodge.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} reads the angle on ${env} and ${action}. ${def} is caught with nowhere to deflect it. The terrain craters outward.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} reads the angle and ${action}. ${def} is caught with nowhere to deflect it. The terrain craters outward.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} is still advancing when ${atk} ${action}. The blast multiplies by ${def}'s own forward momentum. They go down harder for it.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} ${action} from the other side of ${env}. Distance is irrelevant. ${def} takes it like they were standing right in front.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} ${action}. ${def} blocks — it doesn't matter. The force blows through the block and ${def} slides back into the wall of ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} bloodied but still coming. ${atk} ${action} before they cover the distance. ${def} goes down again on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `Standoff across ${env}. Neither moving. Then ${atk} ${action} — the edge is found. ${def} is blown clear.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} ${action} from range. Distance is irrelevant. ${def} takes it like they were standing right in front.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} ${action}. ${def} blocks — it doesn't matter. The force blows through the block and ${def} slides back into the nearest wall.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} bloodied but still coming. ${atk} ${action} before they cover the distance. ${def} goes down again.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `Standoff. Neither moving. Then ${atk} ${action} — the edge is found. ${def} is blown clear.`,
 ];
 
 const rangedCounterTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} moves in to finish it. ${atk} ${action} at the worst possible moment for ${def}. The shot catches them mid-charge. They go down on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} moves in to finish it. ${atk} ${action} at the worst possible moment for ${def}. The shot catches them mid-charge. They go down hard.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} was fading. ${def} pushes for the close-out. ${atk} ${action} as the counter — precise, full power. ${def} takes it and hits the terrain hard.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} thought this was over. ${atk} ${action} through the gap ${def} left reaching for the finish. The tables turn on ${env}, violently.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} thought this was over. ${atk} ${action} through the gap ${def} left reaching for the finish. The tables turn, violently.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} takes one more hit. Stays standing. ${atk} ${action} as the answer — from range, full force. ${def} eats every bit of it.`,
 ];
 
 const rangedClosingTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} is on their knees in ${env}. ${atk} ${action} one final time. ${def} doesn't move. It's done.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} is on their knees. ${atk} ${action} one final time. ${def} doesn't move. It's done.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} is running on fumes. Doesn't matter. ${atk} ${action} — last shot, full power. ${def} goes down and stays down.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} is finished. ${atk} ${action} at maximum range. The blast lands clean on ${env}. ${def} hits the ground and the fight is over.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} is finished. ${atk} ${action} at maximum range. The blast lands clean. ${def} hits the ground and the fight is over.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `Both of them barely standing. ${atk} ${action} in a final surge. ${def} goes down. Done.`,
 ];
 
 // ─── Extended Mid Templates: Tone Variants ───────────────────────────────────
 
 const brutalMidTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} ${action}. ${def} blocks — ${atk} breaks through the block. The hit lands anyway. ${def}'s knees buckle on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} ${action}. ${def} blocks — ${atk} breaks through the block. The hit lands anyway. ${def}'s knees buckle.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} hits ${def}. ${def} gets up. ${atk} hits again before they're upright. ${atk} ${action} — one more. ${def} doesn't get up as fast this time.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${def} tries to reset. ${atk} ${action} before the reset finishes. The second hit is worse than the first. ${env} registers every impact.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${def} tries to reset. ${atk} ${action} before the reset finishes. The second hit is worse than the first. The ground registers every impact.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} and ${def} trade. ${atk} is winning the trade. ${atk} ${action} and the math of this exchange only goes one way. ${def} is taking more hits than they're landing.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} ${action}. No technique — just damage. ${def} has no clever answer because there isn't one. The hit lands like a structural problem.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} hits. Follows up. Hits again. ${atk} ${action} into the exchange and ${def} is at the center of a storm that isn't stopping.`,
 ];
 
@@ -980,48 +980,48 @@ const tacticalMidTemplates = [
 ];
 
 const dominantMidTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} tries to reset. ${atk} doesn't let them. ${atk} ${action} before ${def} is back on their feet. The gap keeps building.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} throws a counter. ${atk} walks through it and ${action}. ${def}'s counter didn't slow anything down.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} absorbs it. Gets up. ${atk} hits them again. Then ${atk} ${action} — another. ${def} is running out of ways to keep absorbing this.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} has ${def} on the back foot and knows it. ${atk} ${action} — not flashy, just relentless — and ${def} is losing ground they won't recover on ${env}.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} has ${def} on the back foot and knows it. ${atk} ${action} — not flashy, just relentless — and ${def} is losing ground they won't recover.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} can't find an angle. Every reset, ${atk} is already there. ${atk} ${action} and there's nowhere to go. The pressure is total.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} is trying everything. ${atk} has an answer for everything. ${atk} ${action} and the answer this round is the same as every round: forward, direct, followed up.`,
 ];
 
 const desperateMidTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} is getting taken apart. Then — ${atk} ${action} from nowhere. A shot that shouldn't have connected. It connects. ${def} didn't see it.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${def} moves in to finish it. ${atk} ${action} from the collapse — short-range, ugly, desperate. It connects. Both of them are surprised.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} is losing. They know it. Then ${atk} ${action} and the momentum on ${env} wobbles for a second. Not over. Not yet.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} is losing. They know it. Then ${atk} ${action} and the momentum wobbles for a second. Not over. Not yet.`,
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} has taken three hits that should have ended this. They haven't. ${atk} ${action} from the edge of standing and drives it home. ${def} wasn't expecting that to still be in them.`,
-  (atk: string, def: string, action: string, env: string) =>
+  (atk: string, def: string, action: string, _env: string) =>
     `${atk} shouldn't still be fighting. The body says stop. ${atk} ${action} with whatever's left — and whatever's left is more than ${def} planned for.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `Cornered on ${env}, bleeding — ${atk} ${action} because it's the only move left. It's not clean. It doesn't have to be. It lands.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `Back against the wall, bleeding — ${atk} ${action} because it's the only move left. It's not clean. It doesn't have to be. It lands.`,
 ];
 
 const environmentalMidTemplates = [
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} shoves ${def} into ${env}. The arena does some of the work. ${atk} ${action} at the same moment. ${def} was fighting two things at once.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `The ground on ${env} shifts under ${def}'s feet. ${atk} doesn't wait for them to recover — ${atk} ${action} before ${def} can get their footing back.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} drives ${def} toward the worst part of ${env} on purpose. When the arena delivers its hazard, ${atk} ${action} in the same instant. ${def} takes both hits.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `Something in ${env} becomes a weapon. ${atk} uses it — ${action} from the angle the arena just opened up. ${def} was watching the wrong threat.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} has been reading ${env} as much as reading ${def}. It pays off. ${atk} ${action} at the exact moment ${env} provides the edge — right place, right time, catastrophic for ${def}.`,
-  (atk: string, def: string, action: string, env: string) =>
-    `${atk} uses ${env} instead of fighting ${def} directly. ${atk} ${action} while ${def} is handling what the arena just threw at them. ${def} is down before they process either problem.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} shoves ${def} into the terrain. The arena does some of the work. ${atk} ${action} at the same moment. ${def} was fighting two things at once.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `The ground shifts under ${def}'s feet. ${atk} doesn't wait for them to recover — ${atk} ${action} before ${def} can get their footing back.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} drives ${def} toward the worst part of the arena on purpose. When the hazard hits, ${atk} ${action} in the same instant. ${def} takes both at once.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `Something nearby becomes a weapon. ${atk} uses it — ${action} from the angle the chaos just opened up. ${def} was watching the wrong threat.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} has been reading the terrain as much as reading ${def}. It pays off. ${atk} ${action} at the exact moment the arena provides the edge — right place, right time, catastrophic for ${def}.`,
+  (atk: string, def: string, action: string, _env: string) =>
+    `${atk} uses the battlefield instead of fighting ${def} directly. ${atk} ${action} while ${def} is handling what just got thrown at them. ${def} is down before they process either problem.`,
 ];
 
 // Short consequence lines — physical damage observations, not philosophy
@@ -1158,12 +1158,12 @@ function getWeaknessBonus(attacker: Character, defender: Character): number {
 // Used when a larger team piles on a smaller/solo opponent simultaneously.
 
 const gangUpTemplates: ((attackers: string, defender: string, arena: string) => string)[] = [
-  (atk, def, env) => `${atk} converge on ${def} simultaneously on ${env}. There is no angle left to defend. ${def} is hit from multiple directions in the span of a single second — the numbers are simply overwhelming.`,
-  (atk, def, env) => `${atk} split apart and attack ${def} from every angle at once on ${env}. It's not a fight anymore — it's a coordinated elimination. ${def} blocks one hit and takes the other two.`,
-  (atk, def, env) => `Being outnumbered finally catches up to ${def}. ${atk} coordinate without a word on ${env} and strike together. ${def} cannot be in three places at once.`,
-  (atk, def, env) => `${atk} close in from opposite ends of ${env}. ${def} turns to face the first — the second doesn't give them time to turn back. This is what being outnumbered actually means.`,
-  (atk, def, env) => `On ${env}, ${atk} execute a pincer attack with zero margin for error. ${def} sees it coming and still can't stop it. You can't block what hits you from behind while you're blocking what's hitting you from the front.`,
-  (atk, def, env) => `${atk} don't need a plan. They have the numbers. They rush ${def} on ${env} from multiple directions and let physics sort it out. Physics is not kind to ${def}.`,
+  (atk, def, _env) => `${atk} converge on ${def} simultaneously. There is no angle left to defend. ${def} is hit from multiple directions in the span of a single second — the numbers are simply overwhelming.`,
+  (atk, def, _env) => `${atk} split apart and attack ${def} from every angle at once. It's not a fight anymore — it's a coordinated elimination. ${def} blocks one hit and takes the other two.`,
+  (atk, def, _env) => `Being outnumbered finally catches up to ${def}. ${atk} coordinate without a word and strike together. ${def} cannot be in three places at once.`,
+  (atk, def, _env) => `${atk} close in from opposite ends. ${def} turns to face the first — the second doesn't give them time to turn back. This is what being outnumbered actually means.`,
+  (atk, def, _env) => `${atk} execute a pincer attack with zero margin for error. ${def} sees it coming and still can't stop it. You can't block what hits you from behind while you're blocking what's hitting you from the front.`,
+  (atk, def, _env) => `${atk} don't need a plan. They have the numbers. They rush ${def} from multiple directions and let physics sort it out. Physics is not kind to ${def}.`,
 ];
 
 export function simulateFight(team1: Character[], team2: Character[]): FightResult {
