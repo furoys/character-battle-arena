@@ -167,9 +167,17 @@ export const simulateFightBodyTeam1Max = 5;
 
 export const simulateFightBodyTeam2Max = 5;
 
+export const simulateFightBodyModeDefault = `fun`;
+
 export const SimulateFightBody = zod.object({
   team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
   team2: zod.array(zod.number()).min(1).max(simulateFightBodyTeam2Max),
+  mode: zod
+    .enum(["fun", "debate"])
+    .default(simulateFightBodyModeDefault)
+    .describe(
+      "fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes",
+    ),
 });
 
 export const SimulateFightResponse = zod.object({
