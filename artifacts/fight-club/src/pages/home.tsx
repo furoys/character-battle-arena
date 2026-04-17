@@ -5,7 +5,8 @@ import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
-import { Search, Swords, X } from "lucide-react";
+import { Search, Swords, X, Zap, AlertTriangle } from "lucide-react";
+import { computeSynergy } from "@/lib/synergies";
 
 function TeamPortrait({ character, team, onRemove }: { character: Character; team: 1 | 2; onRemove: () => void }) {
   const colorClass = team === 1 ? "border-team1 bg-team1/10" : "border-team2 bg-team2/10";
@@ -44,6 +45,10 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
   const textColor = team === 1 ? "text-team1" : "text-team2";
   const bgColor = team === 1 ? "bg-team1/10" : "bg-team2/10";
 
+  const synergy = useMemo(() => computeSynergy(members), [members]);
+  const positiveSynergies = synergy.active.filter(s => s.positive);
+  const negativeSynergies = synergy.active.filter(s => !s.positive);
+
   return (
     <div
       className={`flex-1 flex flex-col gap-2 p-3 border-2 cursor-pointer transition-all duration-200
@@ -70,6 +75,25 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
           </div>
         )}
       </div>
+      {/* Synergy badges */}
+      {members.length >= 2 && (positiveSynergies.length > 0 || negativeSynergies.length > 0) && (
+        <div className="flex flex-col gap-0.5 mt-0.5">
+          {positiveSynergies.map(s => (
+            <div key={s.label} className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30">
+              <Zap className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 truncate">{s.label}</span>
+              <span className="text-[9px] font-bold text-emerald-300 ml-auto flex-shrink-0">+{Math.round(s.bonus * 100)}%</span>
+            </div>
+          ))}
+          {negativeSynergies.map(s => (
+            <div key={s.label} className="flex items-center gap-1 px-1.5 py-0.5 bg-orange-500/10 border border-orange-500/30">
+              <AlertTriangle className="w-2.5 h-2.5 text-orange-400 flex-shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400 truncate">{s.label}</span>
+              <span className="text-[9px] font-bold text-orange-300 ml-auto flex-shrink-0">{Math.round(s.bonus * 100)}%</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

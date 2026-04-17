@@ -9,11 +9,13 @@ interface RosterFlipCardProps {
   onDelete?: () => void;
 }
 
+const formatStatNum = (v: number) => v >= 1000 ? v.toLocaleString() : String(v);
+
 function StatBar({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
   const getBarColor = (v: number) => {
-    if (v >= 90) return "bg-primary";
-    if (v >= 70) return "bg-secondary";
-    if (v >= 50) return "bg-yellow-500";
+    if (v >= 9000) return "bg-primary";
+    if (v >= 4900) return "bg-secondary";
+    if (v >= 2500) return "bg-yellow-500";
     return "bg-muted-foreground";
   };
 
@@ -22,9 +24,9 @@ function StatBar({ label, value, icon: Icon, color }: { label: string; value: nu
       <Icon className={`h-3 w-3 flex-shrink-0 ${color}`} />
       <span className="text-[10px] font-bold text-muted-foreground w-6">{label}</span>
       <div className="flex-1 h-1.5 bg-white/10 rounded-none overflow-hidden">
-        <div className={`h-full ${getBarColor(value)}`} style={{ width: `${value}%` }} />
+        <div className={`h-full ${getBarColor(value)}`} style={{ width: `${value / 100}%` }} />
       </div>
-      <span className="text-[10px] font-bold w-5 text-right">{value}</span>
+      <span className="text-[10px] font-bold w-12 text-right">{formatStatNum(value)}</span>
     </div>
   );
 }

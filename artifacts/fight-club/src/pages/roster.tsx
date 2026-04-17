@@ -59,9 +59,9 @@ export function Roster() {
       {stats && (
         <div className="grid grid-cols-3 border-b border-border/30">
           {[
-            { label: "Strongest", name: stats.topStrength?.name, value: `${stats.topStrength?.strength} STR`, icon: Swords, color: "text-team2" },
-            { label: "Fastest", name: stats.topSpeed?.name, value: `${stats.topSpeed?.speed} SPD`, icon: Zap, color: "text-team1" },
-            { label: "Smartest", name: stats.topIntelligence?.name, value: `${stats.topIntelligence?.intelligence} INT`, icon: Brain, color: "text-secondary" },
+            { label: "Strongest", name: stats.topStrength?.name, value: `${stats.topStrength?.strength?.toLocaleString()} STR`, icon: Swords, color: "text-team2" },
+            { label: "Fastest", name: stats.topSpeed?.name, value: `${stats.topSpeed?.speed?.toLocaleString()} SPD`, icon: Zap, color: "text-team1" },
+            { label: "Smartest", name: stats.topIntelligence?.name, value: `${stats.topIntelligence?.intelligence?.toLocaleString()} INT`, icon: Brain, color: "text-secondary" },
           ].map(s => (
             <div key={s.label} className="p-3 border-r last:border-r-0 border-border/30 flex flex-col gap-0.5">
               <div className="flex items-center gap-1">
