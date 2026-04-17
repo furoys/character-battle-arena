@@ -1177,6 +1177,12 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
   const size2 = team2.length;
   const sizeDiff = Math.abs(size1 - size2); // 0 = equal, 1 = slight edge, 2+ = big mismatch
 
+  // ── Speed-based initiative ────────────────────────────────────────────────
+  // Faster teams attack more often; combined with HP momentum for dynamic swings.
+  const avgSpeed1 = team1.reduce((sum, c) => sum + c.speed, 0) / size1;
+  const avgSpeed2 = team2.reduce((sum, c) => sum + c.speed, 0) / size2;
+  const speedFrac1 = avgSpeed1 / (avgSpeed1 + avgSpeed2); // >0.5 → team1 faster
+
   let hp1 = 100;
   let hp2 = 100;
 
@@ -1352,9 +1358,10 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     }
 
     // ── Normal combat ─────────────────────────────────────────────────────────
-    // Momentum: the team ahead in HP attacks more often (was 0.25 multiplier, now 0.35).
+    // Initiative: speed determines attack frequency + HP momentum for in-fight swings.
+    // speedFrac1 × 0.40 + (hpAdvantage - 0.5) × 0.20 + 0.30 base keeps range in [0,1].
     const currentAdvantage = hp1 / (hp1 + hp2);
-    const team1Attacks = Math.random() < 0.5 + (currentAdvantage - 0.5) * 0.35;
+    const team1Attacks = Math.random() < speedFrac1 * 0.40 + (currentAdvantage - 0.5) * 0.20 + 0.30;
 
     let attacker: Character;
     let defender: Character;
@@ -1363,28 +1370,31 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     if (team1Attacks) {
       attacker = pickRandom(team1);
       defender = pickRandom(team2);
-      // Power fraction weight raised to 0.55 (was 0.45), random reduced to 0.22 (was 0.35).
-      // Strong teams now reliably hit harder; luck still matters but doesn't dominate.
-      // Extra size bonus when outnumbering significantly.
-      const statBonus   = (attacker.strength + attacker.speed) / 200;
-      const sizeBonus   = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
-      const effectiveness = ((base1 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23) * sizeBonus;
-      const weakBonus   = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 17 + 4) + weakBonus;
+      // Exponential scaling: powerRatio^1.4 amplifies large gaps without distorting close fights.
+      // Multiplier raised to 30, random reduced to 0.13, min damage scales with power (not flat +4).
+      const statBonus     = (attacker.strength + attacker.speed) / 200;
+      const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
+      const ratio1        = base1 / totalPower;
+      const scaledRatio   = Math.pow(ratio1, 1.4);
+      const effectiveness = (scaledRatio * 0.72 + Math.random() * 0.13 + statBonus * 0.15) * sizeBonus;
+      const minDmg        = Math.max(1, Math.round(ratio1 * 7));
+      const weakBonus     = getWeaknessBonus(attacker, defender);
+      damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;
       hp2 = Math.max(0, hp2 - damage);
-      // Update tone context: attacker (team1) is winning if their HP is ahead
       narrativeState.attackerWinning = hp1 > hp2 + 10;
       narrativeState.defenderWinning = hp2 > hp1 + 10;
     } else {
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
-      const statBonus   = (attacker.strength + attacker.speed) / 200;
-      const sizeBonus   = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
-      const effectiveness = ((base2 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23) * sizeBonus;
-      const weakBonus   = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 17 + 4) + weakBonus;
+      const statBonus     = (attacker.strength + attacker.speed) / 200;
+      const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
+      const ratio2        = base2 / totalPower;
+      const scaledRatio   = Math.pow(ratio2, 1.4);
+      const effectiveness = (scaledRatio * 0.72 + Math.random() * 0.13 + statBonus * 0.15) * sizeBonus;
+      const minDmg        = Math.max(1, Math.round(ratio2 * 7));
+      const weakBonus     = getWeaknessBonus(attacker, defender);
+      damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;
       hp1 = Math.max(0, hp1 - damage);
-      // Update tone context: attacker (team2) is winning if their HP is ahead
       narrativeState.attackerWinning = hp2 > hp1 + 10;
       narrativeState.defenderWinning = hp1 > hp2 + 10;
     }
