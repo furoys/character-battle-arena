@@ -648,6 +648,147 @@ function getWeaknessMatchNote(
   return null;
 }
 
+// ─── Immunity Note ────────────────────────────────────────────────────────────
+// Fires when an attacker's method fundamentally CAN'T work against this defender.
+// Narrative-only — the stat system handles actual damage, this makes it feel right.
+
+function getImmunityNote(
+  attacker: Character,
+  atkTags: Set<string>,
+  defender: Character,
+  defTags: Set<string>,
+): string | null {
+  // Only fires ~35% of rounds — flavor, not spam
+  if (Math.random() > 0.35) return null;
+
+  const n = attacker.name;
+  const d = defender.name;
+  const hasAnySpecialPower = atkTags.size > 0;
+
+  // Pure physical fighter punching liquid metal / reforming entity
+  if (!hasAnySpecialPower && defTags.has("immortal") && !defTags.has("tech")) {
+    return pickRandom([
+      `Conventional force, correctly applied, completely absorbed. ${d} doesn't acknowledge it the way anything else would.`,
+      `${n} hits exactly right. ${d} is reforming before the follow-through finishes.`,
+      `${n} is using the right techniques against the wrong opponent. The body doesn't stay damaged.`,
+    ]);
+  }
+
+  // Mortal physical fighter vs a truly cosmic being
+  if (!hasAnySpecialPower && defTags.has("cosmic")) {
+    return pickRandom([
+      `${n} is fighting with everything they have. Against something of ${d}'s magnitude, that's less a threat and more a statement of intent.`,
+      `The strike lands. ${d} experiences it the way a star experiences a thrown stone.`,
+      `${n}'s hit is technically successful. The effect on ${d} is technically negligible. Both things are true simultaneously.`,
+    ]);
+  }
+
+  // Tech-heavy attacker vs magnetic/metal controller
+  if (atkTags.has("tech") && defTags.has("metal")) {
+    return pickRandom([
+      `${n}'s systems are misfiring — something in ${d}'s vicinity is making the hardware choose sides. The wrong ones.`,
+      `Half of ${n}'s tech advantages just became ${d}'s. That's the specific nightmare of fighting someone who controls metal.`,
+    ]);
+  }
+
+  // Purely physical fighters vs intangible/shadow entities
+  if (!hasAnySpecialPower && defTags.has("shadow")) {
+    return pickRandom([
+      `${n}'s fist passes through ${d}'s silhouette. There's nothing solid to connect with unless ${d} chooses to be.`,
+      `Physical force requires a physical target. ${d} is offering neither right now.`,
+    ]);
+  }
+
+  // Fire user vs fire-immune
+  if (atkTags.has("fire") && /immune to fire|fire doesn't|cannot burn|fire.?proof/.test(defender.weaknesses.toLowerCase())) {
+    return pickRandom([
+      `The flames wash over ${d} and accomplish nothing. This was not an effective strategy.`,
+      `${d} stands in the fire. Unimpressed. Unharmed. This attack was wasted.`,
+    ]);
+  }
+
+  return null;
+}
+
+// ─── Elimination Line ─────────────────────────────────────────────────────────
+// The definitive final sentence — HOW this fight ends for the loser.
+// Every fight ends. Not every fighter dies the same way.
+
+function getEliminationLine(loser: Character, loserTags: Set<string>, winner: Character, winnerTags: Set<string>): string {
+  const d = loser.name;
+  const w = winner.name;
+
+  // Cosmic entities: dispersed, scattered, ended as a presence
+  if (loserTags.has("cosmic")) {
+    return pickRandom([
+      `${d}'s power disperses across the void — no single point remaining. Not death. Something larger. An ending without a body.`,
+      `${d} ceases to be a coherent force. Scattered. Unraveled at a fundamental level. Removed from the equation permanently.`,
+      `The cosmic presence that was ${d} fragments and fades. This fight has ended something that should have been unkillable. It wasn't.`,
+    ]);
+  }
+
+  // Immortals: contained, overwhelmed past the point of relevance
+  if (loserTags.has("immortal")) {
+    return pickRandom([
+      `${d} cannot be killed. But they can be beaten so completely that resurrection becomes irrelevant. That's what happened here. They will heal. The fight is already over.`,
+      `${d} will survive this. Eventually. Right now, what remains of them is pinned to the ground by the full weight of total defeat — and ${w} is already walking away.`,
+      `You can't end ${d}. But you can take them out of the equation so thoroughly that it doesn't matter. ${w} just did that.`,
+      `${d} goes down. Gets back up. Goes down harder. Gets back up slower. Goes down one final time and the math runs out — they're up, technically, but this fight is over.`,
+    ]);
+  }
+
+  // Undead / necromantic entities: unraveled, dispersed
+  if (loserTags.has("undead")) {
+    return pickRandom([
+      `The dark force animating ${d} shatters. The body collapses. Whatever held the pieces together is gone now — not suppressed, not delayed. Broken.`,
+      `${d}'s necromantic tether snaps. The construct that was ${d} falls apart completely. The dead stay dead this time.`,
+    ]);
+  }
+
+  // Robots / tech / androids: permanently destroyed
+  if (loserTags.has("tech") && !loserTags.has("immortal")) {
+    return pickRandom([
+      `${d}'s systems go offline permanently. Not shut down — destroyed. There is no rebooting this.`,
+      `Every light on ${d} goes dark simultaneously. The chassis hits the ground and nothing inside it is working. This unit is done.`,
+      `${d} crashes. Every system, simultaneously. The kind of catastrophic failure that engineers have nightmares about — no recovery, no backup, no restart. Done.`,
+    ]);
+  }
+
+  // Vampires: burned, staked, ended by the right means
+  if (loserTags.has("vampire")) {
+    return pickRandom([
+      `${d} burns. Centuries of survival end in seconds when the right weakness is found. The night has no more use for them.`,
+      `${d} is gone — dust, ash, and silence where something immortal used to be. ${w} found the thing that vampires cannot survive. There is always a thing.`,
+    ]);
+  }
+
+  // Giant / kaiju: felled
+  if (loserTags.has("giant")) {
+    return pickRandom([
+      `${d} falls. The impact registers on seismographs three hundred miles from here. Something that enormous takes the ground down with it when it goes.`,
+      `${d} crashes to the earth and the shockwave flattens everything within a mile. Dead before impact. The crater is already forming.`,
+    ]);
+  }
+
+  // Animals: killed cleanly — they lived by the fight and died by it
+  if (loser.universe === "Animals") {
+    return pickRandom([
+      `${d} goes still. An apex predator — one of the most dangerous creatures that ever walked this planet — ends here, in this arena, in this fight. The silence after is total.`,
+      `${d} dies as it lived: in combat, in the middle of a fight it believed it could win. It was wrong today. It won't get another chance to be right.`,
+      `The greatest predator of its era hits the ground and does not move again. ${w} stands over what used to be a threat and breathes.`,
+    ]);
+  }
+
+  // Default: they died. Say it plainly.
+  return pickRandom([
+    `${d} is dead. No dramatic last words. No second wind. The fight ended the only way fights at this level can end.`,
+    `${d} hits the ground and doesn't get up. This time, permanently. ${w} is already breathing easier.`,
+    `${d} goes down for the last time. That's the end of it. Final. Irreversible. Done.`,
+    `${d} is gone. The fight has its winner. The arena has its casualty. The difference between them was everything.`,
+    `${d} dies here. On ${w}'s terms, in ${w}'s fight. The last thing they see is the arena they lost in.`,
+  ]);
+}
+
 // ─── Attack Description Builder ───────────────────────────────────────────────
 // Returns a short (≤ 10 word) physical attack phrase: "[verb] [target/move]"
 // These plug into templates as: "${atk} ${action}."
@@ -1112,18 +1253,32 @@ function buildRoundNarrative(
 
   let narrative = template(attacker.name, defender.name, action, arenaName);
 
-  // Append weakness/interaction note
-  const interaction = getWeaknessMatchNote(attacker, atkTags, defender, defTags);
-  if (interaction) narrative += ` ${interaction}`;
+  if (isFinalRound) {
+    // ── FINAL ROUND: append definitive death/elimination ─────────────────────
+    // Closing template already sets the physical beat — elimination line seals the fate.
+    const elimLine = getEliminationLine(defender, defTags, attacker, atkTags);
+    narrative += ` ${elimLine}`;
+  } else {
+    // ── MID ROUNDS ────────────────────────────────────────────────────────────
+    // 1. Weakness match (already handles immortal, cosmic, elements, etc.)
+    const interaction = getWeaknessMatchNote(attacker, atkTags, defender, defTags);
+    if (interaction) {
+      narrative += ` ${interaction}`;
+    } else {
+      // 2. Immunity note — fires when attacker's method can't work on this defender
+      const immunityNote = getImmunityNote(attacker, atkTags, defender, defTags);
+      if (immunityNote) {
+        narrative += ` ${immunityNote}`;
+      } else if (round % 2 === 0) {
+        // 3. Arena flavor when neither note fired
+        narrative += ` ${pickRandom(arenaFlavors)}`;
+      }
+    }
 
-  // Arena flavor on even rounds when no interaction note fired
-  if (!interaction && round % 2 === 0) {
-    narrative += ` ${pickRandom(arenaFlavors)}`;
-  }
-
-  // Consequence lines: fired on some mid rounds only — never on final round
-  if (!interaction && !isFinalRound && round > 2 && progress < 0.75 && Math.random() < 0.25) {
-    narrative += ` ${pickRandom(consequenceLines)(defender.name)}`;
+    // Consequence lines — physical damage accumulation, mid-fight only
+    if (!isFinalRound && round > 2 && progress < 0.75 && Math.random() < 0.25) {
+      narrative += ` ${pickRandom(consequenceLines)(defender.name)}`;
+    }
   }
 
   return narrative;
@@ -1429,12 +1584,25 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
 
   const extraClause = summaryAddons.length > 0 ? ` Along the way, ${summaryAddons.join(" and ")}.` : "";
 
+  // Build a character-appropriate conclusion for the losing side
+  const loserTags = loseTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
+  const winnerTags = winTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
+  const loserConclusion = loserTags.has("cosmic")
+    ? `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`
+    : loserTags.has("immortal")
+    ? `${loserNames} will eventually recover. They won't be back for this fight.`
+    : loserTags.has("tech") && !loserTags.has("immortal")
+    ? `${loserNames} — systems permanently offline.`
+    : loseTeam.every(c => c.universe === "Animals")
+    ? `${loserNames} died here. The greatest predator has its own predators.`
+    : `${loserNames} — dead.`;
+
   const summaries = [
-    `After ${rounds.length} rounds of mayhem on ${arena.name}, ${winnerNames} stand victorious over the wreckage that was ${loserNames}.${extraClause}`,
-    `${winnerNames} survive ${rounds.length} savage rounds on ${arena.name} and emerge as the last ones standing. ${loserNames} gave everything — it simply wasn't enough.${extraClause}`,
-    `${rounds.length} rounds on ${arena.name}. One winner. ${winnerNames} outlasted, outfought, and outlucked ${loserNames}.${extraClause} The arena will never fully recover.`,
-    `When the dust settles on ${arena.name} after ${rounds.length} brutal rounds, ${winnerNames} remain standing while ${loserNames} do not.${extraClause} Whether this counts as a fair fight is a matter of opinion.`,
-    `${winnerNames} — battered, bleeding, possibly betrayed — stand victorious after ${rounds.length} rounds on ${arena.name}.${extraClause} History will remember this as a spectacular mess.`,
+    `After ${rounds.length} rounds on ${arena.name}, ${winnerNames} are the last ones standing. ${loserConclusion}${extraClause}`,
+    `${winnerNames} survive ${rounds.length} brutal rounds on ${arena.name}. ${loserConclusion}${extraClause} This was not a close fight. It was a fight.`,
+    `${rounds.length} rounds. One winner. ${winnerNames} made sure of it. ${loserConclusion}${extraClause}`,
+    `${arena.name} saw ${rounds.length} rounds of escalating violence. ${winnerNames} walked away. ${loserConclusion}${extraClause}`,
+    `${winnerNames} — battered, possibly betrayed, still breathing — close out ${rounds.length} rounds on ${arena.name}. ${loserConclusion}${extraClause}`,
   ];
 
   return { winner, rounds, summary: pickRandom(summaries) };
