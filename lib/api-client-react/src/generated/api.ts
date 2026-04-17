@@ -680,37 +680,167 @@ export const useSimulateFight = <
   return useMutation(getSimulateFightMutationOptions(options));
 };
 
-export const clearFightHistory = async (
-  options?: SecondParameter<typeof customFetch>,
-): Promise<void> => {
-  return customFetch<void>(`/api/fights`, { method: "DELETE", ...options });
+/**
+ * @summary Delete all fight records
+ */
+export const getClearFightHistoryUrl = () => {
+  return `/api/fights`;
 };
 
-export const useClearFightHistory = <
-  TError = ErrorType<ErrorResponse>,
+export const clearFightHistory = async (
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getClearFightHistoryUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearFightHistoryMutationOptions = <
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
-  mutation?: UseMutationOptions<void, TError, void, TContext>;
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearFightHistory>>,
+    TError,
+    void,
+    TContext
+  >;
   request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<void, TError, void, TContext> => {
-  const mutationFn = () => clearFightHistory(options?.request);
-  return useMutation({ mutationKey: ["clearFightHistory"], mutationFn, ...options?.mutation });
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearFightHistory>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clearFightHistory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearFightHistory>>,
+    void
+  > = () => {
+    return clearFightHistory(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearFightHistoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearFightHistory>>
+>;
+
+export type ClearFightHistoryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete all fight records
+ */
+export const useClearFightHistory = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearFightHistory>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearFightHistory>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClearFightHistoryMutationOptions(options));
+};
+
+/**
+ * @summary Delete a single fight record by id
+ */
+export const getDeleteFightUrl = (id: number) => {
+  return `/api/fights/${id}`;
 };
 
 export const deleteFight = async (
   id: number,
-  options?: SecondParameter<typeof customFetch>,
+  options?: RequestInit,
 ): Promise<void> => {
-  return customFetch<void>(`/api/fights/${id}`, { method: "DELETE", ...options });
+  return customFetch<void>(getDeleteFightUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
 };
 
+export const getDeleteFightMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFight>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFight>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteFight"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFight>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteFight(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFightMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFight>>
+>;
+
+export type DeleteFightMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a single fight record by id
+ */
 export const useDeleteFight = <
   TError = ErrorType<ErrorResponse>,
   TContext = unknown,
 >(options?: {
-  mutation?: UseMutationOptions<void, TError, number, TContext>;
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFight>>,
+    TError,
+    { id: number },
+    TContext
+  >;
   request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<void, TError, number, TContext> => {
-  const mutationFn = (id: number) => deleteFight(id, options?.request);
-  return useMutation({ mutationKey: ["deleteFight"], mutationFn, ...options?.mutation });
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFight>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteFightMutationOptions(options));
 };

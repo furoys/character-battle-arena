@@ -161,6 +161,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: clearFightHistory
+      tags: [fights]
+      summary: Delete all fight records
+      responses:
+        "204":
+          description: Fight history cleared
+
+  /fights/{id}:
+    delete:
+      operationId: deleteFight
+      tags: [fights]
+      summary: Delete a single fight record by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Fight deleted
+        "404":
+          description: Fight not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -311,10 +339,14 @@ components:
         mode:
           type: string
           enum:
+            - cinematic
+            - brutal
+            - realistic
+            - funny
             - fun
             - debate
-          default: fun
-          description: "fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes"
+          default: cinematic
+          description: "Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.)"
       required:
         - team1
         - team2
@@ -370,6 +402,9 @@ components:
         arenaIntro:
           type: string
           description: "AI-generated arena description shown before the fight begins"
+        intro:
+          type: string
+          description: "AI-generated combatant entrance section shown after the setting"
         simulatedAt:
           type: string
           format: date-time

@@ -5,7 +5,7 @@ import { AvaLogo } from "@/components/ava-logo";
 
 interface VictoryScreenProps {
   result: FightResult;
-  mode?: "fun" | "debate";
+  mode?: "cinematic" | "brutal" | "realistic" | "funny";
   onClose: () => void;
   onRematch?: () => void;
 }
@@ -333,7 +333,7 @@ function RoundBreakdown({ result }: { result: FightResult }) {
   );
 }
 
-export function VictoryScreen({ result, mode = "fun", onClose, onRematch }: VictoryScreenProps) {
+export function VictoryScreen({ result, mode = "cinematic", onClose, onRematch }: VictoryScreenProps) {
   const [phase, setPhase]     = useState(0);
   const [copied, setCopied]   = useState(false);
   const [shared, setShared]   = useState(false);
@@ -360,7 +360,11 @@ export function VictoryScreen({ result, mode = "fun", onClose, onRematch }: Vict
     const t1Names   = (result.team1 ?? []).map(c => c.name).join(" & ");
     const t2Names   = (result.team2 ?? []).map(c => c.name).join(" & ");
     const wNames    = winnerTeam.map(c => c.name).join(" & ");
-    const modeLabel = mode === "debate" ? "Debate" : "Fun";
+    const modeLabel =
+      mode === "realistic" ? "Realistic" :
+      mode === "brutal"    ? "Brutal"    :
+      mode === "funny"     ? "Funny"     :
+                             "Cinematic";
     const rounds    = (result.rounds ?? []).length;
     const tags      = includeHashtags ? "\n\n#AvA #AnyoneVsAnyone" : "";
     return [

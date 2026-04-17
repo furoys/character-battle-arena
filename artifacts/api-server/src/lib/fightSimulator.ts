@@ -29,8 +29,17 @@ function clamp(val: number, min: number, max: number) {
 }
 
 // ─── 20 Arenas ────────────────────────────────────────────────────────────────
+// `boost` = tags that get a damage edge fighting here (environment helps them).
+// `nerf`  = tags that struggle here (environment works against them).
 
-const arenas = [
+interface Arena {
+  name: string;
+  flavor: string[];
+  boost?: string[];
+  nerf?: string[];
+}
+
+const arenas: Arena[] = [
   {
     name: "a crumbling mountain summit",
     flavor: [
@@ -39,6 +48,8 @@ const arenas = [
       "Lightning hammers the peak, drawn by the raw energy of the fight.",
       "The summit is disintegrating round by round.",
     ],
+    boost: ["lightning", "wind", "speedster"],
+    nerf: ["giant", "tech"],
   },
   {
     name: "a sinking aircraft carrier in the North Atlantic",
@@ -48,6 +59,8 @@ const arenas = [
       "Freezing ocean spray lashes across the battlefield.",
       "The ship groans metallically — she won't stay afloat much longer.",
     ],
+    boost: ["water", "ice", "lightning"],
+    nerf: ["fire"],
   },
   {
     name: "an active volcano crater",
@@ -57,6 +70,8 @@ const arenas = [
       "Superheated air distorts every visual — nothing is where it appears.",
       "The entire volcano shudders as if enraged by the fight above it.",
     ],
+    boost: ["fire", "cosmic"],
+    nerf: ["ice", "water", "tech"],
   },
   {
     name: "a Walmart parking lot at 3am",
@@ -84,6 +99,8 @@ const arenas = [
       "Electrical conduits short-circuit and arc wildly across the flooded floor.",
       "The tunnel ceiling fractures and chunks of concrete rain down.",
     ],
+    boost: ["water", "lightning", "shadow"],
+    nerf: ["fire", "wind"],
   },
   {
     name: "a children's birthday party venue — now completely destroyed",
@@ -102,6 +119,8 @@ const arenas = [
       "A chunk of the floor gives way and falls silently into the city far below.",
       "The entire building sways in the wind like a reed, amplifying every impact.",
     ],
+    boost: ["wind", "speedster", "magic"],
+    nerf: ["giant", "tech"],
   },
   {
     name: "an overgrown jungle temple during a monsoon",
@@ -111,6 +130,8 @@ const arenas = [
       "A massive stone idol topples and crashes through two walls.",
       "Vines and roots seem to reach for the combatants, alive with the storm's electricity.",
     ],
+    boost: ["water", "magic", "shadow", "lightning"],
+    nerf: ["fire", "tech"],
   },
   {
     name: "the frozen surface of Europa",
@@ -120,6 +141,8 @@ const arenas = [
       "Jupiter looms vast and silent overhead.",
       "Something enormous moves beneath the ice. Something that is definitely not human.",
     ],
+    boost: ["ice", "cosmic", "speedster"],
+    nerf: ["fire"],
   },
   {
     name: "a decommissioned nuclear power plant",
@@ -129,6 +152,8 @@ const arenas = [
       "Radiation meters in the fight zone are simply reading ERROR.",
       "A reactor vessel groans and then cracks — everyone has new problems.",
     ],
+    boost: ["tech", "cosmic", "undead"],
+    nerf: [],
   },
   {
     name: "a 500-acre pumpkin farm that is aggressively on fire",
@@ -138,6 +163,8 @@ const arenas = [
       "The farmhouse explodes as the fire reaches a propane tank.",
       "A tractor, apparently self-driving, charges through the battlefield with no clear agenda.",
     ],
+    boost: ["fire", "shadow"],
+    nerf: ["ice", "water"],
   },
   {
     name: "the International Space Station (interior, zero gravity)",
@@ -147,6 +174,8 @@ const arenas = [
       "Untethered equipment — laptops, food pouches, fire extinguishers — orbits the fight.",
       "Mission Control is screaming into their headsets. Nobody is listening.",
     ],
+    boost: ["speedster", "psychic", "cosmic"],
+    nerf: ["giant"],
   },
   {
     name: "a packed NFL stadium, mid-game",
@@ -165,6 +194,8 @@ const arenas = [
       "Ice floes collide with the hull, threatening to tear it apart.",
       "A rogue wave sweeps the deck, taking everything not nailed down into the ocean.",
     ],
+    boost: ["water", "wind", "lightning"],
+    nerf: ["fire", "tech"],
   },
   {
     name: "the surface of Mars during a planet-wide dust storm",
@@ -174,6 +205,8 @@ const arenas = [
       "A terraforming station collapses in the distance, slowly and completely.",
       "The storm strips paint, armor plating, and flesh with equal enthusiasm.",
     ],
+    boost: ["wind", "psychic", "stealth"],
+    nerf: ["tech", "long-range"],
   },
   {
     name: "a luxurious cruise ship casino — currently sinking",
@@ -183,6 +216,8 @@ const arenas = [
       "A grand piano slides slowly but inevitably toward the fight.",
       "The chandelier sways violently, raining crystal on everyone below.",
     ],
+    boost: ["water"],
+    nerf: [],
   },
   {
     name: "a bottomless ancient colosseum with no exits",
@@ -192,6 +227,8 @@ const arenas = [
       "The walls are too high and too smooth to climb. There is no leaving.",
       "A hidden trap door opens in the floor. Something below it is breathing.",
     ],
+    boost: ["aggressive", "giant", "undead"],
+    nerf: [],
   },
   {
     name: "a burning rainforest during an earthquake",
@@ -201,6 +238,8 @@ const arenas = [
       "The earthquake and the fire are each trying to win the title of 'worst thing happening right now.'",
       "A river changes course, surging through the battlefield and sweeping debris in all directions.",
     ],
+    boost: ["fire", "wind", "shadow"],
+    nerf: ["ice"],
   },
   {
     name: "a transdimensional void where the laws of physics are more like suggestions",
@@ -210,8 +249,19 @@ const arenas = [
       "Sound travels backwards here. Screams arrive before the blows that caused them.",
       "The concept of 'floor' stops being applicable for about four seconds.",
     ],
+    boost: ["reality", "magic", "cosmic", "psychic"],
+    nerf: ["tech", "long-range"],
   },
 ];
+
+// Per-arena modifier applied to outgoing damage based on attacker tags.
+// Returns a multiplier centered on 1.0. Boost = +18%, nerf = -18%, capped.
+function getArenaDamageMod(arena: Arena, atkTags: Set<string>): number {
+  let mod = 1.0;
+  if (arena.boost) for (const t of arena.boost) if (atkTags.has(t)) { mod += 0.18; break; }
+  if (arena.nerf)  for (const t of arena.nerf)  if (atkTags.has(t)) { mod -= 0.18; break; }
+  return clamp(mod, 0.7, 1.35);
+}
 
 // ─── Chaos Events ─────────────────────────────────────────────────────────────
 
@@ -468,7 +518,7 @@ interface BehaviorMods {
 
 function getTeamBehaviorMods(
   team: Character[],
-  isDebate: boolean,
+  isRealistic: boolean,
   round: number,
 ): BehaviorMods {
   const tags = new Set<string>();
@@ -486,10 +536,10 @@ function getTeamBehaviorMods(
   // Sadistic fighters press advantages ruthlessly
   if (tags.has("sadistic")) damageMult += 0.08;
 
-  // Tactical teams are more effective in debate mode; still decisive in fun mode
+  // Tactical teams are more effective in realistic tone; still decisive in cinematic/brutal/funny
   if (tags.has("tactical")) {
-    damageMult      += isDebate ? 0.12 : 0.05;
-    initiativeBonus += isDebate ? 0.05 : 0.03;
+    damageMult      += isRealistic ? 0.12 : 0.05;
+    initiativeBonus += isRealistic ? 0.05 : 0.03;
   }
 
   // Arrogant fighters are overconfident early — slight damage boost rounds 1-2
@@ -1524,12 +1574,50 @@ function extractSection(text: string, ...patterns: string[]): string {
   return "";
 }
 
+// ─── Tone Types ────────────────────────────────────────────────────────────
+export type FightTone = "cinematic" | "brutal" | "realistic" | "funny";
+
+export function normalizeTone(input: string | undefined): FightTone {
+  switch (input) {
+    case "brutal":    return "brutal";
+    case "realistic":
+    case "debate":    return "realistic";
+    case "funny":     return "funny";
+    case "cinematic":
+    case "fun":
+    default:          return "cinematic";
+  }
+}
+
+const TONE_INSTRUCTIONS: Record<FightTone, string> = {
+  cinematic: `TONE — CINEMATIC EPIC.
+• Operatic, theatrical, larger-than-life. Slow-motion beats. Dust motes in shafts of light. Camera-style framing.
+• Powers feel mythic. Music swells in the prose. Each hit lands with the weight of a film climax.
+• Vary pace — quiet beats between explosions. Land the finisher like a curtain drop.`,
+  brutal: `TONE — BRUTAL & GROUNDED.
+• Visceral, anatomical, ugly. Bones. Blood. Tendons. Concrete. Real impact, real damage, real cost.
+• No magic-system explanations — describe what hits, where it lands, what tears, what breaks.
+• Short, hard sentences. No adverbs. No fanfare. Pain has texture and consequence.
+• Treat injuries like injuries. The fight should feel exhausting, not heroic.`,
+  realistic: `TONE — TIGHT & STAT-DRIVEN.
+• Restrained, almost analytical. Outcomes follow capability — the stronger fighter wins on technique and matchup.
+• No chaos events, no random environmental saves, no luck-based reversals. Every result is earned.
+• Describe what their abilities CAN ACTUALLY DO and what the opponent CAN ACTUALLY COUNTER.
+• Sound like an honest debate-mode breakdown that just happens to be visceral.`,
+  funny: `TONE — ABSURD & COMEDIC.
+• Take the fight DEAD seriously while every detail is ridiculous. Deadpan. The arena has opinions. The crowd is unhinged.
+• Bystanders, pets, vending machines, weather — everything is somehow involved.
+• NEVER use death-final language. Loser is "humiliated", "thoroughly defeated", "carried off in a shopping cart". They survive — embarrassed, not eliminated.
+• Wordy, observational, dryly funny. Specific brand names, oddly precise measurements, suspicious goats.`,
+};
+
 async function generateAINarrative(
   team1: Character[],
   team2: Character[],
   arena: ArenaData,
   roundSimData: RoundSimData[],
   winner: number,
+  tone: FightTone = "cinematic",
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -1567,7 +1655,9 @@ async function generateAINarrative(
     ? `\nBetrayal rounds: ${betrayalRounds.join(", ")} — a team member turns on their own side.`
     : "";
 
-  const prompt = `You are a cinematic fight narrator. Write a visceral, power-specific battle across FIVE rounds.
+  const prompt = `You are a fight narrator. Write a visceral, power-specific battle across FIVE rounds.
+
+${TONE_INSTRUCTIONS[tone]}
 
 FIGHTERS:
 Team 1: ${team1Info}
@@ -1604,7 +1694,9 @@ Do NOT skip any section. Every section needs real content.
 (Last stand. ${rd(3) ? `${rd(3).attackerName} launches ${rd(3).attackMove}.` : "Final push."} ${hpNote(3)} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)
 
 === ROUND 5 ===
-(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the killing blow: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)
+${tone === "funny"
+    ? `(Finale. ${rd(4) ? `${rd(4).attackerName} lands the absurd, decisive move: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most cartoonish and humiliating of the fight. ${winnerNames} ends it. The loser is thoroughly embarrassed and dignity-shattered — NEVER dead, NEVER killed, NEVER "goes down and stays down" in a final sense. They're concussed, confused, face-down in icing, politely asking for a moment alone, etc.)`
+    : `(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the ${tone === "realistic" ? "decisive blow" : "killing blow"}: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)`}
 
 === RESULT ===
 (2-3 sentences: declare the winner, describe the physical state of both sides, give one line of finality.)
@@ -1638,7 +1730,8 @@ FORMAT RULES:
   };
 }
 
-export async function simulateFight(team1: Character[], team2: Character[], mode: "fun" | "debate" = "fun"): Promise<FightResult> {
+export async function simulateFight(team1: Character[], team2: Character[], mode: string = "cinematic"): Promise<FightResult> {
+  const tone = normalizeTone(mode);
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
@@ -1681,19 +1774,30 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     defenderWinning: false,
   };
 
-  // ── Mode tuning ────────────────────────────────────────────────────────────
-  // Debate mode: pure stat logic, no chaos, no betrayals, tighter variance.
-  // Fun mode: cinematic chaos, betrayals, wild outcomes.
-  const isDebate = mode === "debate";
+  // ── Tone tuning ────────────────────────────────────────────────────────────
+  // realistic = pure stat logic, no chaos, no betrayals, tight variance.
+  // cinematic = epic but disciplined — minor chaos, occasional betrayal.
+  // brutal    = vicious, slightly higher damage variance, chaos rare but harsh.
+  // funny     = arena & chaos lean absurd, more betrayals, no-death final language.
+  const isRealistic = tone === "realistic";
+  const isFunny     = tone === "funny";
+  const isBrutal    = tone === "brutal";
 
-  // ── Chaos tuning ──────────────────────────────────────────────────────────
-  // Chaos events removed — fights are decided by stats, powers, and synergy only.
-  const chaosFrequency = 0;
-  // Reality-warpers tracked for narrative colour but no longer inflate chaos.
+  // Chaos and betrayal frequency by tone.
+  const chaosFrequency =
+    isRealistic ? 0 :
+    isFunny     ? 0.10 :
+    isBrutal    ? 0.04 :
+                  0.02;          // cinematic
+  const betrayalChance =
+    isRealistic ? 0 :
+    isFunny     ? 0.05 :
+                  0.03;
+  // Brutal damage modifier — incoming/outgoing damage scaled up.
+  const brutalDamageMult = isBrutal ? 1.12 : 1.0;
+  // Reality-warpers tracked for narrative colour.
   const hasRealityWarper = [...team1, ...team2].some(c => c.behaviorTags?.includes("reality-warper"));
-  void hasRealityWarper; // used in narrative only
-  // Betrayal: 3% per round. Disabled in debate mode.
-  const betrayalChance = isDebate ? 0 : 0.03;
+  void hasRealityWarper;
   // No back-to-back chaos — after a chaos round, skip the next chaos check.
   let chaosCooldown = false;
   // Gang-up cooldown — don't fire multiple gang-up rounds in a row.
@@ -1841,8 +1945,8 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
     // ── Normal combat ─────────────────────────────────────────────────────────
     // Behavior mods for this round — recalculate per round because firstStrike only applies on round 1.
-    const bMods1 = getTeamBehaviorMods(team1, isDebate, i);
-    const bMods2 = getTeamBehaviorMods(team2, isDebate, i);
+    const bMods1 = getTeamBehaviorMods(team1, isRealistic, i);
+    const bMods2 = getTeamBehaviorMods(team2, isRealistic, i);
 
     // Initiative: speed + HP momentum + behavior (aggressive/speedster push initiative).
     const currentAdvantage = hp1 / (hp1 + hp2);
@@ -1857,17 +1961,19 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     if (team1Attacks) {
       attacker = pickRandom(team1);
       defender = pickRandom(team2);
+      const atkTags       = getTags(attacker);
+      const arenaMod      = getArenaDamageMod(arena, atkTags);
       const statBonus     = (attacker.strength + attacker.speed) / 20000;
       const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
       const ratio1        = base1 / totalPower;
-      const scaledRatio   = isDebate ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
-      const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
+      const scaledRatio   = isRealistic ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
+      const variance      = isRealistic ? Math.random() * 0.04 : (isBrutal ? Math.random() * 0.16 : Math.random() * 0.13);
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio1 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
-      // Apply attacker damage boost × defender resistance reduction
+      // Apply attacker damage boost × defender resistance reduction × arena tags × tone
       const rawDmg = Math.round(effectiveness * 18 + minDmg) + weakBonus + bMods1.firstStrike;
-      damage = Math.max(1, Math.round(rawDmg * bMods1.damageMult * bMods2.damageResist));
+      damage = Math.max(1, Math.round(rawDmg * bMods1.damageMult * bMods2.damageResist * arenaMod * brutalDamageMult));
       hp2 = Math.max(0, hp2 - damage);
       // Regen: team2 recovers some HP after taking the hit
       if (bMods2.regenPerRound > 0) hp2 = Math.min(100, hp2 + bMods2.regenPerRound);
@@ -1876,16 +1982,18 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     } else {
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
+      const atkTags       = getTags(attacker);
+      const arenaMod      = getArenaDamageMod(arena, atkTags);
       const statBonus     = (attacker.strength + attacker.speed) / 20000;
       const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
       const ratio2        = base2 / totalPower;
-      const scaledRatio   = isDebate ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);
-      const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
+      const scaledRatio   = isRealistic ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);
+      const variance      = isRealistic ? Math.random() * 0.04 : (isBrutal ? Math.random() * 0.16 : Math.random() * 0.13);
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio2 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
       const rawDmg = Math.round(effectiveness * 18 + minDmg) + weakBonus + bMods2.firstStrike;
-      damage = Math.max(1, Math.round(rawDmg * bMods2.damageMult * bMods1.damageResist));
+      damage = Math.max(1, Math.round(rawDmg * bMods2.damageMult * bMods1.damageResist * arenaMod * brutalDamageMult));
       hp1 = Math.max(0, hp1 - damage);
       if (bMods1.regenPerRound > 0) hp1 = Math.min(100, hp1 + bMods1.regenPerRound);
       narrativeState.attackerWinning = hp2 > hp1 + 10;
@@ -1922,9 +2030,17 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const extraClause = summaryAddons.length > 0 ? ` Along the way, ${summaryAddons.join(" and ")}.` : "";
 
-  // Build a character-appropriate conclusion for the losing side
+  // Build a character-appropriate conclusion for the losing side.
+  // In funny tone, NEVER use death-final language — losers are humiliated, not killed.
   const loserTags = loseTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
-  const loserConclusion = loserTags.has("cosmic")
+  const loserConclusion = isFunny
+    ? pickRandom([
+        `${loserNames} — thoroughly humiliated, currently being heckled by a passing goat.`,
+        `${loserNames} — defeated, dazed, and politely asking for a moment alone.`,
+        `${loserNames} — wheeled off the field on a borrowed shopping cart, dignity not included.`,
+        `${loserNames} — concussed, embarrassed, plotting an extremely petty rematch.`,
+      ])
+    : loserTags.has("cosmic")
     ? `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`
     : loserTags.has("immortal")
     ? `${loserNames} will eventually recover. They won't be back for this fight.`
@@ -1958,7 +2074,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     isBetrayal: r.attackType === "betrayal",
   }));
 
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner);
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({

@@ -29,7 +29,6 @@ export interface Character {
   weaknesses: string;
   description: string;
   imageUrl?: string | null;
-  behaviorTags?: string[] | null;
   createdAt: string;
 }
 
@@ -75,12 +74,16 @@ export interface CharacterStatsSummary {
 }
 
 /**
- * fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes
+ * Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.)
  */
 export type SimulateFightBodyMode =
   (typeof SimulateFightBodyMode)[keyof typeof SimulateFightBodyMode];
 
 export const SimulateFightBodyMode = {
+  cinematic: "cinematic",
+  brutal: "brutal",
+  realistic: "realistic",
+  funny: "funny",
   fun: "fun",
   debate: "debate",
 } as const;
@@ -96,7 +99,7 @@ export interface SimulateFightBody {
    * @maxItems 5
    */
   team2: number[];
-  /** fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes */
+  /** Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.) */
   mode?: SimulateFightBodyMode;
 }
 
@@ -118,9 +121,9 @@ export interface FightResult {
   winner: number;
   rounds: FightRound[];
   summary: string;
-  /** AI-generated arena/setting description shown before the fight begins */
+  /** AI-generated arena description shown before the fight begins */
   arenaIntro?: string;
-  /** AI-generated combatant entrance scene shown after the arena */
+  /** AI-generated combatant entrance section shown after the setting */
   intro?: string;
   simulatedAt: string;
 }

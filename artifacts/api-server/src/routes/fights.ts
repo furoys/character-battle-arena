@@ -38,7 +38,7 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "fun" } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic" } = parsed.data;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
