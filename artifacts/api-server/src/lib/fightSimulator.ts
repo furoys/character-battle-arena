@@ -609,8 +609,10 @@ function getWeaknessMatchNote(
   // Reality warping vs non-reality
   if (atkTags.has("reality") && !defTags.has("reality") && !defTags.has("cosmic"))
     return pickRandom([
-      `${d} attempts to respond. Reality disagrees. ${n} rewrote the parameters of what ${d}'s attack was allowed to do mid-swing.`,
-      `The rules of the fight just changed. ${d} wasn't consulted. ${n} was.`,
+      `${d} swings with everything. The blow lands wrong — ${n} shifted the angle of impact at contact. What was meant to cave in a chest barely grazes. ${d} doesn't know what just happened.`,
+      `${d}'s counter comes in hard. ${n} redirects it — not by blocking, but by making the air between them refuse the hit. ${d}'s arm snaps through empty space.`,
+      `${d} throws the right move. ${n} simply unmakes the trajectory mid-flight. The strike lands nowhere.`,
+      `${d} commits to the attack. ${n} lets them — then reshapes the point of impact. The force goes sideways. ${d} staggers on their own swing.`,
     ]);
 
   // Giant vs normal-sized
@@ -830,7 +832,7 @@ function buildAttackAction(attacker: Character, atkTags: Set<string>, variant: n
     return pickRandom([
       `hits them with ${move} from an angle that shouldn't exist`,
       `fires ${move} — the blast curves around their guard`,
-      `blasts them with ${move}, the impact warping the space around it`,
+      `channels ${move} at contact range — they take it full in the chest and hit the ground`,
       `snaps ${move} out — precise, immediate, no room to counter`,
       `drives ${move} through every layer of magical shielding`,
       `fires ${move} from close range — no time to dodge, no room to block`,
