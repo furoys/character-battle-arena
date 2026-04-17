@@ -1878,3 +1878,51 @@ id = "gg30fEzcS8xyXuUs9qQ9k"
 uri = "file://artifacts/fight-club/public/characters/gildarts-clive.png"
 type = "image"
 title = "gildarts-clive"
+
+[[generated]]
+id = "fIgNOqiVIOqn-VxNQtVGj"
+uri = "file://artifacts/fight-club/public/characters/adam-warlock.png"
+type = "image"
+title = "Adam Warlock"
+
+[[generated]]
+id = "bn9F-mOMnNyS2O-AXzhZg"
+uri = "file://artifacts/fight-club/public/characters/african-lion.png"
+type = "image"
+title = "African Lion"
+
+[[generated]]
+id = "AMgWK0OD4KoYOvB1J94LC"
+uri = "file://artifacts/fight-club/public/characters/african-wild-dog.png"
+type = "image"
+title = "African Wild Dog"
+
+[[generated]]
+id = "xQ-lWBTpC1tEF1ohuKxZY"
+uri = "file://artifacts/fight-club/public/characters/allosaurus.png"
+type = "image"
+title = "Allosaurus"
+
+[[generated]]
+id = "OLRFB8BPs26FWyf2Sp0R2"
+uri = "file://artifacts/fight-club/public/characters/andrewsarchus.png"
+type = "image"
+title = "Andrewsarchus"
+
+[[generated]]
+id = "1UNMAVpddplZdKaVDhQXj"
+uri = "file://artifacts/fight-club/public/characters/ant-man.png"
+type = "image"
+title = "Ant-Man"
+
+[[generated]]
+id = "wGd-noHkuZAeyMno5Gwdu"
+uri = "file://artifacts/fight-club/public/characters/axel-foley.png"
+type = "image"
+title = "Axel Foley"
+
+[[generated]]
+id = "X4PVb2E0FPgfYMz7yJ2t1"
+uri = "file://artifacts/fight-club/public/characters/batgirl.png"
+type = "image"
+title = "Batgirl"
