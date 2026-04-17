@@ -17,6 +17,7 @@ export interface FightResult {
   rounds: FightRound[];
   summary: string;
   arenaIntro?: string;
+  intro?: string;
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -1345,17 +1346,11 @@ interface RoundSimData {
   isBetrayal: boolean;
 }
 
-// Race an AI streaming call against a hard timeout.
-// Resolves with parsed lines on success, empty array on timeout/error.
-async function aiLinesWithTimeout(prompt: string, maxTokens: number, timeoutMs: number): Promise<string[]> {
-  return new Promise<string[]>((resolve) => {
+// Race a streaming AI call against a hard timeout, returning the raw text.
+async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: number): Promise<string> {
+  return new Promise<string>((resolve) => {
     const ac = new AbortController();
-
-    // Hard deadline — always wins
-    const deadline = setTimeout(() => {
-      ac.abort();
-      resolve([]);
-    }, timeoutMs);
+    const deadline = setTimeout(() => { ac.abort(); resolve(""); }, timeoutMs);
 
     (async () => {
       let text = "";
@@ -1369,17 +1364,105 @@ async function aiLinesWithTimeout(prompt: string, maxTokens: number, timeoutMs: 
           if (delta) text += delta;
         }
         clearTimeout(deadline);
-        const lines = text
-          .split("\n")
-          .map(l => l.replace(/^(Line\s+)?\d+[.:]\s*/i, "").trim())
-          .filter(l => l.length > 10);
-        resolve(lines);
+        resolve(text);
       } catch {
         clearTimeout(deadline);
-        resolve([]);
+        resolve("");
       }
     })();
   });
+}
+
+// Parse AI narrative that uses === MARKER === delimiters into a map of MARKER -> content.
+// Falls back to numbered-header detection if the AI omits delimiters.
+function parseSections(raw: string): Map<string, string> {
+  const map = new Map<string, string>();
+
+  // Primary: === LABEL === format (our enforced prompt format)
+  // Split the text on these markers directly — case-insensitive, any word/space content
+  const delimRe = /===\s*([A-Za-z][A-Za-z0-9 ]*?)\s*===/g;
+  const dparts: Array<{ name: string; contentStart: number; delimEnd: number }> = [];
+  let dm: RegExpExecArray | null;
+  while ((dm = delimRe.exec(raw)) !== null) {
+    dparts.push({
+      name: dm[1]!.trim().toUpperCase(),
+      contentStart: dm.index + dm[0].length,
+      delimEnd: dm.index, // position where this section's delimiter STARTS (= end of previous content)
+    });
+  }
+
+  if (dparts.length > 0) {
+    for (let i = 0; i < dparts.length; i++) {
+      const { name, contentStart } = dparts[i]!;
+      // End of content is the start of the NEXT delimiter
+      const end = dparts[i + 1]?.delimEnd ?? raw.length;
+      const content = raw.slice(contentStart, end).trim();
+      if (content && !map.has(name)) map.set(name, content);
+    }
+    return map;
+  }
+
+  // Fallback: strip markdown, then match short header lines
+  const text = raw
+    .replace(/#{1,4}\s+/g, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1");
+
+  const ALIASES: Array<[string, string]> = [
+    ['combatant entrance', 'ENTRANCE'],
+    ['the combatants',     'ENTRANCE'],
+    ['fighters enter',     'ENTRANCE'],
+    ['fighter entrance',   'ENTRANCE'],
+    ['both fighters',      'ENTRANCE'],
+    ['the fighters',       'ENTRANCE'],
+    ['fighters arrive',    'ENTRANCE'],
+    ['entrance',           'ENTRANCE'],
+    ['combatants',         'ENTRANCE'],
+    ['entering',           'ENTRANCE'],
+    ['round 1',            'ROUND 1'],
+    ['round one',          'ROUND 1'],
+    ['round 2',            'ROUND 2'],
+    ['round two',          'ROUND 2'],
+    ['round 3',            'ROUND 3'],
+    ['round three',        'ROUND 3'],
+    ['setting',            'SETTING'],
+    ['arena',              'SETTING'],
+    ['result',             'RESULT'],
+    ['outcome',            'RESULT'],
+    ['conclusion',         'RESULT'],
+    ['aftermath',          'RESULT'],
+  ];
+
+  const lines = text.split("\n");
+  const fparts: Array<{ key: string; lineIdx: number }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cleaned = lines[i]!.trim().replace(/^\d+\.\s*/, "").replace(/:$/, "").trim().toLowerCase();
+    if (!cleaned || cleaned.length > 60) continue;
+    for (const [kw, key] of ALIASES) {
+      if (cleaned === kw || cleaned.startsWith(kw) || (kw.includes(' ') && cleaned.includes(kw))) {
+        fparts.push({ key, lineIdx: i });
+        break;
+      }
+    }
+  }
+
+  for (let i = 0; i < fparts.length; i++) {
+    const { key, lineIdx } = fparts[i]!;
+    const end = fparts[i + 1]?.lineIdx ?? lines.length;
+    const content = lines.slice(lineIdx + 1, end).join("\n").trim();
+    if (content && !map.has(key)) map.set(key, content);
+  }
+  return map;
+}
+
+// Extract a named section by key from the AI narrative text.
+function extractSection(text: string, ...patterns: string[]): string {
+  const sections = parseSections(text);
+  for (const pat of patterns) {
+    const val = sections.get(pat.toUpperCase().trim());
+    if (val?.trim()) return val;
+  }
+  return "";
 }
 
 async function generateAINarrative(
@@ -1388,33 +1471,78 @@ async function generateAINarrative(
   arena: ArenaData,
   roundSimData: RoundSimData[],
   winner: number,
-): Promise<{ arenaIntro: string; roundNarratives: string[] }> {
+): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
   const winnerNames = winner === 1 ? team1Names : team2Names;
+  const loserNames = winner === 1 ? team2Names : team1Names;
 
-  const totalLines = roundSimData.length + 1; // 1 arena intro + 1 per round
-  const roundDesc = roundSimData.map(r => {
-    const tag = r.isChaos ? "[chaos]" : r.isBetrayal ? "[betrayal]" : "";
-    return `R${r.round}${tag}: ${r.attackerName} attacks ${r.defenderName}`;
-  }).join("; ");
+  const team1Info = team1.map(c => `${c.name} (${c.universe}) — ${c.specialAbility.slice(0, 80)}`).join("; ");
+  const team2Info = team2.map(c => `${c.name} (${c.universe}) — ${c.specialAbility.slice(0, 80)}`).join("; ");
 
-  const lineInstructions = [
-    `Line 1: ${arena.name} setting — 1 vivid sentence.`,
-    ...roundSimData.map((r, i) => {
-      const tag = r.isChaos ? " chaos erupts" : r.isBetrayal ? " betrayal" : "";
-      return `Line ${i + 2}: ${r.attackerName}${tag} — 1 action sentence.`;
-    }),
-  ].join("\n");
+  const chaosRounds = roundSimData.filter(r => r.isChaos).map(r => r.round);
+  const betrayalRounds = roundSimData.filter(r => r.isBetrayal).map(r => r.round);
+  const specialNotes = [
+    ...chaosRounds.map(r => `Round ${r}: chaos event erupts in the arena`),
+    ...betrayalRounds.map(r => `Round ${r}: a team member betrays their own side`),
+  ].join("; ");
 
-  const prompt = `${team1Names} vs ${team2Names}. Arena: ${arena.name}. Winner: ${winnerNames}.\nRounds: ${roundDesc}\n\nWrite exactly ${totalLines} numbered lines, 1 sentence each:\n${lineInstructions}\n\nRules: physical action only, use each fighter's powers, ${winnerNames} wins.`;
+  const prompt = `You are a cinematic versus-battle narrator. Write a brutal, vivid, page-turning fight scene.
 
-  // 8-second window — if AI doesn't answer in time, templates are used instead
-  const lines = await aiLinesWithTimeout(prompt, 600, 8_000);
+FIGHTERS:
+Team 1: ${team1Info}
+Team 2: ${team2Info}
+Arena: ${arena.name} — ${arena.flavor.join(" ")}
+Winner: ${winnerNames} defeats ${loserNames}
+${specialNotes ? `Special events: ${specialNotes}` : ""}
+
+You MUST use these exact markers (surrounded by === on their own line) to separate sections.
+Do NOT skip any section. Do NOT rename the markers.
+
+=== SETTING ===
+(3-5 vivid sentences about the arena. Atmosphere, hazards, lighting. Do NOT begin combat.)
+
+=== ENTRANCE ===
+(2-4 sentences introducing each fighter as they enter. Posture, mood, powers visible. No attacks yet.)
+
+=== ROUND 1 ===
+(First violent exchange.${roundSimData[0] ? ` ${roundSimData[0].attackerName} strikes ${roundSimData[0].defenderName} using ${roundSimData[0].attackMove}.` : ""} Show impact and consequence.)
+
+=== ROUND 2 ===
+(Escalate. Brutality increases.${roundSimData[1] ? ` ${roundSimData[1].attackerName} attacks using ${roundSimData[1].attackMove}.` : ""} Environment reacts.)
+
+=== ROUND 3 ===
+(Final decisive exchange.${roundSimData[2] ? ` ${roundSimData[2].attackerName} lands the finishing blow using ${roundSimData[2].attackMove}.` : ""} ${winnerNames} wins clearly.)
+
+=== RESULT ===
+(2-3 sentences: who won, how, why. Visceral, final.)
+
+Rules:
+- Fill every section with real content.
+- Concrete details: blood, glass, fire, impact craters.
+- No vague phrases like "exchange blows."
+- Character powers must stay accurate.`;
+
+  // 18-second window — richer narrative; 6s reserved for entrance fallback if needed (24s total < 30s proxy limit)
+  const raw = await aiTextWithTimeout(prompt, 2000, 18_000);
+
+  if (!raw.trim()) {
+    return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "" };
+  }
+
+  const arenaIntro  = extractSection(raw, "SETTING");
+  let   intro       = extractSection(raw, "ENTRANCE", "COMBATANT ENTRANCE");
+  const round1      = extractSection(raw, "ROUND 1");
+  const round2      = extractSection(raw, "ROUND 2");
+  const round3      = extractSection(raw, "ROUND 3");
+  const resultText  = extractSection(raw, "RESULT");
+
 
   return {
-    arenaIntro: lines[0] ?? "",
-    roundNarratives: lines.slice(1, roundSimData.length + 1),
+    arenaIntro,
+    intro,
+    roundNarratives: [round1, round2, round3],
+    resultText,
   };
 }
 
@@ -1442,7 +1570,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const rounds: FightRound[] = [];
 
-  const maxRounds = 3 + Math.floor(Math.random() * 2); // 3–4 rounds — keeps AI generation fast (~15s)
+  const maxRounds = 3; // Always exactly 3 rounds — matches the cinematic narrative structure
   const arena = pickRandom(arenas);
 
   // Narrative state — separate no-repeat trackers per pool + ability cycling
@@ -1726,20 +1854,36 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     isBetrayal: r.attackType === "betrayal",
   }));
 
-  const { arenaIntro, roundNarratives } = await generateAINarrative(
-    team1, team2, arena, roundSimData, winner,
-  );
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner);
 
-  // Inject AI narratives — fall back to template narrative if AI returned empty
+  // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
     ...r,
-    narrative: roundNarratives[idx]?.trim().length ? roundNarratives[idx]! : r.narrative,
+    narrative: aiResult.roundNarratives[idx]?.trim().length ? aiResult.roundNarratives[idx]! : r.narrative,
   }));
 
-  // If AI didn't produce an arena intro, fall back to the built-in arena flavor text
-  const finalArenaIntro = arenaIntro?.trim().length
-    ? arenaIntro
+  // If AI didn't produce an arena intro, fall back to built-in arena flavor
+  const finalArenaIntro = aiResult.arenaIntro?.trim().length
+    ? aiResult.arenaIntro
     : `${arena.name[0]!.toUpperCase() + arena.name.slice(1)}. ${arena.flavor[0]} ${arena.flavor[1]}`;
 
-  return { winner, rounds: finalRounds, summary: pickRandom(summaries), arenaIntro: finalArenaIntro };
+  // Use AI result text as the match summary, fall back to template summary
+  const finalSummary = aiResult.resultText?.trim().length ? aiResult.resultText : pickRandom(summaries);
+
+  // Combatant entrance: use AI if available, otherwise build from character data
+  const finalIntro = aiResult.intro?.trim().length
+    ? aiResult.intro
+    : team1
+        .map(c => `${c.name} steps into ${arena.name}, ${(c.specialAbility.split(".")[0] ?? "").trim().toLowerCase() || "powers at the ready"}.`)
+        .concat(team2.map(c => `Across the field, ${c.name} arrives — ${(c.specialAbility.split(".")[0] ?? "").trim().toLowerCase() || "ready for battle"}.`))
+        .concat(["The air between them crackles. Neither speaks."])
+        .join(" ");
+
+  return {
+    winner,
+    rounds: finalRounds,
+    summary: finalSummary,
+    arenaIntro: finalArenaIntro,
+    intro: finalIntro,
+  };
 }

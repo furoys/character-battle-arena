@@ -81,6 +81,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       rounds: result.rounds,
       summary: result.summary,
       arenaIntro: result.arenaIntro ?? "",
+      intro: result.intro ?? "",
       simulatedAt: saved.simulatedAt,
     }),
   );

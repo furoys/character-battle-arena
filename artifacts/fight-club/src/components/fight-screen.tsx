@@ -332,28 +332,30 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
 
   const isTeam1 = index % 2 === 0;
 
+  const color = isTeam1 ? "var(--color-team1, #00f0ff)" : "var(--color-team2, #ff3b30)";
+
   return (
-    <div className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-      <div className={`flex items-start gap-3 ${isTeam1 ? "" : "flex-row-reverse"}`}>
-        <div className="flex-shrink-0 mt-0.5">
-          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 block text-center
-            ${isTeam1 ? "bg-team1/20 text-team1" : "bg-team2/20 text-team2"}`}>
-            R{round.round}
-          </span>
-        </div>
-        <div className={`flex-1 border-l-2 pl-4 ${isTeam1 ? "border-team1/40" : "border-team2/40 border-r-2 border-l-0 pr-4 pl-0 text-right"}`}>
-          <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-            <span className={`font-display text-base uppercase tracking-wide font-bold ${isTeam1 ? "text-team1" : "text-team2"}`}>
-              {round.attacker}
-            </span>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 bg-muted/20 px-1.5">
-              {round.attackType}
-            </span>
-          </div>
-          <p className={`text-sm leading-relaxed text-foreground/90 transition-all duration-300 ${textVisible ? "opacity-100" : "opacity-0"}`}>
-            {round.narrative}
-          </p>
-        </div>
+    <div className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+      {/* Round header */}
+      <div className="flex items-center gap-3 mb-3">
+        <span
+          className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 shrink-0"
+          style={{ background: `${color}18`, color, border: `1px solid ${color}40` }}
+        >
+          Round {round.round}
+        </span>
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 bg-muted/20 px-1.5 py-0.5">
+          {round.attacker} · {round.attackType}
+        </span>
+      </div>
+      {/* Narrative — full paragraph(s) */}
+      <div
+        className={`border-l-2 pl-4 transition-all duration-400 ${textVisible ? "opacity-100" : "opacity-0"}`}
+        style={{ borderColor: `${color}50` }}
+      >
+        <p className="text-sm leading-loose text-foreground/90 whitespace-pre-line">
+          {round.narrative}
+        </p>
       </div>
     </div>
   );
@@ -523,31 +525,43 @@ export function FightScreen({
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
 
-                {/* Arena intro — shown before rounds, fades in once */}
+                {/* 1. SETTING — arena description */}
                 {result.arenaIntro && (
                   <div className="mb-1 px-1 animate-in fade-in duration-700">
-                    <div className="border-l-2 border-muted-foreground/30 pl-4 py-1">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/60 mb-1.5">
-                        — The Arena —
-                      </p>
-                      <p className="text-sm leading-relaxed text-foreground/70 italic">
-                        {result.arenaIntro}
-                      </p>
-                    </div>
-                    <div className="mt-3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/50 mb-2">
+                      ── Setting ──
+                    </p>
+                    <p className="text-sm leading-relaxed text-foreground/75 italic">
+                      {result.arenaIntro}
+                    </p>
+                    <div className="mt-4 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                   </div>
                 )}
 
+                {/* 2. COMBATANT ENTRANCE */}
+                {result.intro && (
+                  <div className="mb-1 px-1 animate-in fade-in duration-700 delay-200">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/50 mb-2">
+                      ── Combatants Enter ──
+                    </p>
+                    <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">
+                      {result.intro}
+                    </p>
+                    <div className="mt-4 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  </div>
+                )}
+
+                {/* 3–5. ROUNDS — auto-revealed in sequence */}
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
                   <RoundBlock key={idx} round={round} index={idx} />
                 ))}
 
-                {/* "Waiting for results" state — all rounds shown */}
+                {/* All rounds done — prompt to see results */}
                 {allRoundsDone && (
                   <div className="pt-4 pb-2 animate-in fade-in duration-500">
                     <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mt-4">
-                      {result.rounds.length} rounds complete — tap to see the outcome
+                      The dust settles — tap to see the outcome
                     </p>
                   </div>
                 )}
