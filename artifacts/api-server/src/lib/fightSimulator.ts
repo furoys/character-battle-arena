@@ -1405,6 +1405,188 @@ function teamPower(team: Character[]): number {
   return raw * computeSynergy(team).multiplier;
 }
 
+// ─── Logical Decision System ───────────────────────────────────────────────
+// Determine the winner BEFORE the fight using stat tiers, special abilities,
+// hard counters, and speed blitz potential. The narrative MUST reflect this —
+// blowouts are short and dominant; only true peers get back-and-forth fights.
+
+type Tier = "cosmic" | "elite" | "powerhouse" | "standard" | "street";
+type MismatchLevel = "BLOWOUT" | "DOMINANT" | "SOLID" | "CLOSE" | "TOSSUP";
+
+interface MatchupAssessment {
+  verdict:           1 | 2;            // who must win
+  mismatchLevel:     MismatchLevel;
+  recommendedRounds: number;            // 1..5
+  team1Tier:         Tier;
+  team2Tier:         Tier;
+  reasoning:         string;            // human-readable for AI prompt
+  hardCounter:       boolean;           // hard counter forced the verdict
+  forceDominant:     boolean;           // if true, simulator must NOT let underdog win
+}
+
+function avgCharStat(c: Character): number {
+  return (c.strength + c.speed + c.intelligence + c.durability) / 4;
+}
+function teamAvgStat(team: Character[]): number {
+  return team.reduce((s, c) => s + avgCharStat(c), 0) / team.length;
+}
+function teamMaxStat(team: Character[]): number {
+  return Math.max(...team.map(avgCharStat));
+}
+function teamHas(team: Character[], tag: string): boolean {
+  return team.some(c => getTags(c).has(tag));
+}
+// Reality-warpers can appear under either canonical tag.
+function teamHasReality(team: Character[]): boolean {
+  return team.some(c => {
+    const tags = getTags(c);
+    return tags.has("reality") || tags.has("reality-warper");
+  });
+}
+function classifyTier(team: Character[]): Tier {
+  const peak = teamMaxStat(team);
+  const avg  = teamAvgStat(team);
+  // Cosmic-tier requires either world-shaking stats OR cosmic/reality tags.
+  if (peak >= 8000 || teamHas(team, "cosmic") || teamHasReality(team)) return "cosmic";
+  if (peak >= 6500 || avg >= 6000 || teamHas(team, "immortal")) return "elite";
+  if (peak >= 5000 || avg >= 4500) return "powerhouse";
+  if (peak >= 3500 || avg >= 3000) return "standard";
+  return "street";
+}
+const TIER_RANK: Record<Tier, number> = {
+  street: 0, standard: 1, powerhouse: 2, elite: 3, cosmic: 4,
+};
+
+function assessMatchup(team1: Character[], team2: Character[]): MatchupAssessment {
+  const tier1 = classifyTier(team1);
+  const tier2 = classifyTier(team2);
+  const tierGap = TIER_RANK[tier1] - TIER_RANK[tier2]; // + → team1 stronger
+
+  const power1 = teamPower(team1);
+  const power2 = teamPower(team2);
+  const powerRatio = power1 / power2;
+  const avg1 = teamAvgStat(team1);
+  const avg2 = teamAvgStat(team2);
+  const speedRatio = (team1.reduce((s, c) => s + c.speed, 0) / team1.length) /
+                     Math.max(1, team2.reduce((s, c) => s + c.speed, 0) / team2.length);
+
+  // Hard counters — these can flip a stat-based verdict.
+  // 1) Reality-warper vs anything without a counter — auto-win for warper.
+  const t1HasReality = teamHas(team1, "reality-warper");
+  const t2HasReality = teamHas(team2, "reality-warper");
+  const t1HasCosmic  = teamHas(team1, "cosmic");
+  const t2HasCosmic  = teamHas(team2, "cosmic");
+  const t1HasImmortal = teamHas(team1, "immortal");
+  const t2HasImmortal = teamHas(team2, "immortal");
+  const t1HasRegen    = teamHas(team1, "regen");
+  const t2HasRegen    = teamHas(team2, "regen");
+
+  let hardCounter = false;
+  let counterWinner: 1 | 2 | null = null;
+  let counterReason = "";
+
+  // Reality-warping beats non-reality opponents unless they're also cosmic.
+  if (t1HasReality && !t2HasReality && !t2HasCosmic) {
+    hardCounter = true; counterWinner = 1;
+    counterReason = "Reality-warping cannot be answered by conventional combat — outcome can be edited.";
+  } else if (t2HasReality && !t1HasReality && !t1HasCosmic) {
+    hardCounter = true; counterWinner = 2;
+    counterReason = "Reality-warping cannot be answered by conventional combat — outcome can be edited.";
+  }
+  // Immortal/regen vs non-lethal opponent is unwinnable for the lesser side.
+  else if (t1HasImmortal && tier2 === "street") {
+    hardCounter = true; counterWinner = 1;
+    counterReason = "Immortality cannot be overcome by street-level damage. Underdog has no win condition.";
+  } else if (t2HasImmortal && tier1 === "street") {
+    hardCounter = true; counterWinner = 2;
+    counterReason = "Immortality cannot be overcome by street-level damage. Underdog has no win condition.";
+  }
+
+  // Stat-based verdict (default if no hard counter).
+  const statVerdict: 1 | 2 = powerRatio >= 1.0 ? 1 : 2;
+  const verdict: 1 | 2 = counterWinner ?? statVerdict;
+
+  // Mismatch level — primarily tier-driven, then stat-ratio driven.
+  const absTierGap = Math.abs(tierGap);
+  const ratio = Math.max(powerRatio, 1 / powerRatio); // ≥ 1
+  let mismatchLevel: MismatchLevel;
+  if (hardCounter)             mismatchLevel = "BLOWOUT";
+  else if (absTierGap >= 2)    mismatchLevel = "BLOWOUT";       // street vs powerhouse, etc.
+  else if (absTierGap === 1)   mismatchLevel = "DOMINANT";
+  else if (ratio >= 1.30)      mismatchLevel = "SOLID";          // same tier but clearly ahead
+  else if (ratio >= 1.10)      mismatchLevel = "CLOSE";
+  else                         mismatchLevel = "TOSSUP";
+
+  // Severe BLOWOUTS (hard counter or 3+ tier gap) collapse to 1 round.
+  const severeBlowout = hardCounter || absTierGap >= 3;
+  const roundCount =
+    severeBlowout                ? 1 :
+    mismatchLevel === "BLOWOUT"  ? 2 :
+    mismatchLevel === "DOMINANT" ? 3 :
+    mismatchLevel === "SOLID"    ? 4 :
+                                   5;
+
+  // Speed blitz hint.
+  let speedNote = "";
+  if (speedRatio >= 1.8 && verdict === 1)      speedNote = " Team 1 is dramatically faster — they should land hits before Team 2 can react.";
+  else if (speedRatio <= 1 / 1.8 && verdict === 2) speedNote = " Team 2 is dramatically faster — they should land hits before Team 1 can react.";
+
+  // Compose human-readable reasoning for the AI.
+  const winnerSide = verdict === 1 ? "Team 1" : "Team 2";
+  const loserSide  = verdict === 1 ? "Team 2" : "Team 1";
+  const winnerTier = verdict === 1 ? tier1 : tier2;
+  const loserTier  = verdict === 1 ? tier2 : tier1;
+  const winnerAvg  = Math.round(verdict === 1 ? avg1 : avg2);
+  const loserAvg   = Math.round(verdict === 1 ? avg2 : avg1);
+
+  const tierExplain = (t: Tier) => {
+    switch (t) {
+      case "cosmic":     return "cosmic / reality-shaping";
+      case "elite":      return "elite / planetary";
+      case "powerhouse": return "powerhouse / continental";
+      case "standard":   return "standard / city-level";
+      case "street":     return "street-level";
+    }
+  };
+
+  let reasoning =
+    `${winnerSide} (${tierExplain(winnerTier)}, avg stat ${winnerAvg}) vs ${loserSide} (${tierExplain(loserTier)}, avg stat ${loserAvg}). ` +
+    `Verdict: ${winnerSide} wins. Mismatch: ${mismatchLevel}.${speedNote}` +
+    (counterReason ? ` HARD COUNTER: ${counterReason}` : "") +
+    (t1HasRegen && verdict === 1 ? " Team 1 has regeneration — finishing them is non-trivial." : "") +
+    (t2HasRegen && verdict === 2 ? " Team 2 has regeneration — finishing them is non-trivial." : "");
+
+  // Stylistic guidance based on mismatch level.
+  switch (mismatchLevel) {
+    case "BLOWOUT":
+      reasoning += ` This is NOT a contest — it's a beatdown. Write 1-2 short, dominant rounds. The weaker side never gets a real hit. NO artificial tension.`;
+      break;
+    case "DOMINANT":
+      reasoning += ` ${loserSide} can land a glancing blow but cannot meaningfully threaten ${winnerSide}. Write 2-3 rounds with clear domination.`;
+      break;
+    case "SOLID":
+      reasoning += ` ${loserSide} can compete in moments but the outcome is never in real doubt. Write 3-4 rounds, ${winnerSide} edging ahead.`;
+      break;
+    case "CLOSE":
+      reasoning += ` Genuine fight — both sides land real hits. Write the full 5 rounds with momentum swings, but ${winnerSide} ultimately closes it out.`;
+      break;
+    case "TOSSUP":
+      reasoning += ` Near-mirror match. Write 5 rounds of true back-and-forth. ${winnerSide} only wins on the final exchange.`;
+      break;
+  }
+
+  return {
+    verdict,
+    mismatchLevel,
+    recommendedRounds: roundCount,
+    team1Tier: tier1,
+    team2Tier: tier2,
+    reasoning,
+    hardCounter,
+    forceDominant: mismatchLevel === "BLOWOUT" || mismatchLevel === "DOMINANT" || hardCounter,
+  };
+}
+
 // Apply a concrete damage bonus when an attacker's power type exploits a defender's known weakness.
 // This makes weaknesses mechanically meaningful, not just narrative flavor.
 function getWeaknessBonus(attacker: Character, defender: Character): number {
@@ -1612,6 +1794,7 @@ async function generateAINarrative(
   roundSimData: RoundSimData[],
   winner: number,
   tone: FightTone = "cinematic",
+  assessment?: MatchupAssessment,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -1649,21 +1832,83 @@ async function generateAINarrative(
     ? `\nBetrayal rounds: ${betrayalRounds.join(", ")} — a team member turns on their own side.`
     : "";
 
-  const prompt = `You are a fight narrator. Write a visceral, power-specific battle across FIVE rounds.
+  // Round count is dynamic — driven by the logical decision system.
+  // Blowouts get 1-2 rounds; close fights get the full 5.
+  const roundCount = roundSimData.length;
+
+  // Per-round directive templates, indexed by [position, totalRounds].
+  // We pick the right template for each round based on the assessment.
+  const mismatch = assessment?.mismatchLevel ?? "CLOSE";
+  const dominantArc = mismatch === "BLOWOUT" || mismatch === "DOMINANT" || assessment?.hardCounter;
+
+  const directiveFor = (idx: number, total: number): string => {
+    const r = rd(idx);
+    const moveHint = r ? `${r.attackerName} uses ${r.attackMove}.` : "";
+    const hp = hpNote(idx);
+    const isFirst = idx === 0;
+    const isLast  = idx === total - 1;
+
+    // Dominant arcs: every round, the favored side controls. No fake reversals.
+    if (dominantArc) {
+      if (isFirst && isLast)
+        return `(SINGLE-ROUND BEATDOWN. ${moveHint} ${hp} ${winnerNames} ends this in the opening exchange. Show why the gap is unbridgeable. ${loserNames} barely registers what hit them.)`;
+      if (isFirst)
+        return `(Opening dominance. ${moveHint} ${hp} ${winnerNames} establishes the gap immediately. ${loserNames} reels and tries to mount any response. They can't.)`;
+      if (isLast)
+        return `(Finish. ${moveHint} ${hp} ${winnerNames} closes it out. ${loserNames} never had a window. Pick a specific, decisive ending — see the ENDINGS list at the bottom.)`;
+      return `(Continued domination. ${moveHint} ${hp} ${loserNames} attempts something — it fails clearly. ${winnerNames} answers harder.)`;
+    }
+
+    // SOLID — winner edges ahead, loser gets a few real moments but never threatens.
+    if (mismatch === "SOLID") {
+      if (isFirst)
+        return `(Opening. ${moveHint} ${hp} Both sides feel each other out. ${winnerNames} lands the cleaner hit but ${loserNames} stays in it.)`;
+      if (isLast)
+        return `(Finish. ${moveHint} ${hp} ${winnerNames} closes the gap they'd been building. ${loserNames} fought hard but it was never enough. Pick a specific ending.)`;
+      return `(Middle exchange. ${moveHint} ${hp} ${loserNames} lands one — it doesn't change the trajectory. ${winnerNames} continues to control.)`;
+    }
+
+    // CLOSE / TOSSUP — full back-and-forth.
+    if (isFirst)
+      return `(Opening. ${moveHint} ${hp} Describe the power activation in full sensory detail, the impact, and the target's reaction. First blood. Momentum is unclear.)`;
+    if (idx === 1)
+      return `(Escalation. ${moveHint} ${hp} Both sides reveal more of what they can do. Show the visual scale of the powers growing. One side edges ahead but it's not decisive.)`;
+    if (idx === Math.floor(total / 2))
+      return `(TURNING POINT. ${moveHint} ${hp} Something shifts — a desperate counter, a power used in a new way, a hit that lands harder than expected. Make the reader unsure who survives.)`;
+    if (idx === total - 2)
+      return `(Last stand. ${moveHint} ${hp} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)`;
+    if (isLast)
+      return `(Finale. ${moveHint} ${hp} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. Pick a specific ending — see the ENDINGS list at the bottom.)`;
+    return `(Mid-round exchange. ${moveHint} ${hp} Real damage on both sides.)`;
+  };
+
+  const roundSections = Array.from({ length: roundCount }, (_, i) =>
+    `=== ROUND ${i + 1} ===\n${directiveFor(i, roundCount)}`
+  ).join("\n\n");
+
+  const verdictBlock = assessment ? `
+
+LOGICAL VERDICT (decided BEFORE this fight, you MUST honor it):
+${assessment.reasoning}
+The simulation already determined ${winnerNames} as the winner — your job is to make the prose match the verdict's mismatch level. Do NOT manufacture artificial tension. Do NOT give the weaker side moments they shouldn't have.` : "";
+
+  const prompt = `You are a fight narrator. Write a visceral, power-specific battle across ${roundCount} round${roundCount === 1 ? "" : "s"}.
 
 ${TONE_INSTRUCTIONS[tone]}
+${verdictBlock}
 
 FIGHTERS:
 Team 1: ${team1Info}
 Team 2: ${team2Info}
 Arena: ${arena.name} — ${arena.flavor.join(" ")}
 Winner: ${winnerNames} defeats ${loserNames}${betrayalNote}
+${specialNotes ? `Special notes: ${specialNotes}` : ""}
 
 POWER WRITING RULES — apply these to every round:
 • Describe EXACTLY what each power looks like when it fires: colour, sound, heat, light, physical distortion, smell of ozone, shockwave, etc.
 • Describe what the power DOES to the target: where it hits, what the impact looks like, how the target's body reacts, what visible damage occurs.
 • Describe the RESPONSE: does the target stagger, get launched, crater the ground, scream, or absorb it silently?
-• Never say "attacks" or "fights" — say WHAT they do. "Blasts with heat vision that cuts a white-hot trench across the chest." "Drives a knee strike so fast it cracks the sound barrier, shattering three ribs and a wall behind them."
+• Never say "attacks" or "fights" — say WHAT they do.
 • Each power use must be unique to that character — no generic punches unless that IS their power.
 
 You MUST use these exact markers (surrounded by === on their own line) to separate sections.
@@ -1675,41 +1920,28 @@ Do NOT skip any section. Every section needs real content.
 === ENTRANCE ===
 (2-4 sentences: each fighter arrives. What their power looks like at rest — aura, energy, physical presence. No attacks.)
 
-=== ROUND 1 ===
-(Opening. ${rd(0) ? `${rd(0).attackerName} strikes first with ${rd(0).attackMove}.` : "First move."} ${hpNote(0)} Describe the power activation in full sensory detail, the impact, and the target's reaction. First blood. Momentum is unclear.)
-
-=== ROUND 2 ===
-(Escalation. ${rd(1) ? `${rd(1).attackerName} uses ${rd(1).attackMove}.` : "Powers unleashed."} ${hpNote(1)} Both sides reveal more of what they can do. Show the visual scale of the powers growing. One side edges ahead but it's not decisive.)
-
-=== ROUND 3 ===
-(TURNING POINT. ${rd(2) ? `${rd(2).attackerName} deploys ${rd(2).attackMove}.` : "Pivotal moment."} ${hpNote(2)} Something shifts — a desperate counter, a power used in a new way, a hit that lands harder than expected. Make the reader genuinely unsure who survives.)
-
-=== ROUND 4 ===
-(Last stand. ${rd(3) ? `${rd(3).attackerName} launches ${rd(3).attackMove}.` : "Final push."} ${hpNote(3)} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)
-
-=== ROUND 5 ===
-(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the decisive blow: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it.
-VARY how the fight ends — do NOT default to killing. Real fights end many ways. Pick whichever fits best for ${loserNames} and the power gap:
-  • KNOCKOUT — loser is out cold, chest still rising, clearly not getting up.
-  • INCAPACITATION — a limb is broken, a joint is destroyed, they literally cannot continue.
-  • SURRENDER / YIELD — loser signals defeat: hands up, dropping their weapon, tapping out, kneeling.
-  • FORCED RETREAT — loser bolts, teleports away, is dragged off by allies, or the environment swallows them.
-  • MERCY / SPARED — winner chooses not to finish them; we see the loser broken but breathing.
-  • HUMILIATION / OUTCLASSED — not a single effective hit landed; loser is exhausted, embarrassed, done.
-  • CAPTURED / PINNED — winner holds loser in a position they cannot escape from.
-  • DEATH — only when the power/lethality gap genuinely warrants it (e.g. cosmic vs mortal, a finisher with no survivable version).
-Pick ONE ending that best fits these combatants. Do NOT narrate all of them. Do NOT reuse "goes down and stays down" — describe the specific way this loser loses.)
+${roundSections}
 
 === RESULT ===
 (2-3 sentences: declare the winner, describe the physical state of both sides after the specific finish you picked, give one line of finality. If the loser isn't dead, say what state they're actually in — unconscious, broken, fleeing, surrendered, captured — don't leave it ambiguous.)
+
+ENDINGS — pick ONE that fits the characters and power gap (do NOT narrate all of them, do NOT reuse "goes down and stays down"):
+  • KNOCKOUT — out cold, chest still rising.
+  • INCAPACITATION — a limb broken, a joint destroyed, cannot continue.
+  • SURRENDER / YIELD — hands up, dropping their weapon, tapping out, kneeling.
+  • FORCED RETREAT — bolts, teleports away, dragged off by allies.
+  • MERCY / SPARED — winner chooses not to finish; loser broken but breathing.
+  • HUMILIATION / OUTCLASSED — not a single effective hit landed.
+  • CAPTURED / PINNED — held in a position they cannot escape.
+  • DEATH — only when the power/lethality gap genuinely warrants it.
 
 FORMAT RULES:
 - Each round = 2-4 paragraphs. Keep each paragraph punchy — max 4 sentences.
 - NEVER use: "exchanged blows", "fought fiercely", "unleashed their power", "clash of titans", "duel", "battle ensued".
 - Each hit must specify: what power → what it looks like → where it lands → what happens next.
-- Not every fight ends in death. Match the ending to the characters and the power gap.`;
+- Match round length and tension to the verdict's mismatch level. Blowouts are SHORT and DOMINANT.`;
 
-  // 22-second window for 5-round narrative (30s proxy limit minus buffer)
+  // 22-second AI window (30s proxy limit minus buffer).
   const raw = await aiTextWithTimeout(prompt, 2500, 22_000);
 
   if (!raw.trim()) {
@@ -1717,18 +1949,16 @@ FORMAT RULES:
   }
 
   const arenaIntro  = extractSection(raw, "SETTING");
-  let   intro       = extractSection(raw, "ENTRANCE", "COMBATANT ENTRANCE");
-  const round1      = extractSection(raw, "ROUND 1");
-  const round2      = extractSection(raw, "ROUND 2");
-  const round3      = extractSection(raw, "ROUND 3");
-  const round4      = extractSection(raw, "ROUND 4");
-  const round5      = extractSection(raw, "ROUND 5");
+  const intro       = extractSection(raw, "ENTRANCE", "COMBATANT ENTRANCE");
   const resultText  = extractSection(raw, "RESULT");
+  const roundNarratives = Array.from({ length: roundCount }, (_, i) =>
+    extractSection(raw, `ROUND ${i + 1}`)
+  );
 
   return {
     arenaIntro,
     intro,
-    roundNarratives: [round1, round2, round3, round4, round5],
+    roundNarratives,
     resultText,
   };
 }
@@ -1737,6 +1967,11 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   const tone = normalizeTone(mode);
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
+
+  // ── LOGICAL DECISION SYSTEM ────────────────────────────────────────────────
+  // Decide the winner BEFORE simulating combat. The simulation must serve the
+  // verdict — blowouts stay short and dominant, only true peers get drama.
+  const assessment = assessMatchup(team1, team2);
 
   // Power gap: 0 = equal, ~±0.35 at extreme mismatch
   const totalPower = base1 + base2;
@@ -1758,7 +1993,9 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const rounds: FightRound[] = [];
 
-  const maxRounds = 5; // 5 rounds — builds suspense with a proper 5-act arc
+  // Round count comes from the logical decision system — blowouts get 1-2 rounds,
+  // close fights get the full 5. No more 5-round padding for mismatches.
+  const maxRounds = assessment.recommendedRounds;
   const arena = pickRandom(arenas);
 
   // Narrative state — separate no-repeat trackers per pool + ability cycling
@@ -2011,7 +2248,38 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     });
   }
 
-  const winner = hp1 >= hp2 ? 1 : 2;
+  // Force the verdict from the logical decision system. If the random walk
+  // produced a different winner, override — the assessment is the source of truth.
+  const hpWinner: 1 | 2 = hp1 >= hp2 ? 1 : 2;
+  const winner: 1 | 2 = assessment.verdict;
+  const overrode = hpWinner !== winner;
+
+  if (assessment.forceDominant) {
+    // Dominant matchup → big HP gap.
+    if (winner === 1) { hp1 = Math.max(hp1, 70); hp2 = Math.min(hp2, 15); }
+    else              { hp2 = Math.max(hp2, 70); hp1 = Math.min(hp1, 15); }
+  } else if (overrode) {
+    // Verdict was overridden in a closer matchup → swap HPs so the declared
+    // winner ends with at least 1 more HP than the loser.
+    if (winner === 1 && hp1 <= hp2) { const t = hp1; hp1 = Math.max(hp2, t + 1); hp2 = t; }
+    else if (winner === 2 && hp2 <= hp1) { const t = hp2; hp2 = Math.max(hp1, t + 1); hp1 = t; }
+  }
+
+  // Whenever we changed the outcome, rewrite the per-round HP timeline so the
+  // displayed HP arc cannot contradict the declared winner. We interpolate
+  // monotonically from 100 down to the final HP across all rounds.
+  if (overrode || assessment.forceDominant) {
+    const winFinal  = winner === 1 ? hp1 : hp2;
+    const loseFinal = winner === 1 ? hp2 : hp1;
+    const total = rounds.length;
+    rounds.forEach((r, i) => {
+      const t = total > 0 ? (i + 1) / total : 1;
+      const winHp  = Math.round(100 - (100 - winFinal)  * t);
+      const loseHp = Math.round(100 - (100 - loseFinal) * t);
+      if (winner === 1) { r.team1Hp = winHp;  r.team2Hp = loseHp; }
+      else              { r.team2Hp = winHp;  r.team1Hp = loseHp; }
+    });
+  }
   const winTeam = winner === 1 ? team1 : team2;
   const loseTeam = winner === 1 ? team2 : team1;
   const winnerNames = winTeam.map((c) => c.name).join(" & ");
@@ -2128,7 +2396,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     isBetrayal: r.attackType === "betrayal",
   }));
 
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone);
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
