@@ -491,6 +491,16 @@ const TAG_PATTERNS: [string, RegExp][] = [
   ["shadow",    /\b(shadow|darkness|void|dark energy|shadow manipulation|shade)\b/i],
   ["water",     /\b(water control|hydrokinesis|ocean|aquatic|tidal|sea power)\b/i],
   ["wind",      /\b(wind|air control|storm|tornado|hurricane|aerokinesis|gale)\b/i],
+  ["regen",     /\b(regenerat\w*|healing factor|regrow\w*|cellular regen\w*|wound close|heals from)\b/i],
+  ["teleport",  /\b(teleport\w*|warp in|warp out|blink\w*|flash step|instant transmission|short-range warp)\b/i],
+  ["energy-proj", /\b(beam|blast\w*|energy projection|energy attack|chi blast|ki blast|laser\w*|optic blast|breath attack)\b/i],
+  ["intangible",/\b(intangib\w*|phase through|phasing|incorporeal|ghost form|astral)\b/i],
+  ["bfr",       /\b(banish|seal away|trap in|exile|sealing|imprison|pocket dimension|prison realm|infinite void)\b/i],
+  ["mind-ctrl", /\b(mind control|brainwash|hypnosis|charm|domination|compulsion|enslave)\b/i],
+  ["dura-bypass", /\b(soul attack|ignores armor|ignores durability|bypasses defense|piercing damage|hax damage|conceptual damage)\b/i],
+  ["absorb",    /\b(absorb power|copy power|steal power|power mimic|power absorption|drain power|leech)\b/i],
+  ["status",    /\b(paralysis|petrify|stun|disease|plague|curse status|status effect|sleep magic)\b/i],
+  ["prep",      /\b(prep time|preparation|gadget|countermeasure|contingency|always has a plan|prepared for)\b/i],
 ];
 
 function getTags(char: Character): Set<string> {
@@ -1415,15 +1425,157 @@ function teamPower(team: Character[]): number {
 type Tier = "cosmic" | "elite" | "powerhouse" | "standard" | "street";
 type MismatchLevel = "BLOWOUT" | "DOMINANT" | "SOLID" | "CLOSE" | "TOSSUP";
 
+type UpsetChance = "none" | "low" | "moderate" | "high";
+
 interface MatchupAssessment {
-  verdict:           1 | 2;            // who must win
+  verdict:           1 | 2;             // who must win (the FAVORITE)
   mismatchLevel:     MismatchLevel;
-  recommendedRounds: number;            // 1..5
+  recommendedRounds: number;             // 1..5
   team1Tier:         Tier;
   team2Tier:         Tier;
-  reasoning:         string;            // human-readable for AI prompt
-  hardCounter:       boolean;           // hard counter forced the verdict
-  forceDominant:     boolean;           // if true, simulator must NOT let underdog win
+  reasoning:         string;             // human-readable LOCKED VERDICT block for AI
+  hardCounter:       boolean;            // hard counter forced the verdict
+  forceDominant:     boolean;            // if true, simulator must NOT let underdog win
+  winCondition:      string;             // mechanically how the favorite wins
+  upsetChance:       UpsetChance;        // none / low / moderate / high
+  upsetCondition:    string | null;      // realistic path for the underdog (or null if none)
+}
+
+// ── Hax / capability inventory ───────────────────────────────────────────
+// Returns the set of "win-condition tools" present on a team.
+const HAX_KEYS = [
+  "regen", "immortal", "reality", "reality-warper", "cosmic", "time", "bfr",
+  "mind-ctrl", "psychic", "soul", "dura-bypass", "absorb", "intangible",
+  "teleport", "energy-proj", "magic", "status", "poison", "prep", "speedster",
+] as const;
+
+function teamHax(team: Character[]): Set<string> {
+  const all = new Set<string>();
+  for (const c of team) for (const t of getTags(c)) if ((HAX_KEYS as readonly string[]).includes(t)) all.add(t);
+  return all;
+}
+function teamWeaknessText(team: Character[]): string {
+  return team.map(c => c.weaknesses || "").join(" | ").toLowerCase();
+}
+
+// Derive the most likely WIN CONDITION based on the favorite's strongest tool
+// vs the loser's profile. Returns a short, mechanical phrase.
+function deriveWinCondition(
+  winnerTeam: Character[],
+  loserTeam: Character[],
+  winHax: Set<string>,
+  loseHax: Set<string>,
+  mismatch: MismatchLevel,
+  speedRatio: number, // winner-speed / loser-speed
+): string {
+  const winnerName = winnerTeam.map(c => c.name).join(" & ");
+  const loserName  = loserTeam.map(c => c.name).join(" & ");
+
+  // 1) Reality-warp / time stop — outcome is rewritten, ONLY if the opponent
+  // doesn't have the same domain to counter with.
+  const winnerHasReality = winHax.has("reality") || winHax.has("reality-warper");
+  const loserHasReality  = loseHax.has("reality") || loseHax.has("reality-warper");
+  if (winnerHasReality && !loserHasReality && !loseHax.has("cosmic"))
+    return `${winnerName} edits the outcome — reality-warping bypasses any defense ${loserName} could mount.`;
+  if (winnerHasReality && loserHasReality)
+    return `Both sides bend reality — ${winnerName} wins the warp duel through superior raw power and faster intent.`;
+  if (winHax.has("time") && !loseHax.has("time") && !loserHasReality)
+    return `${winnerName} stops/manipulates time — ${loserName} can't act inside the locked moment.`;
+
+  // 2) BFR — battlefield removal ends the fight before damage matters.
+  if (winHax.has("bfr") && !loseHax.has("bfr") && !loseHax.has("reality"))
+    return `${winnerName} seals/banishes ${loserName} — fight ends without a kill, no escape.`;
+
+  // 3) Mind control / soul attack — bypasses physical defenses.
+  if (winHax.has("mind-ctrl") && !loseHax.has("mind-ctrl"))
+    return `${winnerName} takes ${loserName}'s mind — the body fights for the wrong side.`;
+  if ((winHax.has("soul") || winHax.has("dura-bypass")) && !loseHax.has("dura-bypass"))
+    return `${winnerName} lands a defense-bypassing strike — armor and durability don't matter.`;
+
+  // 4) Speed blitz — reaction gap means hits land before defense can form.
+  if (speedRatio >= 1.8)
+    return `${winnerName} blitzes — ${loserName} can't track the movement, takes hits before a guard goes up.`;
+
+  // 5) Regen outlast — winner has regen, loser has no finisher.
+  if (winHax.has("regen") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
+    return `${winnerName} outlasts ${loserName} — regeneration nullifies every hit they can land.`;
+  if (winHax.has("immortal") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
+    return `${winnerName} can't be put down by anything ${loserName} brings — they wear them out and finish at leisure.`;
+
+  // 6) Mismatch-driven defaults.
+  if (mismatch === "BLOWOUT")
+    return `Pure power gap — ${winnerName} ends ${loserName} in one or two clean exchanges. Nothing ${loserName} does meaningfully connects.`;
+  if (mismatch === "DOMINANT")
+    return `${winnerName} dictates every exchange — ${loserName} eats clean hits trying to find an opening that isn't there.`;
+  if (mismatch === "SOLID")
+    return `${winnerName} has the better tools and uses them — they grind ${loserName} down with consistent damage and superior positioning.`;
+
+  // 7) Close fights — pick a flavour based on what the winner has.
+  if (winHax.has("prep")) return `${winnerName} executes a planned counter at the right moment — ${loserName} doesn't see it coming until it's done.`;
+  if (winHax.has("energy-proj")) return `${winnerName} closes the gap and lands a decisive ranged finisher when ${loserName} commits to attack.`;
+  return `${winnerName} closes it out by landing the right hit at the right moment — superior consistency over ${loserName}.`;
+}
+
+// Derive the realistic upset path. Returns null if no believable path exists.
+function deriveUpsetCondition(
+  loserTeam: Character[],
+  winnerTeam: Character[],
+  loseHax: Set<string>,
+  winHax: Set<string>,
+  mismatch: MismatchLevel,
+  hardCounter: boolean,
+  winnerWeakness: string,
+): { chance: UpsetChance; condition: string | null } {
+  const loserName  = loserTeam.map(c => c.name).join(" & ");
+  const winnerName = winnerTeam.map(c => c.name).join(" & ");
+
+  // Hard counters → no realistic upset.
+  if (hardCounter) return { chance: "none", condition: null };
+
+  const winnerHasReality = winHax.has("reality") || winHax.has("reality-warper");
+  const loserHasReality  = loseHax.has("reality") || loseHax.has("reality-warper");
+
+  const upsetTools: string[] = [];
+  // Top-tier fight-flippers first.
+  if (loserHasReality && !winnerHasReality)
+    upsetTools.push(`if ${loserName} commits to reality-warping, ${winnerName} has no answer in-domain`);
+  if (loseHax.has("time") && !winHax.has("time") && !winnerHasReality)
+    upsetTools.push(`if ${loserName} stops or rewinds time first, ${winnerName} can't act`);
+  if (loseHax.has("dura-bypass") || loseHax.has("soul"))
+    upsetTools.push(`if ${loserName} lands a defense-bypassing strike first, ${winnerName}'s durability won't save them`);
+  if (loseHax.has("bfr") && !winHax.has("bfr") && !winnerHasReality)
+    upsetTools.push(`if ${loserName} can seal/banish ${winnerName}, the fight ends regardless of stats`);
+  if (loseHax.has("mind-ctrl") && !winHax.has("mind-ctrl"))
+    upsetTools.push(`if ${loserName} gets a mind-control hit in early, ${winnerName} fights for the wrong side`);
+  if (loseHax.has("intangible") && !winHax.has("dura-bypass") && !winHax.has("magic") && !winHax.has("soul"))
+    upsetTools.push(`if ${loserName} stays intangible, ${winnerName}'s physical attacks don't connect`);
+  if (loseHax.has("teleport") && !winHax.has("teleport") && !winHax.has("speedster"))
+    upsetTools.push(`if ${loserName} uses teleportation to control range, ${winnerName} can't keep up`);
+  if (loseHax.has("absorb") && (winHax.has("energy-proj") || winHax.has("magic") || winHax.has("cosmic")))
+    upsetTools.push(`if ${loserName} absorbs ${winnerName}'s energy attacks, the power gap closes`);
+  if (loseHax.has("status") || loseHax.has("poison"))
+    upsetTools.push(`if a status/poison effect lands cleanly, ${winnerName} loses control of the fight`);
+  if (loseHax.has("prep"))
+    upsetTools.push(`with prep time, ${loserName} could exploit a known weakness or stage a trap`);
+  if (loseHax.has("regen") && !winHax.has("dura-bypass") && !winHax.has("soul") && !winHax.has("bfr"))
+    upsetTools.push(`if ${loserName} outlasts ${winnerName}'s stamina via regeneration, the fight inverts`);
+  if (winnerWeakness && winnerWeakness.length > 5 && (loseHax.has("magic") || loseHax.has("prep") || loseHax.has("psychic")))
+    upsetTools.push(`if ${loserName} exploits ${winnerName}'s known weakness — ${winnerWeakness.slice(0, 80)}`);
+
+  if (upsetTools.length === 0) {
+    if (mismatch === "BLOWOUT" || mismatch === "DOMINANT") return { chance: "none", condition: null };
+    if (mismatch === "SOLID") return { chance: "low", condition: `${loserName} would need a perfect read and a clean counter — possible, not likely.` };
+    if (mismatch === "CLOSE") return { chance: "moderate", condition: `${loserName} can win any single exchange — momentum could swing if they capitalize.` };
+    return { chance: "high", condition: `Either side can win — comes down to execution and luck of the early exchanges.` };
+  }
+
+  // Has actual upset tools → calibrate chance by mismatch.
+  const chance: UpsetChance =
+    mismatch === "BLOWOUT"  ? "low" :
+    mismatch === "DOMINANT" ? "low" :
+    mismatch === "SOLID"    ? "moderate" :
+                              "high";
+  return { chance, condition: upsetTools.slice(0, 2).join("; ") };
 }
 
 function avgCharStat(c: Character): number {
@@ -1551,31 +1703,61 @@ function assessMatchup(team1: Character[], team2: Character[]): MatchupAssessmen
     }
   };
 
-  let reasoning =
-    `${winnerSide} (${tierExplain(winnerTier)}, avg stat ${winnerAvg}) vs ${loserSide} (${tierExplain(loserTier)}, avg stat ${loserAvg}). ` +
-    `Verdict: ${winnerSide} wins. Mismatch: ${mismatchLevel}.${speedNote}` +
-    (counterReason ? ` HARD COUNTER: ${counterReason}` : "") +
-    (t1HasRegen && verdict === 1 ? " Team 1 has regeneration — finishing them is non-trivial." : "") +
-    (t2HasRegen && verdict === 2 ? " Team 2 has regeneration — finishing them is non-trivial." : "");
+  // ── Per-team hax inventory and locked-in win/upset condition ────────────
+  const winnerTeam = verdict === 1 ? team1 : team2;
+  const loserTeam  = verdict === 1 ? team2 : team1;
+  const winHax     = teamHax(winnerTeam);
+  const loseHax    = teamHax(loserTeam);
+  const winnerSpeedRatio = verdict === 1 ? speedRatio : 1 / speedRatio;
+  const winnerWeakness   = teamWeaknessText(winnerTeam);
 
-  // Stylistic guidance based on mismatch level.
-  switch (mismatchLevel) {
-    case "BLOWOUT":
-      reasoning += ` This is NOT a contest — it's a beatdown. Write 1-2 short, dominant rounds. The weaker side never gets a real hit. NO artificial tension.`;
-      break;
-    case "DOMINANT":
-      reasoning += ` ${loserSide} can land a glancing blow but cannot meaningfully threaten ${winnerSide}. Write 2-3 rounds with clear domination.`;
-      break;
-    case "SOLID":
-      reasoning += ` ${loserSide} can compete in moments but the outcome is never in real doubt. Write 3-4 rounds, ${winnerSide} edging ahead.`;
-      break;
-    case "CLOSE":
-      reasoning += ` Genuine fight — both sides land real hits. Write the full 5 rounds with momentum swings, but ${winnerSide} ultimately closes it out.`;
-      break;
-    case "TOSSUP":
-      reasoning += ` Near-mirror match. Write 5 rounds of true back-and-forth. ${winnerSide} only wins on the final exchange.`;
-      break;
-  }
+  const winCondition = deriveWinCondition(
+    winnerTeam, loserTeam, winHax, loseHax, mismatchLevel, winnerSpeedRatio,
+  );
+  const upset = deriveUpsetCondition(
+    loserTeam, winnerTeam, loseHax, winHax, mismatchLevel, hardCounter, winnerWeakness,
+  );
+
+  // Format hax lists for the brief (drop empty / redundant entries).
+  const fmtHax = (s: Set<string>) => {
+    const arr = [...s].filter(t => t !== "speedster"); // already shown via speedNote
+    return arr.length ? arr.join(", ") : "none of note";
+  };
+
+  const stylistic = (() => {
+    switch (mismatchLevel) {
+      case "BLOWOUT":
+        return `This is a STOMP — write it as a stomp. The loser never lands a meaningful hit. NO artificial tension.`;
+      case "DOMINANT":
+        return `${loserSide} can land a glancing blow but cannot meaningfully threaten ${winnerSide}. Clear domination.`;
+      case "SOLID":
+        return `${loserSide} can compete in moments but the outcome is never in real doubt. ${winnerSide} edges ahead.`;
+      case "CLOSE":
+        return `Genuine fight — both sides land real hits with momentum swings. ${winnerSide} ultimately closes it out.`;
+      case "TOSSUP":
+        return `Near-mirror match. True back-and-forth. ${winnerSide} only wins on the final exchange.`;
+    }
+  })();
+
+  // ── LOCKED VERDICT block — what the AI must follow. ──────────────────────
+  const reasoning = [
+    `=== LOCKED VERDICT (battle logic engine output) ===`,
+    `FAVORITE: ${winnerSide} (${tierExplain(winnerTier)}, avg stat ${winnerAvg})`,
+    `UNDERDOG: ${loserSide} (${tierExplain(loserTier)}, avg stat ${loserAvg})`,
+    `MISMATCH: ${mismatchLevel}${speedNote ? "  (speed gap noted)" : ""}`,
+    counterReason ? `HARD COUNTER: ${counterReason}` : null,
+    `WIN CONDITION: ${winCondition}`,
+    `UPSET CHANCE: ${upset.chance}`,
+    upset.condition ? `UPSET CONDITION: ${upset.condition}` : `UPSET CONDITION: none — no realistic path for the underdog.`,
+    `FAVORITE TOOLS: ${fmtHax(winHax)}`,
+    `UNDERDOG TOOLS: ${fmtHax(loseHax)}`,
+    `STYLE: ${stylistic}`,
+    `RULES: Show the WIN CONDITION mechanically in the prose — don't just narrate generically. ` +
+      `If regen is the win condition, show the loser failing to keep them down. ` +
+      `If a defense-bypass hit is the win condition, show that hit landing and durability not mattering. ` +
+      `If speed is the win condition, show the loser unable to react. ` +
+      `Never invent powers neither character has. Never let the loser threaten the favorite if UPSET CHANCE is none/low.`,
+  ].filter(Boolean).join("\n");
 
   return {
     verdict,
@@ -1586,6 +1768,9 @@ function assessMatchup(team1: Character[], team2: Character[]): MatchupAssessmen
     reasoning,
     hardCounter,
     forceDominant: mismatchLevel === "BLOWOUT" || mismatchLevel === "DOMINANT" || hardCounter,
+    winCondition,
+    upsetChance: upset.chance,
+    upsetCondition: upset.condition,
   };
 }
 
