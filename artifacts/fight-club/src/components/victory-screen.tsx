@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Character, FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
-import { Swords, RotateCcw, Copy, Check } from "lucide-react";
+import { Swords, RotateCcw, Copy, Check, Share2 } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";
 
 interface VictoryScreenProps {
@@ -334,9 +334,10 @@ function RoundBreakdown({ result }: { result: FightResult }) {
 }
 
 export function VictoryScreen({ result, mode = "fun", onClose, onRematch }: VictoryScreenProps) {
-  const [phase, setPhase]   = useState(0);
-  const [copied, setCopied] = useState(false);
-  const reasons             = useMemo(() => computeReasons(result), [result]);
+  const [phase, setPhase]     = useState(0);
+  const [copied, setCopied]   = useState(false);
+  const [shared, setShared]   = useState(false);
+  const reasons               = useMemo(() => computeReasons(result), [result]);
 
   const winnerTeam: Character[] = result.winner === 1 ? (result.team1 ?? []) : (result.team2 ?? []);
   const teamColor    = result.winner === 1 ? "team1" : "team2";
@@ -355,27 +356,48 @@ export function VictoryScreen({ result, mode = "fun", onClose, onRematch }: Vict
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  const handleSave = () => {
-    const t1Names  = (result.team1 ?? []).map(c => c.name).join(" & ");
-    const t2Names  = (result.team2 ?? []).map(c => c.name).join(" & ");
-    const wNames   = winnerTeam.map(c => c.name).join(" & ");
-    const modeLabel = mode === "debate" ? "Debate Mode" : "Fun Mode";
-    const text = [
-      `A.v.A — Anyone vs Anyone`,
-      `${t1Names} vs ${t2Names}  [${modeLabel}]`,
+  const buildShareText = (includeHashtags = false) => {
+    const t1Names   = (result.team1 ?? []).map(c => c.name).join(" & ");
+    const t2Names   = (result.team2 ?? []).map(c => c.name).join(" & ");
+    const wNames    = winnerTeam.map(c => c.name).join(" & ");
+    const modeLabel = mode === "debate" ? "Debate" : "Fun";
+    const rounds    = (result.rounds ?? []).length;
+    const tags      = includeHashtags ? "\n\n#AvA #AnyoneVsAnyone" : "";
+    return [
+      `⚔️ A.v.A — Anyone vs Anyone`,
       ``,
-      `Winner: ${wNames}`,
+      `${t1Names} vs ${t2Names} [${modeLabel} Mode]`,
       ``,
-      `Why they won:`,
-      ...reasons.map((r, i) => `${i + 1}. ${r}`),
+      `🏆 Winner: ${wNames}`,
       ``,
-      `${(result.rounds ?? []).length} rounds — ${result.summary ?? ""}`,
-    ].join("\n");
+      reasons[0] ? `"${reasons[0]}"` : "",
+      ``,
+      `${rounds} rounds fought.${tags}`,
+    ].filter(l => l !== undefined).join("\n");
+  };
 
+  const handleShare = async () => {
+    const text = buildShareText(false);
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "A.v.A — Anyone vs Anyone", text });
+        setShared(true);
+        setTimeout(() => setShared(false), 2200);
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
     }).catch(() => {});
+  };
+
+  const handleTweet = () => {
+    const text = buildShareText(true);
+    const url  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -550,16 +572,31 @@ export function VictoryScreen({ result, mode = "fun", onClose, onRematch }: Vict
               </button>
 
               <button
-                onClick={handleSave}
+                onClick={handleShare}
                 className="flex items-center gap-2 font-display text-sm uppercase tracking-widest px-5 py-3 border transition-all duration-200 hover:scale-105 active:scale-95"
                 style={{
-                  borderColor: copied ? "#22c55e60" : "rgba(255,255,255,0.12)",
-                  color: copied ? "#22c55e" : "rgba(255,255,255,0.35)",
-                  background: copied ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.02)",
+                  borderColor: (copied || shared) ? "#22c55e60" : "rgba(255,255,255,0.12)",
+                  color: (copied || shared) ? "#22c55e" : "rgba(255,255,255,0.35)",
+                  background: (copied || shared) ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.02)",
                 }}
               >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied!" : "Save"}
+                {(copied || shared) ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                {shared ? "Shared!" : copied ? "Copied!" : "Share"}
+              </button>
+
+              <button
+                onClick={handleTweet}
+                className="flex items-center gap-2 font-display text-sm uppercase tracking-widest px-5 py-3 border transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{
+                  borderColor: "rgba(29,161,242,0.4)",
+                  color: "rgba(29,161,242,0.8)",
+                  background: "rgba(29,161,242,0.05)",
+                }}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.732-8.835L1.254 2.25H8.08l4.254 5.622 5.91-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                Post
               </button>
             </div>
 
