@@ -558,12 +558,18 @@ export function FightScreen({
 
                 {/* All rounds done — prompt to see results */}
                 {allRoundsDone && (
-                  <div className="pt-4 pb-2 animate-in fade-in duration-500">
+                  <button
+                    onClick={() => setShowVictory(true)}
+                    className="w-full pt-4 pb-6 animate-in fade-in duration-500 text-left"
+                  >
                     <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-                    <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mt-4">
-                      The dust settles — tap to see the outcome
+                    <p
+                      className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-primary mt-4"
+                      style={{ animation: "continuePulse 1.5s ease-in-out infinite" }}
+                    >
+                      ▼ The dust settles — tap to see the outcome ▼
                     </p>
-                  </div>
+                  </button>
                 )}
 
                 <div ref={bottomRef} className="h-4" />
