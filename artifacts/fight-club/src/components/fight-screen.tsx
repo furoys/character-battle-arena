@@ -6,6 +6,7 @@ import { VictoryScreen } from "@/components/victory-screen";
 interface FightScreenProps {
   open: boolean;
   onClose: () => void;
+  onRematch?: () => void;
   result: FightResult | null;
   isSimulating: boolean;
   team1Names: string[];
@@ -264,7 +265,7 @@ function RoundBlock({ round, index, onReady }: { round: FightRound; index: numbe
 }
 
 export function FightScreen({
-  open, onClose, result, isSimulating,
+  open, onClose, onRematch, result, isSimulating,
   team1Names, team2Names,
   team1Images = [], team2Images = [],
   mode = "fun",
@@ -323,6 +324,16 @@ export function FightScreen({
       setAllRoundsDone(true);
       setWaitingForInput(true); // show "See Results" button
     }
+  };
+
+  // Rematch: reset fight state then trigger a new fight
+  const handleRematch = () => {
+    setShowVictory(false);
+    setAllRoundsDone(false);
+    setVisibleCount(0);
+    setWaitingForInput(false);
+    setAttackingTeam(0);
+    onRematch?.();
   };
 
   // Skip: reveal all remaining rounds immediately and go to results
@@ -520,7 +531,12 @@ export function FightScreen({
 
         {/* Victory overlay */}
         {showVictory && result && (
-          <VictoryScreen result={result} onClose={onClose} />
+          <VictoryScreen
+            result={result}
+            mode={mode}
+            onClose={onClose}
+            onRematch={onRematch ? handleRematch : undefined}
+          />
         )}
       </div>
     </>

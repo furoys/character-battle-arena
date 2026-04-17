@@ -615,6 +615,9 @@ export function Home() {
         <FightScreen
           open={showModal}
           onClose={() => setShowModal(false)}
+          onRematch={() => {
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
+          }}
           result={simulateFight.data || null}
           isSimulating={simulateFight.isPending}
           team1Names={team1.map(c => c.name)}
