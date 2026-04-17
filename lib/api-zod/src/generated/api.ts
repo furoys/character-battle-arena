@@ -30,6 +30,7 @@ export const ListCharactersResponseItem = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod.array(zod.string()).nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
@@ -76,6 +77,7 @@ export const GetCharacterResponse = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod.array(zod.string()).nullish(),
   createdAt: zod.coerce.date(),
 });
 

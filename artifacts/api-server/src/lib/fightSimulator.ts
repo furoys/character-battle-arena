@@ -451,7 +451,66 @@ function getTags(char: Character): Set<string> {
   for (const [tag, pattern] of TAG_PATTERNS) {
     if (pattern.test(text)) tags.add(tag);
   }
+  // Merge stored behavior tags (assigned by tagCharacters script)
+  for (const t of char.behaviorTags ?? []) tags.add(t);
   return tags;
+}
+
+// ─── Behavior Modifiers ───────────────────────────────────────────────────────
+// Derive per-team combat modifiers from their collective behavior tags.
+interface BehaviorMods {
+  initiativeBonus: number;   // added to attack-probability formula
+  damageMult:      number;   // multiplier on outgoing damage (1.0 = baseline)
+  damageResist:    number;   // multiplier on incoming damage (1.0 = no reduction)
+  regenPerRound:   number;   // HP recovered at end of each round
+  firstStrike:     number;   // extra flat damage bonus on round 1 only
+}
+
+function getTeamBehaviorMods(
+  team: Character[],
+  isDebate: boolean,
+  round: number,
+): BehaviorMods {
+  const tags = new Set<string>();
+  for (const c of team) for (const t of getTags(c)) tags.add(t);
+
+  let initiativeBonus = 0;
+  let damageMult      = 1.0;
+  let damageResist    = 1.0;
+  let regenPerRound   = 0;
+  let firstStrike     = 0;
+
+  // Aggressive teams hit harder and push initiative
+  if (tags.has("aggressive")) { initiativeBonus += 0.07; damageMult += 0.10; }
+
+  // Sadistic fighters press advantages ruthlessly
+  if (tags.has("sadistic")) damageMult += 0.08;
+
+  // Tactical teams are more effective in debate mode; still decisive in fun mode
+  if (tags.has("tactical")) {
+    damageMult      += isDebate ? 0.12 : 0.05;
+    initiativeBonus += isDebate ? 0.05 : 0.03;
+  }
+
+  // Arrogant fighters are overconfident early — slight damage boost rounds 1-2
+  if (tags.has("arrogant") && round <= 2) damageMult += 0.06;
+
+  // Defensive fighters absorb more punishment
+  if (tags.has("defensive")) damageResist *= 0.88;
+
+  // Regenerators slowly claw back HP each round
+  if (tags.has("regen")) regenPerRound += 3;
+
+  // Speedsters already benefit from higher speed stats, but add a small initiative nudge
+  if (tags.has("speedster")) initiativeBonus += 0.04;
+
+  // Stealth bonus: ambush on round 1 only
+  if (tags.has("stealth") && round === 1) firstStrike += 4;
+
+  // Long-range fighters get a small opening-range advantage
+  if (tags.has("long-range") && round === 1) firstStrike += 2;
+
+  return { initiativeBonus, damageMult, damageResist, regenPerRound, firstStrike };
 }
 
 // ─── Fighting Style Detection ─────────────────────────────────────────────────
@@ -1477,8 +1536,12 @@ async function generateAINarrative(
   const winnerNames = winner === 1 ? team1Names : team2Names;
   const loserNames = winner === 1 ? team2Names : team1Names;
 
-  const team1Info = team1.map(c => `${c.name} (${c.universe}) — ${c.specialAbility.slice(0, 80)}`).join("; ");
-  const team2Info = team2.map(c => `${c.name} (${c.universe}) — ${c.specialAbility.slice(0, 80)}`).join("; ");
+  const charProfile = (c: Character) => {
+    const bTags = c.behaviorTags?.length ? ` [${c.behaviorTags.join(", ")}]` : "";
+    return `${c.name} (${c.universe})${bTags} — ${c.specialAbility.slice(0, 80)}`;
+  };
+  const team1Info = team1.map(charProfile).join("; ");
+  const team2Info = team2.map(charProfile).join("; ");
 
   const chaosRounds = roundSimData.filter(r => r.isChaos).map(r => r.round);
   const betrayalRounds = roundSimData.filter(r => r.isBetrayal).map(r => r.round);
@@ -1604,7 +1667,10 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   // ── Chaos tuning ──────────────────────────────────────────────────────────
   // Reduce chaos when the mismatch is severe — chaos shouldn't rescue a 5v1 underdog.
-  const chaosFrequency = isDebate ? 0 : Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
+  let chaosFrequency = isDebate ? 0 : Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
+  // Reality-warpers bend probability — their presence makes chaos events far more likely.
+  const hasRealityWarper = [...team1, ...team2].some(c => c.behaviorTags?.includes("reality-warper"));
+  if (!isDebate && hasRealityWarper) chaosFrequency = Math.min(0.38, chaosFrequency * 1.55);
   // Betrayal: 3% per round. Disabled in debate mode.
   const betrayalChance = isDebate ? 0 : 0.03;
   // No back-to-back chaos — after a chaos round, skip the next chaos check.
@@ -1753,10 +1819,15 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     }
 
     // ── Normal combat ─────────────────────────────────────────────────────────
-    // Initiative: speed determines attack frequency + HP momentum for in-fight swings.
-    // speedFrac1 × 0.40 + (hpAdvantage - 0.5) × 0.20 + 0.30 base keeps range in [0,1].
+    // Behavior mods for this round — recalculate per round because firstStrike only applies on round 1.
+    const bMods1 = getTeamBehaviorMods(team1, isDebate, i);
+    const bMods2 = getTeamBehaviorMods(team2, isDebate, i);
+
+    // Initiative: speed + HP momentum + behavior (aggressive/speedster push initiative).
     const currentAdvantage = hp1 / (hp1 + hp2);
-    const team1Attacks = Math.random() < speedFrac1 * 0.40 + (currentAdvantage - 0.5) * 0.20 + 0.30;
+    const initBase = speedFrac1 * 0.40 + (currentAdvantage - 0.5) * 0.20 + 0.30;
+    const initAdj  = clamp(initBase + bMods1.initiativeBonus - bMods2.initiativeBonus, 0.05, 0.95);
+    const team1Attacks = Math.random() < initAdj;
 
     let attacker: Character;
     let defender: Character;
@@ -1765,24 +1836,26 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     if (team1Attacks) {
       attacker = pickRandom(team1);
       defender = pickRandom(team2);
-      const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
+      const statBonus     = (attacker.strength + attacker.speed) / 20000;
       const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
       const ratio1        = base1 / totalPower;
-      // Debate: exponent 1.8 → stronger side wins more decisively; variance cut to 0.04
-      // Fun: exponent 1.4 → upsets possible; variance 0.13
       const scaledRatio   = isDebate ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
       const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio1 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 18 + minDmg) + weakBonus;
+      // Apply attacker damage boost × defender resistance reduction
+      const rawDmg = Math.round(effectiveness * 18 + minDmg) + weakBonus + bMods1.firstStrike;
+      damage = Math.max(1, Math.round(rawDmg * bMods1.damageMult * bMods2.damageResist));
       hp2 = Math.max(0, hp2 - damage);
+      // Regen: team2 recovers some HP after taking the hit
+      if (bMods2.regenPerRound > 0) hp2 = Math.min(100, hp2 + bMods2.regenPerRound);
       narrativeState.attackerWinning = hp1 > hp2 + 10;
       narrativeState.defenderWinning = hp2 > hp1 + 10;
     } else {
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
-      const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
+      const statBonus     = (attacker.strength + attacker.speed) / 20000;
       const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
       const ratio2        = base2 / totalPower;
       const scaledRatio   = isDebate ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);
@@ -1790,8 +1863,10 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio2 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 18 + minDmg) + weakBonus;
+      const rawDmg = Math.round(effectiveness * 18 + minDmg) + weakBonus + bMods2.firstStrike;
+      damage = Math.max(1, Math.round(rawDmg * bMods2.damageMult * bMods1.damageResist));
       hp1 = Math.max(0, hp1 - damage);
+      if (bMods1.regenPerRound > 0) hp1 = Math.min(100, hp1 + bMods1.regenPerRound);
       narrativeState.attackerWinning = hp2 > hp1 + 10;
       narrativeState.defenderWinning = hp1 > hp2 + 10;
     }
