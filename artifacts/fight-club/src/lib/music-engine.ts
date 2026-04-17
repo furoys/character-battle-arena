@@ -5,7 +5,7 @@ class MusicEngine {
   private masterGain: GainNode | null = null;
   private currentTrack: MusicTrack = "off";
   private _muted = false;
-  private _volume = 0.28;
+  private _volume = 0.34;
   private cleanupFns: Array<() => void> = [];
   private transitioning = false;
 
@@ -131,17 +131,48 @@ class MusicEngine {
 
   private scheduleKick(t: number) {
     const { ctx, master } = this.ensureCtx();
+    // Punchy bass-heavy kick: deeper sub-thump with click transient
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = "sine";
-    o.frequency.setValueAtTime(100, t);
-    o.frequency.exponentialRampToValueAtTime(35, t + 0.12);
-    g.gain.setValueAtTime(0.35, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.frequency.setValueAtTime(140, t);
+    o.frequency.exponentialRampToValueAtTime(28, t + 0.18);
+    g.gain.setValueAtTime(0.6, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
     o.connect(g);
     g.connect(master);
     o.start(t);
-    o.stop(t + 0.3);
+    o.stop(t + 0.45);
+
+    // Sub layer for chest-thump
+    const sub = ctx.createOscillator();
+    const subG = ctx.createGain();
+    sub.type = "sine";
+    sub.frequency.setValueAtTime(55, t);
+    sub.frequency.exponentialRampToValueAtTime(22, t + 0.25);
+    subG.gain.setValueAtTime(0.45, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    sub.connect(subG);
+    subG.connect(master);
+    sub.start(t);
+    sub.stop(t + 0.6);
+  }
+
+  private scheduleHeartbeat(t: number) {
+    // Two-thump heartbeat for tension
+    this.scheduleKick(t);
+    const { ctx, master } = this.ensureCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(90, t + 0.18);
+    o.frequency.exponentialRampToValueAtTime(28, t + 0.3);
+    g.gain.setValueAtTime(0.32, t + 0.18);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g);
+    g.connect(master);
+    o.start(t + 0.18);
+    o.stop(t + 0.42);
   }
 
   private scheduleSnare(t: number) {
@@ -164,119 +195,259 @@ class MusicEngine {
     src.start(t);
   }
 
-  // ─── LOBBY ──────────────────────────────────────────────────────────────────
+  // ─── LOBBY ── ominous, sub-bass-heavy, cinematic dread ─────────────────────
   private playLobby() {
     const { ctx, master } = this.ensureCtx();
 
-    // Deep bass drone on E1 (41 Hz), sawtooth through lowpass
+    // Massive sub-bass on E0 (~20.6 Hz) — felt more than heard
+    const subOsc = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    subOsc.type = "sine";
+    subOsc.frequency.value = 20.6;
+    subGain.gain.value = 0.55;
+    subOsc.connect(subGain);
+    subGain.connect(master);
+    subOsc.start();
+
+    // Bass drone on E1 (41 Hz) — sawtooth through resonant lowpass
     const droneFilter = ctx.createBiquadFilter();
     droneFilter.type = "lowpass";
-    droneFilter.frequency.value = 120;
-    droneFilter.Q.value = 3;
+    droneFilter.frequency.value = 110;
+    droneFilter.Q.value = 6;
     droneFilter.connect(master);
 
     const droneOsc = ctx.createOscillator();
     const droneGain = ctx.createGain();
     droneOsc.type = "sawtooth";
     droneOsc.frequency.value = 41.2;
-    droneGain.gain.value = 0.4;
+    droneGain.gain.value = 0.5;
     droneOsc.connect(droneGain);
     droneGain.connect(droneFilter);
     droneOsc.start();
 
-    // LFO modulating filter for movement
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.type = "sine";
-    lfo.frequency.value = 0.12;
-    lfoGain.gain.value = 90;
-    lfo.connect(lfoGain);
-    lfoGain.connect(droneFilter.frequency);
-    lfo.start();
+    // Slow LFO swelling the bass volume (breathing tension)
+    const swellLfo = ctx.createOscillator();
+    const swellLfoGain = ctx.createGain();
+    swellLfo.type = "sine";
+    swellLfo.frequency.value = 0.14; // ~7s cycle
+    swellLfoGain.gain.value = 0.25;
+    swellLfo.connect(swellLfoGain);
+    swellLfoGain.connect(droneGain.gain);
+    swellLfo.start();
 
-    // Harmony drone E2
-    const harm = ctx.createOscillator();
-    const harmGain = ctx.createGain();
-    harm.type = "sine";
-    harm.frequency.value = 82.41;
-    harmGain.gain.value = 0.12;
-    harm.connect(harmGain);
-    harmGain.connect(master);
-    harm.start();
+    // Filter sweep LFO for movement
+    const filtLfo = ctx.createOscillator();
+    const filtLfoGain = ctx.createGain();
+    filtLfo.type = "sine";
+    filtLfo.frequency.value = 0.09;
+    filtLfoGain.gain.value = 70;
+    filtLfo.connect(filtLfoGain);
+    filtLfoGain.connect(droneFilter.frequency);
+    filtLfo.start();
+
+    // Dissonant minor 2nd above (F1) — quiet, tense
+    const tense = ctx.createOscillator();
+    const tenseGain = ctx.createGain();
+    tense.type = "triangle";
+    tense.frequency.value = 43.65;
+    tenseGain.gain.value = 0.08;
+    tense.connect(tenseGain);
+    tenseGain.connect(master);
+    tense.start();
 
     this.cleanupFns.push(() => {
       try {
         const t = ctx.currentTime;
+        subGain.gain.linearRampToValueAtTime(0, t + 0.4);
         droneGain.gain.linearRampToValueAtTime(0, t + 0.4);
-        harmGain.gain.linearRampToValueAtTime(0, t + 0.4);
+        tenseGain.gain.linearRampToValueAtTime(0, t + 0.4);
         setTimeout(() => {
-          try { droneOsc.stop(); lfo.stop(); harm.stop(); } catch {}
+          try { subOsc.stop(); droneOsc.stop(); swellLfo.stop(); filtLfo.stop(); tense.stop(); } catch {}
         }, 450);
       } catch {}
     });
 
-    // Slow haunting melody in E minor, long notes every 5 seconds
-    const lobbyMelody = [196.0, 220.0, 246.94, 220.0, 185.0, 196.0, 164.81, 220.0];
+    // Slow heartbeat pulse every ~3.2s — adds dread without being a beat
+    let beatRunning = true;
+    const pulse = () => {
+      if (!beatRunning) return;
+      this.scheduleHeartbeat(ctx.currentTime + 0.05);
+      const id = setTimeout(pulse, 3200);
+      this.cleanupFns.push(() => clearTimeout(id));
+    };
+    setTimeout(pulse, 800);
+    this.cleanupFns.push(() => { beatRunning = false; });
+
+    // Sparse low cello-like motif — descending minor 2nd / tritone for tension
+    // E3, F3 (m2), Bb3 (tritone), A3 — long, breathy, drenched in reverb
+    const motif = [164.81, 174.61, 233.08, 220.0, 196.0, 164.81];
     let step = 0;
 
     const playMelNote = () => {
       const t = ctx.currentTime;
-      const freq = lobbyMelody[step % lobbyMelody.length];
+      const freq = motif[step % motif.length];
       const o = ctx.createOscillator();
       const g = ctx.createGain();
-      const reverb = ctx.createDelay(2.0);
-      const reverbGain = ctx.createGain();
-      o.type = "sine";
+      const lp = ctx.createBiquadFilter();
+      const delay = ctx.createDelay(2.0);
+      const delayGain = ctx.createGain();
+      const fb = ctx.createGain();
+      o.type = "sawtooth";
       o.frequency.value = freq;
-      reverb.delayTime.value = 0.45;
-      reverbGain.gain.value = 0.35;
+      lp.type = "lowpass";
+      lp.frequency.value = 700;
+      lp.Q.value = 2;
+      delay.delayTime.value = 0.55;
+      delayGain.gain.value = 0.4;
+      fb.gain.value = 0.45;
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.09, t + 0.6);
-      g.gain.setValueAtTime(0.09, t + 2.5);
-      g.gain.linearRampToValueAtTime(0, t + 4.5);
-      o.connect(g);
+      g.gain.linearRampToValueAtTime(0.11, t + 0.9);
+      g.gain.setValueAtTime(0.11, t + 3.0);
+      g.gain.linearRampToValueAtTime(0, t + 5.5);
+      o.connect(lp);
+      lp.connect(g);
       g.connect(master);
-      g.connect(reverb);
-      reverb.connect(reverbGain);
-      reverbGain.connect(master);
+      g.connect(delay);
+      delay.connect(delayGain);
+      delayGain.connect(master);
+      delay.connect(fb);
+      fb.connect(delay);
       o.start(t);
-      o.stop(t + 4.6);
+      o.stop(t + 5.7);
       step++;
     };
 
-    playMelNote();
-    const iv = setInterval(playMelNote, 5000);
+    setTimeout(playMelNote, 1500);
+    const iv = setInterval(playMelNote, 6500);
     this.cleanupFns.push(() => clearInterval(iv));
   }
 
-  // ─── BATTLE ─────────────────────────────────────────────────────────────────
+  // ─── BATTLE ── slow, menacing, sub-bass driven war drums ───────────────────
   private playBattle() {
-    const { ctx } = this.ensureCtx();
-    const BPM = 140;
-    const BEAT = 60 / BPM; // ~0.429s
+    const { ctx, master } = this.ensureCtx();
+    const BPM = 108;            // Slower = more menacing
+    const BEAT = 60 / BPM;      // ~0.555s per 8th-note step
 
-    // E-minor bass pattern (16 notes cycling)
-    const bassSeq = [82.41, 82.41, 87.31, 98.0, 82.41, 73.42, 82.41, 98.0,
-                     110.0, 98.0, 82.41, 87.31, 73.42, 82.41, 98.0, 110.0];
-    // Melody pattern (8 notes cycling)
-    const melSeq = [329.63, 392.0, 440.0, 392.0, 329.63, 293.66, 329.63, 369.99,
-                    440.0, 493.88, 440.0, 392.0, 329.63, 293.66, 246.94, 329.63];
+    // ── Continuous sub-bass pedal on E1 (41 Hz) — the rumble underneath
+    const pedal = ctx.createOscillator();
+    const pedalGain = ctx.createGain();
+    pedal.type = "sine";
+    pedal.frequency.value = 41.2;
+    pedalGain.gain.value = 0.35;
+    pedal.connect(pedalGain);
+    pedalGain.connect(master);
+    pedal.start();
+
+    // ── Distorted bass channel through waveshaper for grit
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = "lowpass";
+    bassFilter.frequency.value = 280;
+    bassFilter.Q.value = 5;
+
+    const shaper = ctx.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) {
+      const x = (i * 2) / 1024 - 1;
+      curve[i] = Math.tanh(x * 3.5);   // Soft saturation
+    }
+    shaper.curve = curve;
+    shaper.oversample = "2x";
+
+    const bassBus = ctx.createGain();
+    bassBus.gain.value = 0.55;
+    bassFilter.connect(shaper);
+    shaper.connect(bassBus);
+    bassBus.connect(master);
+
+    // ── Slow filter sweep on bass for breathing tension
+    const sweepLfo = ctx.createOscillator();
+    const sweepLfoG = ctx.createGain();
+    sweepLfo.type = "sine";
+    sweepLfo.frequency.value = 0.18;
+    sweepLfoG.gain.value = 180;
+    sweepLfo.connect(sweepLfoG);
+    sweepLfoG.connect(bassFilter.frequency);
+    sweepLfo.start();
+
+    this.cleanupFns.push(() => {
+      try {
+        const t = ctx.currentTime;
+        pedalGain.gain.linearRampToValueAtTime(0, t + 0.4);
+        bassBus.gain.linearRampToValueAtTime(0, t + 0.4);
+        setTimeout(() => { try { pedal.stop(); sweepLfo.stop(); } catch {} }, 450);
+      } catch {}
+    });
+
+    // E-minor riff — heavy, deliberate, ominous (low octaves)
+    // 8th-note grid (16 steps per bar)
+    const bassSeq = [
+      41.2,  41.2,  0,    61.74, 41.2,  0,    49.0, 41.2,
+      41.2,  0,     55.0, 0,     49.0, 41.2,  0,    61.74,
+    ];
+    // Sparse menacing high motif (cello-like) — long sustained notes
+    const motifSeq: Array<[number, number]> = [
+      [164.81, 4],   // E3, 4 beats
+      [196.0,  3],   // G3, 3 beats
+      [185.0,  2],   // F#3
+      [146.83, 4],   // D3
+      [164.81, 4],   // E3
+      [233.08, 3],   // Bb3 (tritone — dread)
+      [220.0,  2],   // A3
+      [246.94, 4],   // B3
+    ];
+
     let step = 0;
+    let motifStep = 0;
     let running = true;
 
     const tick = () => {
       if (!running) return;
       const t = ctx.currentTime + 0.04;
-      const b = step % bassSeq.length;
-      const m = step % melSeq.length;
+      const i = step % bassSeq.length;
+      const freq = bassSeq[i];
 
-      this.scheduleNote(bassSeq[b], "sawtooth", 0.22, t, BEAT * 0.85);
-      this.scheduleNote(melSeq[m], "square", 0.06, t, BEAT * 0.4);
+      // Bass note (skip rests)
+      if (freq > 0) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sawtooth";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.55, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + BEAT * 1.4);
+        o.connect(g);
+        g.connect(bassFilter);
+        o.start(t);
+        o.stop(t + BEAT * 1.5);
+      }
 
-      // Kick on 1 & 3
-      if (step % 4 === 0 || step % 4 === 2) this.scheduleKick(t);
-      // Snare on 2 & 4
-      if (step % 4 === 1 || step % 4 === 3) this.scheduleSnare(t);
+      // BIG kick on every downbeat (every 4 steps), heartbeat-double on bar 4
+      if (step % 4 === 0) this.scheduleKick(t);
+      if (step % 16 === 12) this.scheduleHeartbeat(t);
+      // Sparse snare on the 3rd of every bar for tension
+      if (step % 16 === 8) this.scheduleSnare(t);
+
+      // High motif — change every 4 steps based on motifSeq durations
+      if (step % 4 === 0) {
+        const [mfreq, mbeats] = motifSeq[motifStep % motifSeq.length];
+        const dur = mbeats * BEAT * 2;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        const lp = ctx.createBiquadFilter();
+        o.type = "sawtooth";
+        o.frequency.value = mfreq;
+        lp.type = "lowpass";
+        lp.frequency.value = 1100;
+        lp.Q.value = 1.5;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.07, t + 0.4);
+        g.gain.setValueAtTime(0.07, t + dur * 0.7);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(master);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+        motifStep++;
+      }
 
       step++;
       const id = setTimeout(tick, BEAT * 1000);
