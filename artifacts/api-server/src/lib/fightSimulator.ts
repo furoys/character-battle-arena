@@ -1688,15 +1688,26 @@ Do NOT skip any section. Every section needs real content.
 (Last stand. ${rd(3) ? `${rd(3).attackerName} launches ${rd(3).attackMove}.` : "Final push."} ${hpNote(3)} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)
 
 === ROUND 5 ===
-(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the ${tone === "realistic" ? "decisive blow" : "killing blow"}: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)
+(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the decisive blow: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it.
+VARY how the fight ends — do NOT default to killing. Real fights end many ways. Pick whichever fits best for ${loserNames} and the power gap:
+  • KNOCKOUT — loser is out cold, chest still rising, clearly not getting up.
+  • INCAPACITATION — a limb is broken, a joint is destroyed, they literally cannot continue.
+  • SURRENDER / YIELD — loser signals defeat: hands up, dropping their weapon, tapping out, kneeling.
+  • FORCED RETREAT — loser bolts, teleports away, is dragged off by allies, or the environment swallows them.
+  • MERCY / SPARED — winner chooses not to finish them; we see the loser broken but breathing.
+  • HUMILIATION / OUTCLASSED — not a single effective hit landed; loser is exhausted, embarrassed, done.
+  • CAPTURED / PINNED — winner holds loser in a position they cannot escape from.
+  • DEATH — only when the power/lethality gap genuinely warrants it (e.g. cosmic vs mortal, a finisher with no survivable version).
+Pick ONE ending that best fits these combatants. Do NOT narrate all of them. Do NOT reuse "goes down and stays down" — describe the specific way this loser loses.)
 
 === RESULT ===
-(2-3 sentences: declare the winner, describe the physical state of both sides, give one line of finality.)
+(2-3 sentences: declare the winner, describe the physical state of both sides after the specific finish you picked, give one line of finality. If the loser isn't dead, say what state they're actually in — unconscious, broken, fleeing, surrendered, captured — don't leave it ambiguous.)
 
 FORMAT RULES:
 - Each round = 2-4 paragraphs. Keep each paragraph punchy — max 4 sentences.
 - NEVER use: "exchanged blows", "fought fiercely", "unleashed their power", "clash of titans", "duel", "battle ensued".
-- Each hit must specify: what power → what it looks like → where it lands → what happens next.`;
+- Each hit must specify: what power → what it looks like → where it lands → what happens next.
+- Not every fight ends in death. Match the ending to the characters and the power gap.`;
 
   // 22-second window for 5-round narrative (30s proxy limit minus buffer)
   const raw = await aiTextWithTimeout(prompt, 2500, 22_000);
@@ -2017,16 +2028,81 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   const extraClause = summaryAddons.length > 0 ? ` Along the way, ${summaryAddons.join(" and ")}.` : "";
 
   // Build a character-appropriate conclusion for the losing side.
+  // Fights don't only end in death — vary the outcome by tone, tags, and power gap.
   const loserTags = loseTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
-  const loserConclusion = loserTags.has("cosmic")
-    ? `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`
-    : loserTags.has("immortal")
-    ? `${loserNames} will eventually recover. They won't be back for this fight.`
-    : loserTags.has("tech") && !loserTags.has("immortal")
-    ? `${loserNames} — systems permanently offline.`
-    : loseTeam.every(c => c.universe === "Animals")
-    ? `${loserNames} died here. The greatest predator has its own predators.`
-    : `${loserNames} — dead.`;
+  const charTotal = (c: Character) => c.strength + c.speed + c.intelligence + c.durability;
+  const winTeamTotal  = winTeam.reduce((sum, c) => sum + charTotal(c), 0);
+  const loseTeamTotal = loseTeam.reduce((sum, c) => sum + charTotal(c), 0);
+  const powerRatio = loseTeamTotal > 0 ? winTeamTotal / loseTeamTotal : 1;
+  const severeMismatch = powerRatio >= 1.6; // winner is 60%+ stronger → lethal finish more likely
+
+  // Tag-anchored conclusions (always take priority when they fit — they're character-truth).
+  let taggedConclusion: string | null = null;
+  if (loserTags.has("cosmic") && severeMismatch) {
+    taggedConclusion = `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`;
+  } else if (loserTags.has("cosmic")) {
+    taggedConclusion = pickRandom([
+      `${loserNames} — banished from this plane, will re-form given centuries.`,
+      `${loserNames} — humbled in a way cosmic beings rarely are. Still breathing reality itself.`,
+    ]);
+  } else if (loserTags.has("immortal")) {
+    taggedConclusion = pickRandom([
+      `${loserNames} will eventually recover. They won't be back for this fight.`,
+      `${loserNames} — broken past the point of fighting, already starting to mend.`,
+      `${loserNames} — unconscious and uncontested. They'll wake somewhere else, later.`,
+    ]);
+  } else if (loserTags.has("tech") && severeMismatch) {
+    taggedConclusion = `${loserNames} — systems permanently offline.`;
+  } else if (loserTags.has("tech")) {
+    taggedConclusion = pickRandom([
+      `${loserNames} — critical systems failed, shut down where they stood.`,
+      `${loserNames} — core damaged, operating at 3%, unable to continue.`,
+      `${loserNames} — pinned, immobilized, subroutines surrendering one by one.`,
+    ]);
+  }
+
+  // Generic outcome pools, weighted by tone.
+  // Each tone keeps death in the pool, but it's one option among many — not the default.
+  const realisticPool = [
+    `${loserNames} — knocked unconscious mid-sentence.`,
+    `${loserNames} — arm snapped, ribs caved, done fighting.`,
+    `${loserNames} — on their knees, hands raised, yielding.`,
+    `${loserNames} — dragged off the field by whoever's left standing.`,
+    `${loserNames} — conscious, beaten, refusing to get up again.`,
+    `${loserNames} — forced into full retreat, cover blown.`,
+    `${loserNames} — pinned and unable to move. Held there.`,
+    `${loserNames} — outclassed from the first exchange. Exhausted, embarrassed, done.`,
+    `${loserNames} — spared. ${winnerNames} chose not to finish it.`,
+    `${loserNames} — dead.`,
+  ];
+  const cinematicPool = [
+    `${loserNames} — knelt, sword at their throat, the hall gone silent.`,
+    `${loserNames} — cast down, cape torn, unable to rise.`,
+    `${loserNames} — broken in every way that matters. Alive. Watching.`,
+    `${loserNames} — banished, vanished, gone before the dust settled.`,
+    `${loserNames} — humbled. ${winnerNames} walked past them without a second glance.`,
+    `${loserNames} — surrendered. The legend, ended on one knee.`,
+    `${loserNames} — carried off by loyalists. They will remember this.`,
+    `${loserNames} — dead. The era ends with them.`,
+  ];
+  const brutalPool = [
+    `${loserNames} — unconscious in a spreading pool of their own blood.`,
+    `${loserNames} — spine folded wrong, breathing shallow, not getting up.`,
+    `${loserNames} — ribs through the lung. Alive for now.`,
+    `${loserNames} — jaw wired shut by whatever just hit them. They tap out.`,
+    `${loserNames} — crippled. Whatever they were, they aren't anymore.`,
+    `${loserNames} — pinned face-down with a knee between their shoulder blades, submitting.`,
+    `${loserNames} — unconscious. ${winnerNames} didn't bother with a finisher.`,
+    `${loserNames} — dead. It was ugly and fast.`,
+    `${loserNames} — bled out on the floor.`,
+  ];
+
+  const pool =
+    tone === "brutal"    ? brutalPool :
+    tone === "cinematic" ? cinematicPool :
+                           realisticPool;
+
+  const loserConclusion = taggedConclusion ?? pickRandom(pool);
 
   const summaries = [
     `After ${rounds.length} rounds on ${arena.name}, ${winnerNames} are the last ones standing. ${loserConclusion}${extraClause}`,
