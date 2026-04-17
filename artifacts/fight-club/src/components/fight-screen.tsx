@@ -3,6 +3,109 @@ import { FightResult, FightRound } from "@workspace/api-client-react/src/generat
 import { ChevronLeft, ChevronRight, Swords, Zap, Trophy } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 
+// ─── Cinematic loading sequence ───────────────────────────────────────────────
+const FIGHT_PHASES = [
+  { label: "The arena comes alive…", sub: "Calculating terrain and hazards" },
+  { label: "Fighters enter the arena…", sub: "Reading power levels and abilities" },
+  { label: "The air crackles with tension…", sub: "Computing synergies and rivalries" },
+  { label: "First blood is drawn…", sub: "Simulating round-by-round combat" },
+  { label: "The tide shifts…", sub: "Determining momentum and chaos events" },
+  { label: "A winner emerges…", sub: "Writing the cinematic narrative" },
+  { label: "The dust settles…", sub: "Finalising the outcome" },
+];
+
+function FightLoadingSequence({ team1Names, team2Names }: { team1Names: string[]; team2Names: string[] }) {
+  const [phase, setPhase] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setPhase(p => (p + 1) % FIGHT_PHASES.length);
+        setVisible(true);
+      }, 300);
+    }, 3200);
+    return () => clearInterval(iv);
+  }, []);
+
+  const current = FIGHT_PHASES[phase];
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 py-12 px-6">
+      {/* Clash icon */}
+      <div className="relative">
+        <Swords
+          className="h-10 w-10"
+          style={{
+            color: "#ff0055",
+            filter: "drop-shadow(0 0 16px rgba(255,0,85,0.7))",
+            animation: "rotateSlow 4s linear infinite",
+          }}
+        />
+        <div
+          className="absolute -inset-3 rounded-full"
+          style={{
+            border: "1px solid rgba(255,0,85,0.2)",
+            animation: "ping 1.6s cubic-bezier(0,0,0.2,1) infinite",
+          }}
+        />
+      </div>
+
+      {/* Fighter names */}
+      <div className="flex items-center gap-3">
+        <span className="font-display text-xs uppercase tracking-widest" style={{ color: "#00f0ff" }}>
+          {team1Names.slice(0, 2).join(" & ")}
+        </span>
+        <span className="font-display text-xs" style={{ color: "rgba(255,0,85,0.6)" }}>⚔</span>
+        <span className="font-display text-xs uppercase tracking-widest" style={{ color: "#ff3b30" }}>
+          {team2Names.slice(0, 2).join(" & ")}
+        </span>
+      </div>
+
+      {/* Phase text */}
+      <div
+        className="text-center transition-all duration-300"
+        style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(6px)" }}
+      >
+        <p className="font-display uppercase tracking-[0.2em] mb-1" style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>
+          {current?.label}
+        </p>
+        <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.12em" }}>
+          {current?.sub}
+        </p>
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex gap-2">
+        {FIGHT_PHASES.map((_, i) => (
+          <div
+            key={i}
+            className="rounded-full transition-all duration-300"
+            style={{
+              width: i === phase ? 20 : 6,
+              height: 6,
+              background: i === phase ? "#ff0055" : "rgba(255,255,255,0.12)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Scanline shimmer bar */}
+      <div className="w-48 h-px overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div
+          className="h-full"
+          style={{
+            width: "40%",
+            background: "linear-gradient(90deg, transparent, #ff0055, transparent)",
+            animation: "shimmer 1.8s linear infinite",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 interface FightScreenProps {
   open: boolean;
   onClose: () => void;
@@ -380,6 +483,7 @@ export function FightScreen({
         @keyframes sparkFade { 0% { opacity: 1; transform: rotate(var(--r)) translateY(-20px) scaleY(1); } 100% { opacity: 0; transform: rotate(var(--r)) translateY(-50px) scaleY(0.3); } }
         @keyframes hitShake { 0% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } 100% { transform: translateX(0); } }
         @keyframes continuePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes shimmer { 0% { transform: translateX(-200%); } 100% { transform: translateX(500%); } }
       `}</style>
 
       <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-300">
@@ -481,14 +585,7 @@ export function FightScreen({
                 <div ref={bottomRef} className="h-4" />
               </>
             ) : !isSimulating ? null : (
-              <div className="flex flex-col items-center justify-center h-48 gap-4">
-                <p className="font-display text-sm uppercase tracking-widest text-muted-foreground animate-pulse">
-                  Writing the fight...
-                </p>
-                <p className="text-xs text-muted-foreground/50 uppercase tracking-widest">
-                  This takes a few seconds
-                </p>
-              </div>
+              <FightLoadingSequence team1Names={team1Names} team2Names={team2Names} />
             )}
           </div>
         </div>
