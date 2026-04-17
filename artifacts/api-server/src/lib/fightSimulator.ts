@@ -590,7 +590,9 @@ function isImmobile(char: Character): boolean {
 // Returns a SHORT move name (2–5 words) that can appear naturally in action prose.
 // Cycles through semicolon-separated abilities so characters rotate their moves.
 
-const TRAIT_ONLY_PATTERNS = /^(true immortality|cannot be killed|cannot die|unkillable|immortal|infinite lives|absolute immortality|virtually unkillable|healing factor|near-total invulnerability|invulnerability|invincible)/i;
+// Phrases that describe a TRAIT (passive state), not an ACTION the character takes.
+// We must never let these become "moves" — "uses super strength" is forbidden.
+const TRAIT_ONLY_PATTERNS = /^(true immortality|cannot be killed|cannot die|unkillable|immortal|infinite lives|absolute immortality|virtually unkillable|healing factor|near-total invulnerability|invulnerability|invincible|super(human)?\s+(strength|speed|durability|endurance|reflexes|agility|stamina|intelligence|senses)|enhanced\s+(strength|speed|durability|endurance|reflexes|agility|stamina|intelligence|senses)|godlike\s+(strength|speed|durability|combat|skill|reflexes)|peak\s+(human|physical|combat)|combat\s+(speed|reflexes|prowess|skill|mastery)|tactical\s+(genius|mind|intelligence)|genius[- ]?level\s+(intellect|intelligence)|supernatural\s+(strength|speed|durability|reflexes|senses)|extreme\s+(durability|endurance|stamina)|massive\s+(strength|durability)|incredible\s+(strength|speed|durability|reflexes)|high\s+(intelligence|durability|speed|strength))/i;
 
 function getMoveName(char: Character, variant: number): string {
   const raw = char.specialAbility.trim();
@@ -1843,7 +1845,9 @@ async function generateAINarrative(
 
   const directiveFor = (idx: number, total: number): string => {
     const r = rd(idx);
-    const moveHint = r ? `${r.attackerName} uses ${r.attackMove}.` : "";
+    // Phrase the attacker prompt as a focus-cue, not as "uses X" — moves should
+    // be implied through observable physical action, never named as traits.
+    const moveHint = r ? `(focus this round on ${r.attackerName}.)` : "";
     const hp = hpNote(idx);
     const isFirst = idx === 0;
     const isLast  = idx === total - 1;
@@ -1904,12 +1908,26 @@ Arena: ${arena.name} — ${arena.flavor.join(" ")}
 Winner: ${winnerNames} defeats ${loserNames}${betrayalNote}
 ${specialNotes ? `Special notes: ${specialNotes}` : ""}
 
+ABILITY USAGE RULES (MANDATORY — VIOLATION RUINS THE NARRATIVE):
+1. Abilities are TRAITS, not actions. They influence how a character moves and hits — they are NEVER themselves "used" or "fired" or "activated" in the prose.
+2. NEVER write a generic ability as a verb. FORBIDDEN: "uses super strength", "activates speed", "fires intelligence", "channels durability", "engages combat reflexes", "deploys tactical genius".
+3. Convert every trait into a PHYSICAL OBSERVABLE ACTION:
+   • Speed → "closes the distance before they can blink" / "appears behind them mid-swing"
+   • Strength → "the punch caves the wall, then the chest" / "lifts the truck by its axle"
+   • Durability → "takes the blade across the shoulder, doesn't flinch" / "the hammer breaks against their jaw"
+   • Intelligence → "reads the feint, steps inside, plants the counter" / "had the trap set three moves ago"
+   • Reflexes → "catches the bullet between two fingers" / "tilts a half-inch and the strike misses"
+4. ONLY name an ability mid-fight if it is a PROPER-NOUN SIGNATURE MOVE.
+   Allowed: "Heat vision", "Rasengan", "Kamehameha", "Batarang", "Mjolnir", "Stand attack", "Sharingan".
+   Forbidden: "super strength", "combat speed", "godlike skill", "enhanced reflexes", "tactical mind", "peak human conditioning", "high intelligence".
+5. Every action must be physical and observable: movement, attack, reaction, impact, environment damage. No internal monologue, no stat-naming, no ability-naming.
+
 POWER WRITING RULES — apply these to every round:
-• Describe EXACTLY what each power looks like when it fires: colour, sound, heat, light, physical distortion, smell of ozone, shockwave, etc.
-• Describe what the power DOES to the target: where it hits, what the impact looks like, how the target's body reacts, what visible damage occurs.
+• Describe EXACTLY what the action looks like: colour, sound, heat, light, physical distortion, smell of ozone, shockwave, etc.
+• Describe what the action DOES to the target: where it hits, what the impact looks like, how the target's body reacts, what visible damage occurs.
 • Describe the RESPONSE: does the target stagger, get launched, crater the ground, scream, or absorb it silently?
-• Never say "attacks" or "fights" — say WHAT they do.
-• Each power use must be unique to that character — no generic punches unless that IS their power.
+• Never say "attacks" or "fights" — say WHAT physically happens.
+• Each character's actions must be unique to them — no generic punches unless punching IS their thing.
 
 You MUST use these exact markers (surrounded by === on their own line) to separate sections.
 Do NOT skip any section. Every section needs real content.
