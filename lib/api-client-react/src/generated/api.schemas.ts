@@ -29,6 +29,7 @@ export interface Character {
   weaknesses: string;
   description: string;
   imageUrl?: string | null;
+  behaviorTags?: string[] | null;
   createdAt: string;
 }
 

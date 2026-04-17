@@ -11,6 +11,20 @@ interface CharacterCardProps {
   onToggleFavorite?: () => void;
 }
 
+const TAG_COLORS: Record<string, string> = {
+  "aggressive":      "#ff3b30",
+  "arrogant":        "#ff9f0a",
+  "tactical":        "#00f0ff",
+  "sadistic":        "#ff0055",
+  "defensive":       "#30d158",
+  "long-range":      "#64d2ff",
+  "close-quarters":  "#ff6b30",
+  "reality-warper":  "#bf5af2",
+  "regen":           "#30d158",
+  "speedster":       "#ffe234",
+  "stealth":         "#8e8e93",
+};
+
 const TEAM_COLORS = {
   1: { border: "#00f0ff", bg: "rgba(0,240,255,0.07)", glow: "0 0 18px rgba(0,240,255,0.45), inset 0 0 12px rgba(0,240,255,0.07)", label: "#00f0ff" },
   2: { border: "#ff3b30", bg: "rgba(255,59,48,0.07)", glow: "0 0 18px rgba(255,59,48,0.45), inset 0 0 12px rgba(255,59,48,0.07)", label: "#ff3b30" },
@@ -142,6 +156,25 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
           <StatCol label="INT" value={character.intelligence} color={tc ? tc.border : "#c084fc"} />
           <StatCol label="DUR" value={character.durability}  color={tc ? tc.border : "#eab308"} />
         </div>
+
+        {/* Behavior tag pills */}
+        {character.behaviorTags && character.behaviorTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {character.behaviorTags.slice(0, 4).map(tag => (
+              <span
+                key={tag}
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 leading-none"
+                style={{
+                  color: TAG_COLORS[tag] ?? "rgba(255,255,255,0.4)",
+                  background: `${TAG_COLORS[tag] ?? "rgba(255,255,255,0.2)"}18`,
+                  border: `1px solid ${TAG_COLORS[tag] ?? "rgba(255,255,255,0.2)"}40`,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Favorite star */}
         {onToggleFavorite && (

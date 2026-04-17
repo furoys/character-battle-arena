@@ -14,6 +14,7 @@ export const charactersTable = pgTable("characters", {
   weaknesses: text("weaknesses").notNull(),
   description: text("description").notNull(),
   imageUrl: text("image_url"),
+  behaviorTags: text("behavior_tags").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
