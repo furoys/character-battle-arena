@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useListCharacters, useSimulateFight } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { CharacterCard } from "@/components/character-card";
@@ -237,6 +237,20 @@ export function Home() {
   const [showAllUniverses, setShowAllUniverses] = useState(false);
   const [fightMode, setFightMode] = useState<"fun" | "debate">("fun");
   const [tierFilter, setTierFilter] = useState<string>("all");
+
+  // Load a pending fight from the Suggest page (written to localStorage before navigating here)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("ava_pending_fight");
+      if (!raw) return;
+      localStorage.removeItem("ava_pending_fight");
+      const { team1, team2, mode } = JSON.parse(raw) as { team1: Character[]; team2: Character[]; mode: "fun" | "debate" };
+      if (team1?.length) setTeam1(team1.slice(0, 5));
+      if (team2?.length) setTeam2(team2.slice(0, 5));
+      if (mode === "fun" || mode === "debate") setFightMode(mode);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
