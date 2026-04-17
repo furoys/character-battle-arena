@@ -1351,89 +1351,36 @@ async function generateAINarrative(
   arena: ArenaData,
   roundSimData: RoundSimData[],
   winner: number,
-  mode: "fun" | "debate" = "fun",
 ): Promise<{ arenaIntro: string; roundNarratives: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
   const winnerNames = winner === 1 ? team1Names : team2Names;
   const loserNames = winner === 1 ? team2Names : team1Names;
 
-  const trim100 = (s: string) => s.length > 100 ? s.slice(0, 97) + "..." : s;
+  const trim80 = (s: string) => s.length > 80 ? s.slice(0, 77) + "..." : s;
   const team1Info = team1.map(c =>
-    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability} WEAKNESSES:${c.weaknesses}] ABILITY: ${trim100(c.specialAbility)}`
-  ).join("\n  ");
+    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
+  ).join("; ");
   const team2Info = team2.map(c =>
-    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability} WEAKNESSES:${c.weaknesses}] ABILITY: ${trim100(c.specialAbility)}`
-  ).join("\n  ");
+    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
+  ).join("; ");
 
   const arenaDetails = arena.flavor.join(" ");
 
   const roundLines = roundSimData.map(r => {
     const extra = r.isChaos ? " [CHAOS EVENT]" : r.isBetrayal ? " [BETRAYAL]" : "";
-    const hpDelta1 = r.team1HpAfter - r.team1HpBefore;
-    const hpDelta2 = r.team2HpAfter - r.team2HpBefore;
-    return `R${r.round}: ${r.attackerName} ATTACKS ${r.defenderName}${extra} | T1 HP: ${r.team1HpBefore}→${r.team1HpAfter} (${hpDelta1>=0?"+":""}${hpDelta1}) | T2 HP: ${r.team2HpBefore}→${r.team2HpAfter} (${hpDelta2>=0?"+":""}${hpDelta2})`;
+    return `R${r.round}: ${r.attackerName} vs ${r.defenderName} — "${r.attackMove}"${extra} (T1:${r.team1HpAfter}hp T2:${r.team2HpAfter}hp)`;
   }).join("\n");
 
-  const debatePrompt = `You are writing a DARK CINEMATIC FIGHT SCREENPLAY — the tone of Avengers: Infinity War, Civil War, Endgame. This is NOT comedy. This is a brutal, life-or-death clash between legendary fighters. Every hit is felt. Every injury lingers. The stakes feel real.
-
-ARENA: ${arena.name}
-SETTING: ${arenaDetails}
-
-FIGHTERS:
-Team 1 (${team1Names}):
-  ${team1Info}
-
-Team 2 (${team2Names}):
-  ${team2Info}
-
-ROUND OUTCOME DATA (MUST follow this exactly — HP drops indicate who was hurt):
-${roundLines}
-FINAL WINNER: ${winnerNames}
-FINAL LOSER: ${loserNames} — defeated, incapacitated, or dead
-
-STYLE RULES (all mandatory):
-- Write like a screenplay action block — short, punchy, present tense. "Thor's hammer connects. The ground cracks. Cap flies back 30 feet."
-- BRUTAL PHYSICALITY: broken bones, blood, torn muscle, concussions, burns. Don't soften it.
-- Each fighter uses their ACTUAL abilities (from their ability/weakness data above)
-- Exploit WEAKNESSES when relevant — if a fighter has a weakness and the opponent can use it, USE it
-- Injuries from previous rounds must still be visible in later rounds — show cumulative damage
-- Environmental DESTRUCTION: the arena gets torn apart round by round
-- ZERO abstract language. No "reality warps", no "cosmic energy." Describe what the camera sees.
-- Damage must match the HP data — if T2 takes -22 HP, it was a DEVASTATING hit. -5 HP was glancing.
-- [CHAOS EVENT] = something in the environment catastrophically intervenes — earthquake, explosion, structure collapse
-- [BETRAYAL] = an ally turns on their own team mid-fight — show the moment of shock
-- The winner dominates the final round. The loser is BROKEN by the end.
-- DO NOT name rounds inside the text. Just write the action.
-
-FORMAT — use these EXACT headers, no extra text:
-
-=== ARENA ===
-3 sentences. Set the stage cinematically. Describe the environment in a way that makes it feel alive and dangerous. End on something ominous.
-
-=== ROUND 1 ===
-4 sentences. Opening moves. First real impact. Environmental damage. Whose advantage after round 1.
-
-=== ROUND 2 ===
-4 sentences. Escalation. Previous round injuries are visible. Bigger strikes. The tide may shift.
-
-[Continue for all ${roundSimData.length} rounds with the SAME 4-sentence format]
-
-FINAL ROUND (round ${roundSimData.length}):
-5 sentences. The decisive moment. A finishing move that uses ${winnerNames}'s core ability. ${loserNames} is completely destroyed. One brutal final image.`;
-
-  const funPrompt = `Write a brutal, visceral fight narrative in EXACT format below. Style: Mortal Kombat meets cinema — short punchy sentences, physical cause and effect. Wild, fun, and dramatic. Every sentence describes something that physically happens.
+  const prompt = `Write a brutal, visceral fight narrative in EXACT format below. Style: Mortal Kombat meets cinema — short punchy sentences, physical cause and effect, no abstract language. Every sentence describes something that physically happens.
 
 ARENA: ${arena.name} — ${arenaDetails}
 
 FIGHTERS:
-Team 1 (${team1Names}):
-  ${team1Info}
+Team 1 (${team1Names}): ${team1Info}
+Team 2 (${team2Names}): ${team2Info}
 
-Team 2 (${team2Names}):
-  ${team2Info}
-
-ROUND DATA (follow exactly — HP changes show damage severity):
+ROUND DATA (follow exactly — attacker listed first):
 ${roundLines}
 WINNER: ${winnerNames}. LOSER: ${loserNames} — dead or incapacitated.
 
@@ -1450,9 +1397,7 @@ FORMAT (use EXACT headers, no extra text):
 
 [same 3-sentence format for all ${roundSimData.length} rounds]
 
-RULES: Use arena hazards each round. Blood/bones/fatigue must show. Power effects = physical description only. [CHAOS EVENT] = environment turns the fight. [BETRAYAL] = ally turns traitor. ${winnerNames} wins overall. Keep each round to 3 sentences max.`;
-
-  const prompt = mode === "debate" ? debatePrompt : funPrompt;
+RULES: Use arena hazards each round. Blood/bones/fatigue must show. Power effects = physical description only (no "reality warps"). [CHAOS EVENT] = environment turns the fight. [BETRAYAL] = ally turns traitor. ${winnerNames} wins overall. Keep each round to 3 sentences max.`;
 
   try {
     // Stream the response — required for long outputs to avoid proxy timeouts
@@ -1811,7 +1756,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   }));
 
   const { arenaIntro, roundNarratives } = await generateAINarrative(
-    team1, team2, arena, roundSimData, winner, mode,
+    team1, team2, arena, roundSimData, winner,
   );
 
   // Inject AI narratives — fall back to template narrative if AI returned empty
