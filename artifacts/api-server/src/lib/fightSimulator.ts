@@ -1345,6 +1345,34 @@ interface RoundSimData {
   isBetrayal: boolean;
 }
 
+// Single-shot streaming AI call returning clean lines of text
+async function aiLines(prompt: string, maxTokens: number, timeoutMs: number): Promise<string[]> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  let text = "";
+  try {
+    const stream = await openai.chat.completions.create(
+      {
+        model: "gpt-5-mini",
+        max_completion_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+        stream: true,
+      },
+      { signal: ac.signal },
+    );
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) text += delta;
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+  return text
+    .split("\n")
+    .map(l => l.replace(/^(Line\s+)?\d+[.:]\s*/i, "").trim())
+    .filter(l => l.length > 10); // ignore empty/trivial lines
+}
+
 async function generateAINarrative(
   team1: Character[],
   team2: Character[],
@@ -1355,90 +1383,44 @@ async function generateAINarrative(
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
   const winnerNames = winner === 1 ? team1Names : team2Names;
-  const loserNames = winner === 1 ? team2Names : team1Names;
 
-  const trim80 = (s: string) => s.length > 80 ? s.slice(0, 77) + "..." : s;
-  const team1Info = team1.map(c =>
-    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
-  ).join("; ");
-  const team2Info = team2.map(c =>
-    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
-  ).join("; ");
+  // Split rounds into two halves for parallel generation
+  const half = Math.ceil(roundSimData.length / 2);
+  const firstHalf = roundSimData.slice(0, half);
+  const secondHalf = roundSimData.slice(half);
 
-  const arenaDetails = arena.flavor.join(" ");
+  const context = `Fighters: ${team1Names} vs ${team2Names}. Arena: ${arena.name}. Winner: ${winnerNames}.`;
 
-  const roundLines = roundSimData.map(r => {
-    const extra = r.isChaos ? " [CHAOS EVENT]" : r.isBetrayal ? " [BETRAYAL]" : "";
-    return `R${r.round}: ${r.attackerName} vs ${r.defenderName} — "${r.attackMove}"${extra} (T1:${r.team1HpAfter}hp T2:${r.team2HpAfter}hp)`;
-  }).join("\n");
-
-  const prompt = `Write a brutal, visceral fight narrative in EXACT format below. Style: Mortal Kombat meets cinema — short punchy sentences, physical cause and effect, no abstract language. Every sentence describes something that physically happens.
-
-ARENA: ${arena.name} — ${arenaDetails}
-
-FIGHTERS:
-Team 1 (${team1Names}): ${team1Info}
-Team 2 (${team2Names}): ${team2Info}
-
-ROUND DATA (follow exactly — attacker listed first):
-${roundLines}
-WINNER: ${winnerNames}. LOSER: ${loserNames} — dead or incapacitated.
-
-FORMAT (use EXACT headers, no extra text):
-
-=== ARENA ===
-2 sentences. Vivid physical setting — hazards, sounds, smells. Something that will get destroyed.
-
-=== ROUND 1 ===
-3 sentences. First move and impact. Environmental destruction. Who wins this round and their physical state.
-
-=== ROUND 2 ===
-3 sentences. Follow round data. Show damage from previous round still visible.
-
-[same 3-sentence format for all ${roundSimData.length} rounds]
-
-RULES: Use arena hazards each round. Blood/bones/fatigue must show. Power effects = physical description only (no "reality warps"). [CHAOS EVENT] = environment turns the fight. [BETRAYAL] = ally turns traitor. ${winnerNames} wins overall. Keep each round to 3 sentences max.`;
+  const makePrompt = (rounds: RoundSimData[], includeArena: boolean) => {
+    const lineCount = (includeArena ? 1 : 0) + rounds.length;
+    const roundDesc = rounds.map(r => {
+      const tag = r.isChaos ? " [chaos]" : r.isBetrayal ? " [betrayal]" : "";
+      return `${r.attackerName} vs ${r.defenderName}${tag}`;
+    }).join("; ");
+    const lines = [];
+    let n = 1;
+    if (includeArena) lines.push(`Line ${n++}: ${arena.name} — 1 sentence physical setting.`);
+    for (const r of rounds) {
+      const tag = r.isChaos ? " chaos erupts" : r.isBetrayal ? " betrayal occurs" : "";
+      lines.push(`Line ${n++}: Round ${r.round}${tag} — ${r.attackerName} acts — 1 sentence.`);
+    }
+    return `${context} Rounds: ${roundDesc}\nWrite ${lineCount} lines, 1 sentence each, no headers:\n${lines.join("\n")}\nRules: Physical only. Use powers. ${winnerNames} dominates.`;
+  };
 
   try {
-    // Stream the response — required for long outputs to avoid proxy timeouts
-    // AbortController: 80-second wall-clock limit before falling back to templates
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 80_000);
+    // Fire both halves in parallel — halves the total wait time
+    const [linesA, linesB] = await Promise.all([
+      aiLines(makePrompt(firstHalf, true), 500, 35_000).catch(() => [] as string[]),
+      secondHalf.length > 0
+        ? aiLines(makePrompt(secondHalf, false), 400, 35_000).catch(() => [] as string[])
+        : Promise.resolve([] as string[]),
+    ]);
 
-    let text = "";
-    try {
-      const stream = await openai.chat.completions.create(
-        {
-          model: "gpt-5-mini",
-          max_completion_tokens: 8192,
-          messages: [{ role: "user", content: prompt }],
-          stream: true,
-        },
-        { signal: ac.signal },
-      );
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content;
-        if (delta) text += delta;
-      }
-    } finally {
-      clearTimeout(timer);
-    }
-
-    // Parse === ARENA === section
-    const arenaMatch = text.match(/=== ARENA ===\s*\n([\s\S]*?)(?=\n=== ROUND|\n===|$)/);
-    const arenaIntro = arenaMatch?.[1]?.trim() ?? "";
-
-    // Parse === ROUND N === sections
-    const roundNarratives: string[] = [];
-    for (let i = 0; i < roundSimData.length; i++) {
-      const n = i + 1;
-      const next = i + 2;
-      const pattern = new RegExp(
-        `=== ROUND ${n} ===\\s*\\n([\\s\\S]*?)(?=\\n=== ROUND ${next} ===|\\n===|$)`,
-      );
-      const match = text.match(pattern);
-      roundNarratives.push(match?.[1]?.trim() ?? "");
-    }
+    const arenaIntro = linesA[0] ?? "";
+    const roundNarratives: string[] = [
+      ...linesA.slice(1, firstHalf.length + 1),
+      ...linesB.slice(0, secondHalf.length),
+    ];
 
     return { arenaIntro, roundNarratives };
   } catch (err) {
@@ -1471,7 +1453,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const rounds: FightRound[] = [];
 
-  const maxRounds = 6 + Math.floor(Math.random() * 3); // 6–8 rounds — keeps AI generation under 60 seconds
+  const maxRounds = 3 + Math.floor(Math.random() * 2); // 3–4 rounds — keeps AI generation fast (~15s)
   const arena = pickRandom(arenas);
 
   // Narrative state — separate no-repeat trackers per pool + ability cycling
@@ -1765,5 +1747,10 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     narrative: roundNarratives[idx]?.trim().length ? roundNarratives[idx]! : r.narrative,
   }));
 
-  return { winner, rounds: finalRounds, summary: pickRandom(summaries), arenaIntro };
+  // If AI didn't produce an arena intro, fall back to the built-in arena flavor text
+  const finalArenaIntro = arenaIntro?.trim().length
+    ? arenaIntro
+    : `${arena.name[0]!.toUpperCase() + arena.name.slice(1)}. ${arena.flavor[0]} ${arena.flavor[1]}`;
+
+  return { winner, rounds: finalRounds, summary: pickRandom(summaries), arenaIntro: finalArenaIntro };
 }
