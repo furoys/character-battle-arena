@@ -256,6 +256,11 @@ export function Home() {
       return next;
     });
   };
+  const clearRecentPicks = () => {
+    setRecentPicks([]);
+    writeLS("ava_recent", []);
+    if (activeFilter === "__recent__") setActiveFilter(null);
+  };
   const pillsRef = useRef<HTMLDivElement>(null);
 
   // Build universe list sorted by count, only show 4+ in main bar
@@ -568,19 +573,38 @@ export function Home() {
                 </button>
                 {/* Recent pill — purple */}
                 {recentPicks.length > 0 && (
-                  <button
-                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
-                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
-                    style={{
-                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                      padding: "3px 7px",
-                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
-                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
-                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
-                    }}
-                  >
-                    ⏱ RECENT
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
+                      className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
+                      style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                        padding: "3px 7px",
+                        background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
+                        border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
+                        color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
+                      }}
+                    >
+                      ⏱ RECENT
+                    </button>
+                    <button
+                      onClick={clearRecentPicks}
+                      title="Clear history"
+                      className="flex-shrink-0 flex items-center justify-center transition-all duration-150 hover:bg-white/10"
+                      style={{
+                        fontSize: 11, fontWeight: 700,
+                        width: 16, height: 16,
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.35)",
+                        lineHeight: 1,
+                        marginLeft: -2,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </>
                 )}
                 {displayUniverses.map(({ universe, count }) => (
                   <UniversePill
