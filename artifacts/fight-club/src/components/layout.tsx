@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Users, Trophy, Plus } from "lucide-react";
+import { Swords, Users, Trophy, Lightbulb } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
   { href: "/roster", label: "Roster", icon: Users },
   { href: "/fights", label: "History", icon: Trophy },
-  { href: "/new-character", label: "Add", icon: Plus },
+  { href: "/new-character", label: "Suggest", icon: Lightbulb },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

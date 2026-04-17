@@ -1,9 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation } from "wouter";
-import { useCreateCharacter, getListCharactersQueryKey, getGetCharacterStatsQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import { Send, Info } from "lucide-react";
+import { useState } from "react";
 
-const characterSchema = z.object({
+const suggestionSchema = z.object({
   name: z.string().min(1, "Required").max(100),
   universe: z.string().min(1, "Required").max(100),
   strength: z.number().min(1).max(100),
@@ -30,7 +29,7 @@ const characterSchema = z.object({
   description: z.string().min(1, "Required"),
 });
 
-type CharacterFormValues = z.infer<typeof characterSchema>;
+type SuggestionFormValues = z.infer<typeof suggestionSchema>;
 
 const STAT_LABELS: Record<string, string> = {
   strength: "STR",
@@ -39,27 +38,20 @@ const STAT_LABELS: Record<string, string> = {
   durability: "DUR",
 };
 
+const STAT_DESCRIPTIONS: Record<string, string> = {
+  strength: "Raw physical force",
+  speed: "Movement & reaction time",
+  intelligence: "Strategy, tactics & cunning",
+  durability: "Resistance to damage",
+};
+
 export function NewCharacter() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  const createCharacter = useCreateCharacter({
-    mutation: {
-      onSuccess: () => {
-        toast({ title: "Fighter Registered", description: "New fighter added to the roster." });
-        queryClient.invalidateQueries({ queryKey: getListCharactersQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetCharacterStatsQueryKey() });
-        setLocation("/roster");
-      },
-      onError: (error) => {
-        toast({ title: "Error", description: error.error || "Failed to add fighter.", variant: "destructive" });
-      },
-    },
-  });
-
-  const form = useForm<CharacterFormValues>({
-    resolver: zodResolver(characterSchema),
+  const form = useForm<SuggestionFormValues>({
+    resolver: zodResolver(suggestionSchema),
     defaultValues: {
       name: "",
       universe: "",
@@ -73,15 +65,56 @@ export function NewCharacter() {
     },
   });
 
-  function onSubmit(data: CharacterFormValues) {
-    createCharacter.mutate({ data });
+  async function onSubmit(data: SuggestionFormValues) {
+    setPending(true);
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to submit");
+      setSubmitted(true);
+    } catch {
+      toast({ title: "Error", description: "Could not submit suggestion. Try again.", variant: "destructive" });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="px-4 pt-4 pb-2 border-b border-border/30">
+          <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Suggest a Fighter</h1>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+            <Send className="w-7 h-7 text-emerald-400" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl uppercase tracking-widest text-emerald-400">Suggestion Sent</h2>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Your fighter will be reviewed before being added to the roster. Thanks for the submission.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="rounded-none font-display uppercase tracking-widest"
+            onClick={() => { setSubmitted(false); form.reset(); }}
+          >
+            Suggest Another
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col">
-      {/* Page title */}
       <div className="px-4 pt-4 pb-2 border-b border-border/30">
-        <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Register Fighter</h1>
+        <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Suggest a Fighter</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Submissions are reviewed before being added to the roster.</p>
       </div>
 
       <div className="p-4 overflow-y-auto">
@@ -107,7 +140,7 @@ export function NewCharacter() {
                 name="universe"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Universe</FormLabel>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Universe / Series</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Dragon Ball" className="rounded-none border-2 font-display text-lg h-11" {...field} />
                     </FormControl>
@@ -119,7 +152,13 @@ export function NewCharacter() {
 
             {/* Stats */}
             <div className="border-2 border-border/50 bg-card/50 p-4">
-              <h3 className="font-display text-sm uppercase tracking-widest text-muted-foreground mb-4">Combat Stats (1–100)</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="font-display text-sm uppercase tracking-widest text-muted-foreground">Combat Stats</h3>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                  <Info className="w-3 h-3" />
+                  <span>1–100 scale</span>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 {(["strength", "speed", "intelligence", "durability"] as const).map((stat) => (
                   <FormField
@@ -128,8 +167,11 @@ export function NewCharacter() {
                     name={stat}
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex justify-between items-center mb-2">
-                          <FormLabel className="font-display text-sm uppercase tracking-wider">{STAT_LABELS[stat]}</FormLabel>
+                        <div className="flex justify-between items-start mb-1">
+                          <div>
+                            <FormLabel className="font-display text-sm uppercase tracking-wider">{STAT_LABELS[stat]}</FormLabel>
+                            <p className="text-[9px] text-muted-foreground/60 leading-none mt-0.5">{STAT_DESCRIPTIONS[stat]}</p>
+                          </div>
                           <span className="font-display text-2xl text-primary leading-none">{field.value}</span>
                         </div>
                         <FormControl>
@@ -182,10 +224,10 @@ export function NewCharacter() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Lore</FormLabel>
+                    <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Lore / Background</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Brief backstory..."
+                        placeholder="Brief backstory or context..."
                         className="rounded-none border-2 min-h-[80px] resize-none"
                         {...field}
                       />
@@ -199,10 +241,10 @@ export function NewCharacter() {
             <Button
               type="submit"
               size="lg"
-              disabled={createCharacter.isPending}
+              disabled={pending}
               className="w-full font-display text-xl uppercase tracking-widest h-14 rounded-none"
             >
-              {createCharacter.isPending ? "Registering..." : "Register Fighter"}
+              {pending ? "Submitting..." : "Submit for Review"}
             </Button>
           </form>
         </Form>
