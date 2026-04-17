@@ -1345,32 +1345,41 @@ interface RoundSimData {
   isBetrayal: boolean;
 }
 
-// Single-shot streaming AI call returning clean lines of text
-async function aiLines(prompt: string, maxTokens: number, timeoutMs: number): Promise<string[]> {
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), timeoutMs);
-  let text = "";
-  try {
-    const stream = await openai.chat.completions.create(
-      {
-        model: "gpt-5-mini",
-        max_completion_tokens: maxTokens,
-        messages: [{ role: "user", content: prompt }],
-        stream: true,
-      },
-      { signal: ac.signal },
-    );
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) text += delta;
-    }
-  } finally {
-    clearTimeout(timer);
-  }
-  return text
-    .split("\n")
-    .map(l => l.replace(/^(Line\s+)?\d+[.:]\s*/i, "").trim())
-    .filter(l => l.length > 10); // ignore empty/trivial lines
+// Race an AI streaming call against a hard timeout.
+// Resolves with parsed lines on success, empty array on timeout/error.
+async function aiLinesWithTimeout(prompt: string, maxTokens: number, timeoutMs: number): Promise<string[]> {
+  return new Promise<string[]>((resolve) => {
+    const ac = new AbortController();
+
+    // Hard deadline — always wins
+    const deadline = setTimeout(() => {
+      ac.abort();
+      resolve([]);
+    }, timeoutMs);
+
+    (async () => {
+      let text = "";
+      try {
+        const stream = await openai.chat.completions.create(
+          { model: "gpt-5-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
+          { signal: ac.signal },
+        );
+        for await (const chunk of stream) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (delta) text += delta;
+        }
+        clearTimeout(deadline);
+        const lines = text
+          .split("\n")
+          .map(l => l.replace(/^(Line\s+)?\d+[.:]\s*/i, "").trim())
+          .filter(l => l.length > 10);
+        resolve(lines);
+      } catch {
+        clearTimeout(deadline);
+        resolve([]);
+      }
+    })();
+  });
 }
 
 async function generateAINarrative(
@@ -1384,49 +1393,29 @@ async function generateAINarrative(
   const team2Names = team2.map(c => c.name).join(" & ");
   const winnerNames = winner === 1 ? team1Names : team2Names;
 
-  // Split rounds into two halves for parallel generation
-  const half = Math.ceil(roundSimData.length / 2);
-  const firstHalf = roundSimData.slice(0, half);
-  const secondHalf = roundSimData.slice(half);
+  const totalLines = roundSimData.length + 1; // 1 arena intro + 1 per round
+  const roundDesc = roundSimData.map(r => {
+    const tag = r.isChaos ? "[chaos]" : r.isBetrayal ? "[betrayal]" : "";
+    return `R${r.round}${tag}: ${r.attackerName} attacks ${r.defenderName}`;
+  }).join("; ");
 
-  const context = `Fighters: ${team1Names} vs ${team2Names}. Arena: ${arena.name}. Winner: ${winnerNames}.`;
+  const lineInstructions = [
+    `Line 1: ${arena.name} setting — 1 vivid sentence.`,
+    ...roundSimData.map((r, i) => {
+      const tag = r.isChaos ? " chaos erupts" : r.isBetrayal ? " betrayal" : "";
+      return `Line ${i + 2}: ${r.attackerName}${tag} — 1 action sentence.`;
+    }),
+  ].join("\n");
 
-  const makePrompt = (rounds: RoundSimData[], includeArena: boolean) => {
-    const lineCount = (includeArena ? 1 : 0) + rounds.length;
-    const roundDesc = rounds.map(r => {
-      const tag = r.isChaos ? " [chaos]" : r.isBetrayal ? " [betrayal]" : "";
-      return `${r.attackerName} vs ${r.defenderName}${tag}`;
-    }).join("; ");
-    const lines = [];
-    let n = 1;
-    if (includeArena) lines.push(`Line ${n++}: ${arena.name} — 1 sentence physical setting.`);
-    for (const r of rounds) {
-      const tag = r.isChaos ? " chaos erupts" : r.isBetrayal ? " betrayal occurs" : "";
-      lines.push(`Line ${n++}: Round ${r.round}${tag} — ${r.attackerName} acts — 1 sentence.`);
-    }
-    return `${context} Rounds: ${roundDesc}\nWrite ${lineCount} lines, 1 sentence each, no headers:\n${lines.join("\n")}\nRules: Physical only. Use powers. ${winnerNames} dominates.`;
+  const prompt = `${team1Names} vs ${team2Names}. Arena: ${arena.name}. Winner: ${winnerNames}.\nRounds: ${roundDesc}\n\nWrite exactly ${totalLines} numbered lines, 1 sentence each:\n${lineInstructions}\n\nRules: physical action only, use each fighter's powers, ${winnerNames} wins.`;
+
+  // 8-second window — if AI doesn't answer in time, templates are used instead
+  const lines = await aiLinesWithTimeout(prompt, 600, 8_000);
+
+  return {
+    arenaIntro: lines[0] ?? "",
+    roundNarratives: lines.slice(1, roundSimData.length + 1),
   };
-
-  try {
-    // Fire both halves in parallel — halves the total wait time
-    const [linesA, linesB] = await Promise.all([
-      aiLines(makePrompt(firstHalf, true), 500, 35_000).catch(() => [] as string[]),
-      secondHalf.length > 0
-        ? aiLines(makePrompt(secondHalf, false), 400, 35_000).catch(() => [] as string[])
-        : Promise.resolve([] as string[]),
-    ]);
-
-    const arenaIntro = linesA[0] ?? "";
-    const roundNarratives: string[] = [
-      ...linesA.slice(1, firstHalf.length + 1),
-      ...linesB.slice(0, secondHalf.length),
-    ];
-
-    return { arenaIntro, roundNarratives };
-  } catch (err) {
-    console.error("[fightSimulator] AI narrative generation failed:", err);
-    return { arenaIntro: "", roundNarratives: [] };
-  }
 }
 
 export async function simulateFight(team1: Character[], team2: Character[], mode: "fun" | "debate" = "fun"): Promise<FightResult> {
