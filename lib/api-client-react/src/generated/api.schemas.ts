@@ -74,7 +74,7 @@ export interface CharacterStatsSummary {
 }
 
 /**
- * Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.)
+ * Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.)
  */
 export type SimulateFightBodyMode =
   (typeof SimulateFightBodyMode)[keyof typeof SimulateFightBodyMode];
@@ -83,7 +83,6 @@ export const SimulateFightBodyMode = {
   cinematic: "cinematic",
   brutal: "brutal",
   realistic: "realistic",
-  funny: "funny",
   fun: "fun",
   debate: "debate",
 } as const;
@@ -99,7 +98,7 @@ export interface SimulateFightBody {
    * @maxItems 5
    */
   team2: number[];
-  /** Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.) */
+  /** Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.) */
   mode?: SimulateFightBodyMode;
 }
 

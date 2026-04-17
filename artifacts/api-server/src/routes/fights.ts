@@ -57,7 +57,7 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const result = await simulateFight(team1, team2, mode ?? "fun");
+  const result = await simulateFight(team1, team2, mode ?? "realistic");
 
   const [saved] = await db
     .insert(fightsTable)

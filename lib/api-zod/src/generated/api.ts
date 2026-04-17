@@ -167,16 +167,16 @@ export const simulateFightBodyTeam1Max = 5;
 
 export const simulateFightBodyTeam2Max = 5;
 
-export const simulateFightBodyModeDefault = `cinematic`;
+export const simulateFightBodyModeDefault = `realistic`;
 
 export const SimulateFightBody = zod.object({
   team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
   team2: zod.array(zod.number()).min(1).max(simulateFightBodyTeam2Max),
   mode: zod
-    .enum(["cinematic", "brutal", "realistic", "funny", "fun", "debate"])
+    .enum(["cinematic", "brutal", "realistic", "fun", "debate"])
     .default(simulateFightBodyModeDefault)
     .describe(
-      "Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun\/debate accepted as legacy aliases of cinematic\/realistic.)",
+      "Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun\/debate accepted as legacy aliases of cinematic\/realistic.)",
     ),
 });
 

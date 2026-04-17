@@ -536,7 +536,7 @@ function getTeamBehaviorMods(
   // Sadistic fighters press advantages ruthlessly
   if (tags.has("sadistic")) damageMult += 0.08;
 
-  // Tactical teams are more effective in realistic tone; still decisive in cinematic/brutal/funny
+  // Tactical teams are more effective in realistic tone; still decisive in cinematic/brutal
   if (tags.has("tactical")) {
     damageMult      += isRealistic ? 0.12 : 0.05;
     initiativeBonus += isRealistic ? 0.05 : 0.03;
@@ -1575,17 +1575,16 @@ function extractSection(text: string, ...patterns: string[]): string {
 }
 
 // ─── Tone Types ────────────────────────────────────────────────────────────
-export type FightTone = "cinematic" | "brutal" | "realistic" | "funny";
+export type FightTone = "cinematic" | "brutal" | "realistic";
 
 export function normalizeTone(input: string | undefined): FightTone {
   switch (input) {
     case "brutal":    return "brutal";
-    case "realistic":
-    case "debate":    return "realistic";
-    case "funny":     return "funny";
     case "cinematic":
-    case "fun":
-    default:          return "cinematic";
+    case "fun":       return "cinematic";
+    case "realistic":
+    case "debate":
+    default:          return "realistic";
   }
 }
 
@@ -1604,11 +1603,6 @@ const TONE_INSTRUCTIONS: Record<FightTone, string> = {
 • No chaos events, no random environmental saves, no luck-based reversals. Every result is earned.
 • Describe what their abilities CAN ACTUALLY DO and what the opponent CAN ACTUALLY COUNTER.
 • Sound like an honest debate-mode breakdown that just happens to be visceral.`,
-  funny: `TONE — ABSURD & COMEDIC.
-• Take the fight DEAD seriously while every detail is ridiculous. Deadpan. The arena has opinions. The crowd is unhinged.
-• Bystanders, pets, vending machines, weather — everything is somehow involved.
-• NEVER use death-final language. Loser is "humiliated", "thoroughly defeated", "carried off in a shopping cart". They survive — embarrassed, not eliminated.
-• Wordy, observational, dryly funny. Specific brand names, oddly precise measurements, suspicious goats.`,
 };
 
 async function generateAINarrative(
@@ -1694,9 +1688,7 @@ Do NOT skip any section. Every section needs real content.
 (Last stand. ${rd(3) ? `${rd(3).attackerName} launches ${rd(3).attackMove}.` : "Final push."} ${hpNote(3)} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)
 
 === ROUND 5 ===
-${tone === "funny"
-    ? `(Finale. ${rd(4) ? `${rd(4).attackerName} lands the absurd, decisive move: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most cartoonish and humiliating of the fight. ${winnerNames} ends it. The loser is thoroughly embarrassed and dignity-shattered — NEVER dead, NEVER killed, NEVER "goes down and stays down" in a final sense. They're concussed, confused, face-down in icing, politely asking for a moment alone, etc.)`
-    : `(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the ${tone === "realistic" ? "decisive blow" : "killing blow"}: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)`}
+(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the ${tone === "realistic" ? "decisive blow" : "killing blow"}: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)
 
 === RESULT ===
 (2-3 sentences: declare the winner, describe the physical state of both sides, give one line of finality.)
@@ -1778,21 +1770,15 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   // realistic = pure stat logic, no chaos, no betrayals, tight variance.
   // cinematic = epic but disciplined — minor chaos, occasional betrayal.
   // brutal    = vicious, slightly higher damage variance, chaos rare but harsh.
-  // funny     = arena & chaos lean absurd, more betrayals, no-death final language.
   const isRealistic = tone === "realistic";
-  const isFunny     = tone === "funny";
   const isBrutal    = tone === "brutal";
 
   // Chaos and betrayal frequency by tone.
   const chaosFrequency =
     isRealistic ? 0 :
-    isFunny     ? 0.10 :
     isBrutal    ? 0.04 :
                   0.02;          // cinematic
-  const betrayalChance =
-    isRealistic ? 0 :
-    isFunny     ? 0.05 :
-                  0.03;
+  const betrayalChance = isRealistic ? 0 : 0.03;
   // Brutal damage modifier — incoming/outgoing damage scaled up.
   const brutalDamageMult = isBrutal ? 1.12 : 1.0;
   // Reality-warpers tracked for narrative colour.
@@ -2031,16 +2017,8 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   const extraClause = summaryAddons.length > 0 ? ` Along the way, ${summaryAddons.join(" and ")}.` : "";
 
   // Build a character-appropriate conclusion for the losing side.
-  // In funny tone, NEVER use death-final language — losers are humiliated, not killed.
   const loserTags = loseTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
-  const loserConclusion = isFunny
-    ? pickRandom([
-        `${loserNames} — thoroughly humiliated, currently being heckled by a passing goat.`,
-        `${loserNames} — defeated, dazed, and politely asking for a moment alone.`,
-        `${loserNames} — wheeled off the field on a borrowed shopping cart, dignity not included.`,
-        `${loserNames} — concussed, embarrassed, plotting an extremely petty rematch.`,
-      ])
-    : loserTags.has("cosmic")
+  const loserConclusion = loserTags.has("cosmic")
     ? `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`
     : loserTags.has("immortal")
     ? `${loserNames} will eventually recover. They won't be back for this fight.`
