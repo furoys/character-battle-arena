@@ -2005,14 +2005,29 @@ async function generateAINarrative(
   const rd = (i: number) => roundSimData[i];
 
   // Build per-round HP delta strings so the AI can calibrate damage weight
+  // Translate an HP value into a physical condition the prose must reflect.
+  const condition = (hp: number): string => {
+    if (hp >= 85) return "fresh, unhurt";
+    if (hp >= 65) return "bruised, breathing harder, guard still solid";
+    if (hp >= 45) return "visibly hurt — split lip, slowed footwork, ragged breathing";
+    if (hp >= 25) return "badly damaged — bleeding, favoring a leg or rib, guard breaking";
+    if (hp >= 10) return "barely standing — one good hit from going down, gasping, vision blurred";
+    return "broken — can't keep their feet, every breath agony, finished if hit again";
+  };
+
   const hpNote = (idx: number) => {
     const r = roundSimData[idx];
     if (!r) return "";
     const d1 = r.team1HpBefore - r.team1HpAfter;
     const d2 = r.team2HpBefore - r.team2HpAfter;
-    if (d1 > 0) return `Team 1 takes ${d1} damage (now ${r.team1HpAfter}/100 HP).`;
-    if (d2 > 0) return `Team 2 takes ${d2} damage (now ${r.team2HpAfter}/100 HP).`;
-    return "";
+    const t1State = `Team 1 ${condition(r.team1HpAfter)} (${r.team1HpAfter}/100)`;
+    const t2State = `Team 2 ${condition(r.team2HpAfter)} (${r.team2HpAfter}/100)`;
+    const dmg =
+      d1 > 0 && d2 > 0 ? `Team 1 takes ${d1}, Team 2 takes ${d2}.` :
+      d1 > 0           ? `Team 1 takes ${d1} damage this round.` :
+      d2 > 0           ? `Team 2 takes ${d2} damage this round.` :
+                         "";
+    return `${dmg} STATE: ${t1State}; ${t2State}. The prose MUST reflect these injuries — show the pain, the broken rhythm, the lost footing, the ragged breath.`;
   };
 
   const betrayalNote = betrayalRounds.length
@@ -2113,6 +2128,18 @@ POWER WRITING RULES — apply these to every round:
 • Describe the RESPONSE: does the target stagger, get launched, crater the ground, scream, or absorb it silently?
 • Never say "attacks" or "fights" — say WHAT physically happens.
 • Each character's actions must be unique to them — no generic punches unless punching IS their thing.
+
+PHYSICALITY & CONSEQUENCE — every hit must feel heavy, physical, and earned:
+• HITS LAND. Show the impact: bone-deep thud, the way the body folds around the strike, the spit and blood that leaves the mouth, the half-second the eyes go blank.
+• PAIN IS VISIBLE. After a real hit, the wounded fighter's posture changes — favoring a side, dropping a guard, breath catching, jaw clenched, eyes watering.
+• RHYTHM BREAKS. Real damage interrupts what someone was doing — a combo cuts off mid-motion, footwork stutters, a planned counter never lands because the leg won't push off.
+• FOOTING IS LOST. Heavy hits move bodies — staggered backwards, knees buckling, dropped to one knee, hand to the floor to keep from falling, slipping in their own blood.
+• GUARDS BREAK. After enough damage, blocks become softer, slower, stop covering vital areas. A high guard sags. A blade arm trembles.
+• BREATH GOES RAGGED. By round 2-3 of a real exchange, fighters are breathing through clenched teeth, gasping between actions, spitting blood from a bitten cheek.
+• BLOOD APPEARS WHEN APPROPRIATE. Cuts, split lips, broken noses, blood from the ear, blood smeared on knuckles — but only when the strike type warrants it. A blunt impact bruises and swells; a blade slices; energy burns.
+• INJURIES PERSIST. If a fighter takes a hit to the ribs in round 1, they're guarding that side in round 2. If a leg gets blown out, they don't suddenly sprint in round 3. The HP STATE line above tells you their actual condition — honor it.
+• DECISIONS ARE SHAPED BY DAMAGE. A wounded fighter takes shorter steps, throws fewer combinations, stops trying their best moves and starts trying to survive. A fresh fighter capitalizes — they SEE the limp, the dropped guard, the bad eye.
+• KEEP IT INTENSE BUT COHERENT. Brutal, but never gratuitous. Every wound has a cause. Every reaction has a wound behind it. No invincibility unless the character literally has it; no shrugging off real damage unless durability is canonically that high.
 
 You MUST use these exact markers (surrounded by === on their own line) to separate sections.
 Do NOT skip any section. Every section needs real content.
