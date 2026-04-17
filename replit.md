@@ -45,6 +45,15 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 - `artifacts/api-server/src/lib/fightSimulator.ts` — Fight simulation logic
 - `artifacts/fight-club/src/` — React frontend
 
+## AI Narrative (OpenAI via Replit proxy)
+
+- Uses `@workspace/integrations-openai-ai-server` (OpenAI SDK configured with `AI_INTEGRATIONS_OPENAI_BASE_URL` + `AI_INTEGRATIONS_OPENAI_API_KEY`)
+- Model: `gpt-5-mini` with `stream: true` — streaming is REQUIRED; non-streaming requests return empty content
+- `max_completion_tokens` must be 8192 — proxy rejects lower limits with `finish_reason: length` + empty body
+- Format: `=== ARENA ===` intro + `=== ROUND N ===` sections parsed by regex in `generateAINarrative()`
+- Fight rounds capped at 6–8 to keep AI generation under 80 seconds
+- Falls back to template-based narratives if AI times out or errors
+
 ## Notes
 
 - `lib/api-spec/orval.config.ts` — removed the `schemas` option to avoid TypeScript duplicate export conflicts

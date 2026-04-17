@@ -444,6 +444,21 @@ export function FightScreen({
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
 
+                {/* Arena intro — shown before rounds, fades in once */}
+                {result.arenaIntro && (
+                  <div className="mb-1 px-1 animate-in fade-in duration-700">
+                    <div className="border-l-2 border-muted-foreground/30 pl-4 py-1">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/60 mb-1.5">
+                        — The Arena —
+                      </p>
+                      <p className="text-sm leading-relaxed text-foreground/70 italic">
+                        {result.arenaIntro}
+                      </p>
+                    </div>
+                    <div className="mt-3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                  </div>
+                )}
+
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
                   <RoundBlock
                     key={idx}
@@ -468,7 +483,10 @@ export function FightScreen({
             ) : !isSimulating ? null : (
               <div className="flex flex-col items-center justify-center h-48 gap-4">
                 <p className="font-display text-sm uppercase tracking-widest text-muted-foreground animate-pulse">
-                  Calculating outcomes...
+                  Writing the fight...
+                </p>
+                <p className="text-xs text-muted-foreground/50 uppercase tracking-widest">
+                  This takes a few seconds
                 </p>
               </div>
             )}

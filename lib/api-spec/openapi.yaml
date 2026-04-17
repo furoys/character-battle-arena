@@ -367,6 +367,9 @@ components:
             $ref: "#/components/schemas/FightRound"
         summary:
           type: string
+        arenaIntro:
+          type: string
+          description: "AI-generated arena description shown before the fight begins"
         simulatedAt:
           type: string
           format: date-time
