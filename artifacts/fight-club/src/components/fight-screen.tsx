@@ -319,6 +319,15 @@ function FightBanner({
   );
 }
 
+// Labels for each round position in a 5-round fight
+const ROUND_LABELS: Record<number, { label: string; accent: string }> = {
+  0: { label: "Opening",       accent: "#00f0ff" },
+  1: { label: "Escalation",    accent: "#ff9f0a" },
+  2: { label: "⚡ Turning Point", accent: "#ff0055" },
+  3: { label: "Last Stand",    accent: "#bf5af2" },
+  4: { label: "Finale",        accent: "#ffd700" },
+};
+
 // RoundBlock: slides in and fades text visible shortly after mount
 function RoundBlock({ round, index }: { round: FightRound; index: number }) {
   const [visible, setVisible] = useState(false);
@@ -330,28 +339,44 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  const isTeam1 = index % 2 === 0;
-
-  const color = isTeam1 ? "var(--color-team1, #00f0ff)" : "var(--color-team2, #ff3b30)";
+  const isTurningPoint = index === 2;
+  const meta = ROUND_LABELS[index];
+  const teamColor = index % 2 === 0 ? "var(--color-team1, #00f0ff)" : "var(--color-team2, #ff3b30)";
+  const accentColor = meta?.accent ?? teamColor;
 
   return (
     <div className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+      {/* Turning-point divider */}
+      {isTurningPoint && (
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, #ff005560)" }} />
+          <span className="text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: "#ff0055" }}>
+            The tide shifts
+          </span>
+          <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, transparent, #ff005560)" }} />
+        </div>
+      )}
       {/* Round header */}
       <div className="flex items-center gap-3 mb-3">
         <span
           className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 shrink-0"
-          style={{ background: `${color}18`, color, border: `1px solid ${color}40` }}
+          style={{ background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40` }}
         >
           Round {round.round}
         </span>
-        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 bg-muted/20 px-1.5 py-0.5">
+        {meta && (
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${accentColor}80` }}>
+            {meta.label}
+          </span>
+        )}
+        <span className="text-[9px] text-muted-foreground/40 bg-muted/20 px-1.5 py-0.5 ml-auto">
           {round.attacker} · {round.attackType}
         </span>
       </div>
       {/* Narrative — full paragraph(s) */}
       <div
         className={`border-l-2 pl-4 transition-all duration-400 ${textVisible ? "opacity-100" : "opacity-0"}`}
-        style={{ borderColor: `${color}50` }}
+        style={{ borderColor: `${accentColor}40` }}
       >
         <p className="text-sm leading-loose text-foreground/90 whitespace-pre-line">
           {round.narrative}
@@ -390,17 +415,22 @@ export function FightScreen({
       setAttackingTeam(0);
 
       const totalRounds = result.rounds.length;
-      // Stagger: first round at 600ms, then every 1400ms
+      // Stagger: first round at 700ms, then every 2200ms — gives each round room to breathe
+      // Round 3 (turning point) gets extra 600ms pause before it drops
+      let elapsed = 700;
       for (let i = 0; i < totalRounds; i++) {
-        const delay = 600 + i * 1400;
+        const extraPause = i === 2 ? 600 : 0; // dramatic pause before the turning point
+        elapsed += extraPause;
+        const delay = elapsed;
         const t = setTimeout(() => {
           setVisibleCount(i + 1);
           setAttackingTeam((i % 2 === 0 ? 1 : 2) as 1 | 2);
         }, delay);
         timersRef.current.push(t);
+        elapsed += 2200;
       }
-      // Mark all done 800ms after the last round appears
-      const doneDelay = 600 + totalRounds * 1400 + 800;
+      // Mark all done 1000ms after the last round appears
+      const doneDelay = elapsed + 1000;
       const tDone = setTimeout(() => setAllRoundsDone(true), doneDelay);
       timersRef.current.push(tDone);
     }

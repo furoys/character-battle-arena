@@ -1487,7 +1487,8 @@ async function generateAINarrative(
     ...betrayalRounds.map(r => `Round ${r}: a team member betrays their own side`),
   ].join("; ");
 
-  const prompt = `You are a cinematic versus-battle narrator. Write a brutal, vivid, page-turning fight scene.
+  const rd = (i: number) => roundSimData[i];
+  const prompt = `You are a cinematic versus-battle narrator. Write a brutal, suspenseful, page-turning fight scene across FIVE rounds.
 
 FIGHTERS:
 Team 1: ${team1Info}
@@ -1497,34 +1498,40 @@ Winner: ${winnerNames} defeats ${loserNames}
 ${specialNotes ? `Special events: ${specialNotes}` : ""}
 
 You MUST use these exact markers (surrounded by === on their own line) to separate sections.
-Do NOT skip any section. Do NOT rename the markers.
+Do NOT skip any section. Do NOT rename the markers. Every section needs real content.
 
 === SETTING ===
-(3-5 vivid sentences about the arena. Atmosphere, hazards, lighting. Do NOT begin combat.)
+(3-5 vivid sentences about the arena — atmosphere, hazards, lighting. Do NOT begin combat.)
 
 === ENTRANCE ===
-(2-4 sentences introducing each fighter as they enter. Posture, mood, powers visible. No attacks yet.)
+(2-4 sentences: each fighter enters. Posture, visible power, threat. No attacks yet.)
 
 === ROUND 1 ===
-(First violent exchange.${roundSimData[0] ? ` ${roundSimData[0].attackerName} strikes ${roundSimData[0].defenderName} using ${roundSimData[0].attackMove}.` : ""} Show impact and consequence.)
+(Opening skirmish. Both sides probe, reading each other.${rd(0) ? ` ${rd(0).attackerName} strikes first using ${rd(0).attackMove}.` : ""} First blood drawn. Neither side has the advantage yet.)
 
 === ROUND 2 ===
-(Escalate. Brutality increases.${roundSimData[1] ? ` ${roundSimData[1].attackerName} attacks using ${roundSimData[1].attackMove}.` : ""} Environment reacts.)
+(Escalation. Powers fully unleashed.${rd(1) ? ` ${rd(1).attackerName} attacks with ${rd(1).attackMove}.` : ""} The arena takes damage. One side starts to pull ahead — but the other refuses to yield.)
 
 === ROUND 3 ===
-(Final decisive exchange.${roundSimData[2] ? ` ${roundSimData[2].attackerName} lands the finishing blow using ${roundSimData[2].attackMove}.` : ""} ${winnerNames} wins clearly.)
+(THE TURNING POINT. Something unexpected happens.${rd(2) ? ` ${rd(2).attackerName} uses ${rd(2).attackMove}.` : ""} A reversal, a desperate gambit, or a shocking moment that makes the outcome uncertain again. Make the reader unsure who will win.)
+
+=== ROUND 4 ===
+(The loser makes their final push — a last stand.${rd(3) ? ` ${rd(3).attackerName} launches ${rd(3).attackMove}.` : ""} It nearly works. The desperation is palpable. But ${winnerNames} weathers it.)
+
+=== ROUND 5 ===
+(The decisive finale.${rd(4) ? ` ${rd(4).attackerName} delivers the finishing blow using ${rd(4).attackMove}.` : ""} ${winnerNames} ends it definitively. Visceral, conclusive.)
 
 === RESULT ===
-(2-3 sentences: who won, how, why. Visceral, final.)
+(2-3 sentences: who won, how badly, what it cost them. Final and brutal.)
 
 Rules:
-- Fill every section with real content.
-- Concrete details: blood, glass, fire, impact craters.
-- No vague phrases like "exchange blows."
-- Character powers must stay accurate.`;
+- Each round = 2-4 tight paragraphs. Concrete details only: impacts, blood, shattered terrain, power signatures.
+- NO vague phrases like "exchanged blows" or "fought fiercely."
+- Build suspense — the outcome should feel uncertain until Round 5.
+- Character powers must be accurate and specific.`;
 
-  // 18-second window — richer narrative; 6s reserved for entrance fallback if needed (24s total < 30s proxy limit)
-  const raw = await aiTextWithTimeout(prompt, 2000, 18_000);
+  // 22-second window for 5-round narrative (30s proxy limit minus buffer)
+  const raw = await aiTextWithTimeout(prompt, 2500, 22_000);
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "" };
@@ -1535,13 +1542,14 @@ Rules:
   const round1      = extractSection(raw, "ROUND 1");
   const round2      = extractSection(raw, "ROUND 2");
   const round3      = extractSection(raw, "ROUND 3");
+  const round4      = extractSection(raw, "ROUND 4");
+  const round5      = extractSection(raw, "ROUND 5");
   const resultText  = extractSection(raw, "RESULT");
-
 
   return {
     arenaIntro,
     intro,
-    roundNarratives: [round1, round2, round3],
+    roundNarratives: [round1, round2, round3, round4, round5],
     resultText,
   };
 }
@@ -1570,7 +1578,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const rounds: FightRound[] = [];
 
-  const maxRounds = 3; // Always exactly 3 rounds — matches the cinematic narrative structure
+  const maxRounds = 5; // 5 rounds — builds suspense with a proper 5-act arc
   const arena = pickRandom(arenas);
 
   // Narrative state — separate no-repeat trackers per pool + ability cycling
@@ -1627,9 +1635,9 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       const beneficiary = chaosHitsTeam1 ? pickRandom(team2).name : pickRandom(team1).name;
       const chaos = event.narrative(victim, beneficiary, arena.name);
 
-      // Chaos swings reduced ~35% — significant but not fight-ending.
+      // Chaos swings scaled for 5-round fights — dramatic but not instantly decisive.
       const rawSwing = event.hpSwing + Math.floor(Math.random() * 6) - 3;
-      const swing = Math.round(rawSwing * 0.65);
+      const swing = Math.round(rawSwing * 0.45);
 
       if (chaosHitsTeam1) {
         hp1 = Math.max(2, hp1 - swing);
@@ -1715,7 +1723,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
         const share = largerTeamIsTeam1
           ? (base1 / totalPower / size1) * 0.55 + statBonus * 0.23
           : (base2 / totalPower / size2) * 0.55 + statBonus * 0.23;
-        return sum + Math.round(share * 17 + 3);
+        return sum + Math.round(share * 11 + 2);
       }, 0);
 
       const gangNarrative = pickRandom(gangUpTemplates)(attackerNames, victim.name, arena.name);
@@ -1765,9 +1773,9 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       const scaledRatio   = isDebate ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
       const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
-      const minDmg        = Math.max(1, Math.round(ratio1 * 7));
+      const minDmg        = Math.max(1, Math.round(ratio1 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;
+      damage = Math.round(effectiveness * 18 + minDmg) + weakBonus;
       hp2 = Math.max(0, hp2 - damage);
       narrativeState.attackerWinning = hp1 > hp2 + 10;
       narrativeState.defenderWinning = hp2 > hp1 + 10;
@@ -1780,9 +1788,9 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       const scaledRatio   = isDebate ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);
       const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
       const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
-      const minDmg        = Math.max(1, Math.round(ratio2 * 7));
+      const minDmg        = Math.max(1, Math.round(ratio2 * 4));
       const weakBonus     = getWeaknessBonus(attacker, defender);
-      damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;
+      damage = Math.round(effectiveness * 18 + minDmg) + weakBonus;
       hp1 = Math.max(0, hp1 - damage);
       narrativeState.attackerWinning = hp2 > hp1 + 10;
       narrativeState.defenderWinning = hp1 > hp2 + 10;
