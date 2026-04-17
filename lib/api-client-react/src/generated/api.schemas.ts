@@ -73,6 +73,17 @@ export interface CharacterStatsSummary {
   universeBreakdown: CharacterStatsSummaryUniverseBreakdownItem[];
 }
 
+/**
+ * fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes
+ */
+export type SimulateFightBodyMode =
+  (typeof SimulateFightBodyMode)[keyof typeof SimulateFightBodyMode];
+
+export const SimulateFightBodyMode = {
+  fun: "fun",
+  debate: "debate",
+} as const;
+
 export interface SimulateFightBody {
   /**
    * @minItems 1
@@ -84,6 +95,8 @@ export interface SimulateFightBody {
    * @maxItems 5
    */
   team2: number[];
+  /** fun = chaotic cinematic battles; debate = strict logic, stat-driven outcomes */
+  mode?: SimulateFightBodyMode;
 }
 
 export interface FightRound {

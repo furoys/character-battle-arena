@@ -223,6 +223,7 @@ export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUniverse, setSelectedUniverse] = useState<string | null>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
+  const [fightMode, setFightMode] = useState<"fun" | "debate">("fun");
   const pillsRef = useRef<HTMLDivElement>(null);
 
   // Build universe list sorted by count, only show 4+ in main bar
@@ -278,7 +279,7 @@ export function Home() {
       return;
     }
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id) } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
   };
 
   const getCharacterTeam = (id: number) => {
@@ -421,6 +422,38 @@ export function Home() {
 
             {/* Power comparison bar */}
             <PowerComparison team1={team1} team2={team2} />
+
+            {/* Mode toggle */}
+            <div className="flex items-center justify-center gap-2 pt-1">
+              {(["fun", "debate"] as const).map((m) => {
+                const active = fightMode === m;
+                const accent = m === "fun" ? "#ff0055" : "#00e5ff";
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setFightMode(m)}
+                    style={{
+                      background: "transparent",
+                      borderTop: "none",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderBottom: active ? `1.5px solid ${accent}` : "1.5px solid transparent",
+                      borderRadius: 0,
+                      padding: "3px 10px",
+                      color: active ? accent : "rgba(255,255,255,0.3)",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      transition: "color 0.15s, border-color 0.15s",
+                    }}
+                  >
+                    {m === "fun" ? "⚡ FUN" : "⚖ DEBATE"}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Picking indicator */}
             <div
@@ -588,6 +621,7 @@ export function Home() {
           team2Names={team2.map(c => c.name)}
           team1Images={team1.map(c => c.imageUrl)}
           team2Images={team2.map(c => c.imageUrl)}
+          mode={fightMode}
         />
       </div>
     </>

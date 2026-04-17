@@ -1321,7 +1321,7 @@ const gangUpTemplates: ((attackers: string, defender: string, arena: string) => 
   (atk, def, _env) => `${atk} don't need a plan. They have the numbers. They rush ${def} from multiple directions and let physics sort it out. Physics is not kind to ${def}.`,
 ];
 
-export function simulateFight(team1: Character[], team2: Character[]): FightResult {
+export function simulateFight(team1: Character[], team2: Character[], mode: "fun" | "debate" = "fun"): FightResult {
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
@@ -1364,11 +1364,16 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     defenderWinning: false,
   };
 
+  // ── Mode tuning ────────────────────────────────────────────────────────────
+  // Debate mode: pure stat logic, no chaos, no betrayals, tighter variance.
+  // Fun mode: cinematic chaos, betrayals, wild outcomes.
+  const isDebate = mode === "debate";
+
   // ── Chaos tuning ──────────────────────────────────────────────────────────
   // Reduce chaos when the mismatch is severe — chaos shouldn't rescue a 5v1 underdog.
-  const chaosFrequency = Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
-  // Betrayal: 3% per round (was 6%). Rare but still possible.
-  const betrayalChance = 0.03;
+  const chaosFrequency = isDebate ? 0 : Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
+  // Betrayal: 3% per round. Disabled in debate mode.
+  const betrayalChance = isDebate ? 0 : 0.03;
   // No back-to-back chaos — after a chaos round, skip the next chaos check.
   let chaosCooldown = false;
   // Gang-up cooldown — don't fire multiple gang-up rounds in a row.
@@ -1530,8 +1535,11 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
       const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
       const ratio1        = base1 / totalPower;
-      const scaledRatio   = Math.pow(ratio1, 1.4);
-      const effectiveness = (scaledRatio * 0.72 + Math.random() * 0.13 + statBonus * 0.15) * sizeBonus;
+      // Debate: exponent 1.8 → stronger side wins more decisively; variance cut to 0.04
+      // Fun: exponent 1.4 → upsets possible; variance 0.13
+      const scaledRatio   = isDebate ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
+      const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
+      const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio1 * 7));
       const weakBonus     = getWeaknessBonus(attacker, defender);
       damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;
@@ -1544,8 +1552,9 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
       const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
       const ratio2        = base2 / totalPower;
-      const scaledRatio   = Math.pow(ratio2, 1.4);
-      const effectiveness = (scaledRatio * 0.72 + Math.random() * 0.13 + statBonus * 0.15) * sizeBonus;
+      const scaledRatio   = isDebate ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);
+      const variance      = isDebate ? Math.random() * 0.04 : Math.random() * 0.13;
+      const effectiveness = (scaledRatio * 0.72 + variance + statBonus * 0.15) * sizeBonus;
       const minDmg        = Math.max(1, Math.round(ratio2 * 7));
       const weakBonus     = getWeaknessBonus(attacker, defender);
       damage = Math.round(effectiveness * 30 + minDmg) + weakBonus;

@@ -12,6 +12,7 @@ interface FightScreenProps {
   team2Names: string[];
   team1Images?: (string | null | undefined)[];
   team2Images?: (string | null | undefined)[];
+  mode?: "fun" | "debate";
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -266,6 +267,7 @@ export function FightScreen({
   open, onClose, result, isSimulating,
   team1Names, team2Names,
   team1Images = [], team2Images = [],
+  mode = "fun",
 }: FightScreenProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [waitingForInput, setWaitingForInput] = useState(false);  // round text shown, waiting for tap
@@ -412,6 +414,22 @@ export function FightScreen({
                   <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
                     {team1Names.join(" & ")} vs {team2Names.join(" & ")}
                   </p>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: 4,
+                      padding: "1px 8px",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: mode === "debate" ? "#00e5ff" : "#ff0055",
+                      border: `1px solid ${mode === "debate" ? "#00e5ff40" : "#ff005540"}`,
+                      borderRadius: 2,
+                    }}
+                  >
+                    {mode === "debate" ? "⚖ Debate Mode" : "⚡ Fun Mode"}
+                  </span>
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
 
