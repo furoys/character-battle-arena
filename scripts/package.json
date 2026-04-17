@@ -11,6 +11,7 @@
     "seed-obscure-and-games": "tsx ./src/seed-obscure-and-games.ts",
     "seed-dc-marvel-expansion": "tsx ./src/seed-dc-marvel-expansion.ts",
     "seed-disney-and-animals": "tsx ./src/seed-disney-and-animals.ts",
+    "seed-action-expansion": "tsx ./src/seed-action-expansion.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
