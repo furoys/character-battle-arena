@@ -9,6 +9,7 @@
     "seed-action": "tsx ./src/seed-action.ts",
     "seed-new-batch": "tsx ./src/seed-new-batch.ts",
     "seed-obscure-and-games": "tsx ./src/seed-obscure-and-games.ts",
+    "seed-dc-marvel-expansion": "tsx ./src/seed-dc-marvel-expansion.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
