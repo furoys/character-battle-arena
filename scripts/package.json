@@ -10,6 +10,7 @@
     "seed-new-batch": "tsx ./src/seed-new-batch.ts",
     "seed-obscure-and-games": "tsx ./src/seed-obscure-and-games.ts",
     "seed-dc-marvel-expansion": "tsx ./src/seed-dc-marvel-expansion.ts",
+    "seed-disney-and-animals": "tsx ./src/seed-disney-and-animals.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
