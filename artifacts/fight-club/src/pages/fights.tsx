@@ -1,16 +1,71 @@
-import { useListFights } from "@workspace/api-client-react";
+import { useState } from "react";
+import {
+  useListFights,
+  useClearFightHistory,
+  useDeleteFight,
+  getListFightsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Trophy } from "lucide-react";
+import { Trophy, Trash2, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Fights() {
   const { data: fights, isLoading } = useListFights();
+  const clearHistory = useClearFightHistory();
+  const deleteFight  = useDeleteFight();
+  const queryClient  = useQueryClient();
+  const { toast }    = useToast();
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  const handleClearAll = async () => {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      setTimeout(() => setConfirmClear(false), 3000);
+      return;
+    }
+    try {
+      await clearHistory.mutateAsync();
+      queryClient.invalidateQueries({ queryKey: getListFightsQueryKey() });
+      toast({ title: "History Cleared", description: "All fight records have been removed." });
+    } catch {
+      toast({ title: "Error", description: "Failed to clear history.", variant: "destructive" });
+    }
+    setConfirmClear(false);
+  };
+
+  const handleDeleteOne = async (id: number) => {
+    try {
+      await deleteFight.mutateAsync(id);
+      queryClient.invalidateQueries({ queryKey: getListFightsQueryKey() });
+    } catch {
+      toast({ title: "Error", description: "Failed to remove fight.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="flex flex-col">
-      {/* Page title */}
+      {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-border/30">
         <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Fight History</h1>
-        <span className="text-sm font-bold text-muted-foreground">{fights?.length || 0} matches</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-muted-foreground">{fights?.length || 0} matches</span>
+          {fights && fights.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              disabled={clearHistory.isPending}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 border transition-all"
+              style={{
+                borderColor: confirmClear ? "#ff3b3060" : "rgba(255,255,255,0.12)",
+                color: confirmClear ? "#ff3b30" : "rgba(255,255,255,0.35)",
+                background: confirmClear ? "rgba(255,59,48,0.07)" : "transparent",
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+              {confirmClear ? "Confirm?" : "Clear All"}
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -26,16 +81,27 @@ export function Fights() {
       ) : (
         <div className="flex flex-col divide-y divide-border/30">
           {fights?.map((fight) => (
-            <div key={fight.id} className="relative px-4 py-4 flex flex-col gap-3">
+            <div key={fight.id} className="relative px-4 py-4 flex flex-col gap-3 group">
               {/* Winner color bar */}
               <div className={`absolute left-0 top-0 bottom-0 w-1 ${fight.winner === 1 ? "bg-team1" : "bg-team2"}`} />
 
-              {/* Header */}
+              {/* Header row */}
               <div className="flex items-center justify-between pl-2">
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Match #{fight.id}</span>
-                <span className="text-[10px] text-muted-foreground">
-                  {format(new Date(fight.simulatedAt), "MMM d, yyyy · HH:mm")}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">
+                    {format(new Date(fight.simulatedAt), "MMM d, yyyy · HH:mm")}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteOne(fight.id)}
+                    disabled={deleteFight.isPending}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
+                    style={{ color: "rgba(255,255,255,0.25)" }}
+                    title="Remove this fight"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Teams vs layout */}

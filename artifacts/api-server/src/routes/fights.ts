@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { inArray, desc } from "drizzle-orm";
+import { inArray, desc, eq } from "drizzle-orm";
 import { db, charactersTable, fightsTable } from "@workspace/db";
 import {
   SimulateFightBody,
@@ -85,6 +85,21 @@ router.post("/fights", async (req, res): Promise<void> => {
       simulatedAt: saved.simulatedAt,
     }),
   );
+});
+
+router.delete("/fights", async (_req, res): Promise<void> => {
+  await db.delete(fightsTable);
+  res.status(204).send();
+});
+
+router.delete("/fights/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid fight id" });
+    return;
+  }
+  await db.delete(fightsTable).where(eq(fightsTable.id, id));
+  res.status(204).send();
 });
 
 export default router;
