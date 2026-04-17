@@ -5,7 +5,7 @@ import { AvaLogo } from "@/components/ava-logo";
 
 interface VictoryScreenProps {
   result: FightResult;
-  mode?: "cinematic" | "brutal" | "realistic" | "funny";
+  mode?: "cinematic" | "brutal" | "realistic";
   onClose: () => void;
   onRematch?: () => void;
 }
@@ -363,7 +363,6 @@ export function VictoryScreen({ result, mode = "cinematic", onClose, onRematch }
     const modeLabel =
       mode === "realistic" ? "Realistic" :
       mode === "brutal"    ? "Brutal"    :
-      mode === "funny"     ? "Funny"     :
                              "Cinematic";
     const rounds    = (result.rounds ?? []).length;
     const tags      = includeHashtags ? "\n\n#AvA #AnyoneVsAnyone" : "";

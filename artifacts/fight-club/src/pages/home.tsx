@@ -235,7 +235,7 @@ export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
-  const [fightMode, setFightMode] = useState<"cinematic" | "brutal" | "realistic" | "funny">("cinematic");
+  const [fightMode, setFightMode] = useState<"cinematic" | "brutal" | "realistic">("realistic");
   const [tierFilter, setTierFilter] = useState<string>("all");
 
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
@@ -248,9 +248,9 @@ export function Home() {
       if (team1?.length) setTeam1(team1.slice(0, 5));
       if (team2?.length) setTeam2(team2.slice(0, 5));
       // Accept new tones AND legacy mode aliases
-      if (mode === "cinematic" || mode === "brutal" || mode === "realistic" || mode === "funny") setFightMode(mode);
+      if (mode === "cinematic" || mode === "brutal" || mode === "realistic") setFightMode(mode);
       else if (mode === "fun") setFightMode("cinematic");
-      else if (mode === "debate") setFightMode("realistic");
+      else if (mode === "debate" || mode === "funny") setFightMode("realistic");
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -491,13 +491,12 @@ export function Home() {
             {/* Power comparison bar */}
             <PowerComparison team1={team1} team2={team2} />
 
-            {/* Tone selector — 4 dramatic flavors */}
+            {/* Tone selector — 3 serious flavors */}
             <div className="flex items-center justify-center gap-1 pt-1 flex-wrap">
               {([
+                { id: "realistic", label: "⚖ REALISTIC", color: "#00e5ff" },
                 { id: "cinematic", label: "✦ CINEMATIC", color: "#ff0055" },
                 { id: "brutal",    label: "⚔ BRUTAL",    color: "#ff7a00" },
-                { id: "realistic", label: "⚖ REALISTIC", color: "#00e5ff" },
-                { id: "funny",     label: "☻ FUNNY",     color: "#c8ff00" },
               ] as const).map((t) => {
                 const active = fightMode === t.id;
                 return (
@@ -505,10 +504,9 @@ export function Home() {
                     key={t.id}
                     onClick={() => setFightMode(t.id)}
                     title={
-                      t.id === "cinematic" ? "Operatic, theatrical, larger-than-life." :
-                      t.id === "brutal"    ? "Visceral, anatomical, ugly." :
                       t.id === "realistic" ? "Tight, stat-driven, no chaos." :
-                                             "Absurd, deadpan, no death-final language."
+                      t.id === "cinematic" ? "Operatic, theatrical, larger-than-life." :
+                                             "Visceral, anatomical, ugly."
                     }
                     style={{
                       background: "transparent",

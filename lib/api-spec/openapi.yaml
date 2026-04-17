@@ -342,11 +342,10 @@ components:
             - cinematic
             - brutal
             - realistic
-            - funny
             - fun
             - debate
-          default: cinematic
-          description: "Tone of the fight. cinematic = epic theatrical (default). brutal = grounded, vicious, bone-snap physicality. realistic = strict stat-driven logic, no chaos. funny = absurd, comedic, no death-final language. (fun/debate accepted as legacy aliases of cinematic/realistic.)"
+          default: realistic
+          description: "Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.)"
       required:
         - team1
         - team2

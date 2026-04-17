@@ -117,7 +117,7 @@ interface FightScreenProps {
   team2Names: string[];
   team1Images?: (string | null | undefined)[];
   team2Images?: (string | null | undefined)[];
-  mode?: "cinematic" | "brutal" | "realistic" | "funny";
+  mode?: "cinematic" | "brutal" | "realistic";
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -562,12 +562,10 @@ export function FightScreen({
                       color:
                         mode === "realistic" ? "#00e5ff" :
                         mode === "brutal"    ? "#ff7a00" :
-                        mode === "funny"     ? "#c8ff00" :
                                                "#ff0055",
                       border: `1px solid ${
                         mode === "realistic" ? "#00e5ff40" :
                         mode === "brutal"    ? "#ff7a0040" :
-                        mode === "funny"     ? "#c8ff0040" :
                                                "#ff005540"
                       }`,
                       borderRadius: 2,
@@ -575,7 +573,6 @@ export function FightScreen({
                   >
                     {mode === "realistic" ? "⚖ Realistic" :
                      mode === "brutal"    ? "⚔ Brutal"    :
-                     mode === "funny"     ? "☻ Funny"     :
                                             "✦ Cinematic"}
                   </span>
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
