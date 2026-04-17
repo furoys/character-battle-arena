@@ -13,11 +13,13 @@ const TEAM_COLORS = {
   2: { border: "#ff3b30", bg: "rgba(255,59,48,0.07)", glow: "0 0 18px rgba(255,59,48,0.45), inset 0 0 12px rgba(255,59,48,0.07)", label: "#ff3b30" },
 };
 
+const formatStat = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
+
 function StatCol({ label, value, color }: { label: string; value: number; color: string }) {
-  const pct = value;
+  const pct = value / 100; // stats are 0-10000, bar fills at 100% = 10000
   return (
     <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-      <span className="font-display text-sm font-bold leading-none" style={{ color }}>{value}</span>
+      <span className="font-display text-sm font-bold leading-none" style={{ color }}>{formatStat(value)}</span>
       <div className="w-full h-0.5 bg-white/10 overflow-hidden">
         <div className="h-full" style={{ width: `${pct}%`, background: color, opacity: 0.7 }} />
       </div>

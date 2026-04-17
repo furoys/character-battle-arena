@@ -1,4 +1,5 @@
 import type { Character } from "@workspace/db";
+import { computeSynergy } from "./synergies";
 
 export interface FightRound {
   round: number;
@@ -1131,7 +1132,8 @@ function buildRoundNarrative(
 // ─── Core Simulation ──────────────────────────────────────────────────────────
 
 function teamPower(team: Character[]): number {
-  return team.reduce((sum, c) => sum + c.strength + c.speed + c.intelligence + c.durability, 0);
+  const raw = team.reduce((sum, c) => sum + c.strength + c.speed + c.intelligence + c.durability, 0);
+  return raw * computeSynergy(team).multiplier;
 }
 
 // Apply a concrete damage bonus when an attacker's power type exploits a defender's known weakness.
@@ -1324,7 +1326,7 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
 
       // Combined damage: each attacker contributes their stat-weighted share
       const gangDamage = shuffledAttackers.reduce((sum, a) => {
-        const statBonus = (a.strength + a.speed) / 200;
+        const statBonus = (a.strength + a.speed) / 20000; // stats now 0-10000
         const share = largerTeamIsTeam1
           ? (base1 / totalPower / size1) * 0.55 + statBonus * 0.23
           : (base2 / totalPower / size2) * 0.55 + statBonus * 0.23;
@@ -1370,9 +1372,7 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     if (team1Attacks) {
       attacker = pickRandom(team1);
       defender = pickRandom(team2);
-      // Exponential scaling: powerRatio^1.4 amplifies large gaps without distorting close fights.
-      // Multiplier raised to 30, random reduced to 0.13, min damage scales with power (not flat +4).
-      const statBonus     = (attacker.strength + attacker.speed) / 200;
+      const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
       const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
       const ratio1        = base1 / totalPower;
       const scaledRatio   = Math.pow(ratio1, 1.4);
@@ -1386,7 +1386,7 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
     } else {
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
-      const statBonus     = (attacker.strength + attacker.speed) / 200;
+      const statBonus     = (attacker.strength + attacker.speed) / 20000; // stats now 0-10000
       const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
       const ratio2        = base2 / totalPower;
       const scaledRatio   = Math.pow(ratio2, 1.4);
