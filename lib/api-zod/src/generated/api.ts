@@ -230,6 +230,10 @@ export const SimulateFightResponse = zod.object({
   arenaIntro: zod
     .string()
     .optional()
-    .describe("AI-generated arena description shown before the fight begins"),
+    .describe("AI-generated arena/setting description shown before the fight begins"),
+  intro: zod
+    .string()
+    .optional()
+    .describe("AI-generated combatant entrance scene shown after the arena"),
   simulatedAt: zod.coerce.date(),
 });
