@@ -1,5 +1,6 @@
 import type { Character } from "@workspace/db";
 import { computeSynergy } from "./synergies";
+import { openai } from "@workspace/integrations-openai-ai-server";
 
 export interface FightRound {
   round: number;
@@ -15,6 +16,7 @@ export interface FightResult {
   winner: number;
   rounds: FightRound[];
   summary: string;
+  arenaIntro?: string;
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -1323,7 +1325,129 @@ const gangUpTemplates: ((attackers: string, defender: string, arena: string) => 
   (atk, def, _env) => `${atk} don't need a plan. They have the numbers. They rush ${def} from multiple directions and let physics sort it out. Physics is not kind to ${def}.`,
 ];
 
-export function simulateFight(team1: Character[], team2: Character[], mode: "fun" | "debate" = "fun"): FightResult {
+// ─── AI Narrative Generation ───────────────────────────────────────────────────
+
+interface ArenaData {
+  name: string;
+  flavor: string[];
+}
+
+interface RoundSimData {
+  round: number;
+  attackerName: string;
+  defenderName: string;
+  attackMove: string;
+  team1HpBefore: number;
+  team2HpBefore: number;
+  team1HpAfter: number;
+  team2HpAfter: number;
+  isChaos: boolean;
+  isBetrayal: boolean;
+}
+
+async function generateAINarrative(
+  team1: Character[],
+  team2: Character[],
+  arena: ArenaData,
+  roundSimData: RoundSimData[],
+  winner: number,
+): Promise<{ arenaIntro: string; roundNarratives: string[] }> {
+  const team1Names = team1.map(c => c.name).join(" & ");
+  const team2Names = team2.map(c => c.name).join(" & ");
+  const winnerNames = winner === 1 ? team1Names : team2Names;
+  const loserNames = winner === 1 ? team2Names : team1Names;
+
+  const trim80 = (s: string) => s.length > 80 ? s.slice(0, 77) + "..." : s;
+  const team1Info = team1.map(c =>
+    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
+  ).join("; ");
+  const team2Info = team2.map(c =>
+    `${c.name} [STR:${c.strength} SPD:${c.speed} INT:${c.intelligence} DUR:${c.durability}] ${trim80(c.specialAbility)}`
+  ).join("; ");
+
+  const arenaDetails = arena.flavor.join(" ");
+
+  const roundLines = roundSimData.map(r => {
+    const extra = r.isChaos ? " [CHAOS EVENT]" : r.isBetrayal ? " [BETRAYAL]" : "";
+    return `R${r.round}: ${r.attackerName} vs ${r.defenderName} — "${r.attackMove}"${extra} (T1:${r.team1HpAfter}hp T2:${r.team2HpAfter}hp)`;
+  }).join("\n");
+
+  const prompt = `Write a brutal, visceral fight narrative in EXACT format below. Style: Mortal Kombat meets cinema — short punchy sentences, physical cause and effect, no abstract language. Every sentence describes something that physically happens.
+
+ARENA: ${arena.name} — ${arenaDetails}
+
+FIGHTERS:
+Team 1 (${team1Names}): ${team1Info}
+Team 2 (${team2Names}): ${team2Info}
+
+ROUND DATA (follow exactly — attacker listed first):
+${roundLines}
+WINNER: ${winnerNames}. LOSER: ${loserNames} — dead or incapacitated.
+
+FORMAT (use EXACT headers, no extra text):
+
+=== ARENA ===
+2 sentences. Vivid physical setting — hazards, sounds, smells. Something that will get destroyed.
+
+=== ROUND 1 ===
+3 sentences. First move and impact. Environmental destruction. Who wins this round and their physical state.
+
+=== ROUND 2 ===
+3 sentences. Follow round data. Show damage from previous round still visible.
+
+[same 3-sentence format for all ${roundSimData.length} rounds]
+
+RULES: Use arena hazards each round. Blood/bones/fatigue must show. Power effects = physical description only (no "reality warps"). [CHAOS EVENT] = environment turns the fight. [BETRAYAL] = ally turns traitor. ${winnerNames} wins overall. Keep each round to 3 sentences max.`;
+
+  try {
+    // Stream the response — required for long outputs to avoid proxy timeouts
+    // AbortController: 80-second wall-clock limit before falling back to templates
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 80_000);
+
+    let text = "";
+    try {
+      const stream = await openai.chat.completions.create(
+        {
+          model: "gpt-5-mini",
+          max_completion_tokens: 8192,
+          messages: [{ role: "user", content: prompt }],
+          stream: true,
+        },
+        { signal: ac.signal },
+      );
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) text += delta;
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+
+    // Parse === ARENA === section
+    const arenaMatch = text.match(/=== ARENA ===\s*\n([\s\S]*?)(?=\n=== ROUND|\n===|$)/);
+    const arenaIntro = arenaMatch?.[1]?.trim() ?? "";
+
+    // Parse === ROUND N === sections
+    const roundNarratives: string[] = [];
+    for (let i = 0; i < roundSimData.length; i++) {
+      const n = i + 1;
+      const next = i + 2;
+      const pattern = new RegExp(
+        `=== ROUND ${n} ===\\s*\\n([\\s\\S]*?)(?=\\n=== ROUND ${next} ===|\\n===|$)`,
+      );
+      const match = text.match(pattern);
+      roundNarratives.push(match?.[1]?.trim() ?? "");
+    }
+
+    return { arenaIntro, roundNarratives };
+  } catch (err) {
+    console.error("[fightSimulator] AI narrative generation failed:", err);
+    return { arenaIntro: "", roundNarratives: [] };
+  }
+}
+
+export async function simulateFight(team1: Character[], team2: Character[], mode: "fun" | "debate" = "fun"): Promise<FightResult> {
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
@@ -1347,7 +1471,7 @@ export function simulateFight(team1: Character[], team2: Character[], mode: "fun
 
   const rounds: FightRound[] = [];
 
-  const maxRounds = 14 + Math.floor(Math.random() * 9); // 14–22 rounds
+  const maxRounds = 6 + Math.floor(Math.random() * 3); // 6–8 rounds — keeps AI generation under 60 seconds
   const arena = pickRandom(arenas);
 
   // Narrative state — separate no-repeat trackers per pool + ability cycling
@@ -1597,7 +1721,6 @@ export function simulateFight(team1: Character[], team2: Character[], mode: "fun
 
   // Build a character-appropriate conclusion for the losing side
   const loserTags = loseTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
-  const winnerTags = winTeam.reduce((set, c) => { getTags(c).forEach(t => set.add(t)); return set; }, new Set<string>());
   const loserConclusion = loserTags.has("cosmic")
     ? `${loserNames} dispersed — scattered across dimensions, no longer present in this reality.`
     : loserTags.has("immortal")
@@ -1616,5 +1739,31 @@ export function simulateFight(team1: Character[], team2: Character[], mode: "fun
     `${winnerNames} — battered, possibly betrayed, still breathing — close out ${rounds.length} rounds on ${arena.name}. ${loserConclusion}${extraClause}`,
   ];
 
-  return { winner, rounds, summary: pickRandom(summaries) };
+  // ── AI narrative generation ──────────────────────────────────────────────────
+  // Build the round-sim data from the computed rounds array.
+  // hp1Before/hp2Before come from the prior round's trailing HP (or 100 for round 1).
+  const roundSimData: RoundSimData[] = rounds.map((r, idx) => ({
+    round: r.round,
+    attackerName: r.attacker,
+    defenderName: r.defender,
+    attackMove: r.attackType,
+    team1HpBefore: idx === 0 ? 100 : rounds[idx - 1]!.team1Hp,
+    team2HpBefore: idx === 0 ? 100 : rounds[idx - 1]!.team2Hp,
+    team1HpAfter: r.team1Hp,
+    team2HpAfter: r.team2Hp,
+    isChaos: r.attackType.startsWith("chaos:"),
+    isBetrayal: r.attackType === "betrayal",
+  }));
+
+  const { arenaIntro, roundNarratives } = await generateAINarrative(
+    team1, team2, arena, roundSimData, winner,
+  );
+
+  // Inject AI narratives — fall back to template narrative if AI returned empty
+  const finalRounds = rounds.map((r, idx) => ({
+    ...r,
+    narrative: roundNarratives[idx]?.trim().length ? roundNarratives[idx]! : r.narrative,
+  }));
+
+  return { winner, rounds: finalRounds, summary: pickRandom(summaries), arenaIntro };
 }

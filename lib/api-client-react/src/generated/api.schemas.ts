@@ -117,6 +117,8 @@ export interface FightResult {
   winner: number;
   rounds: FightRound[];
   summary: string;
+  /** AI-generated arena description shown before the fight begins */
+  arenaIntro?: string;
   simulatedAt: string;
 }
 

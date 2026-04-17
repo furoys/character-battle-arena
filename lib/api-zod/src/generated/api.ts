@@ -227,5 +227,9 @@ export const SimulateFightResponse = zod.object({
     }),
   ),
   summary: zod.string(),
+  arenaIntro: zod
+    .string()
+    .optional()
+    .describe("AI-generated arena description shown before the fight begins"),
   simulatedAt: zod.coerce.date(),
 });
