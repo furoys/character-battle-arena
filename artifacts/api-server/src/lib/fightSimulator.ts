@@ -1828,10 +1828,13 @@ interface RoundSimData {
 async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: number): Promise<string> {
   return new Promise<string>((resolve) => {
     const ac = new AbortController();
-    const deadline = setTimeout(() => { ac.abort(); resolve(""); }, timeoutMs);
+    let text = "";
+    // On timeout, abort the stream but RETURN whatever has streamed so far —
+    // discarding partial text means complete sections (SETTING, ENTRANCE, etc.)
+    // get thrown away even though they're usable.
+    const deadline = setTimeout(() => { ac.abort(); resolve(text); }, timeoutMs);
 
     (async () => {
-      let text = "";
       try {
         const stream = await openai.chat.completions.create(
           { model: "gpt-5-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
@@ -1845,7 +1848,7 @@ async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: n
         resolve(text);
       } catch {
         clearTimeout(deadline);
-        resolve("");
+        resolve(text); // return any partial text accumulated before the abort
       }
     })();
   });
@@ -2045,21 +2048,31 @@ async function generateAINarrative(
 
   const directiveFor = (idx: number, total: number): string => {
     const r = rd(idx);
-    // Phrase the attacker prompt as a focus-cue, not as "uses X" — moves should
-    // be implied through observable physical action, never named as traits.
-    const moveHint = r ? `(focus this round on ${r.attackerName}.)` : "";
-    const hp = hpNote(idx);
     const isFirst = idx === 0;
     const isLast  = idx === total - 1;
+    // Phrase the attacker prompt as a focus-cue, not as "uses X" — moves should
+    // be implied through observable physical action, never named as traits.
+    // CRITICAL: in dominant arcs and in the final round, NEVER let the focus
+    // land on the loser (the simulator's random attacker pick can be either
+    // side, which would contradict the winner directive and cause the AI to
+    // hallucinate a verdict reversal). Force focus to the winning side.
+    const winnerSide = assessment?.verdict === 1 ? team1 : team2;
+    const winnerSideNames = new Set(winnerSide.map(c => c.name));
+    const focusName =
+      r && (dominantArc || isLast) && !winnerSideNames.has(r.attackerName)
+        ? winnerNames
+        : r?.attackerName ?? winnerNames;
+    const moveHint = `(focus this round on ${focusName}.)`;
+    const hp = hpNote(idx);
 
     // Dominant arcs: every round, the favored side controls. No fake reversals.
     if (dominantArc) {
       if (isFirst && isLast)
-        return `(SINGLE-ROUND BEATDOWN. ${moveHint} ${hp} ${winnerNames} ends this in the opening exchange. Show why the gap is unbridgeable. ${loserNames} barely registers what hit them.)`;
+        return `(SINGLE-ROUND BEATDOWN. ${moveHint} ${hp} ${winnerNames} ends this in the opening exchange — ${winnerNames} is the attacker, ${loserNames} is the one who falls. Show why the gap is unbridgeable. ${loserNames} barely registers what hit them.)`;
       if (isFirst)
-        return `(Opening dominance. ${moveHint} ${hp} ${winnerNames} establishes the gap immediately. ${loserNames} reels and tries to mount any response. They can't.)`;
+        return `(Opening dominance. ${moveHint} ${hp} ${winnerNames} establishes the gap immediately with the first hit. ${loserNames} reels and tries to mount any response. They can't.)`;
       if (isLast)
-        return `(Finish. ${moveHint} ${hp} ${winnerNames} closes it out. ${loserNames} never had a window. Pick a specific, decisive ending — see the ENDINGS list at the bottom.)`;
+        return `(Finish. ${moveHint} ${hp} ${winnerNames} delivers the final hit — ${loserNames} is the one who goes down, NOT ${winnerNames}. ${loserNames} never had a window. Pick a specific, decisive ending from the ENDINGS list at the bottom.)`;
       return `(Continued domination. ${moveHint} ${hp} ${loserNames} attempts something — it fails clearly. ${winnerNames} answers harder.)`;
     }
 
@@ -2172,7 +2185,10 @@ FORMAT RULES:
 - Match round length and tension to the verdict's mismatch level. Blowouts are SHORT and DOMINANT.`;
 
   // 22-second AI window (30s proxy limit minus buffer).
-  const raw = await aiTextWithTimeout(prompt, 2500, 22_000);
+  // 4500 tokens gives the model room to honor PHYSICALITY rules across all
+  // sections (SETTING + ENTRANCE + N rounds + RESULT) — the prior 2500 budget
+  // was getting clipped, leaving ENTRANCE/RESULT to fall back to templates.
+  const raw = await aiTextWithTimeout(prompt, 4500, 22_000);
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "" };
@@ -2425,7 +2441,14 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       initBase += favorBias;
     }
     const initAdj  = clamp(initBase + bMods1.initiativeBonus - bMods2.initiativeBonus, 0.05, 0.95);
-    const team1Attacks = Math.random() < initAdj;
+    // In dominant arcs, the favored side ALWAYS attacks. Letting the loser be
+    // the round's "attacker" causes templated narrative fallbacks to describe
+    // the loser hitting the winner — directly contradicting the verdict.
+    const isLastRound = i === maxRounds - 1;
+    const forceWinnerAttack = assessment.forceDominant || isLastRound;
+    const team1Attacks = forceWinnerAttack
+      ? assessment.verdict === 1
+      : Math.random() < initAdj;
 
     let attacker: Character;
     let defender: Character;
@@ -2611,12 +2634,20 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const loserConclusion = taggedConclusion ?? pickRandom(pool);
 
+  // Subject-verb agreement based on winning team size
+  const winSolo = winTeam.length === 1;
+  const winIs = winSolo ? "is" : "are";
+  const winSurvive = winSolo ? "survives" : "survive";
+  const winWalk = winSolo ? "walks" : "walk";
+  const winClose = winSolo ? "closes" : "close";
+  const winLast = winSolo ? "the last one standing" : "the last ones standing";
+
   const summaries = [
-    `After ${rounds.length} rounds on ${arena.name}, ${winnerNames} are the last ones standing. ${loserConclusion}${extraClause}`,
-    `${winnerNames} survive ${rounds.length} brutal rounds on ${arena.name}. ${loserConclusion}${extraClause} This was not a close fight. It was a fight.`,
+    `After ${rounds.length} rounds on ${arena.name}, ${winnerNames} ${winIs} ${winLast}. ${loserConclusion}${extraClause}`,
+    `${winnerNames} ${winSurvive} ${rounds.length} brutal rounds on ${arena.name}. ${loserConclusion}${extraClause} This was not a close fight. It was a fight.`,
     `${rounds.length} rounds. One winner. ${winnerNames} made sure of it. ${loserConclusion}${extraClause}`,
-    `${arena.name} saw ${rounds.length} rounds of escalating violence. ${winnerNames} walked away. ${loserConclusion}${extraClause}`,
-    `${winnerNames} — battered, possibly betrayed, still breathing — close out ${rounds.length} rounds on ${arena.name}. ${loserConclusion}${extraClause}`,
+    `${arena.name} saw ${rounds.length} rounds of escalating violence. ${winnerNames} ${winWalk} away. ${loserConclusion}${extraClause}`,
+    `${winnerNames} — battered, possibly betrayed, still breathing — ${winClose} out ${rounds.length} rounds on ${arena.name}. ${loserConclusion}${extraClause}`,
   ];
 
   // ── AI narrative generation ──────────────────────────────────────────────────
@@ -2651,14 +2682,21 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   // Use AI result text as the match summary, fall back to template summary
   const finalSummary = aiResult.resultText?.trim().length ? aiResult.resultText : pickRandom(summaries);
 
-  // Combatant entrance: use AI if available, otherwise build from character data
+  // Combatant entrance: use AI if available, otherwise build from character data.
+  // Fallback is intentionally minimal — clean physical staging, no raw stat dumps.
   const finalIntro = aiResult.intro?.trim().length
     ? aiResult.intro
-    : team1
-        .map(c => `${c.name} steps into ${arena.name}, ${(c.specialAbility.split(".")[0] ?? "").trim().toLowerCase() || "powers at the ready"}.`)
-        .concat(team2.map(c => `Across the field, ${c.name} arrives — ${(c.specialAbility.split(".")[0] ?? "").trim().toLowerCase() || "ready for battle"}.`))
-        .concat(["The air between them crackles. Neither speaks."])
-        .join(" ");
+    : (() => {
+        const t1Names = team1.map(c => c.name);
+        const t2Names = team2.map(c => c.name);
+        const t1Line = t1Names.length === 1
+          ? `${t1Names[0]} steps into ${arena.name}, weight settling, eyes locked forward.`
+          : `${t1Names.slice(0, -1).join(", ")} and ${t1Names.at(-1)} take the near side of ${arena.name}, fanning out without a word.`;
+        const t2Line = t2Names.length === 1
+          ? `Across the way, ${t2Names[0]} appears — no greeting, no posturing, just ready.`
+          : `Opposite them, ${t2Names.slice(0, -1).join(", ")} and ${t2Names.at(-1)} hold the far side, already moving into position.`;
+        return `${t1Line} ${t2Line} The space between them goes quiet. Nobody bothers with words.`;
+      })();
 
   return {
     winner,
