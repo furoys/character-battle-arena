@@ -19,6 +19,20 @@ import { Button } from "@/components/ui/button";
 type SortKey = "power" | "str" | "spd" | "int" | "dur" | "name";
 type TierFilter = "all" | "cosmic" | "elite" | "standard" | "street";
 
+const BEHAVIOR_TAGS: { tag: string; color: string }[] = [
+  { tag: "aggressive",     color: "#ff3b30" },
+  { tag: "tactical",       color: "#00f0ff" },
+  { tag: "defensive",      color: "#30d158" },
+  { tag: "speedster",      color: "#ffe234" },
+  { tag: "regen",          color: "#30d158" },
+  { tag: "stealth",        color: "#8e8e93" },
+  { tag: "arrogant",       color: "#ff9f0a" },
+  { tag: "sadistic",       color: "#ff0055" },
+  { tag: "reality-warper", color: "#bf5af2" },
+  { tag: "long-range",     color: "#64d2ff" },
+  { tag: "close-quarters", color: "#ff6b30" },
+];
+
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "power", label: "Power (avg)" },
   { key: "str",   label: "Strength" },
@@ -41,6 +55,7 @@ export function Roster() {
   const [universeFilter, setUniverse] = useState<string>("all");
   const [sortBy, setSortBy]           = useState<SortKey>("power");
   const [tierFilter, setTierFilter]   = useState<TierFilter>("all");
+  const [tagFilter, setTagFilter]     = useState<string | null>(null);
 
   const { data: characters, isLoading } = useListCharacters();
   const { data: stats } = useGetCharacterStats();
@@ -72,6 +87,7 @@ export function Roster() {
         const t = powerTier(avg).label.toLowerCase();
         if (tierFilter !== t) return false;
       }
+      if (tagFilter && !(c.behaviorTags ?? []).includes(tagFilter)) return false;
       return true;
     })
     .sort((a, b) => {
@@ -165,6 +181,29 @@ export function Roster() {
         ))}
       </div>
 
+      {/* Behavior tag filter pills */}
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap scrollbar-none items-center">
+        <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 flex-shrink-0 mr-1">STYLE</span>
+        {BEHAVIOR_TAGS.map(({ tag, color }) => {
+          const active = tagFilter === tag;
+          return (
+            <button
+              key={tag}
+              onClick={() => setTagFilter(active ? null : tag)}
+              className="flex-shrink-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border transition-all"
+              style={{
+                color: active ? "#000" : color,
+                background: active ? color : `${color}10`,
+                borderColor: `${color}50`,
+                opacity: tagFilter !== null && !active ? 0.35 : 1,
+              }}
+            >
+              {tag}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search + Sort */}
       <div className="flex gap-2 p-3 bg-card/50 border-b border-border/30 sticky top-0 z-20">
         <div className="relative flex-1">
@@ -232,14 +271,14 @@ export function Roster() {
       </div>
 
       {/* Results count */}
-      {(search || universeFilter !== "all" || tierFilter !== "all") && (
+      {(search || universeFilter !== "all" || tierFilter !== "all" || tagFilter) && (
         <div className="px-3 py-1.5 border-b border-border/20 flex items-center justify-between bg-card/30">
           <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
             {filtered?.length ?? 0} results
           </span>
           <button
             className="text-[10px] text-primary uppercase tracking-widest hover:underline"
-            onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); }}
+            onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); setTagFilter(null); }}
           >
             Clear filters
           </button>
@@ -266,7 +305,7 @@ export function Roster() {
               <p className="font-display text-lg text-muted-foreground uppercase">No fighters found.</p>
               <button
                 className="text-xs text-primary uppercase tracking-widest hover:underline"
-                onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); }}
+                onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); setTagFilter(null); }}
               >
                 Clear all filters
               </button>
