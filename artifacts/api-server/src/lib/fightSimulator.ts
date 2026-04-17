@@ -1152,6 +1152,18 @@ function getWeaknessBonus(attacker: Character, defender: Character): number {
   return bonus;
 }
 
+// ─── Gang-up Narrative Templates ──────────────────────────────────────────────
+// Used when a larger team piles on a smaller/solo opponent simultaneously.
+
+const gangUpTemplates: ((attackers: string, defender: string, arena: string) => string)[] = [
+  (atk, def, env) => `${atk} converge on ${def} simultaneously on ${env}. There is no angle left to defend. ${def} is hit from multiple directions in the span of a single second — the numbers are simply overwhelming.`,
+  (atk, def, env) => `${atk} split apart and attack ${def} from every angle at once on ${env}. It's not a fight anymore — it's a coordinated elimination. ${def} blocks one hit and takes the other two.`,
+  (atk, def, env) => `Being outnumbered finally catches up to ${def}. ${atk} coordinate without a word on ${env} and strike together. ${def} cannot be in three places at once.`,
+  (atk, def, env) => `${atk} close in from opposite ends of ${env}. ${def} turns to face the first — the second doesn't give them time to turn back. This is what being outnumbered actually means.`,
+  (atk, def, env) => `On ${env}, ${atk} execute a pincer attack with zero margin for error. ${def} sees it coming and still can't stop it. You can't block what hits you from behind while you're blocking what's hitting you from the front.`,
+  (atk, def, env) => `${atk} don't need a plan. They have the numbers. They rush ${def} on ${env} from multiple directions and let physics sort it out. Physics is not kind to ${def}.`,
+];
+
 export function simulateFight(team1: Character[], team2: Character[]): FightResult {
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
@@ -1160,8 +1172,14 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
   const totalPower = base1 + base2;
   const powerGap = (base1 - base2) / totalPower;
 
+  // ── Team size tracking ───────────────────────────────────────────────────────
+  const size1 = team1.length;
+  const size2 = team2.length;
+  const sizeDiff = Math.abs(size1 - size2); // 0 = equal, 1 = slight edge, 2+ = big mismatch
+
   let hp1 = 100;
   let hp2 = 100;
+
   const rounds: FightRound[] = [];
 
   const maxRounds = 14 + Math.floor(Math.random() * 9); // 14–22 rounds
@@ -1184,12 +1202,14 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
   };
 
   // ── Chaos tuning ──────────────────────────────────────────────────────────
-  // Chaos fires 12–22% per round (was 22–47%). Still present, but no longer dominant.
-  const chaosFrequency = 0.12 + Math.abs(powerGap) * 0.2;
+  // Reduce chaos when the mismatch is severe — chaos shouldn't rescue a 5v1 underdog.
+  const chaosFrequency = Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
   // Betrayal: 3% per round (was 6%). Rare but still possible.
   const betrayalChance = 0.03;
   // No back-to-back chaos — after a chaos round, skip the next chaos check.
   let chaosCooldown = false;
+  // Gang-up cooldown — don't fire multiple gang-up rounds in a row.
+  let gangUpCooldown = false;
 
   for (let i = 1; i <= maxRounds; i++) {
     if (hp1 <= 0 || hp2 <= 0) break;
@@ -1271,6 +1291,66 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       continue;
     }
 
+    // ── Gang-up check (fires when sizeDiff >= 2 and larger team has advantage) ──
+    // When a team outnumbers by 2+, they can all pile on the smaller team's fighter(s).
+    // This fires ~25% of rounds during the fight, not back-to-back.
+    const currentHpAdvantage = hp1 / (hp1 + hp2);
+    const largerTeamIsTeam1 = size1 > size2;
+    const largerTeamIsWinning = largerTeamIsTeam1 ? currentHpAdvantage > 0.45 : currentHpAdvantage < 0.55;
+
+    if (
+      !gangUpCooldown &&
+      sizeDiff >= 2 &&
+      largerTeamIsWinning &&
+      Math.random() < 0.28
+    ) {
+      gangUpCooldown = true;
+      const gangTeam  = largerTeamIsTeam1 ? team1 : team2;
+      const victim    = pickRandom(largerTeamIsTeam1 ? team2 : team1);
+
+      // Build attacker name string: "X, Y, and Z"
+      const shuffledAttackers = [...gangTeam].sort(() => Math.random() - 0.5).slice(0, Math.min(gangTeam.length, 3));
+      const attackerNames = shuffledAttackers.length === 1
+        ? shuffledAttackers[0]!.name
+        : shuffledAttackers.length === 2
+          ? `${shuffledAttackers[0]!.name} and ${shuffledAttackers[1]!.name}`
+          : `${shuffledAttackers[0]!.name}, ${shuffledAttackers[1]!.name}, and ${shuffledAttackers[2]!.name}`;
+
+      // Combined damage: each attacker contributes their stat-weighted share
+      const gangDamage = shuffledAttackers.reduce((sum, a) => {
+        const statBonus = (a.strength + a.speed) / 200;
+        const share = largerTeamIsTeam1
+          ? (base1 / totalPower / size1) * 0.55 + statBonus * 0.23
+          : (base2 / totalPower / size2) * 0.55 + statBonus * 0.23;
+        return sum + Math.round(share * 17 + 3);
+      }, 0);
+
+      const gangNarrative = pickRandom(gangUpTemplates)(attackerNames, victim.name, arena.name);
+
+      if (largerTeamIsTeam1) {
+        hp2 = Math.max(0, hp2 - gangDamage);
+        narrativeState.attackerWinning = true;
+        narrativeState.defenderWinning = false;
+      } else {
+        hp1 = Math.max(0, hp1 - gangDamage);
+        narrativeState.attackerWinning = true;
+        narrativeState.defenderWinning = false;
+      }
+
+      rounds.push({
+        round: i,
+        attacker: attackerNames,
+        defender: victim.name,
+        attackType: "gang-up",
+        narrative: gangNarrative,
+        team1Hp: Math.round(hp1),
+        team2Hp: Math.round(hp2),
+      });
+      continue;
+    } else if (gangUpCooldown) {
+      gangUpCooldown = false;
+    }
+
     // ── Normal combat ─────────────────────────────────────────────────────────
     // Momentum: the team ahead in HP attacks more often (was 0.25 multiplier, now 0.35).
     const currentAdvantage = hp1 / (hp1 + hp2);
@@ -1285,8 +1365,10 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       defender = pickRandom(team2);
       // Power fraction weight raised to 0.55 (was 0.45), random reduced to 0.22 (was 0.35).
       // Strong teams now reliably hit harder; luck still matters but doesn't dominate.
+      // Extra size bonus when outnumbering significantly.
       const statBonus   = (attacker.strength + attacker.speed) / 200;
-      const effectiveness = (base1 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23;
+      const sizeBonus   = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
+      const effectiveness = ((base1 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23) * sizeBonus;
       const weakBonus   = getWeaknessBonus(attacker, defender);
       damage = Math.round(effectiveness * 17 + 4) + weakBonus;
       hp2 = Math.max(0, hp2 - damage);
@@ -1297,7 +1379,8 @@ export function simulateFight(team1: Character[], team2: Character[]): FightResu
       attacker = pickRandom(team2);
       defender = pickRandom(team1);
       const statBonus   = (attacker.strength + attacker.speed) / 200;
-      const effectiveness = (base2 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23;
+      const sizeBonus   = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
+      const effectiveness = ((base2 / totalPower) * 0.55 + Math.random() * 0.22 + statBonus * 0.23) * sizeBonus;
       const weakBonus   = getWeaknessBonus(attacker, defender);
       damage = Math.round(effectiveness * 17 + 4) + weakBonus;
       hp1 = Math.max(0, hp1 - damage);
