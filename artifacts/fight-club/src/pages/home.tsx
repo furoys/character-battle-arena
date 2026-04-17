@@ -7,6 +7,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { Search, Swords, X, Zap, AlertTriangle, ChevronDown } from "lucide-react";
 import { computeSynergy } from "@/lib/synergies";
+import { powerAvg, powerTier } from "@/components/roster-flip-card";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -235,6 +236,7 @@ export function Home() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
   const [fightMode, setFightMode] = useState<"fun" | "debate">("fun");
+  const [tierFilter, setTierFilter] = useState<string>("all");
 
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
@@ -290,10 +292,13 @@ export function Home() {
     } else {
       pool = characters;
     }
+    if (tierFilter !== "all") {
+      pool = pool.filter(c => powerTier(powerAvg(c)).label.toLowerCase() === tierFilter);
+    }
     const q = searchQuery.trim().toLowerCase();
     if (!q) return pool;
     return pool.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
-  }, [characters, searchQuery, activeFilter, favorites, recentPicks]);
+  }, [characters, searchQuery, activeFilter, favorites, recentPicks, tierFilter]);
 
   const simulateFight = useSimulateFight({
     mutation: {
@@ -633,6 +638,35 @@ export function Home() {
                   {showAllUniverses ? "Less" : "More"}
                 </button>
               </div>
+
+              {/* Tier filter pills */}
+              <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                {[
+                  { key: "all",      label: "All",     color: "rgba(255,255,255,0.35)" },
+                  { key: "cosmic",   label: "★ Cosmic",   color: "#ff0055" },
+                  { key: "elite",    label: "◆ Elite",    color: "#c084fc" },
+                  { key: "standard", label: "● Standard", color: "#00f0ff" },
+                  { key: "street",   label: "○ Street",   color: "#94a3b8" },
+                ].map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTierFilter(t.key === tierFilter ? "all" : t.key)}
+                    className="flex-shrink-0 transition-all duration-150"
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 800,
+                      letterSpacing: "0.12em",
+                      padding: "3px 7px",
+                      color: tierFilter === t.key ? "#000" : t.color,
+                      background: tierFilter === t.key ? t.color : "transparent",
+                      border: `1px solid ${tierFilter === t.key ? t.color : t.color + "50"}`,
+                      opacity: tierFilter !== "all" && tierFilter !== t.key ? 0.4 : 1,
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -656,7 +690,7 @@ export function Home() {
         ) : (
           <div className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
             {/* Filter status bar */}
-            {(activeFilter || searchQuery) && (
+            {(activeFilter || searchQuery || tierFilter !== "all") && (
               <div
                 className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
                 style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
@@ -664,10 +698,11 @@ export function Home() {
                 <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
                   {filteredCharacters.length} fighter{filteredCharacters.length !== 1 ? "s" : ""}
                   {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recently Used" : activeFilter ? ` — ${activeFilter}` : ""}
+                  {tierFilter !== "all" ? ` — ${tierFilter}` : ""}
                   {searchQuery ? ` matching "${searchQuery}"` : ""}
                 </span>
                 <button
-                  onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
+                  onClick={() => { setSearchQuery(""); setActiveFilter(null); setTierFilter("all"); }}
                   className="text-[10px] font-bold uppercase tracking-widest transition-colors"
                   style={{ color: "#ff0055" }}
                 >

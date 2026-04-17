@@ -1,22 +1,46 @@
 import { useState } from "react";
 import { useListCharacters, useGetCharacterStats, useDeleteCharacter, getListCharactersQueryKey, getGetCharacterStatsQueryKey } from "@workspace/api-client-react";
-import { RosterFlipCard } from "@/components/roster-flip-card";
+import { RosterFlipCard, powerAvg, powerTier } from "@/components/roster-flip-card";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Swords, Zap, Brain } from "lucide-react";
+import { Search, Swords, Zap, Brain, ChevronDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+type SortKey = "power" | "str" | "spd" | "int" | "dur" | "name";
+type TierFilter = "all" | "cosmic" | "elite" | "standard" | "street";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "power", label: "Power (avg)" },
+  { key: "str",   label: "Strength" },
+  { key: "spd",   label: "Speed" },
+  { key: "int",   label: "Intelligence" },
+  { key: "dur",   label: "Durability" },
+  { key: "name",  label: "Name A–Z" },
+];
+
+const TIER_OPTIONS: { key: TierFilter; label: string; color: string }[] = [
+  { key: "all",      label: "All Tiers",  color: "hsl(var(--muted-foreground))" },
+  { key: "cosmic",   label: "★ Cosmic",   color: "#ff0055" },
+  { key: "elite",    label: "◆ Elite",    color: "#c084fc" },
+  { key: "standard", label: "● Standard", color: "#00f0ff" },
+  { key: "street",   label: "○ Street",   color: "#94a3b8" },
+];
 
 export function Roster() {
-  const [search, setSearch] = useState("");
-  const [universeFilter, setUniverseFilter] = useState<string>("all");
+  const [search, setSearch]           = useState("");
+  const [universeFilter, setUniverse] = useState<string>("all");
+  const [sortBy, setSortBy]           = useState<SortKey>("power");
+  const [tierFilter, setTierFilter]   = useState<TierFilter>("all");
 
   const { data: characters, isLoading } = useListCharacters();
   const { data: stats } = useGetCharacterStats();
@@ -37,17 +61,36 @@ export function Roster() {
     }
   };
 
-  const universes = Array.from(new Set(characters?.map(c => c.universe) || []));
+  const universes = Array.from(new Set(characters?.map(c => c.universe) || [])).sort();
 
-  const filteredCharacters = characters?.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
-    const matchesUniverse = universeFilter === "all" || c.universe === universeFilter;
-    return matchesSearch && matchesUniverse;
-  });
+  const filtered = characters
+    ?.filter(c => {
+      if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (universeFilter !== "all" && c.universe !== universeFilter) return false;
+      if (tierFilter !== "all") {
+        const avg = powerAvg(c);
+        const t = powerTier(avg).label.toLowerCase();
+        if (tierFilter !== t) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "str":   return b.strength - a.strength;
+        case "spd":   return b.speed - a.speed;
+        case "int":   return b.intelligence - a.intelligence;
+        case "dur":   return b.durability - a.durability;
+        case "name":  return a.name.localeCompare(b.name);
+        default:      return powerAvg(b) - powerAvg(a);
+      }
+    });
+
+  const currentSort = SORT_OPTIONS.find(o => o.key === sortBy)!;
+  const currentTier = TIER_OPTIONS.find(o => o.key === tierFilter)!;
 
   return (
     <div className="flex flex-col">
-      {/* Page title */}
+      {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-border/30">
         <h1 className="font-display text-2xl uppercase tracking-widest text-primary">Roster</h1>
         {stats && (
@@ -60,8 +103,8 @@ export function Roster() {
         <div className="grid grid-cols-3 border-b border-border/30">
           {[
             { label: "Strongest", name: stats.topStrength?.name, value: `${stats.topStrength?.strength?.toLocaleString()} STR`, icon: Swords, color: "text-team2" },
-            { label: "Fastest", name: stats.topSpeed?.name, value: `${stats.topSpeed?.speed?.toLocaleString()} SPD`, icon: Zap, color: "text-team1" },
-            { label: "Smartest", name: stats.topIntelligence?.name, value: `${stats.topIntelligence?.intelligence?.toLocaleString()} INT`, icon: Brain, color: "text-secondary" },
+            { label: "Fastest",   name: stats.topSpeed?.name,    value: `${stats.topSpeed?.speed?.toLocaleString()} SPD`,        icon: Zap,    color: "text-team1" },
+            { label: "Smartest",  name: stats.topIntelligence?.name, value: `${stats.topIntelligence?.intelligence?.toLocaleString()} INT`, icon: Brain, color: "text-secondary" },
           ].map(s => (
             <div key={s.label} className="p-3 border-r last:border-r-0 border-border/30 flex flex-col gap-0.5">
               <div className="flex items-center gap-1">
@@ -75,24 +118,54 @@ export function Roster() {
         </div>
       )}
 
-      {/* Universe tags */}
-      {stats?.universeBreakdown && stats.universeBreakdown.length > 0 && (
-        <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap">
-          {stats.universeBreakdown.map(u => (
-            <Badge
-              key={u.universe}
-              variant="secondary"
-              className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
-              onClick={() => setUniverseFilter(u.universe === universeFilter ? "all" : u.universe)}
-              style={{ opacity: universeFilter !== "all" && universeFilter !== u.universe ? 0.4 : 1 }}
-            >
-              {u.universe} {u.count}
-            </Badge>
-          ))}
+      {/* Universe quick tags */}
+      {universes.length > 0 && (
+        <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap scrollbar-none">
+          <Badge
+            variant="secondary"
+            className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
+            style={{ opacity: universeFilter === "all" ? 1 : 0.45 }}
+            onClick={() => setUniverse("all")}
+          >
+            ALL
+          </Badge>
+          {universes.map(u => {
+            const count = characters?.filter(c => c.universe === u).length ?? 0;
+            return (
+              <Badge
+                key={u}
+                variant="secondary"
+                className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
+                style={{ opacity: universeFilter !== "all" && universeFilter !== u ? 0.35 : 1 }}
+                onClick={() => setUniverse(u === universeFilter ? "all" : u)}
+              >
+                {u} {count}
+              </Badge>
+            );
+          })}
         </div>
       )}
 
-      {/* Search + Filter */}
+      {/* Power tier filter pills */}
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap scrollbar-none">
+        {TIER_OPTIONS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTierFilter(t.key === tierFilter ? "all" : t.key)}
+            className="flex-shrink-0 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border transition-all"
+            style={{
+              color: tierFilter === t.key ? "#000" : t.color,
+              background: tierFilter === t.key ? t.color : "transparent",
+              borderColor: `${t.color}60`,
+              opacity: tierFilter !== "all" && tierFilter !== t.key ? 0.4 : 1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search + Sort */}
       <div className="flex gap-2 p-3 bg-card/50 border-b border-border/30 sticky top-0 z-20">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -103,21 +176,75 @@ export function Roster() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={universeFilter} onValueChange={setUniverseFilter}>
-          <SelectTrigger className="rounded-none border-2 h-10 w-[140px] bg-background text-xs font-bold uppercase">
-            <div className="flex items-center gap-1">
-              <Filter className="h-3 w-3" />
-              <SelectValue placeholder="Universe" />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="rounded-none font-bold text-xs uppercase">
-            <SelectItem value="all">All Universes</SelectItem>
-            {universes.map(u => (
-              <SelectItem key={u} value={u}>{u}</SelectItem>
+
+        {/* Sort dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="rounded-none border-2 h-10 px-3 gap-1 text-xs font-bold uppercase whitespace-nowrap">
+              {currentSort.label}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="rounded-none min-w-[160px]">
+            <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground">Sort by</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {SORT_OPTIONS.map(o => (
+              <DropdownMenuItem
+                key={o.key}
+                className={`text-xs font-bold uppercase ${sortBy === o.key ? "text-primary" : ""}`}
+                onClick={() => setSortBy(o.key)}
+              >
+                {o.label}
+                {sortBy === o.key && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Tier quick filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="rounded-none border-2 h-10 px-3 gap-1 text-xs font-bold uppercase whitespace-nowrap"
+              style={{ color: currentTier.color, borderColor: tierFilter !== "all" ? currentTier.color : undefined }}
+            >
+              {tierFilter === "all" ? "Tier" : currentTier.label}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="rounded-none min-w-[140px]">
+            <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground">Power Tier</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {TIER_OPTIONS.map(t => (
+              <DropdownMenuItem
+                key={t.key}
+                className="text-xs font-bold uppercase"
+                style={{ color: tierFilter === t.key ? t.color : undefined }}
+                onClick={() => setTierFilter(t.key)}
+              >
+                {t.label}
+                {tierFilter === t.key && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      {/* Results count */}
+      {(search || universeFilter !== "all" || tierFilter !== "all") && (
+        <div className="px-3 py-1.5 border-b border-border/20 flex items-center justify-between bg-card/30">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+            {filtered?.length ?? 0} results
+          </span>
+          <button
+            className="text-[10px] text-primary uppercase tracking-widest hover:underline"
+            onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); }}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
 
       {/* Grid */}
       {isLoading ? (
@@ -126,7 +253,7 @@ export function Roster() {
         </div>
       ) : (
         <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filteredCharacters?.map(character => (
+          {filtered?.map(character => (
             <div key={character.id} className="group/card">
               <RosterFlipCard
                 character={character}
@@ -134,9 +261,15 @@ export function Roster() {
               />
             </div>
           ))}
-          {filteredCharacters?.length === 0 && (
-            <div className="col-span-full text-center p-12">
+          {filtered?.length === 0 && (
+            <div className="col-span-full text-center p-12 flex flex-col items-center gap-3">
               <p className="font-display text-lg text-muted-foreground uppercase">No fighters found.</p>
+              <button
+                className="text-xs text-primary uppercase tracking-widest hover:underline"
+                onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); }}
+              >
+                Clear all filters
+              </button>
             </div>
           )}
         </div>

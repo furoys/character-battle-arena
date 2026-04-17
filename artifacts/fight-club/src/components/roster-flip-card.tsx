@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Badge } from "@/components/ui/badge";
-import { X, Zap, Shield, Brain, Heart, Swords } from "lucide-react";
+import { X, Zap, Shield, Brain, Swords } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";
 
 interface RosterFlipCardProps {
@@ -9,24 +9,31 @@ interface RosterFlipCardProps {
   onDelete?: () => void;
 }
 
-const formatStatNum = (v: number) => v >= 1000 ? v.toLocaleString() : String(v);
+const formatStatNum = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
+
+export function powerAvg(c: Character) {
+  return Math.round((c.strength + c.speed + c.intelligence + c.durability) / 4);
+}
+
+export function powerTier(avg: number): { label: string; color: string; bg: string } {
+  if (avg >= 8000) return { label: "COSMIC", color: "#ff0055", bg: "rgba(255,0,85,0.15)" };
+  if (avg >= 6000) return { label: "ELITE",  color: "#c084fc", bg: "rgba(192,132,252,0.15)" };
+  if (avg >= 4000) return { label: "STANDARD", color: "#00f0ff", bg: "rgba(0,240,255,0.10)" };
+  return               { label: "STREET",  color: "#94a3b8", bg: "rgba(148,163,184,0.10)" };
+}
 
 function StatBar({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
-  const getBarColor = (v: number) => {
-    if (v >= 9000) return "bg-primary";
-    if (v >= 4900) return "bg-secondary";
-    if (v >= 2500) return "bg-yellow-500";
-    return "bg-muted-foreground";
-  };
+  const pct = value / 100;
+  const barColor = value >= 9000 ? "#ff0055" : value >= 6000 ? "#c084fc" : value >= 4000 ? "#00f0ff" : "#94a3b8";
 
   return (
     <div className="flex items-center gap-2">
       <Icon className={`h-3 w-3 flex-shrink-0 ${color}`} />
       <span className="text-[10px] font-bold text-muted-foreground w-6">{label}</span>
       <div className="flex-1 h-1.5 bg-white/10 rounded-none overflow-hidden">
-        <div className={`h-full ${getBarColor(value)}`} style={{ width: `${value / 100}%` }} />
+        <div className="h-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
       </div>
-      <span className="text-[10px] font-bold w-12 text-right">{formatStatNum(value)}</span>
+      <span className="text-[10px] font-bold w-10 text-right tabular-nums">{formatStatNum(value)}</span>
     </div>
   );
 }
@@ -42,6 +49,9 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const avg = powerAvg(character);
+  const tier = powerTier(avg);
 
   return (
     <div
@@ -82,33 +92,45 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
                 <span className="font-display text-7xl font-bold opacity-40 select-none">{initials}</span>
               </div>
             )}
+            {/* Power tier pill — sits over image bottom-right */}
+            <div
+              className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest border"
+              style={{ color: tier.color, background: tier.bg, borderColor: `${tier.color}40` }}
+            >
+              {tier.label}
+            </div>
           </div>
 
           {/* Info */}
           <div className="px-3 pt-2 pb-3 flex flex-col gap-2">
-            <Badge variant="outline" className="rounded-none border-primary text-primary font-bold uppercase tracking-wider text-[9px] w-fit">
-              {character.universe}
-            </Badge>
+            <div className="flex items-center justify-between gap-1">
+              <Badge variant="outline" className="rounded-none border-primary text-primary font-bold uppercase tracking-wider text-[9px] truncate max-w-[120px]">
+                {character.universe}
+              </Badge>
+              <span className="text-[10px] font-black tabular-nums" style={{ color: tier.color }}>
+                {formatStatNum(avg)} PWR
+              </span>
+            </div>
             <h3 className="font-display text-xl leading-none uppercase truncate">{character.name}</h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-1">
-              <StatBar label="STR" value={character.strength} icon={Swords} color="text-team2" />
-              <StatBar label="SPD" value={character.speed} icon={Zap} color="text-team1" />
-              <StatBar label="INT" value={character.intelligence} icon={Brain} color="text-secondary" />
-              <StatBar label="DUR" value={character.durability} icon={Shield} color="text-yellow-500" />
+              <StatBar label="STR" value={character.strength}     icon={Swords} color="text-team2" />
+              <StatBar label="SPD" value={character.speed}        icon={Zap}    color="text-team1" />
+              <StatBar label="INT" value={character.intelligence} icon={Brain}  color="text-secondary" />
+              <StatBar label="DUR" value={character.durability}   icon={Shield} color="text-yellow-500" />
             </div>
-            <p className="text-[10px] text-primary font-medium line-clamp-1 pt-0.5">{character.specialAbility}</p>
-            <p className="text-[9px] text-muted-foreground text-center mt-1 uppercase tracking-widest">Tap to flip</p>
+            <p className="text-[10px] text-primary font-medium line-clamp-2 pt-0.5 leading-relaxed">{character.specialAbility}</p>
+            <p className="text-[9px] text-muted-foreground/50 text-center mt-0.5 uppercase tracking-widest">Tap to flip</p>
           </div>
         </div>
 
         {/* ── BACK ── */}
         <div className="roster-flip-face roster-flip-back border-2 border-primary/40 bg-card overflow-hidden flex flex-col">
-          {/* A.v.A Logo Header */}
+          {/* Header */}
           <div className="flex items-center justify-center py-2 border-b border-primary/20 bg-primary/5 flex-shrink-0">
             <AvaLogo className="h-9 w-auto" />
           </div>
 
-          {/* Small portrait + name */}
+          {/* Small portrait + name + tier */}
           <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border/30 flex-shrink-0">
             <div className="w-10 h-10 flex-shrink-0 overflow-hidden border border-primary/30">
               {character.imageUrl && !imgError ? (
@@ -119,29 +141,34 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
                 </div>
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="font-display text-lg leading-none uppercase truncate">{character.name}</h3>
-              <Badge variant="outline" className="rounded-none border-primary/60 text-primary font-bold uppercase tracking-wider text-[8px] mt-0.5">
-                {character.universe}
-              </Badge>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Badge variant="outline" className="rounded-none border-primary/60 text-primary font-bold uppercase tracking-wider text-[8px]">
+                  {character.universe}
+                </Badge>
+                <span
+                  className="text-[9px] font-black uppercase tracking-widest"
+                  style={{ color: tier.color }}
+                >
+                  {tier.label}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Scrollable bio */}
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 text-xs">
-            {/* Description */}
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Bio</p>
               <p className="text-foreground/80 leading-relaxed text-[11px]">{character.description}</p>
             </div>
 
-            {/* Special */}
             <div>
               <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Signature Ability</p>
               <p className="text-primary text-[11px] leading-relaxed">{character.specialAbility}</p>
             </div>
 
-            {/* Weaknesses */}
             {character.weaknesses && (
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Weaknesses</p>
@@ -149,18 +176,21 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
               </div>
             )}
 
-            {/* Stats row */}
             <div className="pt-1 border-t border-border/30">
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                <StatBar label="STR" value={character.strength} icon={Swords} color="text-team2" />
-                <StatBar label="SPD" value={character.speed} icon={Zap} color="text-team1" />
-                <StatBar label="INT" value={character.intelligence} icon={Brain} color="text-secondary" />
-                <StatBar label="DUR" value={character.durability} icon={Shield} color="text-yellow-500" />
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                <StatBar label="STR" value={character.strength}     icon={Swords} color="text-team2" />
+                <StatBar label="SPD" value={character.speed}        icon={Zap}    color="text-team1" />
+                <StatBar label="INT" value={character.intelligence} icon={Brain}  color="text-secondary" />
+                <StatBar label="DUR" value={character.durability}   icon={Shield} color="text-yellow-500" />
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Avg Power</span>
+                <span className="text-sm font-black tabular-nums" style={{ color: tier.color }}>{formatStatNum(avg)}</span>
               </div>
             </div>
           </div>
 
-          <p className="text-[9px] text-muted-foreground text-center py-1.5 flex-shrink-0 border-t border-border/20 uppercase tracking-widest">Tap to flip back</p>
+          <p className="text-[9px] text-muted-foreground/50 text-center py-1.5 flex-shrink-0 border-t border-border/20 uppercase tracking-widest">Tap to flip back</p>
         </div>
       </div>
     </div>

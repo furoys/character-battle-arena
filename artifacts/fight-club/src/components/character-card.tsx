@@ -19,14 +19,18 @@ const TEAM_COLORS = {
 const formatStat = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
 
 function StatCol({ label, value, color }: { label: string; value: number; color: string }) {
-  const pct = value / 100; // stats are 0-10000, bar fills at 100% = 10000
+  const pct = value / 100;
   return (
     <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-      <span className="font-display text-sm font-bold leading-none" style={{ color }}>{formatStat(value)}</span>
-      <div className="w-full h-0.5 bg-white/10 overflow-hidden">
-        <div className="h-full" style={{ width: `${pct}%`, background: color, opacity: 0.7 }} />
+      <span className="font-display text-sm font-bold leading-none" style={{ color, textShadow: `0 0 8px ${color}60` }}>
+        {formatStat(value)}
+      </span>
+      <div className="w-full h-1 bg-white/10 overflow-hidden">
+        <div className="h-full" style={{ width: `${pct}%`, background: color, opacity: 0.8 }} />
       </div>
-      <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground/60">{label}</span>
+      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -87,14 +91,12 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
               }}
               onError={() => setImgError(true)}
             />
-            {/* Gradient overlay - stronger at bottom */}
             <div
               className="absolute inset-0"
               style={{
-                background: "linear-gradient(to top, hsl(var(--card)) 0%, hsl(var(--card)/0.5) 30%, transparent 60%)",
+                background: "linear-gradient(to top, hsl(var(--card)) 0%, hsl(var(--card)/0.55) 28%, transparent 58%)",
               }}
             />
-            {/* Selection color tint */}
             {isSelected && tc && (
               <div
                 className="absolute inset-0"
@@ -115,7 +117,6 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
             </span>
           </div>
         )}
-        {/* Power aura — particles, ring, shimmer */}
         <PowerAura character={character} hovered={hovered && isClickable} />
       </div>
 
@@ -123,14 +124,14 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
       <div className="relative px-2.5 pt-1.5 pb-2.5 space-y-1.5">
         {/* Universe */}
         <div
-          className="text-[9px] font-bold uppercase tracking-widest truncate pr-5"
+          className="text-[10px] font-bold uppercase tracking-widest truncate pr-5"
           style={{ color: tc ? tc.border : "hsl(var(--primary))" }}
         >
           {character.universe}
         </div>
 
         {/* Name */}
-        <h3 className="font-display text-lg leading-none uppercase truncate text-foreground pr-5">
+        <h3 className="font-display text-base leading-none uppercase truncate text-foreground pr-5">
           {character.name}
         </h3>
 
