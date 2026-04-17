@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
-import { ChevronLeft, ChevronRight, Swords, Zap, Trophy } from "lucide-react";
+import { ChevronLeft, Swords, Zap, Trophy } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 
 // ─── Cinematic loading sequence ───────────────────────────────────────────────
@@ -319,23 +319,15 @@ function FightBanner({
   );
 }
 
-// RoundBlock: displays the round narrative, then calls onReady once text is visible
-function RoundBlock({ round, index, onReady }: { round: FightRound; index: number; onReady: () => void }) {
+// RoundBlock: slides in and fades text visible shortly after mount
+function RoundBlock({ round, index }: { round: FightRound; index: number }) {
   const [visible, setVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
-  const calledReady = useRef(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(true), 100);
-    const t2 = setTimeout(() => setTextVisible(true), 350);
-    // Call onReady after text is settled — but only once
-    const t3 = setTimeout(() => {
-      if (!calledReady.current) {
-        calledReady.current = true;
-        onReady();
-      }
-    }, 1100);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t1 = setTimeout(() => setVisible(true), 80);
+    const t2 = setTimeout(() => setTextVisible(true), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   const isTeam1 = index % 2 === 0;
@@ -374,80 +366,66 @@ export function FightScreen({
   mode = "fun",
 }: FightScreenProps) {
   const [visibleCount, setVisibleCount] = useState(0);
-  const [waitingForInput, setWaitingForInput] = useState(false);  // round text shown, waiting for tap
-  const [allRoundsDone, setAllRoundsDone] = useState(false);      // all rounds shown, waiting for "See Results"
+  const [allRoundsDone, setAllRoundsDone] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  // Clear all pending auto-reveal timers
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
+
+  // Auto-reveal all rounds in sequence, then mark done
   useEffect(() => {
+    clearTimers();
     if (open && result && !isSimulating) {
       setVisibleCount(0);
-      setWaitingForInput(false);
       setAllRoundsDone(false);
       setShowVictory(false);
       setAttackingTeam(0);
-      setTimeout(() => {
-        setVisibleCount(1);
-        setAttackingTeam(1);
-      }, 400);
+
+      const totalRounds = result.rounds.length;
+      // Stagger: first round at 600ms, then every 1400ms
+      for (let i = 0; i < totalRounds; i++) {
+        const delay = 600 + i * 1400;
+        const t = setTimeout(() => {
+          setVisibleCount(i + 1);
+          setAttackingTeam((i % 2 === 0 ? 1 : 2) as 1 | 2);
+        }, delay);
+        timersRef.current.push(t);
+      }
+      // Mark all done 800ms after the last round appears
+      const doneDelay = 600 + totalRounds * 1400 + 800;
+      const tDone = setTimeout(() => setAllRoundsDone(true), doneDelay);
+      timersRef.current.push(tDone);
     }
     if (!open) {
       setVisibleCount(0);
-      setWaitingForInput(false);
       setAllRoundsDone(false);
       setShowVictory(false);
       setAttackingTeam(0);
     }
+    return clearTimers;
   }, [open, result, isSimulating]);
-
-  // Called when the current round's text has fully appeared
-  const handleRoundReady = () => {
-    setWaitingForInput(true);
-  };
-
-  // Called when user taps "Continue" or "See Results"
-  const handleContinue = () => {
-    if (!result) return;
-
-    if (allRoundsDone) {
-      setShowVictory(true);
-      return;
-    }
-
-    setWaitingForInput(false);
-
-    const nextIdx = visibleCount; // next 0-based index to show
-    if (nextIdx < result.rounds.length) {
-      const nextTeam: 1 | 2 = nextIdx % 2 === 0 ? 1 : 2;
-      setAttackingTeam(nextTeam);
-      setTimeout(() => setVisibleCount(nextIdx + 1), 300);
-    } else {
-      // All rounds just finished
-      setAllRoundsDone(true);
-      setWaitingForInput(true); // show "See Results" button
-    }
-  };
 
   // Rematch: reset fight state then trigger a new fight
   const handleRematch = () => {
     setShowVictory(false);
     setAllRoundsDone(false);
     setVisibleCount(0);
-    setWaitingForInput(false);
     setAttackingTeam(0);
     onRematch?.();
   };
 
-  // Skip: reveal all remaining rounds immediately and go to results
+  // Skip: cancel auto-reveal and jump straight to all rounds + results button
   const handleSkip = () => {
     if (!result) return;
-    setWaitingForInput(false);
+    clearTimers();
     setVisibleCount(result.rounds.length);
-    setTimeout(() => {
-      setAllRoundsDone(true);
-      setWaitingForInput(true);
-    }, 300);
+    setAllRoundsDone(true);
   };
 
   useEffect(() => {
@@ -468,9 +446,6 @@ export function FightScreen({
       team2HpPct = Math.max(0, (last.team2Hp / initMax2) * 100);
     }
   }
-
-  const isLastRound = result ? visibleCount >= result.rounds.length : false;
-  const roundsLeft = result ? result.rounds.length - visibleCount : 0;
 
   if (!open) return null;
 
@@ -564,12 +539,7 @@ export function FightScreen({
                 )}
 
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
-                  <RoundBlock
-                    key={idx}
-                    round={round}
-                    index={idx}
-                    onReady={idx === visibleCount - 1 ? handleRoundReady : () => {}}
-                  />
+                  <RoundBlock key={idx} round={round} index={idx} />
                 ))}
 
                 {/* "Waiting for results" state — all rounds shown */}
@@ -604,8 +574,8 @@ export function FightScreen({
           {/* Right side — context-sensitive */}
           {result && !isSimulating && (
             <div className="flex items-center gap-3">
-              {/* Skip button — only show while rounds are still pending */}
-              {!allRoundsDone && roundsLeft > 0 && (
+              {/* Skip — jumps ahead while auto-reveal is in progress */}
+              {!allRoundsDone && (
                 <button
                   onClick={handleSkip}
                   className="text-xs font-bold uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground transition-colors"
@@ -614,22 +584,10 @@ export function FightScreen({
                 </button>
               )}
 
-              {/* Continue / See Results button */}
-              {waitingForInput && !allRoundsDone && (
-                <button
-                  onClick={handleContinue}
-                  className="flex items-center gap-2 font-display text-base uppercase tracking-widest text-primary border border-primary/50 px-4 py-2 hover:bg-primary/10 transition-all active:scale-95"
-                  style={{ animation: "continuePulse 2s ease-in-out infinite" }}
-                >
-                  Continue
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
-
-              {/* See Results — shown after all rounds */}
+              {/* See Results — appears automatically once all rounds are shown */}
               {allRoundsDone && (
                 <button
-                  onClick={handleContinue}
+                  onClick={() => setShowVictory(true)}
                   className="flex items-center gap-2 font-display text-base uppercase tracking-widest text-primary border-2 border-primary px-5 py-2.5 hover:bg-primary/10 transition-all active:scale-95"
                   style={{
                     boxShadow: "0 0 20px rgba(255,0,85,0.3)",
