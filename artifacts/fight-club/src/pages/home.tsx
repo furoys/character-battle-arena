@@ -8,6 +8,17 @@ import { AvaLogo } from "@/components/ava-logo";
 import { Search, Swords, X, Zap, AlertTriangle, ChevronDown } from "lucide-react";
 import { computeSynergy } from "@/lib/synergies";
 
+// ─── localStorage helpers ────────────────────────────────────────────────────
+function readLS<T>(key: string, fallback: T): T {
+  try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? fallback; }
+  catch { return fallback; }
+}
+function writeLS(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+type ActiveFilter = null | "__faves__" | "__recent__" | string;
+
 // ─── Corner bracket decoration ──────────────────────────────────────────────
 function Brackets({ color, size = 10 }: { color: string; size?: number }) {
   const s: React.CSSProperties = { position: "absolute", width: size, height: size };
@@ -221,9 +232,30 @@ export function Home() {
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUniverse, setSelectedUniverse] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
   const [fightMode, setFightMode] = useState<"fun" | "debate">("fun");
+
+  // Favorites — persisted to localStorage
+  const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      writeLS("ava_faves", [...next]);
+      return next;
+    });
+  };
+
+  // Recent picks — persisted to localStorage, ordered most-recent-first
+  const [recentPicks, setRecentPicks] = useState<number[]>(() => readLS<number[]>("ava_recent", []));
+  const pushRecentPicks = (ids: number[]) => {
+    setRecentPicks(prev => {
+      const next = [...ids, ...prev.filter(id => !ids.includes(id))].slice(0, 20);
+      writeLS("ava_recent", next);
+      return next;
+    });
+  };
   const pillsRef = useRef<HTMLDivElement>(null);
 
   // Build universe list sorted by count, only show 4+ in main bar
@@ -242,13 +274,21 @@ export function Home() {
 
   const filteredCharacters = useMemo(() => {
     if (!characters) return [];
+    let pool: Character[];
+    if (activeFilter === "__faves__") {
+      pool = characters.filter(c => favorites.has(c.id));
+    } else if (activeFilter === "__recent__") {
+      const order = new Map(recentPicks.map((id, i) => [id, i]));
+      pool = characters.filter(c => order.has(c.id)).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+    } else if (activeFilter) {
+      pool = characters.filter(c => c.universe === activeFilter);
+    } else {
+      pool = characters;
+    }
     const q = searchQuery.trim().toLowerCase();
-    return characters.filter(c => {
-      const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q);
-      const matchesUniverse = !selectedUniverse || c.universe === selectedUniverse;
-      return matchesSearch && matchesUniverse;
-    });
-  }, [characters, searchQuery, selectedUniverse]);
+    if (!q) return pool;
+    return pool.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
+  }, [characters, searchQuery, activeFilter, favorites, recentPicks]);
 
   const simulateFight = useSimulateFight({
     mutation: {
@@ -278,6 +318,7 @@ export function Home() {
       toast({ title: "Teams Required", description: "Both teams need at least 1 fighter", variant: "destructive" });
       return;
     }
+    pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
     simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
   };
@@ -508,16 +549,46 @@ export function Home() {
               >
                 <UniversePill
                   label="All"
-                  active={!selectedUniverse}
-                  onClick={() => setSelectedUniverse(null)}
+                  active={activeFilter === null}
+                  onClick={() => setActiveFilter(null)}
                 />
+                {/* Favorites pill — gold */}
+                <button
+                  onClick={() => setActiveFilter(f => f === "__faves__" ? null : "__faves__")}
+                  className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
+                  style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                    padding: "3px 7px",
+                    background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "transparent",
+                    border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.10)"}`,
+                    color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.6 }}> {favorites.size}</span>}
+                </button>
+                {/* Recent pill — purple */}
+                {recentPicks.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
+                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
+                    style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                      padding: "3px 7px",
+                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
+                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
+                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
+                    }}
+                  >
+                    ⏱ RECENT
+                  </button>
+                )}
                 {displayUniverses.map(({ universe, count }) => (
                   <UniversePill
                     key={universe}
                     label={universe}
                     count={count}
-                    active={selectedUniverse === universe}
-                    onClick={() => setSelectedUniverse(prev => prev === universe ? null : universe)}
+                    active={activeFilter === universe}
+                    onClick={() => setActiveFilter(prev => prev === universe ? null : universe)}
                   />
                 ))}
                 {/* Toggle to show all universes */}
@@ -561,18 +632,18 @@ export function Home() {
         ) : (
           <div className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
             {/* Filter status bar */}
-            {(selectedUniverse || searchQuery) && (
+            {(activeFilter || searchQuery) && (
               <div
                 className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
                 style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
                   {filteredCharacters.length} fighter{filteredCharacters.length !== 1 ? "s" : ""}
-                  {selectedUniverse ? ` — ${selectedUniverse}` : ""}
+                  {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recently Used" : activeFilter ? ` — ${activeFilter}` : ""}
                   {searchQuery ? ` matching "${searchQuery}"` : ""}
                 </span>
                 <button
-                  onClick={() => { setSearchQuery(""); setSelectedUniverse(null); }}
+                  onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
                   className="text-[10px] font-bold uppercase tracking-widest transition-colors"
                   style={{ color: "#ff0055" }}
                 >
@@ -589,6 +660,8 @@ export function Home() {
                     character={character}
                     selectedTeam={getCharacterTeam(character.id)}
                     onClick={() => handleCharacterClick(character)}
+                    isFavorite={favorites.has(character.id)}
+                    onToggleFavorite={toggleFavorite}
                     disabled={
                       (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
                       (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
@@ -600,7 +673,7 @@ export function Home() {
                 <div className="text-center p-16 space-y-3">
                   <p className="font-display text-xl uppercase" style={{ color: "rgba(255,255,255,0.2)" }}>No fighters found</p>
                   <button
-                    onClick={() => { setSearchQuery(""); setSelectedUniverse(null); }}
+                    onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
                     className="text-xs font-bold uppercase tracking-widest transition-colors"
                     style={{ color: "#ff0055" }}
                   >
