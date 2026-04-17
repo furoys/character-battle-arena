@@ -679,3 +679,38 @@ export const useSimulateFight = <
 > => {
   return useMutation(getSimulateFightMutationOptions(options));
 };
+
+export const clearFightHistory = async (
+  options?: SecondParameter<typeof customFetch>,
+): Promise<void> => {
+  return customFetch<void>(`/api/fights`, { method: "DELETE", ...options });
+};
+
+export const useClearFightHistory = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<void, TError, void, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<void, TError, void, TContext> => {
+  const mutationFn = () => clearFightHistory(options?.request);
+  return useMutation({ mutationKey: ["clearFightHistory"], mutationFn, ...options?.mutation });
+};
+
+export const deleteFight = async (
+  id: number,
+  options?: SecondParameter<typeof customFetch>,
+): Promise<void> => {
+  return customFetch<void>(`/api/fights/${id}`, { method: "DELETE", ...options });
+};
+
+export const useDeleteFight = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<void, TError, number, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<void, TError, number, TContext> => {
+  const mutationFn = (id: number) => deleteFight(id, options?.request);
+  return useMutation({ mutationKey: ["deleteFight"], mutationFn, ...options?.mutation });
+};
