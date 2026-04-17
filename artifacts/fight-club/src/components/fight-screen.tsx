@@ -216,27 +216,90 @@ function FightBanner({
   );
 }
 
+const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
+
 // RoundBlock: displays the round narrative, then calls onReady once text is visible
-function RoundBlock({ round, index, onReady }: { round: FightRound; index: number; onReady: () => void }) {
+function RoundBlock({ round, index, onReady, mode }: { round: FightRound; index: number; onReady: () => void; mode: "fun" | "debate" }) {
   const [visible, setVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const calledReady = useRef(false);
+  const isDebate = mode === "debate";
 
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(true), 100);
-    const t2 = setTimeout(() => setTextVisible(true), 350);
-    // Call onReady after text is settled — but only once
+    const t1 = setTimeout(() => setVisible(true), isDebate ? 200 : 100);
+    const t2 = setTimeout(() => setTextVisible(true), isDebate ? 600 : 350);
     const t3 = setTimeout(() => {
       if (!calledReady.current) {
         calledReady.current = true;
         onReady();
       }
-    }, 1100);
+    }, isDebate ? 1500 : 1100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
-  const isTeam1 = index % 2 === 0;
+  if (isDebate) {
+    const isChaos = round.attackType.startsWith("chaos:");
+    const isBetrayal = round.attackType === "betrayal";
+    const accent = isChaos ? "#f59e0b" : isBetrayal ? "#f43f5e" : "rgba(255,0,85,0.7)";
 
+    return (
+      <div
+        className={`transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+        style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
+      >
+        <div
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            border: `1px solid rgba(255,255,255,0.06)`,
+            borderLeft: `3px solid ${accent}`,
+            padding: "16px 20px",
+          }}
+        >
+          {/* Scene header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <span
+                className="font-display uppercase"
+                style={{ fontSize: 10, letterSpacing: "0.3em", color: accent }}
+              >
+                — ROUND {ROMAN[index] ?? index + 1} —
+              </span>
+              {(isChaos || isBetrayal) && (
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 800,
+                    letterSpacing: "0.15em",
+                    padding: "2px 6px",
+                    background: `${accent}20`,
+                    border: `1px solid ${accent}60`,
+                    color: accent,
+                  }}
+                >
+                  {isChaos ? "⚡ CHAOS" : "💀 BETRAYAL"}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em", fontWeight: 600 }}>
+              {round.attacker}
+            </span>
+          </div>
+          {/* Divider */}
+          <div style={{ height: 1, background: "linear-gradient(to right, rgba(255,0,85,0.3), transparent)", marginBottom: 12 }} />
+          {/* Narrative text */}
+          <p
+            className={`leading-[1.85] transition-all duration-700 ${textVisible ? "opacity-100" : "opacity-0"}`}
+            style={{ fontSize: 15, color: "rgba(255,255,255,0.88)", fontStyle: "italic", letterSpacing: "0.01em" }}
+          >
+            {round.narrative}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fun mode — original layout
+  const isTeam1 = index % 2 === 0;
   return (
     <div className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
       <div className={`flex items-start gap-3 ${isTeam1 ? "" : "flex-row-reverse"}`}>
@@ -382,7 +445,7 @@ export function FightScreen({
         @keyframes continuePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
       `}</style>
 
-      <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-50 flex flex-col animate-in fade-in duration-300" style={{ background: mode === "debate" ? "#050508" : "var(--background)" }}>
         {/* Fight Banner */}
         <div className="flex-shrink-0 border-b border-border/30">
           <FightBanner
@@ -425,27 +488,56 @@ export function FightScreen({
                   <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
                     {team1Names.join(" & ")} vs {team2Names.join(" & ")}
                   </p>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      marginTop: 4,
-                      padding: "1px 8px",
-                      fontSize: 9,
-                      fontWeight: 700,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: mode === "debate" ? "#00e5ff" : "#ff0055",
-                      border: `1px solid ${mode === "debate" ? "#00e5ff40" : "#ff005540"}`,
-                      borderRadius: 2,
-                    }}
-                  >
-                    {mode === "debate" ? "⚖ Debate Mode" : "⚡ Fun Mode"}
-                  </span>
+                  {mode === "debate" ? (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ height: 1, background: "linear-gradient(to right, transparent, rgba(255,0,85,0.4), transparent)", marginBottom: 8 }} />
+                      <span style={{ display: "inline-block", padding: "3px 12px", fontSize: 9, fontWeight: 800, letterSpacing: "0.25em", textTransform: "uppercase", color: "#ff0055", border: "1px solid rgba(255,0,85,0.35)", background: "rgba(255,0,85,0.06)" }}>
+                        ⚖ DEBATE MODE — CINEMATIC
+                      </span>
+                      <div style={{ height: 1, background: "linear-gradient(to right, transparent, rgba(255,0,85,0.4), transparent)", marginTop: 8 }} />
+                    </div>
+                  ) : (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        marginTop: 4,
+                        padding: "1px 8px",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: "#ff0055",
+                        border: "1px solid #ff005540",
+                        borderRadius: 2,
+                      }}
+                    >
+                      ⚡ Fun Mode
+                    </span>
+                  )}
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
 
-                {/* Arena intro — shown before rounds, fades in once */}
-                {result.arenaIntro && (
+                {/* Arena intro */}
+                {result.arenaIntro && mode === "debate" ? (
+                  <div className="animate-in fade-in duration-1000 mb-2">
+                    <div
+                      style={{
+                        background: "rgba(0,0,0,0.7)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderTop: "2px solid rgba(255,0,85,0.5)",
+                        padding: "20px 24px 16px",
+                      }}
+                    >
+                      <p className="font-display uppercase tracking-[0.4em] mb-3" style={{ fontSize: 9, color: "rgba(255,0,85,0.6)" }}>
+                        — THE BATTLEFIELD —
+                      </p>
+                      <p style={{ fontSize: 15, lineHeight: 1.85, color: "rgba(255,255,255,0.75)", fontStyle: "italic", letterSpacing: "0.01em" }}>
+                        {result.arenaIntro}
+                      </p>
+                    </div>
+                    <div style={{ height: 1, background: "linear-gradient(to right, rgba(255,0,85,0.4), transparent, rgba(255,0,85,0.4))", margin: "16px 0" }} />
+                  </div>
+                ) : result.arenaIntro ? (
                   <div className="mb-1 px-1 animate-in fade-in duration-700">
                     <div className="border-l-2 border-muted-foreground/30 pl-4 py-1">
                       <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/60 mb-1.5">
@@ -457,13 +549,14 @@ export function FightScreen({
                     </div>
                     <div className="mt-3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                   </div>
-                )}
+                ) : null}
 
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
                   <RoundBlock
                     key={idx}
                     round={round}
                     index={idx}
+                    mode={mode}
                     onReady={idx === visibleCount - 1 ? handleRoundReady : () => {}}
                   />
                 ))}
@@ -471,10 +564,21 @@ export function FightScreen({
                 {/* "Waiting for results" state — all rounds shown */}
                 {allRoundsDone && (
                   <div className="pt-4 pb-2 animate-in fade-in duration-500">
-                    <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-                    <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mt-4">
-                      {result.rounds.length} rounds complete — tap to see the outcome
-                    </p>
+                    {mode === "debate" ? (
+                      <div style={{ textAlign: "center" }}>
+                        <div style={{ height: 1, background: "linear-gradient(to right, transparent, rgba(255,0,85,0.6), transparent)", marginBottom: 20 }} />
+                        <p className="font-display uppercase" style={{ fontSize: 11, letterSpacing: "0.4em", color: "rgba(255,0,85,0.5)" }}>
+                          — {result.rounds.length} rounds fought — the verdict awaits —
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                        <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mt-4">
+                          {result.rounds.length} rounds complete — tap to see the outcome
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -482,12 +586,30 @@ export function FightScreen({
               </>
             ) : !isSimulating ? null : (
               <div className="flex flex-col items-center justify-center h-48 gap-4">
-                <p className="font-display text-sm uppercase tracking-widest text-muted-foreground animate-pulse">
-                  Writing the fight...
-                </p>
-                <p className="text-xs text-muted-foreground/50 uppercase tracking-widest">
-                  This takes a few seconds
-                </p>
+                {mode === "debate" ? (
+                  <>
+                    <div className="flex gap-1.5">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "rgba(255,0,85,0.7)", animationDelay: `${i * 0.18}s` }} />
+                      ))}
+                    </div>
+                    <p className="font-display text-sm uppercase tracking-[0.3em] animate-pulse" style={{ color: "rgba(255,0,85,0.6)" }}>
+                      Scripting the confrontation...
+                    </p>
+                    <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                      Dark cinematic mode — takes up to 60 seconds
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-sm uppercase tracking-widest text-muted-foreground animate-pulse">
+                      Writing the fight...
+                    </p>
+                    <p className="text-xs text-muted-foreground/50 uppercase tracking-widest">
+                      This takes a few seconds
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
