@@ -1551,47 +1551,68 @@ async function generateAINarrative(
   ].join("; ");
 
   const rd = (i: number) => roundSimData[i];
-  const prompt = `You are a cinematic versus-battle narrator. Write a brutal, suspenseful, page-turning fight scene across FIVE rounds.
+
+  // Build per-round HP delta strings so the AI can calibrate damage weight
+  const hpNote = (idx: number) => {
+    const r = roundSimData[idx];
+    if (!r) return "";
+    const d1 = r.team1HpBefore - r.team1HpAfter;
+    const d2 = r.team2HpBefore - r.team2HpAfter;
+    if (d1 > 0) return `Team 1 takes ${d1} damage (now ${r.team1HpAfter}/100 HP).`;
+    if (d2 > 0) return `Team 2 takes ${d2} damage (now ${r.team2HpAfter}/100 HP).`;
+    return "";
+  };
+
+  const betrayalNote = betrayalRounds.length
+    ? `\nBetrayal rounds: ${betrayalRounds.join(", ")} — a team member turns on their own side.`
+    : "";
+
+  const prompt = `You are a cinematic fight narrator. Write a visceral, power-specific battle across FIVE rounds.
 
 FIGHTERS:
 Team 1: ${team1Info}
 Team 2: ${team2Info}
 Arena: ${arena.name} — ${arena.flavor.join(" ")}
-Winner: ${winnerNames} defeats ${loserNames}
-${specialNotes ? `Special events: ${specialNotes}` : ""}
+Winner: ${winnerNames} defeats ${loserNames}${betrayalNote}
+
+POWER WRITING RULES — apply these to every round:
+• Describe EXACTLY what each power looks like when it fires: colour, sound, heat, light, physical distortion, smell of ozone, shockwave, etc.
+• Describe what the power DOES to the target: where it hits, what the impact looks like, how the target's body reacts, what visible damage occurs.
+• Describe the RESPONSE: does the target stagger, get launched, crater the ground, scream, or absorb it silently?
+• Never say "attacks" or "fights" — say WHAT they do. "Blasts with heat vision that cuts a white-hot trench across the chest." "Drives a knee strike so fast it cracks the sound barrier, shattering three ribs and a wall behind them."
+• Each power use must be unique to that character — no generic punches unless that IS their power.
 
 You MUST use these exact markers (surrounded by === on their own line) to separate sections.
-Do NOT skip any section. Do NOT rename the markers. Every section needs real content.
+Do NOT skip any section. Every section needs real content.
 
 === SETTING ===
-(3-5 vivid sentences about the arena — atmosphere, hazards, lighting. Do NOT begin combat.)
+(3-5 sentences: the arena in sensory detail — light, texture, hazards, atmosphere. No combat yet.)
 
 === ENTRANCE ===
-(2-4 sentences: each fighter enters. Posture, visible power, threat. No attacks yet.)
+(2-4 sentences: each fighter arrives. What their power looks like at rest — aura, energy, physical presence. No attacks.)
 
 === ROUND 1 ===
-(Opening skirmish. Both sides probe, reading each other.${rd(0) ? ` ${rd(0).attackerName} strikes first using ${rd(0).attackMove}.` : ""} First blood drawn. Neither side has the advantage yet.)
+(Opening. ${rd(0) ? `${rd(0).attackerName} strikes first with ${rd(0).attackMove}.` : "First move."} ${hpNote(0)} Describe the power activation in full sensory detail, the impact, and the target's reaction. First blood. Momentum is unclear.)
 
 === ROUND 2 ===
-(Escalation. Powers fully unleashed.${rd(1) ? ` ${rd(1).attackerName} attacks with ${rd(1).attackMove}.` : ""} The arena takes damage. One side starts to pull ahead — but the other refuses to yield.)
+(Escalation. ${rd(1) ? `${rd(1).attackerName} uses ${rd(1).attackMove}.` : "Powers unleashed."} ${hpNote(1)} Both sides reveal more of what they can do. Show the visual scale of the powers growing. One side edges ahead but it's not decisive.)
 
 === ROUND 3 ===
-(THE TURNING POINT. Something unexpected happens.${rd(2) ? ` ${rd(2).attackerName} uses ${rd(2).attackMove}.` : ""} A reversal, a desperate gambit, or a shocking moment that makes the outcome uncertain again. Make the reader unsure who will win.)
+(TURNING POINT. ${rd(2) ? `${rd(2).attackerName} deploys ${rd(2).attackMove}.` : "Pivotal moment."} ${hpNote(2)} Something shifts — a desperate counter, a power used in a new way, a hit that lands harder than expected. Make the reader genuinely unsure who survives.)
 
 === ROUND 4 ===
-(The loser makes their final push — a last stand.${rd(3) ? ` ${rd(3).attackerName} launches ${rd(3).attackMove}.` : ""} It nearly works. The desperation is palpable. But ${winnerNames} weathers it.)
+(Last stand. ${rd(3) ? `${rd(3).attackerName} launches ${rd(3).attackMove}.` : "Final push."} ${hpNote(3)} The losing side throws everything. It nearly works — describe the desperate power use in detail. But ${winnerNames} endures and answers back.)
 
 === ROUND 5 ===
-(The decisive finale.${rd(4) ? ` ${rd(4).attackerName} delivers the finishing blow using ${rd(4).attackMove}.` : ""} ${winnerNames} ends it definitively. Visceral, conclusive.)
+(Finale. ${rd(4) ? `${rd(4).attackerName} delivers the killing blow: ${rd(4).attackMove}.` : "The end."} ${hpNote(4)} Make the finishing power use the most detailed and visceral of the fight. ${winnerNames} ends it. The loser goes down and stays down.)
 
 === RESULT ===
-(2-3 sentences: who won, how badly, what it cost them. Final and brutal.)
+(2-3 sentences: declare the winner, describe the physical state of both sides, give one line of finality.)
 
-Rules:
-- Each round = 2-4 tight paragraphs. Concrete details only: impacts, blood, shattered terrain, power signatures.
-- NO vague phrases like "exchanged blows" or "fought fiercely."
-- Build suspense — the outcome should feel uncertain until Round 5.
-- Character powers must be accurate and specific.`;
+FORMAT RULES:
+- Each round = 2-4 paragraphs. Keep each paragraph punchy — max 4 sentences.
+- NEVER use: "exchanged blows", "fought fiercely", "unleashed their power", "clash of titans", "duel", "battle ensued".
+- Each hit must specify: what power → what it looks like → where it lands → what happens next.`;
 
   // 22-second window for 5-round narrative (30s proxy limit minus buffer)
   const raw = await aiTextWithTimeout(prompt, 2500, 22_000);
@@ -1666,11 +1687,11 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   const isDebate = mode === "debate";
 
   // ── Chaos tuning ──────────────────────────────────────────────────────────
-  // Reduce chaos when the mismatch is severe — chaos shouldn't rescue a 5v1 underdog.
-  let chaosFrequency = isDebate ? 0 : Math.max(0.06, 0.12 + Math.abs(powerGap) * 0.2 - sizeDiff * 0.03);
-  // Reality-warpers bend probability — their presence makes chaos events far more likely.
+  // Chaos events removed — fights are decided by stats, powers, and synergy only.
+  const chaosFrequency = 0;
+  // Reality-warpers tracked for narrative colour but no longer inflate chaos.
   const hasRealityWarper = [...team1, ...team2].some(c => c.behaviorTags?.includes("reality-warper"));
-  if (!isDebate && hasRealityWarper) chaosFrequency = Math.min(0.38, chaosFrequency * 1.55);
+  void hasRealityWarper; // used in narrative only
   // Betrayal: 3% per round. Disabled in debate mode.
   const betrayalChance = isDebate ? 0 : 0.03;
   // No back-to-back chaos — after a chaos round, skip the next chaos check.

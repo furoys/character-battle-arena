@@ -471,11 +471,10 @@ export function FightScreen({
   if (result && result.rounds.length > 0) {
     const shownRounds = result.rounds.slice(0, visibleCount);
     if (shownRounds.length > 0) {
-      const last = shownRounds[shownRounds.length - 1];
-      const initMax1 = result.rounds.reduce((m, r) => Math.max(m, r.team1Hp), 0);
-      const initMax2 = result.rounds.reduce((m, r) => Math.max(m, r.team2Hp), 0);
-      team1HpPct = Math.max(0, (last.team1Hp / initMax1) * 100);
-      team2HpPct = Math.max(0, (last.team2Hp / initMax2) * 100);
+      const last = shownRounds[shownRounds.length - 1]!;
+      // HP is on a 0-100 scale from the server — use it directly as a percentage
+      team1HpPct = Math.max(0, Math.min(100, last.team1Hp));
+      team2HpPct = Math.max(0, Math.min(100, last.team2Hp));
     }
   }
 
