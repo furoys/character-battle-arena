@@ -428,11 +428,11 @@ export function FightScreen({
       setAttackingTeam(0);
 
       const totalRounds = result.rounds.length;
-      // Stagger: first round at 700ms, then every 2200ms — gives each round room to breathe
-      // Round 3 (turning point) gets extra 600ms pause before it drops
-      let elapsed = 700;
+      // Stagger: first round at 400ms, then every 1400ms
+      // Round 3 (turning point) gets extra 500ms dramatic pause
+      let elapsed = 400;
       for (let i = 0; i < totalRounds; i++) {
-        const extraPause = i === 2 ? 600 : 0; // dramatic pause before the turning point
+        const extraPause = i === 2 ? 500 : 0;
         elapsed += extraPause;
         const delay = elapsed;
         const t = setTimeout(() => {
@@ -440,10 +440,10 @@ export function FightScreen({
           setAttackingTeam((i % 2 === 0 ? 1 : 2) as 1 | 2);
         }, delay);
         timersRef.current.push(t);
-        elapsed += 2200;
+        elapsed += 1400;
       }
-      // Mark all done 1000ms after the last round appears
-      const doneDelay = elapsed + 1000;
+      // Mark all done 800ms after the last round appears
+      const doneDelay = elapsed + 800;
       const tDone = setTimeout(() => setAllRoundsDone(true), doneDelay);
       timersRef.current.push(tDone);
     }
@@ -582,19 +582,45 @@ export function FightScreen({
                   <RoundBlock key={idx} round={round} index={idx} />
                 ))}
 
-                {/* All rounds done — prompt to see results */}
-                {allRoundsDone && (
+                {/* All rounds done — dramatic winner reveal prompt */}
+                {allRoundsDone && result && (
                   <button
                     onClick={() => setShowVictory(true)}
-                    className="w-full pt-4 pb-6 animate-in fade-in duration-500 text-left"
+                    className="w-full animate-in fade-in zoom-in-95 duration-700 mt-4"
                   >
-                    <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-                    <p
-                      className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-primary mt-4"
-                      style={{ animation: "continuePulse 1.5s ease-in-out infinite" }}
+                    {/* Winner flash banner */}
+                    <div
+                      className="w-full py-5 flex flex-col items-center gap-2"
+                      style={{
+                        background: result.winner === 1
+                          ? "linear-gradient(135deg, rgba(0,240,255,0.08) 0%, rgba(0,0,0,0) 100%)"
+                          : "linear-gradient(135deg, rgba(255,59,48,0.08) 0%, rgba(0,0,0,0) 100%)",
+                        border: `1px solid ${result.winner === 1 ? "rgba(0,240,255,0.2)" : "rgba(255,59,48,0.2)"}`,
+                      }}
                     >
-                      ▼ The dust settles — tap to see the outcome ▼
-                    </p>
+                      <span
+                        className="font-display text-[9px] uppercase tracking-[0.4em]"
+                        style={{ color: "rgba(255,255,255,0.3)" }}
+                      >
+                        Winner declared
+                      </span>
+                      <span
+                        className="font-display text-2xl uppercase tracking-widest"
+                        style={{
+                          color: result.winner === 1 ? "#00f0ff" : "#ff3b30",
+                          textShadow: `0 0 20px ${result.winner === 1 ? "rgba(0,240,255,0.6)" : "rgba(255,59,48,0.6)"}`,
+                          animation: "continuePulse 1.8s ease-in-out infinite",
+                        }}
+                      >
+                        Team {result.winner}
+                      </span>
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-[0.3em]"
+                        style={{ color: "rgba(255,255,255,0.3)", animation: "continuePulse 1.5s ease-in-out 0.3s infinite" }}
+                      >
+                        ▼ tap for full results ▼
+                      </span>
+                    </div>
                   </button>
                 )}
 

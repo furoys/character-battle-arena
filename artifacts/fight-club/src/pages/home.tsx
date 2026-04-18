@@ -42,7 +42,7 @@ function TeamPortrait({ character, team, onRemove }: { character: Character; tea
   return (
     <div
       className="relative overflow-hidden flex-shrink-0"
-      style={{ width: 38, height: 48, border: `1.5px solid ${color}40`, boxShadow: `0 0 8px ${color}20` }}
+      style={{ width: 32, height: 42, border: `1.5px solid ${color}40`, boxShadow: `0 0 8px ${color}20` }}
     >
       {character.imageUrl ? (
         <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover object-top" />
@@ -81,10 +81,6 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
   const glowColor = team === 1 ? "rgba(0,240,255,0.25)" : "rgba(255,59,48,0.25)";
   const totalPower = members.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
 
-  const synergy = useMemo(() => computeSynergy(members), [members]);
-  const positiveSynergies = synergy.active.filter(s => s.positive);
-  const negativeSynergies = synergy.active.filter(s => !s.positive);
-
   return (
     <div
       className="flex-1 relative cursor-pointer transition-all duration-200 select-none overflow-hidden"
@@ -92,7 +88,7 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
         background: active ? dimColor : "rgba(255,255,255,0.02)",
         border: `1px solid ${active ? color + "60" : "rgba(255,255,255,0.08)"}`,
         boxShadow: active ? `0 0 24px ${glowColor}` : "none",
-        padding: "8px 10px 6px",
+        padding: "6px 8px 4px",
         minWidth: 0,
       }}
       onClick={onActivate}
@@ -127,51 +123,29 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
       </div>
 
       {/* Portraits — scrollable so they never overflow onto the FIGHT button */}
-      <div className="flex gap-1 min-h-[48px] items-end overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      <div className="flex gap-1 min-h-[42px] items-end overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         {members.map(c => (
           <TeamPortrait key={c.id} character={c} team={team} onRemove={() => onRemove(c.id)} />
         ))}
-        {/* One empty slot placeholder */}
         {members.length < 5 && (
           <div
             className="flex-shrink-0 flex items-center justify-center"
             style={{
-              width: 38, height: 48,
+              width: 32, height: 42,
               border: `1px dashed ${active ? color + "35" : "rgba(255,255,255,0.08)"}`,
             }}
           >
-            <span style={{ color: active ? `${color}50` : "rgba(255,255,255,0.12)", fontSize: 20, fontWeight: 300, lineHeight: 1 }}>+</span>
+            <span style={{ color: active ? `${color}50` : "rgba(255,255,255,0.12)", fontSize: 18, fontWeight: 300, lineHeight: 1 }}>+</span>
           </div>
         )}
-        {/* Remaining count ghost when team has some members */}
         {members.length > 0 && members.length < 4 && (
           <div className="flex items-end pb-1 pl-0.5">
             <span className="text-[9px] font-bold" style={{ color: active ? `${color}30` : "rgba(255,255,255,0.1)" }}>
-              +{5 - members.length - 1} more
+              +{5 - members.length - 1}
             </span>
           </div>
         )}
       </div>
-
-      {/* Synergy badges */}
-      {members.length >= 2 && (positiveSynergies.length + negativeSynergies.length > 0) && (
-        <div className="flex flex-wrap gap-0.5 mt-1.5">
-          {positiveSynergies.map(s => (
-            <div key={s.label} className="flex items-center gap-0.5 px-1 py-0.5" style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
-              <Zap className="w-2 h-2 flex-shrink-0" style={{ color: "#34d399" }} />
-              <span className="text-[8px] font-bold uppercase tracking-wider leading-none" style={{ color: "#34d399" }}>{s.label}</span>
-              <span className="text-[8px] font-bold ml-0.5" style={{ color: "#6ee7b7" }}>+{Math.round(s.bonus * 100)}%</span>
-            </div>
-          ))}
-          {negativeSynergies.map(s => (
-            <div key={s.label} className="flex items-center gap-0.5 px-1 py-0.5" style={{ background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.25)" }}>
-              <AlertTriangle className="w-2 h-2 flex-shrink-0" style={{ color: "#fb923c" }} />
-              <span className="text-[8px] font-bold uppercase tracking-wider leading-none" style={{ color: "#fb923c" }}>{s.label}</span>
-              <span className="text-[8px] font-bold ml-0.5" style={{ color: "#fdba74" }}>{Math.round(s.bonus * 100)}%</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -184,15 +158,23 @@ function PowerComparison({ team1, team2 }: { team1: Character[]; team2: Characte
   const total = p1 + p2 || 1;
   const pct1 = Math.round((p1 / total) * 100);
   const pct2 = 100 - pct1;
+  const gap = Math.abs(pct1 - pct2);
+  let prediction = "";
+  let predColor = "rgba(255,255,255,0.2)";
+  if (p1 > 0 && p2 > 0) {
+    if (gap < 5) { prediction = "EVEN MATCH"; predColor = "#ffd700"; }
+    else if (pct1 > pct2) { prediction = `T1 FAVORED`; predColor = "#00f0ff"; }
+    else { prediction = `T2 FAVORED`; predColor = "#ff3b30"; }
+  }
   return (
-    <div className="px-3 pb-1">
+    <div className="px-2 pb-1">
       <div className="h-0.5 flex overflow-hidden">
         <div className="h-full transition-all duration-700" style={{ width: `${pct1}%`, background: "linear-gradient(to right, #00f0ff80, #00f0ff)" }} />
         <div className="h-full transition-all duration-700" style={{ width: `${pct2}%`, background: "linear-gradient(to left, #ff3b3080, #ff3b30)" }} />
       </div>
       <div className="flex justify-between mt-0.5">
         <span className="text-[8px] font-bold" style={{ color: "#00f0ff80" }}>{pct1}%</span>
-        <span className="text-[8px] font-bold text-center" style={{ color: "rgba(255,255,255,0.2)" }}>PWR RATIO</span>
+        <span className="text-[8px] font-bold text-center" style={{ color: predColor }}>{prediction || "PWR RATIO"}</span>
         <span className="text-[8px] font-bold" style={{ color: "#ff3b3080" }}>{pct2}%</span>
       </div>
     </div>
@@ -384,6 +366,16 @@ export function Home() {
   const canFight = team1.length > 0 && team2.length > 0;
   const activeColor = activeTeam === 1 ? "#00f0ff" : "#ff3b30";
 
+  // Synergy strip — computed for both teams to show in HUD
+  const syn1 = useMemo(() => computeSynergy(team1), [team1]);
+  const syn2 = useMemo(() => computeSynergy(team2), [team2]);
+  const synergyPills = useMemo(() => {
+    const pills: Array<{ label: string; bonus: number; team: 1 | 2; positive: boolean }> = [];
+    for (const s of syn1.active) pills.push({ ...s, team: 1 });
+    for (const s of syn2.active) pills.push({ ...s, team: 2 });
+    return pills;
+  }, [syn1, syn2]);
+
   return (
     <>
       <style>{`
@@ -427,16 +419,14 @@ export function Home() {
           <div className="relative z-10">
             {/* Logo strip */}
             <div
-              className="flex items-center justify-center py-1.5 relative"
+              className="flex items-center justify-center py-1 relative"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
             >
-              {/* Left decoration */}
               <div className="absolute left-3 flex items-center gap-1.5">
                 <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, rgba(0,240,255,0.5))" }} />
                 <div className="h-1 w-1 rotate-45" style={{ background: "#00f0ff60" }} />
               </div>
-              <AvaLogo className="h-9 w-auto" />
-              {/* Right decoration */}
+              <AvaLogo className="h-7 w-auto" />
               <div className="absolute right-3 flex items-center gap-1.5">
                 <div className="h-1 w-1 rotate-45" style={{ background: "#ff3b3060" }} />
                 <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, rgba(255,59,48,0.5))" }} />
@@ -475,12 +465,46 @@ export function Home() {
             {/* Power comparison bar */}
             <PowerComparison team1={team1} team2={team2} />
 
+            {/* Synergy strip — scrollable single row, only when there are synergies */}
+            {synergyPills.length > 0 && (
+              <div
+                className="flex gap-1 overflow-x-auto px-2 pb-1"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {synergyPills.map((p, i) => {
+                  const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
+                  const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
+                  return (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5"
+                      style={{
+                        background: p.positive ? `${color}12` : "rgba(249,115,22,0.1)",
+                        border: `1px solid ${color}40`,
+                        fontSize: 7.5,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      <span style={{ color: teamColor, opacity: 0.7 }}>T{p.team}</span>
+                      <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>·</span>
+                      <span style={{ color }}>{p.label}</span>
+                      <span style={{ color, opacity: 0.8, marginLeft: 2 }}>
+                        {p.bonus > 0 ? "+" : ""}{Math.round(p.bonus * 100)}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* FIGHT button — full-width below teams, always reachable */}
             <div className="px-2 pb-2">
               <button
                 className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
                 style={{
-                  height: 40,
+                  height: 34,
                   border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
                   background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
                   color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
