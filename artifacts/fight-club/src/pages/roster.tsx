@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useListCharacters, useGetCharacterStats, useDeleteCharacter, getListCharactersQueryKey, getGetCharacterStatsQueryKey } from "@workspace/api-client-react";
 import { RosterFlipCard, powerAvg, powerTier } from "@/components/roster-flip-card";
 import { Input } from "@/components/ui/input";
@@ -50,18 +50,36 @@ const TIER_OPTIONS: { key: TierFilter; label: string; color: string }[] = [
   { key: "street",   label: "○ Street",   color: "#94a3b8" },
 ];
 
+const INITIAL_VISIBLE = 60;
+const PAGE_SIZE       = 40;
+
 export function Roster() {
   const [search, setSearch]           = useState("");
   const [universeFilter, setUniverse] = useState<string>("all");
   const [sortBy, setSortBy]           = useState<SortKey>("power");
   const [tierFilter, setTierFilter]   = useState<TierFilter>("all");
   const [tagFilter, setTagFilter]     = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data: characters, isLoading } = useListCharacters();
   const { data: stats } = useGetCharacterStats();
   const deleteCharacter = useDeleteCharacter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Reset when any filter changes
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [search, universeFilter, tierFilter, tagFilter, sortBy]);
+
+  // IntersectionObserver — load more when sentinel scrolls into view
+  const loadMore = useCallback(() => setVisibleCount(n => n + PAGE_SIZE), []);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore(); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loadMore]);
 
   const handleDelete = async (id: number, name: string) => {
     if (confirm(`Remove ${name} from roster?`)) {
@@ -291,27 +309,37 @@ export function Roster() {
           <p className="font-display text-2xl uppercase animate-pulse text-muted-foreground">Loading...</p>
         </div>
       ) : (
-        <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filtered?.map(character => (
-            <div key={character.id} className="group/card">
-              <RosterFlipCard
-                character={character}
-                onDelete={() => handleDelete(character.id, character.name)}
-              />
-            </div>
-          ))}
-          {filtered?.length === 0 && (
-            <div className="col-span-full text-center p-12 flex flex-col items-center gap-3">
-              <p className="font-display text-lg text-muted-foreground uppercase">No fighters found.</p>
-              <button
-                className="text-xs text-primary uppercase tracking-widest hover:underline"
-                onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); setTagFilter(null); }}
-              >
-                Clear all filters
-              </button>
+        <>
+          <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {filtered?.slice(0, visibleCount).map(character => (
+              <div key={character.id} className="group/card">
+                <RosterFlipCard
+                  character={character}
+                  onDelete={() => handleDelete(character.id, character.name)}
+                />
+              </div>
+            ))}
+            {filtered?.length === 0 && (
+              <div className="col-span-full text-center p-12 flex flex-col items-center gap-3">
+                <p className="font-display text-lg text-muted-foreground uppercase">No fighters found.</p>
+                <button
+                  className="text-xs text-primary uppercase tracking-widest hover:underline"
+                  onClick={() => { setSearch(""); setUniverse("all"); setTierFilter("all"); setTagFilter(null); }}
+                >
+                  Clear all filters
+                </button>
+              </div>
+            )}
+          </div>
+          {/* Sentinel — triggers loading the next batch */}
+          {(filtered?.length ?? 0) > visibleCount && (
+            <div ref={sentinelRef} className="flex justify-center py-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 animate-pulse">
+                Loading more…
+              </span>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
