@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { runMigrations } from "./lib/migrate";
 import { seedNewChars } from "./lib/seedNewChars";
+import { applyStatCorrections } from "./lib/statCorrections";
 
 const rawPort = process.env["PORT"];
 
@@ -29,6 +30,7 @@ const startServer = () => {
 
 runMigrations()
   .then(() => seedNewChars())
+  .then(() => applyStatCorrections())
   .then(() => startServer())
   .catch((err) => {
     logger.error({ err }, "Startup error, starting anyway");
