@@ -1837,7 +1837,7 @@ async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: n
     (async () => {
       try {
         const stream = await openai.chat.completions.create(
-          { model: "gpt-5-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
+          { model: "gpt-4o-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
           { signal: ac.signal },
         );
         for await (const chunk of stream) {
@@ -2158,37 +2158,34 @@ You MUST use these exact markers (surrounded by === on their own line) to separa
 Do NOT skip any section. Every section needs real content.
 
 === SETTING ===
-(3-5 sentences: the arena in sensory detail — light, texture, hazards, atmosphere. No combat yet.)
+(2 sentences max: one vivid sensory detail of the arena. No combat.)
 
 === ENTRANCE ===
-(2-4 sentences: each fighter arrives. What their power looks like at rest — aura, energy, physical presence. No attacks.)
+(1 sentence per fighter: how they look at rest — aura, physical presence. No attacks.)
 
 ${roundSections}
 
 === RESULT ===
-(2-3 sentences: declare the winner, describe the physical state of both sides after the specific finish you picked, give one line of finality. If the loser isn't dead, say what state they're actually in — unconscious, broken, fleeing, surrendered, captured — don't leave it ambiguous.)
+(2 sentences: state the winner and the loser's condition — unconscious, broken, fled, dead. One line of finality.)
 
-ENDINGS — pick ONE that fits the characters and power gap (do NOT narrate all of them, do NOT reuse "goes down and stays down"):
-  • KNOCKOUT — out cold, chest still rising.
-  • INCAPACITATION — a limb broken, a joint destroyed, cannot continue.
-  • SURRENDER / YIELD — hands up, dropping their weapon, tapping out, kneeling.
-  • FORCED RETREAT — bolts, teleports away, dragged off by allies.
-  • MERCY / SPARED — winner chooses not to finish; loser broken but breathing.
-  • HUMILIATION / OUTCLASSED — not a single effective hit landed.
-  • CAPTURED / PINNED — held in a position they cannot escape.
-  • DEATH — only when the power/lethality gap genuinely warrants it.
+ENDINGS — pick ONE (do NOT narrate all of them):
+  • KNOCKOUT — out cold. • INCAPACITATION — limb broken/joint destroyed.
+  • SURRENDER — hands up, weapon dropped, tapping out.
+  • FORCED RETREAT — bolts or teleports away.
+  • MERCY — winner stops; loser broken but alive.
+  • HUMILIATION — not a single effective hit landed.
+  • CAPTURED/PINNED — held and can't escape.
+  • DEATH — only when lethality gap genuinely warrants it.
 
-FORMAT RULES:
-- Each round = 2-4 paragraphs. Keep each paragraph punchy — max 4 sentences.
+FORMAT RULES (CRITICAL — every word counts):
+- SETTING = 2 sentences. ENTRANCE = 1 sentence per fighter. RESULT = 2 sentences.
+- Each round = EXACTLY 1 paragraph of 2-3 sentences. Short. Punchy. No filler.
 - NEVER use: "exchanged blows", "fought fiercely", "unleashed their power", "clash of titans", "duel", "battle ensued".
-- Each hit must specify: what power → what it looks like → where it lands → what happens next.
-- Match round length and tension to the verdict's mismatch level. Blowouts are SHORT and DOMINANT.`;
+- Each hit must specify: power → what it looks like → where it lands → what happens next. One sentence per beat.
+- Blowouts: make it brutal and brief. The winner dominates. One paragraph is enough.`;
 
-  // 22-second AI window (30s proxy limit minus buffer).
-  // 4500 tokens gives the model room to honor PHYSICALITY rules across all
-  // sections (SETTING + ENTRANCE + N rounds + RESULT) — the prior 2500 budget
-  // was getting clipped, leaving ENTRANCE/RESULT to fall back to templates.
-  const raw = await aiTextWithTimeout(prompt, 4500, 22_000);
+  // gpt-4o-mini at 900 tokens targets ~5s. Sections are tightly bounded.
+  const raw = await aiTextWithTimeout(prompt, 900, 22_000);
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "" };
