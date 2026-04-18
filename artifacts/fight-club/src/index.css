@@ -238,6 +238,31 @@
   }
 }
 
+/* ── Arena character card flip ── */
+.ava-card-scene {
+  perspective: 900px;
+}
+.ava-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.ava-card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+.ava-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.ava-card-back {
+  transform: rotateY(180deg);
+}
+
 /* ── Roster flip card ── */
 .roster-flip-wrapper {
   perspective: 1000px;

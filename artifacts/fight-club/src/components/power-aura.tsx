@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 
 export type PowerType = "FIRE" | "LIGHTNING" | "PSYCHIC" | "IRON" | "COSMIC";
@@ -84,105 +85,89 @@ interface PowerAuraProps {
   hovered: boolean;
 }
 
-export function PowerAura({ character, hovered }: PowerAuraProps) {
+export const PowerAura = memo(function PowerAura({ character, hovered }: PowerAuraProps) {
   const type = getPowerType(character);
   const def = POWER_DEFS[type];
 
   return (
     <>
-      {/* Ambient rising aura from the bottom — always on, subtler at rest */}
+      {/* Ambient aura — always present, cheap single div */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: def.auraGradient,
           animation: "ava-aura-pulse 3s ease-in-out infinite",
-          opacity: hovered ? 1 : 0.5,
+          opacity: hovered ? 0.9 : 0.3,
           transition: "opacity 0.5s ease",
-          willChange: "opacity",
         }}
       />
 
-      {/* Floating energy particles */}
-      {PARTICLES.map((p, i) => (
-        <div
-          key={i}
-          className="absolute pointer-events-none rounded-full"
-          style={{
-            left: `${p.left}%`,
-            bottom: `${4 + (i % 4) * 5}px`,
-            width: p.size,
-            height: p.size,
-            background: p.useSecondary ? def.secondary : def.primary,
-            boxShadow: def.glow,
-            animation: `ava-particle-rise ${p.dur}s ease-out ${p.delay}s infinite`,
-            opacity: hovered ? 1 : 0.35,
-            transition: "opacity 0.4s ease",
-            willChange: "transform, opacity",
-          }}
-        />
-      ))}
+      {/* Heavy particles + effects — only mounted when hovered to avoid 640 animating divs */}
+      {hovered && (
+        <>
+          {PARTICLES.map((p, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none rounded-full"
+              style={{
+                left: `${p.left}%`,
+                bottom: `${4 + (i % 4) * 5}px`,
+                width: p.size,
+                height: p.size,
+                background: p.useSecondary ? def.secondary : def.primary,
+                boxShadow: def.glow,
+                animation: `ava-particle-rise ${p.dur}s ease-out ${p.delay}s infinite`,
+                willChange: "transform, opacity",
+              }}
+            />
+          ))}
 
-      {/* Expanding energy ring at base — on hover */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.3s ease",
-        }}
-      >
-        <div
-          style={{
-            width: 72,
-            height: 20,
-            borderRadius: "50%",
-            border: `1.5px solid ${def.primary}`,
-            boxShadow: `0 0 10px ${def.primary}, 0 0 20px ${def.primary.replace("0.9)", "0.3)")}`,
-            animation: "ava-ring-expand 1.6s ease-out infinite",
-            willChange: "transform, opacity",
-          }}
-        />
-      </div>
+          {/* Expanding ring */}
+          <div
+            className="absolute pointer-events-none"
+            style={{ bottom: 0, left: "50%", transform: "translateX(-50%)" }}
+          >
+            <div
+              style={{
+                width: 72,
+                height: 20,
+                borderRadius: "50%",
+                border: `1.5px solid ${def.primary}`,
+                boxShadow: `0 0 10px ${def.primary}, 0 0 20px ${def.primary.replace("0.9)", "0.3)")}`,
+                animation: "ava-ring-expand 1.6s ease-out infinite",
+                willChange: "transform, opacity",
+              }}
+            />
+          </div>
 
-      {/* Shimmer sweep — on hover */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: "28%",
-          background: `linear-gradient(90deg, transparent 0%, ${def.secondary.replace(/[\d.]+\)$/, "0.18)")} 50%, transparent 100%)`,
-          animation: "ava-shimmer-sweep 1.6s ease-in-out 0.15s infinite",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.3s ease",
-          willChange: "transform, opacity",
-        }}
-      />
+          {/* Shimmer sweep */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              top: 0, bottom: 0, left: 0, width: "28%",
+              background: `linear-gradient(90deg, transparent 0%, ${def.secondary.replace(/[\d.]+\)$/, "0.18)")} 50%, transparent 100%)`,
+              animation: "ava-shimmer-sweep 1.6s ease-in-out 0.15s infinite",
+              willChange: "transform",
+            }}
+          />
 
-      {/* Power type label — appears on hover */}
-      <div
-        className="absolute bottom-1.5 left-1.5 pointer-events-none"
-        style={{
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.35s ease",
-        }}
-      >
-        <span
-          className="font-display text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 leading-none"
-          style={{
-            color: def.textColor,
-            background: def.primary.replace(/[\d.]+\)$/, "0.12)"),
-            border: `1px solid ${def.primary.replace(/[\d.]+\)$/, "0.4)")}`,
-            textShadow: `0 0 10px ${def.textColor}`,
-            display: "block",
-          }}
-        >
-          {def.label}
-        </span>
-      </div>
+          {/* Power type label */}
+          <div className="absolute bottom-1.5 left-1.5 pointer-events-none">
+            <span
+              className="font-display text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 leading-none"
+              style={{
+                color: def.textColor,
+                background: def.primary.replace(/[\d.]+\)$/, "0.12)"),
+                border: `1px solid ${def.primary.replace(/[\d.]+\)$/, "0.4)")}`,
+                textShadow: `0 0 10px ${def.textColor}`,
+                display: "block",
+              }}
+            >
+              {def.label}
+            </span>
+          </div>
+        </>
+      )}
     </>
   );
-}
+});
