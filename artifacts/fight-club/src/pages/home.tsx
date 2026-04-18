@@ -42,7 +42,7 @@ function TeamPortrait({ character, team, onRemove }: { character: Character; tea
   return (
     <div
       className="relative overflow-hidden flex-shrink-0"
-      style={{ width: 44, height: 54, border: `1.5px solid ${color}40`, boxShadow: `0 0 8px ${color}20` }}
+      style={{ width: 38, height: 48, border: `1.5px solid ${color}40`, boxShadow: `0 0 8px ${color}20` }}
     >
       {character.imageUrl ? (
         <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover object-top" />
@@ -87,7 +87,7 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
 
   return (
     <div
-      className="flex-1 relative cursor-pointer transition-all duration-200 select-none"
+      className="flex-1 relative cursor-pointer transition-all duration-200 select-none overflow-hidden"
       style={{
         background: active ? dimColor : "rgba(255,255,255,0.02)",
         border: `1px solid ${active ? color + "60" : "rgba(255,255,255,0.08)"}`,
@@ -126,8 +126,8 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
         </div>
       </div>
 
-      {/* Portraits */}
-      <div className="flex gap-1 min-h-[54px] items-end">
+      {/* Portraits — scrollable so they never overflow onto the FIGHT button */}
+      <div className="flex gap-1 min-h-[48px] items-end overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         {members.map(c => (
           <TeamPortrait key={c.id} character={c} team={team} onRemove={() => onRemove(c.id)} />
         ))}
@@ -136,7 +136,7 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
           <div
             className="flex-shrink-0 flex items-center justify-center"
             style={{
-              width: 44, height: 54,
+              width: 38, height: 48,
               border: `1px dashed ${active ? color + "35" : "rgba(255,255,255,0.08)"}`,
             }}
           >
@@ -458,23 +458,19 @@ export function Home() {
                 onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
               />
 
-              {/* CENTER: VS + FIGHT */}
-              <div className="flex-shrink-0 flex flex-col items-center justify-between gap-1" style={{ width: 52 }}>
+              {/* CENTER: VS + FIGHT — fixed-height column so it never moves */}
+              <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5" style={{ width: 52 }}>
                 {/* VS label */}
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div
-                      className="font-display text-xs uppercase tracking-[0.3em] leading-none"
-                      style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
-                    >
-                      vs
-                    </div>
-                  </div>
+                <div
+                  className="font-display text-xs uppercase tracking-[0.3em] leading-none"
+                  style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
+                >
+                  vs
                 </div>
 
                 {/* FIGHT button */}
                 <button
-                  className="flex flex-col items-center justify-center font-display text-[10px] uppercase tracking-widest transition-all duration-200 active:scale-95"
+                  className="flex flex-col items-center justify-center font-display text-[10px] uppercase tracking-widest transition-all duration-200 active:scale-95 flex-shrink-0"
                   style={{
                     width: 52,
                     height: 52,
