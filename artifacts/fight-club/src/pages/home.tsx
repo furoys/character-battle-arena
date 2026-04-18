@@ -111,7 +111,7 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
         <div className="flex items-center gap-1.5">
           {members.length > 0 && (
             <span className="font-display text-[9px]" style={{ color: `${color}90` }}>
-              {(totalPower / 1000).toFixed(1)}K PWR
+              {totalPower >= 1_000_000 ? `${+(totalPower / 1_000_000).toFixed(1)}M` : totalPower >= 1_000 ? `${Math.round(totalPower / 1_000)}K` : totalPower} PWR
             </span>
           )}
           <span

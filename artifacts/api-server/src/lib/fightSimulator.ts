@@ -2390,7 +2390,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
       // Combined damage: each attacker contributes their stat-weighted share
       const gangDamage = shuffledAttackers.reduce((sum, a) => {
-        const statBonus = (a.strength + a.speed) / 20000; // stats now 0-10000
+        const statBonus = (a.strength + a.speed) / 20_000_000; // stats now 0-10,000,000
         const share = largerTeamIsTeam1
           ? (base1 / totalPower / size1) * 0.55 + statBonus * 0.23
           : (base2 / totalPower / size2) * 0.55 + statBonus * 0.23;
@@ -2459,7 +2459,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       defender = pickRandom(team2);
       const atkTags       = getTags(attacker);
       const arenaMod      = getArenaDamageMod(arena, atkTags);
-      const statBonus     = (attacker.strength + attacker.speed) / 20000;
+      const statBonus     = (attacker.strength + attacker.speed) / 20_000_000; // stats now 0-10,000,000
       const sizeBonus     = size1 > size2 ? 1 + (size1 - size2) * 0.08 : 1;
       const ratio1        = base1 / totalPower;
       const scaledRatio   = isRealistic ? Math.pow(ratio1, 1.8) : Math.pow(ratio1, 1.4);
@@ -2480,7 +2480,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
       defender = pickRandom(team1);
       const atkTags       = getTags(attacker);
       const arenaMod      = getArenaDamageMod(arena, atkTags);
-      const statBonus     = (attacker.strength + attacker.speed) / 20000;
+      const statBonus     = (attacker.strength + attacker.speed) / 20_000_000; // stats now 0-10,000,000
       const sizeBonus     = size2 > size1 ? 1 + (size2 - size1) * 0.08 : 1;
       const ratio2        = base2 / totalPower;
       const scaledRatio   = isRealistic ? Math.pow(ratio2, 1.8) : Math.pow(ratio2, 1.4);

@@ -9,7 +9,12 @@ interface RosterFlipCardProps {
   onDelete?: () => void;
 }
 
-const formatStatNum = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
+const formatStatNum = (v: number): string => {
+  if (v >= 1_000_000) return `${+(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 10_000)    return `${Math.round(v / 1_000)}K`;
+  if (v >= 1_000)     return `${+(v / 1_000).toFixed(1)}K`;
+  return String(v);
+};
 
 const TAG_COLORS: Record<string, string> = {
   "aggressive":      "#ff3b30",
@@ -30,15 +35,21 @@ export function powerAvg(c: Character) {
 }
 
 export function powerTier(avg: number): { label: string; color: string; bg: string } {
-  if (avg >= 8000) return { label: "COSMIC", color: "#ff0055", bg: "rgba(255,0,85,0.15)" };
-  if (avg >= 6000) return { label: "ELITE",  color: "#c084fc", bg: "rgba(192,132,252,0.15)" };
-  if (avg >= 4000) return { label: "STANDARD", color: "#00f0ff", bg: "rgba(0,240,255,0.10)" };
-  return               { label: "STREET",  color: "#94a3b8", bg: "rgba(148,163,184,0.10)" };
+  if (avg >= 2_000_000) return { label: "COSMIC",   color: "#ff0055", bg: "rgba(255,0,85,0.15)" };
+  if (avg >= 100_000)   return { label: "ELITE",    color: "#c084fc", bg: "rgba(192,132,252,0.15)" };
+  if (avg >= 3_000)     return { label: "STANDARD", color: "#00f0ff", bg: "rgba(0,240,255,0.10)" };
+  return                       { label: "STREET",   color: "#94a3b8", bg: "rgba(148,163,184,0.10)" };
+}
+
+// Logarithmic bar scale: 100 (log10=2) → 0%, 10M (log10=7) → 100%
+function statBarPct(v: number): number {
+  if (v <= 0) return 0;
+  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, v)) - 2) / 5) * 100));
 }
 
 function StatBar({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
-  const pct = value / 100;
-  const barColor = value >= 9000 ? "#ff0055" : value >= 6000 ? "#c084fc" : value >= 4000 ? "#00f0ff" : "#94a3b8";
+  const pct = statBarPct(value);
+  const barColor = value >= 2_000_000 ? "#ff0055" : value >= 200_000 ? "#c084fc" : value >= 10_000 ? "#00f0ff" : "#94a3b8";
 
   return (
     <div className="flex items-center gap-2">
