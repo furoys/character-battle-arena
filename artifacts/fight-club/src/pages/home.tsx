@@ -453,50 +453,13 @@ export function Home() {
                 onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
               />
 
-              {/* CENTER: VS + FIGHT — fixed-height column so it never moves */}
-              <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5" style={{ width: 52 }}>
-                {/* VS label */}
+              {/* CENTER: VS only — slim divider */}
+              <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 28 }}>
                 <div
                   className="font-display text-xs uppercase tracking-[0.3em] leading-none"
                   style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
                 >
                   vs
-                </div>
-
-                {/* FIGHT button */}
-                <button
-                  className="flex flex-col items-center justify-center font-display text-[10px] uppercase tracking-widest transition-all duration-200 active:scale-95 flex-shrink-0"
-                  style={{
-                    width: 52,
-                    height: 52,
-                    border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
-                    background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
-                    color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
-                    cursor: canFight ? "pointer" : "not-allowed",
-                    animation: canFight ? "fightPulse 2s ease-in-out infinite" : "none",
-                  }}
-                  onClick={handleFight}
-                  disabled={!canFight || simulateFight.isPending}
-                >
-                  <Swords className="h-5 w-5 mb-0.5" />
-                  <span className="leading-none text-[9px]">
-                    {simulateFight.isPending ? "•••" : "FIGHT"}
-                  </span>
-                </button>
-
-                {/* Slot dots */}
-                <div className="flex gap-0.5 justify-center">
-                  {[0,1,2,3,4].map(i => (
-                    <div
-                      key={i}
-                      className="w-1 h-1 rounded-full"
-                      style={{
-                        background: i < Math.max(team1.length, team2.length)
-                          ? "#ff005560"
-                          : "rgba(255,255,255,0.1)",
-                      }}
-                    />
-                  ))}
                 </div>
               </div>
 
@@ -511,6 +474,42 @@ export function Home() {
 
             {/* Power comparison bar */}
             <PowerComparison team1={team1} team2={team2} />
+
+            {/* FIGHT button — full-width below teams, always reachable */}
+            <div className="px-2 pb-2">
+              <button
+                className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
+                style={{
+                  height: 40,
+                  border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
+                  background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
+                  color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
+                  fontSize: 11,
+                  letterSpacing: "0.25em",
+                  cursor: canFight ? "pointer" : "not-allowed",
+                  animation: canFight ? "fightPulse 2s ease-in-out infinite" : "none",
+                }}
+                onClick={handleFight}
+                disabled={!canFight || simulateFight.isPending}
+              >
+                <Swords className="h-4 w-4" />
+                <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
+                {/* slot dots */}
+                <div className="flex gap-0.5 ml-1">
+                  {[0,1,2,3,4].map(i => (
+                    <div
+                      key={i}
+                      className="w-1 h-1 rounded-full"
+                      style={{
+                        background: i < Math.max(team1.length, team2.length)
+                          ? "#ff005560"
+                          : "rgba(255,255,255,0.1)",
+                      }}
+                    />
+                  ))}
+                </div>
+              </button>
+            </div>
 
 
             {/* Picking indicator */}
