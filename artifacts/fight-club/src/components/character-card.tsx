@@ -30,10 +30,22 @@ const TEAM_COLORS = {
   2: { border: "#ff3b30", bg: "rgba(255,59,48,0.07)", glow: "0 0 18px rgba(255,59,48,0.45), inset 0 0 12px rgba(255,59,48,0.07)", label: "#ff3b30" },
 };
 
-const formatStat = (v: number) => v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(v);
+const formatStat = (v: number): string => {
+  if (v >= 1_000_000) return `${+(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 10_000)    return `${Math.round(v / 1_000)}K`;
+  if (v >= 1_000)     return `${+(v / 1_000).toFixed(1)}K`;
+  return String(v);
+};
+
+// Logarithmic bar: min=100 (log10=2), max=10M (log10=7) → 0–100%
+function statBarPct(v: number): number {
+  if (v <= 0) return 0;
+  const MIN_LOG = 2, MAX_LOG = 7;
+  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, v)) - MIN_LOG) / (MAX_LOG - MIN_LOG)) * 100));
+}
 
 function StatCol({ label, value, color }: { label: string; value: number; color: string }) {
-  const pct = value / 100;
+  const pct = statBarPct(value);
   return (
     <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
       <span className="font-display text-sm font-bold leading-none" style={{ color, textShadow: `0 0 8px ${color}60` }}>
