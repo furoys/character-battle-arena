@@ -98,6 +98,8 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
             <img
               src={character.imageUrl}
               alt={character.name}
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover object-top"
               style={{
                 transform: hovered && isClickable ? "scale(1.06)" : "scale(1)",

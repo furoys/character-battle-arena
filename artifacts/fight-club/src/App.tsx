@@ -14,7 +14,17 @@ import { Admin } from "@/pages/admin";
 import { Suggest } from "@/pages/suggest";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Characters rarely change — cache for 5 min, keep in memory for 30
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      // Don't silently refetch every time the user alt-tabs back
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function Router() {
   return (
