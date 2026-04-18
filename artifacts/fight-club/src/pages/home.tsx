@@ -238,6 +238,16 @@ export function Home() {
   const [fightMode, setFightMode] = useState<"cinematic" | "brutal" | "realistic">("realistic");
   const [tierFilter, setTierFilter] = useState<string>("all");
 
+  // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
+  const INITIAL_VISIBLE = 80;
+  const PAGE_SIZE = 60;
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset visible count whenever the filter/search changes
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [searchQuery, activeFilter, tierFilter]);
+
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
   useEffect(() => {
     try {
@@ -325,6 +335,26 @@ export function Home() {
       },
     },
   });
+
+  // IntersectionObserver — appends PAGE_SIZE cards when the sentinel scrolls into view.
+  // Must live AFTER filteredCharacters is declared (avoids TDZ).
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount(n => n + PAGE_SIZE);
+        }
+      },
+      { root: gridScrollRef.current, rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  // Re-create the observer whenever the filtered list changes so the sentinel
+  // is watched relative to the new scroll container content.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredCharacters.length]);
 
   const handleCharacterClick = (character: Character) => {
     const inTeam1 = team1.some(c => c.id === character.id);
@@ -713,7 +743,7 @@ export function Home() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
+          <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
             {/* Filter status bar */}
             {(activeFilter || searchQuery || tierFilter !== "all") && (
               <div
@@ -738,7 +768,7 @@ export function Home() {
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {filteredCharacters.map(character => (
+                {filteredCharacters.slice(0, visibleCount).map(character => (
                   <CharacterCard
                     key={character.id}
                     character={character}
@@ -753,6 +783,10 @@ export function Home() {
                   />
                 ))}
               </div>
+              {/* Sentinel div — intersection observer loads more cards when this comes into view */}
+              {visibleCount < filteredCharacters.length && (
+                <div ref={sentinelRef} className="h-4 mt-1" aria-hidden />
+              )}
               {filteredCharacters.length === 0 && !isLoading && (
                 <div className="text-center p-16 space-y-3">
                   <p className="font-display text-xl uppercase" style={{ color: "rgba(255,255,255,0.2)" }}>No fighters found</p>

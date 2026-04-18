@@ -55,6 +55,9 @@ router.get("/characters", async (req, res): Promise<void> => {
     .select()
     .from(charactersTable)
     .orderBy(charactersTable.name);
+  // Characters change infrequently — cache at CDN/browser for 60 s,
+  // allow serving stale up to 5 min while revalidating in the background.
+  res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
   res.json(ListCharactersResponse.parse(characters));
 });
 
