@@ -775,7 +775,7 @@ export function Home() {
                     selectedTeam={getCharacterTeam(character.id)}
                     onClick={() => handleCharacterClick(character)}
                     isFavorite={favorites.has(character.id)}
-                    onToggleFavorite={toggleFavorite}
+                    onToggleFavorite={() => toggleFavorite(character.id)}
                     disabled={
                       (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
                       (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
@@ -805,7 +805,7 @@ export function Home() {
 
         <FightScreen
           open={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
           }}
