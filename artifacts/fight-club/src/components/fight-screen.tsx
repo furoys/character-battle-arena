@@ -117,7 +117,6 @@ interface FightScreenProps {
   team2Names: string[];
   team1Images?: (string | null | undefined)[];
   team2Images?: (string | null | undefined)[];
-  mode?: "cinematic" | "brutal" | "realistic";
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -391,7 +390,6 @@ export function FightScreen({
   open, onClose, onRematch, result, isSimulating,
   team1Names, team2Names,
   team1Images = [], team2Images = [],
-  mode = "cinematic",
 }: FightScreenProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [allRoundsDone, setAllRoundsDone] = useState(false);
@@ -550,31 +548,6 @@ export function FightScreen({
                   <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
                     {team1Names.join(" & ")} vs {team2Names.join(" & ")}
                   </p>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      marginTop: 4,
-                      padding: "1px 8px",
-                      fontSize: 9,
-                      fontWeight: 700,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color:
-                        mode === "realistic" ? "#00e5ff" :
-                        mode === "brutal"    ? "#ff7a00" :
-                                               "#ff0055",
-                      border: `1px solid ${
-                        mode === "realistic" ? "#00e5ff40" :
-                        mode === "brutal"    ? "#ff7a0040" :
-                                               "#ff005540"
-                      }`,
-                      borderRadius: 2,
-                    }}
-                  >
-                    {mode === "realistic" ? "⚖ Realistic" :
-                     mode === "brutal"    ? "⚔ Brutal"    :
-                                            "✦ Cinematic"}
-                  </span>
                   <div className="mt-2 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
 
@@ -679,7 +652,6 @@ export function FightScreen({
         {showVictory && result && (
           <VictoryScreen
             result={result}
-            mode={mode}
             onClose={onClose}
             onRematch={onRematch ? handleRematch : undefined}
           />
