@@ -1,11 +1,10 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Users, Trophy, Lightbulb } from "lucide-react";
+import { Swords, Trophy, Lightbulb } from "lucide-react";
 import { MusicToggle } from "@/components/music-toggle";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
-  { href: "/roster", label: "Roster", icon: Users },
   { href: "/fights", label: "History", icon: Trophy },
   { href: "/suggest", label: "Suggest", icon: Lightbulb },
 ];
@@ -30,7 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Bottom game navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-4">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-3">
         {navItems.map((item) => {
           const active = location === item.href;
           return (
