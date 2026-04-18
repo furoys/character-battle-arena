@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { PowerAura } from "./power-aura";
 import { Zap, Shield, Brain, Swords } from "lucide-react";
@@ -75,7 +75,7 @@ function StatRow({ icon: Icon, label, value, color }: { icon: any; label: string
   );
 }
 
-export function CharacterCard({ character, selectedTeam, onClick, disabled, isFavorite, onToggleFavorite }: CharacterCardProps) {
+function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavorite, onToggleFavorite }: CharacterCardProps) {
   const [imgError, setImgError] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [flipped, setFlipped] = useState(false);
@@ -115,28 +115,7 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
   };
 
   return (
-    <>
-      <style>{`
-        .ava-card-scene { perspective: 900px; }
-        .ava-card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transform-style: preserve-3d;
-          transition: transform 0.45s cubic-bezier(0.4, 0.2, 0.2, 1);
-        }
-        .ava-card-inner.is-flipped { transform: rotateY(180deg); }
-        .ava-card-face {
-          position: absolute;
-          inset: 0;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          overflow: hidden;
-        }
-        .ava-card-back { transform: rotateY(180deg); }
-      `}</style>
-
-      <div
+    <div
         className="ava-card-scene relative select-none"
         style={{ height: 300 }}
         onMouseEnter={() => setHovered(true)}
@@ -380,6 +359,7 @@ export function CharacterCard({ character, selectedTeam, onClick, disabled, isFa
 
         </div>
       </div>
-    </>
   );
 }
+
+export const CharacterCard = memo(CharacterCardInner);
