@@ -514,7 +514,7 @@ export function Home() {
 
             {/* Picking indicator */}
             <div
-              className="text-center py-1 text-[10px] font-bold uppercase tracking-[0.25em]"
+              className="text-center py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] whitespace-nowrap overflow-hidden"
               style={{
                 color: activeColor,
                 background: `${activeColor}08`,
@@ -522,12 +522,12 @@ export function Home() {
                 animation: "pickingBlink 2.5s ease-in-out infinite",
               }}
             >
-              ▸ Picking for Team {activeTeam} — tap a fighter below ◂
+              ▸ Team {activeTeam} — pick a fighter ◂
             </div>
 
             {/* Search + filter */}
             <div
-              className="px-3 pt-2 pb-2 space-y-1.5"
+              className="px-3 pt-1.5 pb-1.5 space-y-1"
               style={{ background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
             >
               {/* Search */}
