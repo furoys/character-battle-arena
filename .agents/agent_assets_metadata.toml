@@ -3731,3 +3731,9 @@ id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
 type = "unspecified"
 title = "A.v.A Project Export"
+
+[[outputs]]
+id = "XQ5x9X_SE9sXOhnAqi50_"
+uri = "file://character-list.txt"
+type = "text"
+title = "A.v.A — Full Character Roster (638 characters)"
