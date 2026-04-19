@@ -5,7 +5,7 @@ import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
-import { Search, Swords, X, Zap, AlertTriangle, ChevronDown } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, ChevronDown } from "lucide-react";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 
@@ -377,6 +377,35 @@ export function Home() {
     simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic" } });
   };
 
+  const handleRandomFight = () => {
+    if (!characters || characters.length < 2) return;
+
+    // Weighted random team size: 1 char more likely than 5 (feels more surprising)
+    const pickSize = () => {
+      const roll = Math.random();
+      if (roll < 0.30) return 1;
+      if (roll < 0.55) return 2;
+      if (roll < 0.75) return 3;
+      if (roll < 0.90) return 4;
+      return 5;
+    };
+
+    const size1 = pickSize();
+    const size2 = pickSize();
+    const total = size1 + size2;
+
+    // Shuffle all characters and take the first (size1 + size2)
+    const shuffled = [...characters].sort(() => Math.random() - 0.5).slice(0, total);
+    const r1 = shuffled.slice(0, size1);
+    const r2 = shuffled.slice(size1, size1 + size2);
+
+    setTeam1(r1);
+    setTeam2(r2);
+    pushRecentPicks([...r1.map(c => c.id), ...r2.map(c => c.id)]);
+    setShowModal(true);
+    simulateFight.mutate({ data: { team1: r1.map(c => c.id), team2: r2.map(c => c.id), mode: "cinematic" } });
+  };
+
   const getCharacterTeam = (id: number) => {
     if (team1.some(c => c.id === id)) return 1 as const;
     if (team2.some(c => c.id === id)) return 2 as const;
@@ -534,10 +563,10 @@ export function Home() {
               </div>
             )}
 
-            {/* FIGHT button — full-width below teams, always reachable */}
-            <div className="px-2 pb-2">
+            {/* FIGHT + RANDOM buttons */}
+            <div className="px-2 pb-2 flex gap-1.5">
               <button
-                className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
+                className="flex-1 flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
                 style={{
                   height: 34,
                   border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
@@ -553,7 +582,6 @@ export function Home() {
               >
                 <Swords className="h-4 w-4" />
                 <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
-                {/* slot dots */}
                 <div className="flex gap-0.5 ml-1">
                   {[0,1,2,3,4].map(i => (
                     <div
@@ -567,6 +595,28 @@ export function Home() {
                     />
                   ))}
                 </div>
+              </button>
+
+              {/* RANDOM fight button */}
+              <button
+                className="flex items-center justify-center gap-1.5 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.97]"
+                style={{
+                  height: 34,
+                  width: 90,
+                  fontSize: 8,
+                  letterSpacing: "0.18em",
+                  border: "1.5px solid rgba(255,200,0,0.35)",
+                  background: "rgba(255,200,0,0.07)",
+                  color: "rgba(255,200,0,0.7)",
+                  cursor: simulateFight.isPending ? "not-allowed" : "pointer",
+                  flexShrink: 0,
+                }}
+                onClick={handleRandomFight}
+                disabled={simulateFight.isPending || !characters?.length}
+                title="Random fight — fully randomized teams"
+              >
+                <Shuffle className="h-3 w-3" />
+                <span>RANDOM</span>
               </button>
             </div>
 
