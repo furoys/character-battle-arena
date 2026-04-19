@@ -2145,11 +2145,15 @@ const TONE_INSTRUCTIONS: Record<FightTone, string> = {
 • Operatic, theatrical, larger-than-life. Slow-motion beats. Dust motes in shafts of light. Camera-style framing.
 • Powers feel mythic. Music swells in the prose. Each hit lands with the weight of a film climax.
 • Vary pace — quiet beats between explosions. Land the finisher like a curtain drop.`,
-  brutal: `TONE — BRUTAL & GROUNDED.
-• Visceral, anatomical, ugly. Bones. Blood. Tendons. Concrete. Real impact, real damage, real cost.
-• No magic-system explanations — describe what hits, where it lands, what tears, what breaks.
-• Short, hard sentences. No adverbs. No fanfare. Pain has texture and consequence.
-• Treat injuries like injuries. The fight should feel exhausting, not heroic.`,
+  brutal: `TONE — BRUTAL, GRAPHIC & UNFILTERED.
+• Visceral, anatomical, ugly. Bones shatter. Flesh tears. Joints dislocate with wet pops. Blood runs freely.
+• Describe exactly WHERE hits land and what the body DOES — ribs fold, skulls crack, limbs get pinned or torn.
+• Graphic physical damage is REQUIRED: deep lacerations, broken teeth, fractured orbital bones, internal bleeding shown through coughing blood, limbs that stop working.
+• Dismemberment, decapitation, and fatal injuries are on the table when power levels justify it — describe them with clinical specificity.
+• Blood spurts from arterial hits. Bones show through skin on heavy impacts. Organs are damaged, not "hurt."
+• No adverbs. No fanfare. No heroics. Short declarative sentences. Pain is the subject of every clause.
+• After a massive hit: describe the body's involuntary response — the jaw goes slack, the knees buckle, the stomach empties, the vision whites out.
+• Finishers must be genuinely final — describe the exact physical mechanism of incapacitation or death in explicit detail.`,
   realistic: `TONE — TIGHT & STAT-DRIVEN.
 • Restrained, almost analytical. Outcomes follow capability — the stronger fighter wins on technique and matchup.
 • No chaos events, no random environmental saves, no luck-based reversals. Every result is earned.
@@ -2215,12 +2219,12 @@ async function generateAINarrative(
   // Build per-round HP delta strings so the AI can calibrate damage weight
   // Translate an HP value into a physical condition the prose must reflect.
   const condition = (hp: number): string => {
-    if (hp >= 85) return "fresh, unhurt";
-    if (hp >= 65) return "bruised, breathing harder, guard still solid";
-    if (hp >= 45) return "visibly hurt — split lip, slowed footwork, ragged breathing";
-    if (hp >= 25) return "badly damaged — bleeding, favoring a leg or rib, guard breaking";
-    if (hp >= 10) return "barely standing — one good hit from going down, gasping, vision blurred";
-    return "broken — can't keep their feet, every breath agony, finished if hit again";
+    if (hp >= 85) return "fresh, unhurt — full power, no limitations";
+    if (hp >= 65) return "bruised — split lip, blood on teeth, breathing harder, still functional";
+    if (hp >= 45) return "visibly damaged — gash across cheek or torso, one eye swelling shut, slowed footwork, favoring injured side";
+    if (hp >= 25) return "badly hurt — ribs cracked, bleeding from multiple wounds, guard failing, each breath a gasp, movement compromised";
+    if (hp >= 10) return "barely standing — blood loss significant, one limb barely functional, vision strobing, held together by refusal to fall";
+    return "destroyed — cannot stand unaided, bones broken, bleeding internally, every breath a wet rattle, finished";
   };
 
   const hpNote = (idx: number) => {
@@ -2376,11 +2380,14 @@ Unless the mismatch is a STOMP:
 Each fight must evolve — opening engagement → adaptation → turning point → decisive finish.
 
 8. VIOLENCE AND IMPACT
-- Be vivid, intense, and descriptive
-- Cosmic entities distort reality, not just punch
-- Speedsters reposition and blitz, they don't trade hits
+- Be vivid, intense, anatomically specific. Name the body part. Describe what it does when hit.
+- Cosmic entities unmake flesh, collapse organs, or erase matter — not "hurt"
+- Speedsters reposition and blitz, they don't trade hits — every pass leaves a specific wound
 - Mages/sorcerers control the field, summon, exploit conditions
 - Every hit lands with weight appropriate to the power level
+- Blood, broken bones, torn muscle, burst vessels — describe the physical reality of violence
+- Finishing blows must describe EXACTLY what ends the fight: the neck broken, the skull caved, the arm removed, the chest burned through
+- DO NOT sanitize. DO NOT fade to black. Show it.
 
 ==================================================
 STYLE RULES
@@ -2434,15 +2441,20 @@ Write exactly 5 sentences. Each sentence must cover ONE of these points in this 
 5. LOSER'S FAILURE: What their best play was, why it wasn't enough, and what specific gap in their kit left them exposed.
 
 ENDINGS — pick the ONE most fitting for this matchup and power level:
-• KNOCKOUT — out cold, lights out mid-sentence
-• INCAPACITATION — limb destroyed, joint broken, cannot continue
-• SURRENDER — weapon dropped, hands raised, done
-• FORCED RETREAT — teleported or fled, too damaged to stay
-• MERCY KILL — winner chooses to stop; loser is broken but alive
-• HUMILIATION — not one effective hit landed, complete shutdown
-• CAPTURED/PINNED — held and immobilized, no escape
-• ERASURE — cosmic-tier only; loser is unmade, dispersed, or banished from existence
-• DEATH — only when lethality gap genuinely warrants it
+• KNOCKOUT — skull hits concrete, eyes roll, body stops mid-movement and drops dead weight
+• INCAPACITATION — specific limb destroyed with anatomical detail: joint shattered, bone through skin, arm hanging useless
+• DECAPITATION — head removed or separated at the neck; describe it precisely; for characters capable of this level of violence
+• DISMEMBERMENT — arm, leg, or multiple limbs removed in the finishing blow; describe the wound, the blood, the silence after
+• IMPALEMENT — run through — describe what the weapon enters and exits, where, what the body does
+• INTERNAL OBLITERATION — no external wound but organs liquefied, skeleton fractured internally, body collapses from inside
+• EVISCERATION — abdominal wound with full description; reserved for characters with bladed weapons or claws
+• SURRENDER — weapon dropped, hands raised, knows they're done
+• FORCED RETREAT — too broken to stay, describes the injuries that make continuing impossible
+• MERCY KILL — winner stops deliberately; loser is shattered but alive, describe exactly how bad the damage is
+• HUMILIATION — zero effective offense, complete shutdown — describe the gap in humiliating clinical detail
+• CAPTURED/PINNED — held and immobilized, no escape possible, describe the hold
+• ERASURE — cosmic-tier only; loser is unmade at the molecular level, dispersed, or banished from existence — describe what disappearing looks like
+• DEATH — describe the final moment, the exact cause, what the body does when it dies
 
 FORMAT RULES (CRITICAL):
 - SETTING = 3-5 sentences. ENTRANCE = 1 sentence per fighter. RESULT = 2 sentences. WHY THEY WON = 3-5 sentences.
