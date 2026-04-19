@@ -16,6 +16,12 @@ export const charactersTable = pgTable("characters", {
   imageUrl: text("image_url"),
   behaviorTags: text("behavior_tags").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // v3 roster stats (0-100 scale, VS-Battles-inspired)
+  skill: integer("skill"),
+  energyProjection: integer("energy_projection"),
+  hax: integer("hax"),
+  tier: text("tier"),
+  powerGapIndex: integer("power_gap_index"),
 });
 
 export const insertCharacterSchema = createInsertSchema(charactersTable).omit({ id: true, createdAt: true });
