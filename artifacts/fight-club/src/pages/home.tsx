@@ -350,13 +350,9 @@ export function Home() {
     if (activeTeam === 1) {
       if (team1.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam1(t => [...t, character]);
-      // Auto-switch: go to Team 2 unless Team 2 is already full
-      if (team2.length < 5) setActiveTeam(2);
     } else {
       if (team2.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam2(t => [...t, character]);
-      // Auto-switch: go to Team 1 unless Team 1 is already full
-      if (team1.length < 5) setActiveTeam(1);
     }
   };
 
