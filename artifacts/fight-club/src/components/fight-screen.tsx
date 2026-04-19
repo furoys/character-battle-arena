@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
 import { ChevronLeft, Swords, Zap, Trophy } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
-import { useMusic } from "@/contexts/music-context";
 
 // ─── Cinematic loading sequence ───────────────────────────────────────────────
 const FIGHT_PHASES = [
@@ -397,20 +396,6 @@ export function FightScreen({
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const { setTrack } = useMusic();
-
-  // Music: battle while simulating, victory on results screen, lobby when closed
-  useEffect(() => {
-    if (!open) {
-      setTrack("lobby");
-    } else if (isSimulating) {
-      setTrack("battle");
-    }
-  }, [open, isSimulating, setTrack]);
-
-  useEffect(() => {
-    if (showVictory) setTrack("victory");
-  }, [showVictory, setTrack]);
 
   // Clear all pending auto-reveal timers
   const clearTimers = () => {

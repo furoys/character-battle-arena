@@ -3690,3 +3690,39 @@ id = "yfR2cNSYMWScCljL-lQQd"
 uri = "file://artifacts/fight-club/public/characters/boba-fett.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "mI0LfQ-opLniOGmrdAksA"
+uri = "file://attached_assets/generated_images/generated_image_1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Djl1mxMWme4LyubTp074J"
+uri = "file://attached_assets/generated_images/generated_image_2.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "puZ3tNyDJ0TnQd0EMk9hh"
+uri = "file://attached_assets/generated_images/generated_image_4.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "KMOiNuTSLc0IzN67syTBP"
+uri = "file://attached_assets/generated_images/generated_image_5.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OJpEb6wbtbbkZV24n9ZDC"
+uri = "file://attached_assets/generated_images/generated_image_0.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "TQtiUVjpCZmQH3TKxh4HN"
+uri = "file://attached_assets/generated_images/generated_image_3.png"
+type = "image"
+title = "generated_image"

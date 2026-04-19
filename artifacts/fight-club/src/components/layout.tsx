@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Swords, Trophy, Lightbulb } from "lucide-react";
-import { MusicToggle } from "@/components/music-toggle";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
@@ -18,17 +17,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-background text-foreground overflow-hidden">
-      {/* Music toggle — fixed top-right */}
-      <div className="fixed top-3 right-3 z-50">
-        <MusicToggle />
-      </div>
-
-      {/* Game screen content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pb-[72px]">
         {children}
       </main>
 
-      {/* Bottom game navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-3">
         {navItems.map((item) => {
           const active = location === item.href;
