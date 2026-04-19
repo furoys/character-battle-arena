@@ -269,12 +269,12 @@ export function Home() {
   };
   const pillsRef = useRef<HTMLDivElement>(null);
 
-  // Build universe list sorted by count, only show 4+ in main bar
+  // Build universe list sorted alphabetically, only show 4+ in main bar
   const { mainUniverses, allUniverses } = useMemo(() => {
     if (!characters) return { mainUniverses: [], allUniverses: [] };
     const counts: Record<string, number> = {};
     for (const c of characters) counts[c.universe] = (counts[c.universe] ?? 0) + 1;
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
     return {
       mainUniverses: sorted.filter(([, n]) => n >= 4).map(([u, n]) => ({ universe: u, count: n })),
       allUniverses: sorted.map(([u, n]) => ({ universe: u, count: n })),
