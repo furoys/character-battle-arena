@@ -252,6 +252,336 @@ const arenas: Arena[] = [
     boost: ["reality", "magic", "cosmic", "psychic"],
     nerf: ["tech", "long-range"],
   },
+  {
+    name: "the ruins of a Gothic cathedral mid-collapse during a thunderstorm",
+    flavor: [
+      "Stained glass windows detonate inward as shockwaves pulse through the stonework.",
+      "The vaulted ceiling groans and drops a section — three tonnes of stone, zero warning.",
+      "Lightning splits the bell tower. The bells fall and ring on impact.",
+      "Rain pours through the shattered roof. The floor is ankle-deep in cold black water.",
+    ],
+    boost: ["lightning", "magic", "undead", "shadow"],
+    nerf: ["fire", "tech"],
+  },
+  {
+    name: "a collapsing underground cave system with magma flooding the lower levels",
+    flavor: [
+      "The floor cracks open and orange light bleeds up through the fissures.",
+      "A stalactite the size of a telephone pole drops without warning.",
+      "The air is superheating. Every breath is work.",
+      "The cave is compressing — the ceiling is visibly lower than it was two minutes ago.",
+    ],
+    boost: ["fire", "earth", "shadow"],
+    nerf: ["ice", "water", "tech"],
+  },
+  {
+    name: "the photosphere of a dying red giant star",
+    flavor: [
+      "Plasma tornadoes the size of planets spiral across the battlefield.",
+      "The gravity here is crushing. Every movement costs twice what it should.",
+      "Solar flares arc overhead, rewriting the horizon every few seconds.",
+      "The star is destabilizing. This entire region of space has minutes left.",
+    ],
+    boost: ["fire", "cosmic", "energy"],
+    nerf: ["ice", "tech"],
+  },
+  {
+    name: "the eye of an EF5 tornado tearing across the Great Plains",
+    flavor: [
+      "Two-hundred-mile-an-hour walls of wind form the arena's boundaries.",
+      "Farm equipment, vehicles, and structural debris orbit the fight at lethal velocity.",
+      "The ground is being stripped down to bedrock in real time.",
+      "The funnel shifts — the eye moves — and both sides scramble to stay inside it.",
+    ],
+    boost: ["wind", "speedster", "lightning"],
+    nerf: ["tech", "giant"],
+  },
+  {
+    name: "a massive hydroelectric dam in the final seconds before catastrophic failure",
+    flavor: [
+      "The concrete face is spiderwebbed with cracks. Water jets through in a dozen places.",
+      "The structure shudders with the weight of billions of gallons pressing against it.",
+      "Warning sirens echo across the valley below. Nobody down there is going to make it.",
+      "The dam gives another groan. One more good hit anywhere and the whole thing goes.",
+    ],
+    boost: ["water", "lightning"],
+    nerf: ["fire"],
+  },
+  {
+    name: "the sunken ruins of a pre-human civilization on the ocean floor",
+    flavor: [
+      "At this depth, the pressure alone should be fatal for anyone who doesn't belong here.",
+      "Bio-luminescent organisms pulse in the black water — the only light for miles.",
+      "Ancient monoliths the size of skyscrapers lean at wrong angles in the silt.",
+      "Something vast moves in the dark beyond the ruins. It hasn't engaged yet.",
+    ],
+    boost: ["water", "psychic", "shadow"],
+    nerf: ["fire", "lightning", "tech"],
+  },
+  {
+    name: "a fractured dimensional seam where three realities press against each other",
+    flavor: [
+      "The ground is three different surfaces overlapping — stone, metal, and something that isn't matter.",
+      "Fighters from other timelines flicker in and out of visibility. Some of them are dead versions of the combatants.",
+      "Cause and effect have stopped agreeing with each other. Hits register before they land.",
+      "The seam is widening. When it completes, this location will cease to exist.",
+    ],
+    boost: ["reality", "psychic", "cosmic", "magic"],
+    nerf: ["tech"],
+  },
+  {
+    name: "a post-apocalyptic city buried under fifty years of decay and overgrowth",
+    flavor: [
+      "Skyscrapers have become vertical forests — trees growing from every shattered window.",
+      "The street grid has been swallowed. Exposed rebar and collapsed concrete form the terrain.",
+      "Something large and territorial lives in the nearest building. It is becoming aware of the fight.",
+      "Acid rain begins falling — slow at first, then constant.",
+    ],
+    boost: ["shadow", "stealth", "aggressive"],
+    nerf: ["tech"],
+  },
+  {
+    name: "the Mariana Trench — deepest point on Earth, 11 kilometers under the surface",
+    flavor: [
+      "The pressure at this depth is eight tonnes per square inch. The darkness is absolute.",
+      "Hydrothermal vents vent superheated mineral columns directly through the battlefield.",
+      "No sound travels correctly here. Every impact arrives wrong — delayed, distorted.",
+      "Something bioluminescent and enormous drifts past. It does not stop. It does not look away.",
+    ],
+    boost: ["water", "psychic"],
+    nerf: ["fire", "lightning", "tech"],
+  },
+  {
+    name: "an active World War II battlefield in the final hours of a siege",
+    flavor: [
+      "Artillery shells fall on a schedule nobody knows. The ground is constant percussion.",
+      "Mud and wire and craters as far as visibility allows — which isn't far.",
+      "A tank grinds through the battlefield, indifferent to what's in front of it.",
+      "Tracer fire streaks across the smoke in every direction. Friendly fire is an abstract concept here.",
+    ],
+    boost: ["tech", "stealth", "aggressive"],
+    nerf: ["cosmic", "magic"],
+  },
+  {
+    name: "a sealed military bunker three hundred meters underground — no exits",
+    flavor: [
+      "The ventilation cut out an hour ago. The air is getting thick.",
+      "Emergency lighting paints everything the color of dried blood.",
+      "The walls are reinforced to survive a direct nuclear strike. They are not surviving this fight.",
+      "The blast doors are sealed from the outside. Whatever happens here, stays here.",
+    ],
+    boost: ["tech", "aggressive", "shadow"],
+    nerf: ["wind", "cosmic"],
+  },
+  {
+    name: "the event horizon of a stellar-mass black hole",
+    flavor: [
+      "Time is running at different speeds in different parts of the arena.",
+      "Light bends into closed loops. You can watch yourself from behind.",
+      "The tidal forces are shredding the battlefield in real time.",
+      "Anything that crosses that line doesn't come back. Both sides know exactly where the line is.",
+    ],
+    boost: ["cosmic", "reality", "psychic"],
+    nerf: ["tech", "speedster"],
+  },
+  {
+    name: "a category 5 hurricane making landfall — coastal city, 190mph sustained winds",
+    flavor: [
+      "The storm surge has already taken the lower two floors of every building.",
+      "Street signs, vehicles, and shipping containers fly past at terminal velocity.",
+      "Visibility is zero. The only reference point is the wind direction — which keeps changing.",
+      "A building collapses slowly on the edge of the arena. Then another. Then three at once.",
+    ],
+    boost: ["water", "wind", "lightning"],
+    nerf: ["fire", "tech"],
+  },
+  {
+    name: "the rubble field of a destroyed alien homeworld",
+    flavor: [
+      "The planet's crust has been shattered into floating megaton chunks drifting in low orbit.",
+      "The atmosphere is venting into space — they have some time. Not a lot.",
+      "Ancient weapons systems, some still active, discharge randomly from the debris.",
+      "The planet's core is visible through a crack in the terrain. It is not stable.",
+    ],
+    boost: ["cosmic", "tech", "energy"],
+    nerf: [],
+  },
+  {
+    name: "the interior of a massive cumulonimbus thundercloud at 15,000 meters altitude",
+    flavor: [
+      "Lightning fires from every surface simultaneously — the cloud itself is a weapon.",
+      "Updrafts and downdrafts shift without warning, throwing fighters hundreds of meters vertically.",
+      "Hail the size of fists hammers everything constantly.",
+      "The static discharge here would incinerate conventional aircraft. This is not a safe place.",
+    ],
+    boost: ["lightning", "wind", "speedster"],
+    nerf: ["fire", "tech"],
+  },
+  {
+    name: "an arctic ice shelf calving into the sea during a polar storm",
+    flavor: [
+      "Sections of ice the size of city blocks shear off and plunge into the black water below.",
+      "The wind cuts to the bone. Visibility is measured in meters, not kilometers.",
+      "Pressure ridges of ancient ice — some twenty meters high — shift and collapse.",
+      "The ocean below is 1.9°C. Submersion is a death sentence by minutes.",
+    ],
+    boost: ["ice", "wind"],
+    nerf: ["fire", "tech"],
+  },
+  {
+    name: "the summit ridge of Everest in a whiteout — 8,800 meters, oxygen near zero",
+    flavor: [
+      "At this altitude, the body is consuming itself. Every movement is borrowed time.",
+      "Visibility drops to arm's length. The wind is strong enough to throw a person off the ridge.",
+      "The temperature is -60°C with windchill. Exposed skin doesn't last a minute.",
+      "The ridge is barely three meters wide. On both sides: a vertical drop of two kilometers.",
+    ],
+    boost: ["wind", "ice", "cosmic"],
+    nerf: ["fire", "tech"],
+  },
+  {
+    name: "beneath the largest waterfall on Earth — Niagara scaled to a kilometer of drop",
+    flavor: [
+      "Six million cubic feet of water per minute hits the basin sixty meters away.",
+      "The noise makes communication impossible. Every sense is overwhelmed.",
+      "The mist is so dense it constitutes its own weather system.",
+      "The shockwave from the water hitting the basin is constant — the ground never stops moving.",
+    ],
+    boost: ["water", "lightning"],
+    nerf: ["fire", "shadow"],
+  },
+  {
+    name: "a collapsing megacity tower — floors 40 through 60, actively falling",
+    flavor: [
+      "The structure is in progressive collapse — each floor pancaking onto the one below at fifteen seconds per floor.",
+      "Gravity is winning. The horizon outside the windows is rotating.",
+      "Furniture, structural steel, and glass cascade through the fight from above.",
+      "The math says they have ninety seconds before the section they're on ceases to be a section.",
+    ],
+    boost: ["speedster", "wind", "tech"],
+    nerf: ["giant"],
+  },
+  {
+    name: "an ancient labyrinth carved into bedrock — and it is rearranging itself",
+    flavor: [
+      "Stone walls grind and shift between rounds. The corridors from sixty seconds ago no longer exist.",
+      "The torches are not fire. Whatever they burn doesn't consume them. It illuminates nothing.",
+      "The labyrinth is not random. It is herding both sides toward something at the center.",
+      "Sound behaves wrong in here. Echoes arrive before they should. Sometimes they don't arrive at all.",
+    ],
+    boost: ["magic", "psychic", "shadow", "stealth"],
+    nerf: ["long-range", "tech"],
+  },
+  {
+    name: "a reality nexus — the point where parallel universes physically overlap",
+    flavor: [
+      "Multiple versions of the same location exist simultaneously. The wrong step lands in a different universe.",
+      "Alternate versions of the fighters flicker in and out — echoes of paths not taken.",
+      "The nexus is contracting. With every passing minute, fewer realities fit in the space.",
+      "The laws of physics are voting on which version applies here. The vote is not unanimous.",
+    ],
+    boost: ["reality", "cosmic", "psychic", "magic"],
+    nerf: ["tech", "long-range"],
+  },
+  {
+    name: "the surface of a comet traveling at 70km/s through the inner solar system",
+    flavor: [
+      "The comet is outgassing — jets of superheated ice and dust punch through the surface without warning.",
+      "Gravity is near-zero. Every movement sends a fighter drifting. Control is a constant negotiation.",
+      "The sun fills half the sky and is getting larger by the minute.",
+      "The tail stretches millions of kilometers behind them. They are very alone out here.",
+    ],
+    boost: ["cosmic", "speedster", "ice"],
+    nerf: ["giant", "tech"],
+  },
+  {
+    name: "a dense asteroid field in the belt between Mars and Jupiter",
+    flavor: [
+      "Boulders ranging from car-sized to city-block-sized drift through the arena at conflicting velocities.",
+      "The gravity gradient between asteroids creates pockets of turbulence that redirect trajectories without warning.",
+      "A collision between two large rocks nearby sends shrapnel through the arena at orbital velocity.",
+      "There is no consistent surface. Every foothold is temporary.",
+    ],
+    boost: ["cosmic", "speedster", "tech"],
+    nerf: ["giant", "long-range"],
+  },
+  {
+    name: "the interior of the Great Pyramid of Giza — during an inexplicable sand flood",
+    flavor: [
+      "Sand pours through cracks that didn't exist when the fight started.",
+      "The chambers are filling from the bottom. By the final round, fighters will be at the ceiling.",
+      "The walls are inscribed with things that make more sense the less you look directly at them.",
+      "The sarcophagus chamber has been empty for four thousand years. Something is in it now.",
+    ],
+    boost: ["magic", "undead", "shadow"],
+    nerf: ["tech", "water"],
+  },
+  {
+    name: "the frozen subsurface ocean of Europa — beneath the ice, in complete darkness",
+    flavor: [
+      "The ice ceiling above is four kilometers of solid frozen compression.",
+      "Hydrothermal vents on the ocean floor below illuminate nothing but make everything warmer in wrong ways.",
+      "Something vastly larger than any known Earth creature passes through the fight space without acknowledgement.",
+      "The pressure at this depth converts sound into something that is also partially light.",
+    ],
+    boost: ["water", "psychic", "ice"],
+    nerf: ["fire", "lightning", "tech"],
+  },
+  {
+    name: "the burning ruins of Alexandria's Great Library during the final sack",
+    flavor: [
+      "Two thousand years of accumulated knowledge burns around the fight.",
+      "The smoke is so thick that breathing is a decision requiring reconsideration.",
+      "Shelves forty feet high topple in chains, taking sections of the ceiling with them.",
+      "The scrolls burn with different colored flames. Some of them shouldn't be burning at all.",
+    ],
+    boost: ["fire", "magic", "psychic"],
+    nerf: ["ice", "tech"],
+  },
+  {
+    name: "a quantum realm where the scale of existence is arbitrary and instant",
+    flavor: [
+      "Sub-atomic particles are the size of boulders here. Electrons orbit like slow moons.",
+      "Distance and size are relative concepts with opt-out provisions.",
+      "Probability clouds make every action simultaneously happened and not-happened until observed.",
+      "A wave function collapses nearby. What it was before is not what it is after.",
+    ],
+    boost: ["reality", "psychic", "speedster", "cosmic"],
+    nerf: ["tech", "giant"],
+  },
+  {
+    name: "a time-fractured battlefield where five different historical conflicts overlap",
+    flavor: [
+      "Roman legions, WWI trenches, medieval cavalry, future mechanized units, and ancient warriors occupy the same ground simultaneously.",
+      "Weapons and tactics from different eras interact with each other in ways no military academy has addressed.",
+      "A soldier from one era walks through another era's soldier without noticing. Only the fighters notice each other.",
+      "The temporal fracture is expanding. In twenty minutes this will either resolve itself or end everything nearby.",
+    ],
+    boost: ["time", "magic", "psychic"],
+    nerf: ["tech"],
+  },
+  {
+    name: "a gladiatorial arena on a populated alien world — broadcast live to 40 billion viewers",
+    flavor: [
+      "The audience is forty billion strong and completely alien. Their reaction to the fight is impossible to read.",
+      "The arena architecture follows physics that weren't negotiated on Earth.",
+      "Between rounds, the arena floor reconfigures automatically — different terrain each time.",
+      "The species hosting this event has been running these events for longer than humanity has existed.",
+    ],
+    boost: ["aggressive", "cosmic", "tech"],
+    nerf: [],
+  },
+  {
+    name: "a dimensional fortress hanging between worlds — walls built from condensed spacetime",
+    flavor: [
+      "The fortress exists in no single universe. It overlaps six.",
+      "The walls are made of something older than matter. Hitting them is like hitting the concept of a wall.",
+      "Doors open onto different dimensions depending on when you open them.",
+      "The fortress's original occupant is not present. Its defenses still are.",
+    ],
+    boost: ["reality", "magic", "cosmic", "shadow"],
+    nerf: ["tech"],
+  },
 ];
 
 // Per-arena modifier applied to outgoing damage based on attacker tags.
@@ -263,157 +593,6 @@ function getArenaDamageMod(arena: Arena, atkTags: Set<string>): number {
   return clamp(mod, 0.7, 1.35);
 }
 
-// ─── Chaos Events ─────────────────────────────────────────────────────────────
-
-interface ChaosEvent {
-  name: string;
-  narrative: (victim: string, beneficiary: string, arena: string) => string;
-  hpSwing: number; // positive = hurts leading team, negative = hurts trailing team
-  targetStrong: boolean; // true = prefers to target the stronger/winning team
-}
-
-const chaosEvents: ChaosEvent[] = [
-  {
-    name: "lightning strike",
-    narrative: (v, b, arena) =>
-      `CHAOS — A bolt of lightning from the storm above ${arena} hammers ${v} directly with approximately 300 million volts. ${b} did not cause this. Nature simply chose a side. ${v} is left twitching and smoking while ${b} cannot believe their luck.`,
-    hpSwing: 22,
-    targetStrong: true,
-  },
-  {
-    name: "a goat",
-    narrative: (v, b, arena) =>
-      `CHAOS — A goat appears from nowhere. Nobody knows where it came from. It headbutts ${v} squarely in the back of the knees with laser-targeted precision, dropping them at a critical moment. The goat trots off with the confident energy of someone who had a very specific task to complete.`,
-    hpSwing: 14,
-    targetStrong: false,
-  },
-  {
-    name: "ancient curse",
-    narrative: (v, b, arena) =>
-      `CHAOS — Something in ${arena} is cursed. It was always cursed. ${v} triggers it by stepping on exactly the wrong tile. For three agonizing seconds, they experience every bad decision they've ever made simultaneously. ${b} watches with wide eyes and steps carefully around the cursed tile.`,
-    hpSwing: 18,
-    targetStrong: true,
-  },
-  {
-    name: "rogue satellite",
-    narrative: (v, b, arena) =>
-      `CHAOS — A decommissioned Soviet satellite re-enters the atmosphere and strikes ${arena} with pinpoint inaccuracy that still somehow hits ${v} directly. The collision is not survivable by most metrics. ${b} picks debris out of their hair and quietly thanks the cosmos.`,
-    hpSwing: 26,
-    targetStrong: true,
-  },
-  {
-    name: "uninvited spectator",
-    narrative: (v, b, arena) =>
-      `CHAOS — An elderly man in a fishing hat walks directly into the fight, seemingly lost. ${v} pulls their finishing blow at the last second to avoid hitting him. This hesitation costs them dearly. The old man disappears into a hedge. Nobody finds the hedge later.`,
-    hpSwing: 12,
-    targetStrong: true,
-  },
-  {
-    name: "gravity inversion",
-    narrative: (v, b, arena) =>
-      `CHAOS — Gravity briefly inverts. ${b} — by luck, instinct, or sheer absurdity — had already left the ground at the moment of inversion. ${v}, however, was firmly planted and gets launched ceiling-first into whatever ceiling exists with full gravitational force.`,
-    hpSwing: 20,
-    targetStrong: true,
-  },
-  {
-    name: "dimensional rift",
-    narrative: (v, b, arena) =>
-      `CHAOS — A dimensional rift tears open inches from ${v}'s face. A different, angrier version of ${v} from a parallel timeline reaches through and delivers a single devastating punch before the rift closes. The regular ${v} has now been beaten up by themselves and has a lot of questions.`,
-    hpSwing: 24,
-    targetStrong: true,
-  },
-  {
-    name: "swarm of bees",
-    narrative: (v, b, arena) =>
-      `CHAOS — Sixty thousand bees arrive at ${arena} simultaneously and select ${v} with the unified democratic conviction of a hive that has decided. The bees have no agenda beyond justice. ${b} is not stung once. ${v} cannot stop running in circles for a full fifteen seconds.`,
-    hpSwing: 16,
-    targetStrong: false,
-  },
-  {
-    name: "betrayal by the arena itself",
-    narrative: (v, b, arena) =>
-      `CHAOS — ${arena} seems to actively choose a side. The ground shifts, a wall falls, a trap opens — all targeting ${v} with an intentionality that suggests the environment itself has opinions about this fight. ${b} makes a mental note to fight here again sometime.`,
-    hpSwing: 18,
-    targetStrong: true,
-  },
-  {
-    name: "inspirational music",
-    narrative: (v, b, arena) =>
-      `CHAOS — Someone on the sideline starts playing eye-of-the-tiger on a portable speaker directly at ${b}. The effect is medically inexplicable but impossible to deny — ${b} attacks with sudden, renewed fury while ${v} struggles to focus against the tonal assault.`,
-    hpSwing: 14,
-    targetStrong: true,
-  },
-  {
-    name: "spontaneous sinkholes",
-    narrative: (v, b, arena) =>
-      `CHAOS — The ground beneath ${v}'s feet gives way — a sinkhole opens with zero warning and swallows ${v} to the waist. They spend two rounds extracting themselves, during which ${b} respectfully (and then disrespectfully) continues fighting.`,
-    hpSwing: 20,
-    targetStrong: false,
-  },
-  {
-    name: "rogue energy discharge",
-    narrative: (v, b, arena) =>
-      `CHAOS — The sheer density of power being thrown around ${arena} reaches a critical threshold. A feedback loop of discharged energy spontaneously forms and detonates directly above ${v}. This is technically ${v}'s fault for being too powerful in an enclosed space.`,
-    hpSwing: 28,
-    targetStrong: true,
-  },
-  {
-    name: "intervention from a talking animal",
-    narrative: (v, b, arena) =>
-      `CHAOS — A crow lands on a piece of nearby debris, looks directly at ${v}, and says — clearly, in the local language — "Not today." It then divebombs ${v}'s face with surgical precision. The crow has not explained itself and cannot be found for comment. ${b} will remember this crow forever.`,
-    hpSwing: 15,
-    targetStrong: false,
-  },
-  {
-    name: "time hiccup",
-    narrative: (v, b, arena) =>
-      `CHAOS — Time stutters. ${v} gets stuck in a 0.8-second loop and throws the same punch at empty air four times in rapid succession while ${b} — who is outside the loop — has an entire uninterrupted window of opportunity and uses all of it.`,
-    hpSwing: 22,
-    targetStrong: true,
-  },
-  {
-    name: "catastrophic structural failure",
-    narrative: (v, b, arena) =>
-      `CHAOS — A load-bearing element of ${arena} finally gives up. The section ${v} is standing on drops six meters before catching on a lower ledge. ${v} survives but is briefly occupied with not falling to their death, which costs them the momentum of the round.`,
-    hpSwing: 18,
-    targetStrong: false,
-  },
-  {
-    name: "the fight goes viral",
-    narrative: (v, b, arena) =>
-      `CHAOS — The fight is being livestreamed and ${v} has just recognized their face on a phone screen. The comments are not kind. The awareness of being judged publicly causes a critical hesitation in ${v}'s movements that ${b} exploits immediately and without mercy or sympathy.`,
-    hpSwing: 13,
-    targetStrong: true,
-  },
-  {
-    name: "weather event",
-    narrative: (v, b, arena) =>
-      `CHAOS — The weather changes instantaneously to something ${v} is specifically vulnerable to. This is either cosmic irony or targeted atmospheric weaponization — either way, ${v} is dealing with hail, UV radiation, or extreme humidity at exactly the wrong time.`,
-    hpSwing: 19,
-    targetStrong: true,
-  },
-  {
-    name: "a second goat",
-    narrative: (v, b, arena) =>
-      `CHAOS — The first goat returns. It has brought a friend. They operate as a unit. ${v} is headbutted from two different angles in rapid succession. The goats share a meaningful look, then disperse. The fight continues.`,
-    hpSwing: 17,
-    targetStrong: false,
-  },
-  {
-    name: "power nullification field",
-    narrative: (v, b, arena) =>
-      `CHAOS — A localized power nullification field activates — source unknown. For exactly one round, ${v}'s signature abilities simply don't work. All that training, all those powers — temporarily offline. ${b} has never had a better window. They use it.`,
-    hpSwing: 30,
-    targetStrong: true,
-  },
-  {
-    name: "the floor is actually lava",
-    narrative: (v, b, arena) =>
-      `CHAOS — Part of the floor is, at this moment, literally lava. This is not a game. ${v} has just stepped in it. The good news is they're still in the fight. The bad news is everything else about this situation.`,
-    hpSwing: 16,
-    targetStrong: false,
-  },
-];
 
 // ─── Betrayal Events ──────────────────────────────────────────────────────────
 
@@ -2558,68 +2737,17 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   const isRealistic = tone === "realistic";
   const isBrutal    = tone === "brutal";
 
-  // Chaos and betrayal frequency by tone.
-  const chaosFrequency =
-    isRealistic ? 0 :
-    isBrutal    ? 0.04 :
-                  0.02;          // cinematic
   const betrayalChance = isRealistic ? 0 : 0.03;
   // Brutal damage modifier — incoming/outgoing damage scaled up.
   const brutalDamageMult = isBrutal ? 1.12 : 1.0;
   // Reality-warpers tracked for narrative colour.
   const hasRealityWarper = [...team1, ...team2].some(c => c.behaviorTags?.includes("reality-warper"));
   void hasRealityWarper;
-  // No back-to-back chaos — after a chaos round, skip the next chaos check.
-  let chaosCooldown = false;
   // Gang-up cooldown — don't fire multiple gang-up rounds in a row.
   let gangUpCooldown = false;
 
   for (let i = 1; i <= maxRounds; i++) {
     if (hp1 <= 0 || hp2 <= 0) break;
-
-    // ── Chaos event check ─────────────────────────────────────────────────────
-    if (!chaosCooldown && Math.random() < chaosFrequency) {
-      chaosCooldown = true; // suppress next round — no back-to-back
-
-      const event = pickRandom(chaosEvents);
-
-      // Chaos still slightly favors the underdog, but with a softer bias (60% vs 72%).
-      // In extreme mismatches it's even softer — chaos shouldn't fully rescue lost causes.
-      const strongBias = Math.min(0.60, 0.55 + Math.abs(powerGap));
-      let chaosHitsTeam1: boolean;
-      if (event.targetStrong) {
-        chaosHitsTeam1 = powerGap > 0 ? Math.random() < strongBias : Math.random() < (1 - strongBias);
-      } else {
-        chaosHitsTeam1 = Math.random() < 0.5;
-      }
-
-      const victim      = chaosHitsTeam1 ? pickRandom(team1).name : pickRandom(team2).name;
-      const beneficiary = chaosHitsTeam1 ? pickRandom(team2).name : pickRandom(team1).name;
-      const chaos = event.narrative(victim, beneficiary, arena.name);
-
-      // Chaos swings scaled for 5-round fights — dramatic but not instantly decisive.
-      const rawSwing = event.hpSwing + Math.floor(Math.random() * 6) - 3;
-      const swing = Math.round(rawSwing * 0.45);
-
-      if (chaosHitsTeam1) {
-        hp1 = Math.max(2, hp1 - swing);
-      } else {
-        hp2 = Math.max(2, hp2 - swing);
-      }
-
-      rounds.push({
-        round: i,
-        attacker: beneficiary,
-        defender: victim,
-        attackType: `chaos: ${event.name}`,
-        narrative: chaos,
-        team1Hp: Math.round(hp1),
-        team2Hp: Math.round(hp2),
-      });
-      continue;
-    } else {
-      chaosCooldown = false;
-    }
 
     // ── Betrayal check ────────────────────────────────────────────────────────
     const canBetray1 = team1.length >= 2;
