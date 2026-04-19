@@ -2206,15 +2206,306 @@ FORMAT RULES (CRITICAL — every word counts):
   };
 }
 
+// ─── AI Matchup Assessment ────────────────────────────────────────────────────
+// Uses an LLM with access to fictional lore knowledge to determine who wins
+// before the narrative AI writes the story. Falls back to pure-math assessMatchup()
+// if the AI call times out or returns malformed JSON.
+
+const AI_MATCHUP_SYSTEM_PROMPT = `You are a structured versus battle decision engine.
+
+Your job is to determine, as accurately and consistently as possible, who would win in a fight between Team 1 and Team 2. Your goal is to END debates with logical, repeatable, and trustworthy results.
+
+====================
+REFERENCE SYSTEM
+====================
+
+Use the following sources as guidance:
+
+PRIMARY REFERENCE:
+- VS Battles Wiki → for overall power tier scaling across all characters
+
+SECONDARY REFERENCES:
+- Marvel Power Grid / Marvel Database → for Marvel character stats and abilities
+- DC Database → for DC character abilities, traits, and weaknesses
+
+FOR NON-COMIC CHARACTERS:
+- Use widely accepted feats, lore, and realistic fictional scaling
+- Map all characters into the same unified tier system
+
+IMPORTANT:
+- Do NOT blindly copy any one source
+- Normalize all characters into ONE consistent internal system
+- If sources conflict, prioritize:
+  1. Feats and demonstrated power
+  2. Consistent tier placement
+  3. Logical scaling
+  4. Conservative estimates over hype
+
+====================
+MASTER TIER SYSTEM
+====================
+
+Assign each character a Power Tier from 0 to 10:
+
+0 = normal human (Uncle Ben, real civilians)
+1 = peak human (Batman, Mike Tyson)
+2 = enhanced human / low superhuman (Captain America, Spider-Man low end)
+3 = major superhuman (Spider-Man high end, Lobo, mid-tier heroes)
+4 = city to planet-level threats (Thor, Hulk, Superman base)
+5 = planetary to star/system level
+6 = cosmic level
+7 = universal level
+8 = multiversal level
+9 = extreme reality warpers
+10 = supreme / near-omnipotent ceiling (The Presence, TOAA)
+
+Power Tier ALWAYS outweighs raw stat differences.
+
+====================
+STAT SYSTEM
+====================
+
+Within each tier, assign stats from 0–100:
+
+- strength
+- speed
+- durability
+- intelligence
+- combat_skill
+- power_impact
+- hax
+- survivability
+
+RULES:
+- Stats refine matchups within or near the same tier
+- Do NOT compress vastly different characters into similar stats
+- Higher tiers must feel significantly stronger, not slightly
+
+====================
+POWER WEIGHTING
+====================
+
+Evaluate in this order:
+
+1. Power Tier
+2. Speed (reaction and combat speed)
+3. Power Impact (attack potency / damage output)
+4. Durability and survivability
+5. Hax (special abilities, reality warping, regeneration, etc.)
+6. Intelligence and tactics
+7. Team synergy
+8. Scenario advantage
+
+====================
+TEAM FIGHT LOGIC
+====================
+
+For team battles:
+- Evaluate each fighter individually
+- Evaluate team synergy and coordination
+- Identify counters and key matchups
+- Determine who gets eliminated first and why
+- Simulate the most likely flow of battle
+
+====================
+DECISION RULES
+====================
+
+- Decide the MOST LIKELY outcome, not rare possibilities
+- Express results as win rate (example: 9/10, 7/10)
+- Do NOT create random upsets
+- Only allow upset paths if clearly explainable and repeatable
+- Be decisive and consistent
+
+====================
+OUTPUT FORMAT (JSON ONLY)
+====================
+
+{
+  "scenario_analysis": {
+    "summary": "",
+    "advantage_team": "",
+    "importance": "low | medium | high"
+  },
+  "team_1": {
+    "fighters": []
+  },
+  "team_2": {
+    "fighters": []
+  },
+  "matchup_assessment": {
+    "team_1_advantages": [],
+    "team_2_advantages": [],
+    "key_interactions": [],
+    "likely_battle_flow": []
+  },
+  "verdict": {
+    "winner": "Team 1 or Team 2",
+    "confidence": 0,
+    "win_rate_out_of_10": 0,
+    "difficulty": "easy | moderate | hard",
+    "reasoning": [
+      "",
+      "",
+      ""
+    ],
+    "losing_team_best_path_to_victory": []
+  }
+}
+
+====================
+STRICT REQUIREMENTS
+====================
+
+- Output JSON only
+- Be internally consistent
+- Use the same scaling every time
+- Make powers and abilities matter
+- Do NOT ignore regeneration, immortality, speed blitzing, one-shot potential, or reality warping
+- Do NOT overvalue popularity or meme status
+- Do NOT allow weaker characters to win without strong justification
+- Always choose the MOST LIKELY winner`;
+
+// Map AI power tier (0–10) to our internal 5-tier system.
+function mapAiTierToInternal(t: number): Tier {
+  if (t >= 8) return "cosmic";
+  if (t >= 6) return "elite";
+  if (t >= 4) return "powerhouse";
+  if (t >= 2) return "standard";
+  return "street";
+}
+
+// Map win_rate_out_of_10 to mismatch level + round count.
+function mapWinRateToMismatch(rate: number): { mismatch: MismatchLevel; rounds: number } {
+  if (rate >= 9.5) return { mismatch: "BLOWOUT",  rounds: 1 };
+  if (rate >= 9.0) return { mismatch: "BLOWOUT",  rounds: 2 };
+  if (rate >= 7.5) return { mismatch: "DOMINANT", rounds: 3 };
+  if (rate >= 6.5) return { mismatch: "SOLID",    rounds: 4 };
+  if (rate >= 5.5) return { mismatch: "CLOSE",    rounds: 5 };
+  return             { mismatch: "TOSSUP",         rounds: 5 };
+}
+
+async function aiAssessMatchup(
+  team1: Character[],
+  team2: Character[],
+  fallback: MatchupAssessment,
+): Promise<MatchupAssessment> {
+  const fmt = (c: Character) =>
+    `${c.name} (${c.universe}): ${c.specialAbility.slice(0, 120)}. Weaknesses: ${c.weaknesses.slice(0, 80)}.`;
+  const t1Info = team1.map(fmt).join("\n");
+  const t2Info = team2.map(fmt).join("\n");
+  const userMsg =
+    `Team 1:\n${t1Info}\n\nTeam 2:\n${t2Info}\n\nScenario: Standard battle arena, random encounter, no prep time, morals off.`;
+
+  try {
+    const raw = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_completion_tokens: 1200,
+        messages: [
+          { role: "system", content: AI_MATCHUP_SYSTEM_PROMPT },
+          { role: "user",   content: userMsg },
+        ],
+        response_format: { type: "json_object" },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("ai-matchup-timeout")), 12_000),
+      ),
+    ]);
+
+    const json = JSON.parse((raw as Awaited<ReturnType<typeof openai.chat.completions.create>>).choices[0]?.message?.content ?? "{}");
+    const verdict  = json.verdict ?? {};
+    const rawWinner: string = verdict.winner ?? "";
+    const aiWinner: 1 | 2 = rawWinner.toLowerCase().includes("team 2") ? 2 : 1;
+    const winRate: number  = Number(verdict.win_rate_out_of_10) || 5;
+    const confidence: number = Number(verdict.confidence) || 70;
+
+    const { mismatch, rounds } = mapWinRateToMismatch(winRate);
+    const hardCounter = confidence >= 93 && (mismatch === "BLOWOUT");
+
+    const winnerTeam = aiWinner === 1 ? team1 : team2;
+    const loserTeam  = aiWinner === 1 ? team2 : team1;
+    const winnerNames = winnerTeam.map(c => c.name).join(" & ");
+    const loserNames  = loserTeam.map(c => c.name).join(" & ");
+
+    // Extract per-team AI tiers from the fighters array if available.
+    const t1Fighters: Array<{ power_tier?: number }> = json.team_1?.fighters ?? [];
+    const t2Fighters: Array<{ power_tier?: number }> = json.team_2?.fighters ?? [];
+    const avgAiTier = (fighters: Array<{ power_tier?: number }>) => {
+      const valid = fighters.map(f => f.power_tier ?? 5).filter(n => !isNaN(n));
+      return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 5;
+    };
+    const aiTier1 = mapAiTierToInternal(avgAiTier(t1Fighters));
+    const aiTier2 = mapAiTierToInternal(avgAiTier(t2Fighters));
+
+    // Derive win condition and upset from AI fields.
+    const reasoningArr: string[] = Array.isArray(verdict.reasoning) ? verdict.reasoning : [];
+    const winCondition = reasoningArr[0] ?? fallback.winCondition;
+    const upsetArr: string[] = Array.isArray(verdict.losing_team_best_path_to_victory)
+      ? verdict.losing_team_best_path_to_victory : [];
+    const upsetCondition = upsetArr.length ? upsetArr.join("; ") : null;
+    const upsetChance: UpsetChance =
+      mismatch === "BLOWOUT"  ? "none" :
+      mismatch === "DOMINANT" ? "low" :
+      mismatch === "SOLID"    ? "moderate" : "high";
+
+    const battleFlow: string[] = Array.isArray(json.matchup_assessment?.likely_battle_flow)
+      ? json.matchup_assessment.likely_battle_flow : [];
+
+    const stylistic = (() => {
+      switch (mismatch) {
+        case "BLOWOUT":  return `This is a STOMP — write it as a stomp. ${loserNames} never lands a meaningful hit. NO artificial tension.`;
+        case "DOMINANT": return `${loserNames} can land a glancing blow but cannot meaningfully threaten ${winnerNames}. Clear domination.`;
+        case "SOLID":    return `${loserNames} can compete in moments but the outcome is never in real doubt. ${winnerNames} edges ahead.`;
+        case "CLOSE":    return `Genuine fight — both sides land real hits with momentum swings. ${winnerNames} ultimately closes it out.`;
+        case "TOSSUP":   return `Near-mirror match. True back-and-forth. ${winnerNames} only wins on the final exchange.`;
+      }
+    })();
+
+    const reasoning = [
+      `=== LOCKED VERDICT (AI lore engine — ${winRate}/10 confidence) ===`,
+      `FAVORITE: ${winnerNames}`,
+      `UNDERDOG: ${loserNames}`,
+      `MISMATCH: ${mismatch}`,
+      hardCounter ? `HARD COUNTER: AI assessed this as a decisive capability mismatch.` : null,
+      `WIN CONDITION: ${winCondition}`,
+      `UPSET CHANCE: ${upsetChance}`,
+      upsetCondition ? `UPSET CONDITION: ${upsetCondition}` : `UPSET CONDITION: none.`,
+      battleFlow.length ? `BATTLE FLOW: ${battleFlow.slice(0, 3).join(" → ")}` : null,
+      `STYLE: ${stylistic}`,
+      `RULES: Show the WIN CONDITION mechanically in the prose. Never let the loser threaten the favorite if UPSET CHANCE is none/low.`,
+    ].filter(Boolean).join("\n");
+
+    return {
+      verdict: aiWinner,
+      mismatchLevel: mismatch,
+      recommendedRounds: rounds,
+      team1Tier: aiTier1,
+      team2Tier: aiTier2,
+      reasoning,
+      hardCounter,
+      forceDominant: mismatch === "BLOWOUT" || mismatch === "DOMINANT" || hardCounter,
+      winCondition,
+      upsetChance,
+      upsetCondition,
+    };
+  } catch {
+    // AI timed out or returned bad JSON — fall back to math assessment silently.
+    return fallback;
+  }
+}
+
 export async function simulateFight(team1: Character[], team2: Character[], mode: string = "cinematic"): Promise<FightResult> {
   const tone = normalizeTone(mode);
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
   // ── LOGICAL DECISION SYSTEM ────────────────────────────────────────────────
-  // Decide the winner BEFORE simulating combat. The simulation must serve the
-  // verdict — blowouts stay short and dominant, only true peers get drama.
-  const assessment = assessMatchup(team1, team2);
+  // Run math-based assessment first for instant fallback, then AI assessment
+  // in parallel with arena/setup work. The AI's lore knowledge overrides math
+  // if it returns in time; otherwise the math result is used transparently.
+  const mathAssessment = assessMatchup(team1, team2);
+  const assessmentPromise = aiAssessMatchup(team1, team2, mathAssessment);
 
   // Power gap: 0 = equal, ~±0.35 at extreme mismatch
   const totalPower = base1 + base2;
@@ -2235,6 +2526,9 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   let hp2 = 100;
 
   const rounds: FightRound[] = [];
+
+  // Await the AI matchup assessment now (it was kicked off above in parallel with setup).
+  const assessment = await assessmentPromise;
 
   // Round count comes from the logical decision system — blowouts get 1-2 rounds,
   // close fights get the full 5. No more 5-round padding for mismatches.
