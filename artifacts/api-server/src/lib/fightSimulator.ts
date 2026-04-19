@@ -2793,8 +2793,90 @@ async function aiAssessMatchup(
   }
 }
 
+// ─── Auto-brutal tone detection ──────────────────────────────────────────────
+// Scores each character against known brutal signals — universes, names,
+// ability/description text, and temperament. If any character scores high
+// enough the whole fight escalates to brutal, regardless of the requested mode.
+function autoDetectBrutalTone(team1: Character[], team2: Character[]): boolean {
+  const BRUTAL_UNIVERSES = [
+    "berserk", "bloodborne", "mortal kombat", "doom", "chainsaw man",
+    "warhammer", "conan the barbarian", "conan", "hellraiser", "predator",
+    "alien", "dark souls", "elden ring", "sekiro", "nioh",
+    "elfen lied", "gantz", "deadman wonderland", "violence jack",
+    "judge dredd", "punisher", "the boys",
+  ];
+
+  const BRUTAL_NAME_SIGNALS = [
+    "carnage", "doomguy", "doom slayer", "punisher", "guts",
+    "denji", "makima", "power", "kratos", "jason voorhees", "leatherface",
+    "freddy krueger", "michael myers", "candyman", "hannibal lecter",
+    "joker", "victor zsasz", "sabretooth", "lady deathstrike", "bullseye",
+    "gorr", "grendel", "venom", "anti-venom", "toxin",
+    "spawn", "violator", "violator",
+    "broly", "frieza", "cell", "majin buu",
+    "dio brando", "kars", "yoshikage kira",
+    "jack the ripper", "killmonger",
+  ];
+
+  const BRUTAL_TEXT_KEYWORDS = [
+    "massacre", "slaughter", "butcher", "eviscer", "decapitat", "dismember",
+    "bloodlust", "rip and tear", "rip apart", "tear limb", "rend flesh",
+    "eviscerate", "gore", "feral rage", "psychotic", "sadistic",
+    "murderous", "no mercy", "kill anything", "lethal", "carnage",
+    "beheading", "impaling", "impale", "impalement", "brutali",
+    "savage fury", "berserk", "berserker", "killing spree", "slaughterer",
+    "skull", "blood", "flesh",
+  ];
+
+  const BRUTAL_TEMPERAMENT_SIGNALS = [
+    "berserker", "berserk", "bloodlust", "psychotic", "sadistic",
+    "savage", "feral", "chaotic", "murderous", "unstable", "deranged",
+    "ruthless", "predatory",
+  ];
+
+  const scoreChar = (c: Character): number => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const v3 = c.v3Profile as any;
+    const universe  = (c.universe || "").toLowerCase();
+    const name      = (c.name || "").toLowerCase();
+    const ability   = (c.specialAbility || "").toLowerCase();
+    const desc      = (c.description || "").toLowerCase();
+    const weakness  = (c.weaknesses || "").toLowerCase();
+    const temp      = (v3?.temperament || "").toLowerCase();
+    const text      = `${ability} ${desc} ${weakness}`;
+
+    let score = 0;
+
+    // Universe match: strong signal
+    if (BRUTAL_UNIVERSES.some(u => universe.includes(u))) score += 4;
+
+    // Name match: strong signal
+    if (BRUTAL_NAME_SIGNALS.some(n => name.includes(n))) score += 3;
+
+    // Temperament: moderate signal
+    if (BRUTAL_TEMPERAMENT_SIGNALS.some(t => temp.includes(t))) score += 3;
+
+    // Text keyword hits (ability/description/weaknesses): up to 4 points
+    let textHits = 0;
+    for (const kw of BRUTAL_TEXT_KEYWORDS) {
+      if (text.includes(kw)) textHits++;
+    }
+    score += Math.min(textHits, 4);
+
+    return score;
+  };
+
+  const allChars = [...team1, ...team2];
+  const maxScore = Math.max(...allChars.map(scoreChar));
+  const totalScore = allChars.reduce((sum, c) => sum + scoreChar(c), 0);
+
+  // Any single character scoring 4+ OR combined team score 6+ → brutal
+  return maxScore >= 4 || totalScore >= 6;
+}
+
 export async function simulateFight(team1: Character[], team2: Character[], mode: string = "cinematic"): Promise<FightResult> {
-  const tone = normalizeTone(mode);
+  const brutal = autoDetectBrutalTone(team1, team2);
+  const tone = brutal ? "brutal" : normalizeTone(mode);
   const base1 = teamPower(team1);
   const base2 = teamPower(team2);
 
