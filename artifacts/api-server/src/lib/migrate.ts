@@ -11,7 +11,8 @@ export async function runMigrations(): Promise<void> {
         ADD COLUMN IF NOT EXISTS energy_projection integer,
         ADD COLUMN IF NOT EXISTS hax integer,
         ADD COLUMN IF NOT EXISTS tier text,
-        ADD COLUMN IF NOT EXISTS power_gap_index integer;
+        ADD COLUMN IF NOT EXISTS power_gap_index integer,
+        ADD COLUMN IF NOT EXISTS v3_profile jsonb;
     `);
     logger.info("Migrations applied successfully");
   } catch (err) {

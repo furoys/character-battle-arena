@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -22,6 +22,8 @@ export const charactersTable = pgTable("characters", {
   hax: integer("hax"),
   tier: text("tier"),
   powerGapIndex: integer("power_gap_index"),
+  // v3Profile: rich structured combat data from the roster
+  v3Profile: jsonb("v3_profile"),
 });
 
 export const insertCharacterSchema = createInsertSchema(charactersTable).omit({ id: true, createdAt: true });
