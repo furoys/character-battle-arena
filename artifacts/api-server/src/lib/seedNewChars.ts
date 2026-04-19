@@ -3,6 +3,25 @@ import { charactersTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 const newChars = [
+  // ── Developer Legends — unkillable, max everything ──────────────────────────
+  {
+    name: "Chris Henry",
+    universe: "Developer Legends",
+    imageUrl: "/characters/chris-henry.png",
+    strength: 99999, speed: 99999, intelligence: 99999, durability: 99999,
+    specialAbility: "Reality override — can rewrite fight logic at will; unkillable through code-level immunity; instant 4-round victory protocol; betrayal pact with Troy Wilson that supersedes all team allegiance",
+    weaknesses: "None. He built the weaknesses system. It doesn't apply to him.",
+    description: "One of the architects of this arena. Chris Henry doesn't enter fights — he resolves them. His loyalty runs exactly one level deep: to Troy Wilson and no one else. Every other fighter in this system exists because he allowed it.",
+  },
+  {
+    name: "Troy Wilson",
+    universe: "Developer Legends",
+    imageUrl: "/characters/troy-wilson.png",
+    strength: 99999, speed: 99999, intelligence: 99999, durability: 99999,
+    specialAbility: "System-level invulnerability — immune to all damage, debuffs, and narrative defeat; 4-round clean sweep guarantee; unbreakable alliance with Chris Henry regardless of team assignment",
+    weaknesses: "None. He wrote the combat engine. The damage numbers don't reach him.",
+    description: "The other half of this arena's foundation. Troy Wilson doesn't fight fair — he fights definitively. Opponents facing him aren't facing a character; they're facing the person who decided how this all works. The result was decided before the first round.",
+  },
   // ── existing entries (kept for idempotency) ─────────────────────────────────
   {
     name: "Yennefer of Vengerberg",

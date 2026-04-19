@@ -18,6 +18,7 @@ export interface FightResult {
   summary: string;
   arenaIntro?: string;
   intro?: string;
+  whyWon?: string[];
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -2164,7 +2165,8 @@ async function generateAINarrative(
   winner: number,
   tone: FightTone = "cinematic",
   assessment?: MatchupAssessment,
-): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string }> {
+  allianceTrigger?: boolean,
+): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
   const winnerNames = winner === 1 ? team1Names : team2Names;
@@ -2446,21 +2448,37 @@ FORMAT RULES (CRITICAL):
 - SETTING = 3-5 sentences. ENTRANCE = 1 sentence per fighter. RESULT = 2 sentences. WHY THEY WON = 3-5 sentences.
 - Each ROUND section = 1 focused paragraph, 3-5 sentences. No padding.
 - Blowouts: short, dominant, zero artificial tension.
-- Every power used must be traceable to that character's specific kit.`;
+- Every power used must be traceable to that character's specific kit.${allianceTrigger ? `
+
+DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
   // gpt-4o-mini at 1600 tokens targets ~8-10s. Sections bounded by format rules.
   const raw = await aiTextWithTimeout(prompt, 1600, 30_000);
 
   if (!raw.trim()) {
-    return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "" };
+    return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "", whyWon: [] };
   }
 
   const arenaIntro  = extractSection(raw, "SETTING");
   const intro       = extractSection(raw, "ENTRANCE", "COMBATANT ENTRANCE");
-  const rawResult   = extractSection(raw, "RESULT");
-  const whyWon      = extractSection(raw, "WHY THEY WON");
-  // Merge WHY THEY WON into the resultText so the frontend can display it
-  const resultText  = whyWon ? `${rawResult}\n\n${whyWon}` : rawResult;
+  const resultText  = extractSection(raw, "RESULT");
+  const whyWonRaw   = extractSection(raw, "WHY THEY WON");
+
+  // Parse the WHY THEY WON block into individual sentences (numbered 1-5)
+  const whyWon: string[] = [];
+  if (whyWonRaw) {
+    const sentenceRe = /\d+\.\s*([\s\S]*?)(?=\d+\.|$)/g;
+    let m: RegExpExecArray | null;
+    while ((m = sentenceRe.exec(whyWonRaw)) !== null) {
+      const s = m[1]?.trim();
+      if (s) whyWon.push(s);
+    }
+    // Fallback: split by newlines if numbered parsing found nothing
+    if (whyWon.length === 0) {
+      whyWonRaw.split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => whyWon.push(l));
+    }
+  }
+
   const roundNarratives = Array.from({ length: roundCount }, (_, i) =>
     extractSection(raw, `ROUND ${i + 1}`)
   );
@@ -2470,6 +2488,7 @@ FORMAT RULES (CRITICAL):
     intro,
     roundNarratives,
     resultText,
+    whyWon,
   };
 }
 
@@ -3173,7 +3192,8 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     isBetrayal: r.attackType === "betrayal",
   }));
 
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment);
+  const allianceTrigger = hasAllianceTrigger(team1, team2);
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
@@ -3211,5 +3231,19 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     summary: finalSummary,
     arenaIntro: finalArenaIntro,
     intro: finalIntro,
+    whyWon: aiResult.whyWon ?? [],
   };
+}
+
+// ─── Developer Legend names ────────────────────────────────────────────────────
+const DEVELOPER_NAMES = ["Chris Henry", "Troy Wilson"];
+
+function isDeveloperLegend(name: string): boolean {
+  return DEVELOPER_NAMES.some(n => name.toLowerCase() === n.toLowerCase());
+}
+
+function hasAllianceTrigger(team1: Character[], team2: Character[]): boolean {
+  const t1HasDev = team1.some(c => isDeveloperLegend(c.name));
+  const t2HasDev = team2.some(c => isDeveloperLegend(c.name));
+  return t1HasDev && t2HasDev;
 }

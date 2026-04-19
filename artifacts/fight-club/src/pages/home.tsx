@@ -592,24 +592,14 @@ export function Home() {
                 )}
               </div>
 
-              {/* Universe pills */}
-              <div
-                ref={pillsRef}
-                className="flex gap-1 overflow-x-auto pb-0.5"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              >
-                <UniversePill
-                  label="All"
-                  active={activeFilter === null}
-                  onClick={() => setActiveFilter(null)}
-                />
-                {/* Favorites pill — gold */}
+              {/* FAVES + RECENT quick filters (pinned row — never scrolls away) */}
+              <div className="flex gap-1 mb-0.5">
                 <button
                   onClick={() => setActiveFilter(f => f === "__faves__" ? null : "__faves__")}
                   className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
                   style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                    padding: "3px 7px",
+                    padding: "3px 8px",
                     background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "transparent",
                     border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.10)"}`,
                     color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.35)",
@@ -617,7 +607,6 @@ export function Home() {
                 >
                   ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.6 }}> {favorites.size}</span>}
                 </button>
-                {/* Recent pill — purple */}
                 {recentPicks.length > 0 && (
                   <>
                     <button
@@ -625,7 +614,7 @@ export function Home() {
                       className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
                       style={{
                         fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                        padding: "3px 7px",
+                        padding: "3px 8px",
                         background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
                         border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
                         color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
@@ -645,13 +634,25 @@ export function Home() {
                         border: "1px solid rgba(255,255,255,0.12)",
                         color: "rgba(255,255,255,0.35)",
                         lineHeight: 1,
-                        marginLeft: -2,
                       }}
                     >
                       ×
                     </button>
                   </>
                 )}
+              </div>
+
+              {/* Universe pills */}
+              <div
+                ref={pillsRef}
+                className="flex gap-1 overflow-x-auto pb-0.5"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                <UniversePill
+                  label="All"
+                  active={activeFilter === null}
+                  onClick={() => setActiveFilter(null)}
+                />
                 {displayUniverses.map(({ universe, count }) => (
                   <UniversePill
                     key={universe}

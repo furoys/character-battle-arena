@@ -237,6 +237,36 @@ export const SimulateFightResponse = zod.object({
     .describe(
       "AI-generated combatant entrance section shown after the setting",
     ),
+  whyWon: zod
+    .array(zod.string())
+    .optional()
+    .describe("AI-generated array of reasons why the winner won (5 sentences)"),
+  simulatedAt: zod.coerce.date(),
+});
+
+export const GetFightParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetFightResponse = zod.object({
+  id: zod.number(),
+  team1Names: zod.array(zod.string()),
+  team2Names: zod.array(zod.string()),
+  winner: zod.number(),
+  rounds: zod.array(
+    zod.object({
+      round: zod.number(),
+      attacker: zod.string(),
+      defender: zod.string(),
+      attackType: zod.string(),
+      narrative: zod.string(),
+      team1Hp: zod.number(),
+      team2Hp: zod.number(),
+    }),
+  ),
+  summary: zod.string(),
+  arenaIntro: zod.string().optional(),
+  intro: zod.string().optional(),
   simulatedAt: zod.coerce.date(),
 });
 

@@ -5,6 +5,7 @@ import {
   SimulateFightBody,
   ListFightsResponse,
   SimulateFightResponse,
+  GetFightResponse,
 } from "@workspace/api-zod";
 import { simulateFight } from "../lib/fightSimulator";
 
@@ -28,6 +29,32 @@ router.get("/fights", async (req, res): Promise<void> => {
         simulatedAt: f.simulatedAt,
       })),
     ),
+  );
+});
+
+router.get("/fights/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid fight id" });
+    return;
+  }
+  const [fight] = await db.select().from(fightsTable).where(eq(fightsTable.id, id));
+  if (!fight) {
+    res.status(404).json({ error: "Fight not found" });
+    return;
+  }
+  res.json(
+    GetFightResponse.parse({
+      id: fight.id,
+      team1Names: fight.team1Names,
+      team2Names: fight.team2Names,
+      winner: fight.winner,
+      rounds: fight.rounds,
+      summary: fight.summary,
+      arenaIntro: fight.arenaIntro ?? "",
+      intro: fight.intro ?? "",
+      simulatedAt: fight.simulatedAt,
+    }),
   );
 });
 
@@ -69,6 +96,8 @@ router.post("/fights", async (req, res): Promise<void> => {
       winner: result.winner,
       rounds: result.rounds,
       summary: result.summary,
+      arenaIntro: result.arenaIntro ?? null,
+      intro: result.intro ?? null,
     })
     .returning();
 
@@ -82,6 +111,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       summary: result.summary,
       arenaIntro: result.arenaIntro ?? "",
       intro: result.intro ?? "",
+      whyWon: result.whyWon ?? [],
       simulatedAt: saved.simulatedAt,
     }),
   );

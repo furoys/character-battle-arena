@@ -124,6 +124,20 @@ export interface FightResult {
   arenaIntro?: string;
   /** AI-generated combatant entrance section shown after the setting */
   intro?: string;
+  /** AI-generated array of reasons why the winner won (5 sentences) */
+  whyWon?: string[];
+  simulatedAt: string;
+}
+
+export interface FightDetail {
+  id: number;
+  team1Names: string[];
+  team2Names: string[];
+  winner: number;
+  rounds: FightRound[];
+  summary: string;
+  arenaIntro?: string;
+  intro?: string;
   simulatedAt: string;
 }
 

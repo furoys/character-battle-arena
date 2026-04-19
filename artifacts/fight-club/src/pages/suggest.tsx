@@ -235,7 +235,7 @@ const MATCHUPS: Matchup[] = [
   },
 ];
 
-const CATEGORIES = ["All", "DC vs Marvel", "Anime Debates", "Gods & Myths", "Cosmic Tier", "Horror Showdown", "Sci-Fi Clash", "Street Level", "Fantasy Clash"];
+const CATEGORIES = ["All", "Developer Legends", "DC vs Marvel", "Anime Debates", "Gods & Myths", "Cosmic Tier", "Horror Showdown", "Sci-Fi Clash", "Street Level", "Fantasy Clash"];
 
 // ─── Matchup card ─────────────────────────────────────────────────────────────
 function FighterMini({ character, side }: { character: Character | undefined; side: "left" | "right" }) {
@@ -392,6 +392,127 @@ function MatchupCard({
   );
 }
 
+// ─── Developer Legends special card ───────────────────────────────────────────
+function DevLegendsCard({
+  chris,
+  troy,
+  onLoad,
+}: {
+  chris: Character | undefined;
+  troy: Character | undefined;
+  onLoad: (team1: Character[], team2: Character[], mode: string) => void;
+}) {
+  const loaded = !!(chris && troy);
+
+  // When both are on opposing teams — the betrayal scenario
+  const handleBetrayalFight = () => {
+    if (!chris || !troy) return;
+    // Put them on opposite teams — the AI will detect the alliance and trigger the betrayal override
+    onLoad([chris], [troy], "cinematic");
+  };
+
+  return (
+    <div
+      className="relative overflow-hidden col-span-full"
+      style={{
+        background: "linear-gradient(135deg, rgba(255,200,0,0.06), rgba(0,0,0,0.5))",
+        border: "1.5px solid rgba(255,200,0,0.25)",
+        borderLeft: "4px solid #ffc800",
+      }}
+    >
+      {/* Gold badge */}
+      <div
+        className="absolute top-0 right-0 px-3 py-1"
+        style={{
+          fontSize: 7,
+          fontWeight: 900,
+          letterSpacing: "0.25em",
+          color: "#ffc800",
+          background: "rgba(255,200,0,0.12)",
+          borderLeft: "1px solid rgba(255,200,0,0.2)",
+          borderBottom: "1px solid rgba(255,200,0,0.2)",
+        }}
+      >
+        ◆ DEVELOPER LEGENDS
+      </div>
+
+      <div className="pt-6 pb-4 px-4">
+        <h3
+          className="font-display uppercase tracking-wider mb-1"
+          style={{ fontSize: 14, color: "#ffc800", lineHeight: 1.2 }}
+        >
+          The Architects — Betrayal Protocol
+        </h3>
+        <p style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.6, letterSpacing: "0.05em" }}>
+          Chris Henry and Troy Wilson built this arena. Put them on opposing teams and watch what happens. 
+          They will not fight each other. They will turn on their own sides. They always win together.
+        </p>
+
+        {/* Character portraits */}
+        <div className="flex items-center gap-4 mb-4">
+          {[chris, troy].map((c, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div
+                className="relative overflow-hidden"
+                style={{
+                  width: 56, height: 72,
+                  border: "2px solid rgba(255,200,0,0.5)",
+                  boxShadow: "0 0 16px rgba(255,200,0,0.2)",
+                }}
+              >
+                {c?.imageUrl ? (
+                  <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-display font-bold text-sm" style={{ background: "rgba(255,200,0,0.08)", color: "#ffc800" }}>
+                    {c?.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?"}
+                  </div>
+                )}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 55%)" }} />
+              </div>
+              <div>
+                <p className="font-display uppercase text-xs tracking-wider" style={{ color: "#ffc800" }}>
+                  {c?.name ?? "Loading..."}
+                </p>
+                <p style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
+                  Developer Legend
+                </p>
+              </div>
+              {i === 0 && (
+                <span
+                  className="font-display font-black italic mx-2"
+                  style={{ fontSize: 20, color: "rgba(255,200,0,0.2)" }}
+                >
+                  VS
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Action button */}
+        <button
+          onClick={handleBetrayalFight}
+          disabled={!loaded}
+          className="w-full flex items-center justify-center gap-2 transition-all duration-150 active:scale-95"
+          style={{
+            padding: "9px 0",
+            background: loaded ? "linear-gradient(135deg, rgba(255,200,0,0.15), rgba(255,200,0,0.08))" : "rgba(255,255,255,0.04)",
+            border: `1.5px solid ${loaded ? "rgba(255,200,0,0.5)" : "rgba(255,255,255,0.08)"}`,
+            color: loaded ? "#ffc800" : "rgba(255,255,255,0.2)",
+            fontSize: 9,
+            fontWeight: 900,
+            letterSpacing: "0.2em",
+            cursor: loaded ? "pointer" : "default",
+          }}
+        >
+          <Swords className="w-3.5 h-3.5" />
+          {loaded ? "TRIGGER THE BETRAYAL PROTOCOL" : "LOADING LEGENDS…"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function Suggest() {
   const { data: characters } = useListCharacters();
@@ -404,8 +525,12 @@ export function Suggest() {
     return m;
   }, [characters]);
 
+  // Find Developer Legends by name (IDs are dynamic)
+  const chris = useMemo(() => characters?.find(c => c.name === "Chris Henry"), [characters]);
+  const troy  = useMemo(() => characters?.find(c => c.name === "Troy Wilson"), [characters]);
+
   const filtered = useMemo(
-    () => activeCategory === "All" ? MATCHUPS : MATCHUPS.filter(m => m.category === activeCategory),
+    () => activeCategory === "All" ? MATCHUPS : activeCategory === "Developer Legends" ? [] : MATCHUPS.filter(m => m.category === activeCategory),
     [activeCategory]
   );
 
@@ -423,6 +548,15 @@ export function Suggest() {
     } catch {}
     navigate("/");
   }
+
+  function handleDevLoad(team1: Character[], team2: Character[], mode: string) {
+    try {
+      localStorage.setItem("ava_pending_fight", JSON.stringify({ team1, team2, mode }));
+    } catch {}
+    navigate("/");
+  }
+
+  const showDevLegends = activeCategory === "All" || activeCategory === "Developer Legends";
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: "#0a0a0f" }}>
@@ -487,6 +621,9 @@ export function Suggest() {
       {/* Matchup grid */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {showDevLegends && (
+            <DevLegendsCard chris={chris} troy={troy} onLoad={handleDevLoad} />
+          )}
           {filtered.map(matchup => (
             <MatchupCard
               key={matchup.id}
@@ -497,7 +634,7 @@ export function Suggest() {
           ))}
         </div>
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !showDevLegends && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Zap className="w-10 h-10" style={{ color: "rgba(255,255,255,0.1)" }} />
             <p className="font-display uppercase tracking-widest" style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>

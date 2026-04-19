@@ -19,13 +19,18 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 
 ## Features
 
-- Browse a roster of 735 fictional characters from 80+ universes
+- Browse a roster of 735+ fictional characters from 80+ universes
 - Select up to 5 characters per team (Team 1 and Team 2)
 - Simulate fights with cinematic AI narratives — phase-based (opening/escalation/turning point/finish) driven by each character's v3Profile (abilities, weapons, gadgets, combatStyle, battleIQ, temperament, finishers)
 - Tier-calibrated outcomes (Cosmic → Street) using exponential 0-10M power stats; stronger always wins
 - v3Profile jsonb column populated for 633/735 characters from PDF roster v3
 - AI narrative follows user's cinematic spec: SETTING / ENTRANCE / FIGHT PHASES / RESULT / WHY THEY WON
-- View fight history; add/delete characters; universe breakdown stats
+- WHY THEY WON uses AI-generated text (5 parsed sentences), falls back to stat-computed bullets if AI returns nothing
+- Re-read full match feature in History tab — expands round-by-round narrative with arenaIntro and intro text
+- FAVES pill is on its own pinned row above the scrollable universe filter pills (won't get scrolled out)
+- Debate Room has a "Developer Legends" tab featuring Chris Henry & Troy Wilson with the Betrayal Protocol matchup
+- Developer Legends: Chris Henry and Troy Wilson are seeded at max stats (99999 all stats). When on opposing teams, the AI override makes them refuse to fight each other and brutally betray their partners to win together
+- View fight history; add/delete characters; universe breakdown stats; character leaderboard
 
 ## Key Commands
 
