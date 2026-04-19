@@ -151,9 +151,18 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
 }
 
 // ─── Power bar comparison ────────────────────────────────────────────────────
+// Uses logarithmic scoring so a 10M-stat cosmic character properly dominates
+// a 1K-stat street fighter, instead of raw sums where one huge number swamps all.
+function logPowerScore(c: Character): number {
+  const stats = [c.strength, c.speed, c.intelligence, c.durability];
+  // Average the log10 of each stat (clamped to min 100 so log stays ≥ 2)
+  const logAvg = stats.reduce((s, v) => s + Math.log10(Math.max(100, v)), 0) / 4;
+  return Math.pow(10, logAvg);
+}
+
 function PowerComparison({ team1, team2 }: { team1: Character[]; team2: Character[] }) {
-  const p1 = team1.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
-  const p2 = team2.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
+  const p1 = team1.reduce((s, c) => s + logPowerScore(c), 0);
+  const p2 = team2.reduce((s, c) => s + logPowerScore(c), 0);
   if (p1 === 0 && p2 === 0) return null;
   const total = p1 + p2 || 1;
   const pct1 = Math.round((p1 / total) * 100);
