@@ -401,9 +401,6 @@ export function Home() {
 
     setTeam1(r1);
     setTeam2(r2);
-    pushRecentPicks([...r1.map(c => c.id), ...r2.map(c => c.id)]);
-    setShowModal(true);
-    simulateFight.mutate({ data: { team1: r1.map(c => c.id), team2: r2.map(c => c.id), mode: "cinematic" } });
   };
 
   const getCharacterTeam = (id: number) => {
