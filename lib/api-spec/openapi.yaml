@@ -170,6 +170,29 @@ paths:
           description: Fight history cleared
 
   /fights/{id}:
+    get:
+      operationId: getFight
+      tags: [fights]
+      summary: Get a single fight by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full fight record with rounds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FightDetail"
+        "404":
+          description: Fight not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteFight
       tags: [fights]
@@ -404,6 +427,11 @@ components:
         intro:
           type: string
           description: "AI-generated combatant entrance section shown after the setting"
+        whyWon:
+          type: array
+          items:
+            type: string
+          description: "AI-generated array of reasons why the winner won (5 sentences)"
         simulatedAt:
           type: string
           format: date-time
@@ -411,6 +439,43 @@ components:
         - id
         - team1
         - team2
+        - winner
+        - rounds
+        - summary
+        - simulatedAt
+
+    FightDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        team1Names:
+          type: array
+          items:
+            type: string
+        team2Names:
+          type: array
+          items:
+            type: string
+        winner:
+          type: integer
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/FightRound"
+        summary:
+          type: string
+        arenaIntro:
+          type: string
+        intro:
+          type: string
+        simulatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - team1Names
+        - team2Names
         - winner
         - rounds
         - summary

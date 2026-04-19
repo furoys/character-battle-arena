@@ -10,6 +10,8 @@ export const fightsTable = pgTable("fights", {
   winner: integer("winner").notNull(),
   rounds: jsonb("rounds").notNull().$type<object[]>(),
   summary: text("summary").notNull(),
+  arenaIntro: text("arena_intro"),
+  intro: text("intro"),
   simulatedAt: timestamp("simulated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

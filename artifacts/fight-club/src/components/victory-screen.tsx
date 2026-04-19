@@ -336,7 +336,12 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
   const [phase, setPhase]     = useState(0);
   const [copied, setCopied]   = useState(false);
   const [shared, setShared]   = useState(false);
-  const reasons               = useMemo(() => computeReasons(result), [result]);
+
+  // Prefer AI-generated whyWon sentences; fall back to stat-computed reasons
+  const reasons               = useMemo(
+    () => (result.whyWon && result.whyWon.length > 0 ? result.whyWon : computeReasons(result)),
+    [result],
+  );
 
   const winnerTeam: Character[] = result.winner === 1 ? (result.team1 ?? []) : (result.team2 ?? []);
   const teamColor    = result.winner === 1 ? "team1" : "team2";

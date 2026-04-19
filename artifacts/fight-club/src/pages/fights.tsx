@@ -3,11 +3,12 @@ import {
   useListFights,
   useClearFightHistory,
   useDeleteFight,
+  useGetFight,
   getListFightsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Trophy, Trash2, X, TrendingUp, Swords, Star } from "lucide-react";
+import { Trophy, Trash2, X, TrendingUp, Swords, Star, BookOpen, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Compute character leaderboard from fight history ───────────────────────
@@ -43,6 +44,78 @@ function detectStreaks(fights: Array<{ winner: number }>): { t1: number; t2: num
   return { t1, t2 };
 }
 
+// ─── Re-read panel — fetches full fight and shows round narratives ────────────
+function RereadPanel({ fightId, winner }: { fightId: number; winner: number }) {
+  const { data, isLoading } = useGetFight(fightId);
+  const winColor = winner === 1 ? "#00f0ff" : "#ff3b30";
+
+  if (isLoading) {
+    return (
+      <div className="px-3 py-4 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
+          Loading narrative...
+        </p>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  const arenaIntro = data.arenaIntro?.trim();
+  const intro = data.intro?.trim();
+  const rounds = data.rounds ?? [];
+
+  return (
+    <div
+      className="mt-2 rounded overflow-hidden"
+      style={{ border: `1px solid ${winColor}20`, background: "rgba(0,0,0,0.4)" }}
+    >
+      {(arenaIntro || intro) && (
+        <div className="px-3 py-2.5" style={{ borderBottom: `1px solid ${winColor}15` }}>
+          {arenaIntro && (
+            <p className="text-[10px] leading-relaxed italic mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {arenaIntro}
+            </p>
+          )}
+          {intro && (
+            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+              {intro}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="divide-y" style={{ borderColor: `${winColor}10` }}>
+        {rounds.map((r, i) => (
+          <div key={i} className="px-3 py-2.5">
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="text-[8px] font-bold uppercase tracking-widest flex-shrink-0"
+                style={{ color: winColor, opacity: 0.7 }}
+              >
+                Round {r.round}
+              </span>
+              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                {r.attacker} → {r.defender}
+              </span>
+            </div>
+            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
+              {r.narrative}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {data.summary && (
+        <div className="px-3 py-2.5" style={{ borderTop: `1px solid ${winColor}15` }}>
+          <p className="text-[10px] leading-relaxed italic" style={{ color: "rgba(255,255,255,0.5)" }}>
+            {data.summary}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Fights() {
   const { data: fights, isLoading } = useListFights();
   const clearHistory = useClearFightHistory();
@@ -51,6 +124,7 @@ export function Fights() {
   const { toast }    = useToast();
   const [confirmClear, setConfirmClear] = useState(false);
   const [tab, setTab] = useState<"history" | "stats">("history");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const stats = useMemo(() => {
     if (!fights || fights.length === 0) return null;
@@ -88,9 +162,14 @@ export function Fights() {
     try {
       await deleteFight.mutateAsync(id);
       queryClient.invalidateQueries({ queryKey: getListFightsQueryKey() });
+      if (expandedId === id) setExpandedId(null);
     } catch {
       toast({ title: "Error", description: "Failed to remove fight.", variant: "destructive" });
     }
+  };
+
+  const toggleReread = (id: number) => {
+    setExpandedId(prev => prev === id ? null : id);
   };
 
   return (
@@ -278,6 +357,7 @@ export function Fights() {
             {fights?.map((fight) => {
               const winColor = fight.winner === 1 ? "#00f0ff" : "#ff3b30";
               const winNames = fight.winner === 1 ? fight.team1Names : fight.team2Names;
+              const isExpanded = expandedId === fight.id;
               return (
                 <div key={fight.id} className="relative px-4 py-3 flex flex-col gap-2 group">
                   <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{ background: winColor }} />
@@ -332,6 +412,29 @@ export function Fights() {
                       {winNames.slice(0, 2).join(" & ")} won
                     </p>
                     <p className="text-[10px] text-muted-foreground/60 leading-relaxed line-clamp-2">{fight.summary}</p>
+                  </div>
+
+                  {/* Re-read button */}
+                  <div className="pl-2">
+                    <button
+                      onClick={() => toggleReread(fight.id)}
+                      className="flex items-center gap-1.5 transition-all"
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: "0.15em",
+                        textTransform: "uppercase",
+                        color: isExpanded ? winColor : "rgba(255,255,255,0.25)",
+                      }}
+                    >
+                      <BookOpen className="h-2.5 w-2.5" />
+                      {isExpanded ? "Close" : "Re-read"}
+                      <ChevronDown
+                        className="h-2.5 w-2.5 transition-transform"
+                        style={{ transform: isExpanded ? "rotate(180deg)" : "none" }}
+                      />
+                    </button>
+                    {isExpanded && <RereadPanel fightId={fight.id} winner={fight.winner} />}
                   </div>
                 </div>
               );
