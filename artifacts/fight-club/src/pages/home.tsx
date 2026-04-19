@@ -341,9 +341,13 @@ export function Home() {
     if (activeTeam === 1) {
       if (team1.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam1(t => [...t, character]);
+      // Auto-switch: go to Team 2 unless Team 2 is already full
+      if (team2.length < 5) setActiveTeam(2);
     } else {
       if (team2.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam2(t => [...t, character]);
+      // Auto-switch: go to Team 1 unless Team 1 is already full
+      if (team1.length < 5) setActiveTeam(1);
     }
   };
 
@@ -540,13 +544,15 @@ export function Home() {
             <div
               className="text-center py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] whitespace-nowrap overflow-hidden"
               style={{
-                color: activeColor,
+                color: canFight ? `${activeColor}99` : activeColor,
                 background: `${activeColor}08`,
                 borderTop: `1px solid ${activeColor}20`,
-                animation: "pickingBlink 2.5s ease-in-out infinite",
+                animation: canFight ? "none" : "pickingBlink 2.5s ease-in-out infinite",
               }}
             >
-              ▸ Team {activeTeam} — pick a fighter ◂
+              {canFight
+                ? `▸ Team ${activeTeam} — add more (optional) ◂`
+                : `▸ Team ${activeTeam} — pick a fighter ◂`}
             </div>
 
             {/* Search + filter */}
