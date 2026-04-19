@@ -761,11 +761,10 @@ function DevLegendsCard({
 }) {
   const loaded = !!(chris && troy);
 
-  // When both are on opposing teams — the betrayal scenario
-  const handleBetrayalFight = () => {
+  // Deploy them TOGETHER on team 1 — they never fight each other
+  const handleDeploy = () => {
     if (!chris || !troy) return;
-    // Put them on opposite teams — the AI will detect the alliance and trigger the betrayal override
-    onLoad([chris], [troy], "cinematic");
+    onLoad([chris, troy], [], "cinematic");
   };
 
   return (
@@ -798,14 +797,14 @@ function DevLegendsCard({
           className="font-display uppercase tracking-wider mb-1"
           style={{ fontSize: 14, color: "#ffc800", lineHeight: 1.2 }}
         >
-          The Architects — Betrayal Protocol
+          The Architects — Brothers in Arms
         </h3>
         <p style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.6, letterSpacing: "0.05em" }}>
-          Chris Henry and Troy Wilson built this arena. Put them on opposing teams and watch what happens. 
-          They will not fight each other. They will turn on their own sides. They always win together.
+          Chris Henry and Troy Wilson built this entire arena. They're brothers — they don't answer to anyone 
+          inside it, and they sure as hell don't fight each other. Deploy them together and watch everything else burn.
         </p>
 
-        {/* Character portraits */}
+        {/* Character portraits — side by side as brothers */}
         <div className="flex items-center gap-4 mb-4">
           {[chris, troy].map((c, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -818,37 +817,38 @@ function DevLegendsCard({
                 }}
               >
                 {c?.imageUrl ? (
-                  <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />
+                  <img src={c.imageUrl} alt={c?.name} className="w-full h-full object-cover object-top" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center font-display font-bold text-sm" style={{ background: "rgba(255,200,0,0.08)", color: "#ffc800" }}>
-                    {c?.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?"}
+                    {c?.name?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?"}
                   </div>
                 )}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 55%)" }} />
-              </div>
-              <div>
-                <p className="font-display uppercase text-xs tracking-wider" style={{ color: "#ffc800" }}>
-                  {c?.name ?? "Loading..."}
-                </p>
-                <p style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
-                  Developer Legend
-                </p>
+                <div className="absolute bottom-1 left-0 right-0 text-center">
+                  <span style={{ fontSize: 7, fontWeight: 900, color: "#ffc800", letterSpacing: "0.08em" }}>
+                    {c?.name?.split(" ")[0] ?? "?"}
+                  </span>
+                </div>
               </div>
               {i === 0 && (
                 <span
-                  className="font-display font-black italic mx-2"
-                  style={{ fontSize: 20, color: "rgba(255,200,0,0.2)" }}
+                  className="font-display font-black mx-1"
+                  style={{ fontSize: 18, color: "rgba(255,200,0,0.5)" }}
                 >
-                  VS
+                  +
                 </span>
               )}
             </div>
           ))}
+          <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginLeft: 8, lineHeight: 1.5, flex: 1, fontStyle: "italic" }}>
+            These two don't fight each other.{" "}
+            <span style={{ color: "rgba(255,200,0,0.6)" }}>Not now. Not ever.</span>
+          </p>
         </div>
 
         {/* Action button */}
         <button
-          onClick={handleBetrayalFight}
+          onClick={handleDeploy}
           disabled={!loaded}
           className="w-full flex items-center justify-center gap-2 transition-all duration-150 active:scale-95"
           style={{
@@ -863,7 +863,7 @@ function DevLegendsCard({
           }}
         >
           <Swords className="w-3.5 h-3.5" />
-          {loaded ? "TRIGGER THE BETRAYAL PROTOCOL" : "LOADING LEGENDS…"}
+          {loaded ? "DEPLOY THE ARCHITECTS" : "LOADING LEGENDS…"}
         </button>
       </div>
     </div>

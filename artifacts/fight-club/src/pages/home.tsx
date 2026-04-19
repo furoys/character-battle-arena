@@ -223,6 +223,7 @@ export function Home() {
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
   const [showModal, setShowModal] = useState(false);
+  const [showRefusal, setShowRefusal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
@@ -356,9 +357,19 @@ export function Home() {
     }
   };
 
+  const DEVELOPER_IDS = [780, 781]; // Chris Henry, Troy Wilson
+
   const handleFight = () => {
     if (team1.length === 0 || team2.length === 0) {
       toast({ title: "Teams Required", description: "Both teams need at least 1 fighter", variant: "destructive" });
+      return;
+    }
+    // Chris Henry and Troy Wilson REFUSE to fight each other — under any circumstances
+    const t1HasDev = team1.some(c => DEVELOPER_IDS.includes(c.id));
+    const t2HasDev = team2.some(c => DEVELOPER_IDS.includes(c.id));
+    const devsOnOpposingSides = t1HasDev && t2HasDev;
+    if (devsOnOpposingSides) {
+      setShowRefusal(true);
       return;
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
@@ -395,6 +406,21 @@ export function Home() {
         @keyframes fightPulse {
           0%, 100% { box-shadow: 0 0 20px rgba(255,0,85,0.4), 0 0 40px rgba(255,0,85,0.15); }
           50% { box-shadow: 0 0 30px rgba(255,0,85,0.7), 0 0 60px rgba(255,0,85,0.3); }
+        }
+        @keyframes fingerBounce {
+          0%, 100% { transform: translateY(0) rotate(-5deg) scale(1); }
+          20% { transform: translateY(-18px) rotate(5deg) scale(1.15); }
+          40% { transform: translateY(-8px) rotate(-8deg) scale(1.08); }
+          60% { transform: translateY(-22px) rotate(3deg) scale(1.2); }
+          80% { transform: translateY(-4px) rotate(-3deg) scale(1.05); }
+        }
+        @keyframes refusalGlow {
+          0%, 100% { text-shadow: 0 0 20px rgba(255,0,85,0.8), 0 0 40px rgba(255,0,85,0.4); }
+          50% { text-shadow: 0 0 40px rgba(255,0,85,1), 0 0 80px rgba(255,0,85,0.6); }
+        }
+        @keyframes refusalFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes pickingBlink {
           0%, 100% { opacity: 1; }
@@ -804,6 +830,101 @@ export function Home() {
           team2Images={team2.map(c => c.imageUrl)}
         />
       </div>
+
+      {/* ── REFUSAL SCREEN — Chris Henry & Troy Wilson refuse to fight ─── */}
+      {showRefusal && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
+          style={{
+            background: "linear-gradient(180deg, #000000 0%, #0a0005 60%, #000000 100%)",
+            animation: "refusalFadeIn 0.3s ease-out",
+          }}
+        >
+          {/* Scanlines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)",
+            }}
+          />
+
+          <div className="relative z-10 flex flex-col items-center gap-6 px-8 text-center max-w-sm">
+            {/* Portraits */}
+            <div className="flex items-center gap-4 mb-2">
+              {[team1.find(c => [780,781].includes(c.id)), team2.find(c => [780,781].includes(c.id))].filter(Boolean).map((c, i) => (
+                <div key={i} className="relative" style={{ width: 64, height: 80, border: "1.5px solid rgba(255,200,0,0.4)" }}>
+                  {c?.imageUrl && (
+                    <img src={c.imageUrl} alt={c?.name} className="w-full h-full object-cover object-top" />
+                  )}
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
+                </div>
+              ))}
+            </div>
+
+            {/* Animated middle finger */}
+            <div
+              style={{
+                fontSize: 72,
+                lineHeight: 1,
+                animation: "fingerBounce 1.2s ease-in-out infinite",
+                userSelect: "none",
+              }}
+            >
+              🖕
+            </div>
+
+            {/* Title */}
+            <div>
+              <p
+                className="font-display uppercase tracking-[0.3em] mb-3"
+                style={{
+                  fontSize: 11,
+                  color: "rgba(255,200,0,0.8)",
+                  letterSpacing: "0.35em",
+                }}
+              >
+                ◆ Developer Legends
+              </p>
+              <h2
+                className="font-display uppercase leading-tight mb-3"
+                style={{
+                  fontSize: 22,
+                  color: "#ffffff",
+                  animation: "refusalGlow 2s ease-in-out infinite",
+                }}
+              >
+                These two don't fight each other.
+              </h2>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                Chris Henry and Troy Wilson built this whole arena. They answer to no one inside it —
+                and they sure as hell don't answer to you.
+              </p>
+            </div>
+
+            {/* Only option: New Fight */}
+            <button
+              onClick={() => {
+                setShowRefusal(false);
+                setTeam1([]);
+                setTeam2([]);
+              }}
+              className="w-full font-display uppercase tracking-widest transition-all duration-150 active:scale-95"
+              style={{
+                marginTop: 8,
+                padding: "14px 24px",
+                fontSize: 12,
+                letterSpacing: "0.25em",
+                background: "rgba(255,0,85,0.12)",
+                border: "1.5px solid rgba(255,0,85,0.6)",
+                color: "#ff3b30",
+                boxShadow: "0 0 20px rgba(255,0,85,0.2)",
+              }}
+            >
+              ⚔ NEW FIGHT
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
