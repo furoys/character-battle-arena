@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
+import { IntroScreen } from "@/components/intro-screen";
 
 // Pages
 import { Home } from "@/pages/home";
@@ -37,9 +39,20 @@ function Router() {
   );
 }
 
-function App() {
+function AppInner() {
+  // Only show the intro once per session
+  const [showIntro, setShowIntro] = useState(
+    () => sessionStorage.getItem("ava_intro_played") !== "1"
+  );
+
+  const handleIntroDone = () => {
+    sessionStorage.setItem("ava_intro_played", "1");
+    setShowIntro(false);
+  };
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
+      {showIntro && <IntroScreen onDone={handleIntroDone} />}
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Layout>
@@ -48,6 +61,14 @@ function App() {
           <Toaster />
         </WouterRouter>
       </TooltipProvider>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppInner />
     </QueryClientProvider>
   );
 }
