@@ -144,12 +144,25 @@ function letterbox(ctx: CanvasRenderingContext2D, W: number, H: number, progress
   ctx.fillRect(0, H - barH, W, barH);
 }
 
+/** Parse any rgb/rgba/hex string into [r,g,b] */
+function parseRGB(color: string): [number, number, number] {
+  const m = color.match(/(\d+),\s*(\d+),\s*(\d+)/);
+  if (m) return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+  // hex fallback
+  const hx = color.replace("#","");
+  if (hx.length === 6) {
+    return [parseInt(hx.slice(0,2),16), parseInt(hx.slice(2,4),16), parseInt(hx.slice(4,6),16)];
+  }
+  return [200, 0, 40];
+}
+
 /** Volumetric light rays emanating from a point */
 function lightRays(
   ctx: CanvasRenderingContext2D, cx: number, cy: number, W: number, H: number,
   color: string, alpha: number, rayCount = 10, spread = Math.PI
 ) {
   if (alpha <= 0) return;
+  const [r, g, b] = parseRGB(color);
   ctx.save();
   for (let i = 0; i < rayCount; i++) {
     const baseAngle = -Math.PI / 2 + (i / (rayCount - 1) - 0.5) * spread;
@@ -162,15 +175,15 @@ function lightRays(
     const nx = -Math.sin(angle);
     const ny =  Math.cos(angle);
     const grad = ctx.createLinearGradient(cx, cy, ex, ey);
-    grad.addColorStop(0, color.replace(")", `,${alpha * 0.55})`).replace("rgb", "rgba"));
-    grad.addColorStop(0.4, color.replace(")", `,${alpha * 0.22})`).replace("rgb", "rgba"));
-    grad.addColorStop(1, "rgba(0,0,0,0)");
+    grad.addColorStop(0,   `rgba(${r},${g},${b},${alpha * 0.55})`);
+    grad.addColorStop(0.4, `rgba(${r},${g},${b},${alpha * 0.22})`);
+    grad.addColorStop(1,   `rgba(0,0,0,0)`);
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.moveTo(cx + nx * 2,           cy + ny * 2);
-    ctx.lineTo(cx - nx * 2,           cy - ny * 2);
-    ctx.lineTo(ex - nx * halfW,       ey - ny * halfW);
-    ctx.lineTo(ex + nx * halfW,       ey + ny * halfW);
+    ctx.moveTo(cx + nx * 2,     cy + ny * 2);
+    ctx.lineTo(cx - nx * 2,     cy - ny * 2);
+    ctx.lineTo(ex - nx * halfW, ey - ny * halfW);
+    ctx.lineTo(ex + nx * halfW, ey + ny * halfW);
     ctx.closePath();
     ctx.fill();
   }
@@ -827,7 +840,8 @@ function runIntro(
 
           // Colored mood per slot
           const mColors = ["rgba(200,100,255,0.7)", "rgba(0,200,255,0.7)", "rgba(255,200,0,0.7)", "rgba(255,80,0,0.7)"];
-          lightRays(ctx, fx, H*0.25, W, H, mColors[segIdx % 4].replace(",0.7)",""), charA*0.18, 7, Math.PI*0.5);
+          const mRayColors = ["rgb(200,100,255)", "rgb(0,200,255)", "rgb(255,200,0)", "rgb(255,80,0)"];
+          lightRays(ctx, fx, H*0.25, W, H, mRayColors[segIdx % 4], charA*0.18, 7, Math.PI*0.5);
 
           drawChar(ctx, c.img, fx, BASEY, kbScale, charA, flip, mColors[segIdx % 4], kbPanX, 0);
 
