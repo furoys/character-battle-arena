@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
-import { MusicProvider } from "@/contexts/music-context";
 
 // Pages
 import { Home } from "@/pages/home";
@@ -17,10 +16,8 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Characters rarely change — cache for 5 min, keep in memory for 30
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
-      // Don't silently refetch every time the user alt-tabs back
       refetchOnWindowFocus: false,
     },
   },
@@ -44,14 +41,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <MusicProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Layout>
-              <Router />
-            </Layout>
-          </WouterRouter>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Layout>
+            <Router />
+          </Layout>
           <Toaster />
-        </MusicProvider>
+        </WouterRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
