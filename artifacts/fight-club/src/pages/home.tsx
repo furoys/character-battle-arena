@@ -228,7 +228,6 @@ export function Home() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [showAllUniverses, setShowAllUniverses] = useState(false);
   const [tierFilter, setTierFilter] = useState<string>("all");
-  const [fightMode, setFightMode] = useState<"cinematic" | "brutal">("cinematic");
 
   // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
   const INITIAL_VISIBLE = 80;
@@ -375,7 +374,7 @@ export function Home() {
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic" } });
   };
 
   const getCharacterTeam = (id: number) => {
@@ -535,40 +534,15 @@ export function Home() {
               </div>
             )}
 
-            {/* BRUTAL toggle + FIGHT button */}
-            <div className="px-2 pb-1 flex gap-1.5">
-              <button
-                className="flex items-center justify-center gap-1 font-display uppercase tracking-widest transition-all duration-150 flex-1"
-                style={{
-                  height: 22,
-                  fontSize: 8,
-                  letterSpacing: "0.2em",
-                  border: fightMode === "cinematic" ? "1px solid rgba(255,255,255,0.15)" : "1px solid #ff4400",
-                  background: fightMode === "cinematic" ? "rgba(255,255,255,0.03)" : "rgba(255,68,0,0.18)",
-                  color: fightMode === "cinematic" ? "rgba(255,255,255,0.3)" : "#ff6622",
-                  cursor: "pointer",
-                }}
-                onClick={() => setFightMode(m => m === "cinematic" ? "brutal" : "cinematic")}
-              >
-                {fightMode === "brutal" ? "⚠ BRUTAL MODE ON" : "BRUTAL MODE"}
-              </button>
-            </div>
-
             {/* FIGHT button — full-width below teams, always reachable */}
             <div className="px-2 pb-2">
               <button
                 className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
                 style={{
                   height: 34,
-                  border: canFight
-                    ? fightMode === "brutal" ? "1.5px solid #ff4400" : "1.5px solid #ff0055"
-                    : "1.5px solid rgba(255,255,255,0.1)",
-                  background: canFight
-                    ? fightMode === "brutal" ? "rgba(255,68,0,0.15)" : "rgba(255,0,85,0.12)"
-                    : "rgba(255,255,255,0.03)",
-                  color: canFight
-                    ? fightMode === "brutal" ? "#ff6622" : "#ff0055"
-                    : "rgba(255,255,255,0.2)",
+                  border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
+                  background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
+                  color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
                   fontSize: 11,
                   letterSpacing: "0.25em",
                   cursor: canFight ? "pointer" : "not-allowed",
@@ -846,7 +820,7 @@ export function Home() {
           open={showModal}
           onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: fightMode } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic" } });
           }}
           result={simulateFight.data || null}
           isSimulating={simulateFight.isPending}
