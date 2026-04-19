@@ -2424,7 +2424,12 @@ ${roundSections}
 (2 sentences: winner declared, loser's exact condition — unconscious, broken, fled, dead. One line of cold finality.)
 
 === WHY THEY WON ===
-(3-5 sentences. Reference: tier/power gap, specific abilities that decided the fight, behavioral factor — battleIQ or temperament — that mattered most, and the exact turning point or decisive exchange.)
+Write exactly 5 sentences. Each sentence must cover ONE of these points in this order — no merging, no skipping:
+1. POWER GAP: Name the exact stat(s) that created the margin — use actual numbers or tier labels. Be specific (e.g. "Goku's 5M strength against Thor's 1.1M meant every direct exchange ended one way").
+2. ABILITY EDGE: Name the single ability, weapon, or technique from the winner's kit that the loser had NO answer for. Must be traceable to their ABILITIES or WEAPONS list.
+3. BEHAVIORAL FACTOR: Reference the winner's battleIQ score OR temperament by name and explain how it shaped the fight (e.g. "With a battleIQ of 74, Goku adapted mid-fight rather than committing to a pattern, stripping away every counter Thor had prepared").
+4. TURNING POINT: One sentence describing the exact exchange that sealed the outcome — what move landed, what it did to the loser's body or position, why they couldn't recover from that moment.
+5. LOSER'S FAILURE: What their best play was, why it wasn't enough, and what specific gap in their kit left them exposed.
 
 ENDINGS — pick the ONE most fitting for this matchup and power level:
 • KNOCKOUT — out cold, lights out mid-sentence
