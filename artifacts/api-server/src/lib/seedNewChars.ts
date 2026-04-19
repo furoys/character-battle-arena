@@ -60,7 +60,7 @@ const newChars = [
   },
   {
     name: "Ip Man",
-    universe: "Martial Arts Films",
+    universe: "Martial Arts",
     imageUrl: null,
     strength: 5200, speed: 7800, intelligence: 7200, durability: 5800,
     specialAbility: "Wing Chun grandmastery — simultaneous attack-and-defense; chain punching at extreme speed; joint locks and pressure point targeting; adapts to any opponent's style within seconds",
@@ -69,7 +69,7 @@ const newChars = [
   },
   {
     name: "Rama",
-    universe: "The Raid",
+    universe: "Action Heroes",
     imageUrl: null,
     strength: 6100, speed: 8200, intelligence: 6800, durability: 6400,
     specialAbility: "Pencak Silat mastery — close-quarters brutality using elbows, knees, and throws; knife fighting; extreme pain tolerance and combat continuation through injury; improvised weapon adaptation in any environment",
@@ -324,7 +324,7 @@ const newChars = [
   // ── MYTHOLOGY ─────────────────────────────────────────────────────────────
   {
     name: "Gilgamesh",
-    universe: "Ancient Mythology",
+    universe: "Mythology",
     imageUrl: null,
     strength: 9000, speed: 7500, intelligence: 8500, durability: 9000,
     specialAbility: "Two-thirds divine — superhuman strength and endurance beyond mortal limits; wielded weapons forged by the gods; friendship with Enkidu amplified both beyond individual limits; near-immortal body",
@@ -333,7 +333,7 @@ const newChars = [
   },
   {
     name: "Beowulf",
-    universe: "Anglo-Saxon Mythology",
+    universe: "Mythology",
     imageUrl: null,
     strength: 9200, speed: 7000, intelligence: 7000, durability: 8800,
     specialAbility: "Thirty men's grip strength — tore Grendel's arm from its socket bare-handed; dived into a lake and fought for hours without air; defeated three monsters in succession across decades; armor-breaking physical strikes",
@@ -342,7 +342,7 @@ const newChars = [
   },
   {
     name: "Odysseus",
-    universe: "Greek Mythology",
+    universe: "Mythology",
     imageUrl: null,
     strength: 6500, speed: 6500, intelligence: 9800, durability: 7000,
     specialAbility: "Greatest strategic mind of the ancient world — conceived the Trojan Horse; divine favor from Athena; master archer (strung a bow no other man could); survived encounters with Cyclops, Sirens, Scylla, and Circe through cunning alone",
@@ -351,7 +351,7 @@ const newChars = [
   },
   {
     name: "Cuchulainn",
-    universe: "Celtic Mythology",
+    universe: "Mythology",
     imageUrl: null,
     strength: 9000, speed: 9000, intelligence: 7500, durability: 8500,
     specialAbility: "Warp Spasm — a berserker transformation that distorts his body into a terrifying killing machine; Gáe Bulg — a barbed spear thrown with the foot that enters the body and shreds organs; divine parentage from Lugh",
@@ -416,7 +416,7 @@ const newChars = [
   },
   {
     name: "Isshiki Otsutsuki",
-    universe: "Naruto / Boruto",
+    universe: "Naruto",
     imageUrl: null,
     strength: 9500, speed: 9800, intelligence: 9000, durability: 9500,
     specialAbility: "Sukunahikona — shrinks himself or any object instantaneously and removes it from spacetime; Daikokuten — stores shrunken objects in a separate dimension for instant deployment; cannot be sensed while shrinking",
@@ -465,7 +465,7 @@ const newChars = [
   // ── FULLMETAL ALCHEMIST ─────────────────────────────────────────────────────
   {
     name: "Father",
-    universe: "Fullmetal Alchemist: Brotherhood",
+    universe: "Fullmetal Alchemist",
     imageUrl: null,
     strength: 9000, speed: 8500, intelligence: 9500, durability: 9500,
     specialAbility: "Absorbed God — contains all five Philosopher's Stones and God itself; negates alchemy across an entire country; creates nuclear blasts; perfect immortal body; embodiment of all seven deadly sins",
@@ -474,7 +474,7 @@ const newChars = [
   },
   {
     name: "Pride",
-    universe: "Fullmetal Alchemist: Brotherhood",
+    universe: "Fullmetal Alchemist",
     imageUrl: null,
     strength: 7500, speed: 9500, intelligence: 9000, durability: 8000,
     specialAbility: "Shadow manipulation — near-infinite tendrils of darkness that can slice through everything in his line of sight; ability to absorb and copy Alchemists' knowledge; requires only a single small core body",
@@ -766,7 +766,7 @@ const newChars = [
   },
   {
     name: "Judge Dredd",
-    universe: "2000 AD",
+    universe: "Action Heroes",
     imageUrl: null,
     strength: 7000, speed: 6500, intelligence: 7500, durability: 7500,
     specialAbility: "Lawmaster motorcycle and full-body combat armor; Lawgiver smart-gun with armor-piercing, incendiary, and ricochet rounds; Judge training from age 5 — peak human combat conditioning; authority of Judge, Jury, and Executioner simultaneously",
@@ -784,7 +784,7 @@ const newChars = [
   },
   {
     name: "William Wallace",
-    universe: "Historical / Braveheart",
+    universe: "Historical",
     imageUrl: null,
     strength: 8000, speed: 7000, intelligence: 7500, durability: 8000,
     specialAbility: "Claymore swordsmanship of brutal effectiveness; tactical genius at Stirling Bridge — used terrain and feigned retreat to destroy a superior English force; rallied an entire nation through force of will; captured and executed without confessing anything",
@@ -793,7 +793,7 @@ const newChars = [
   },
   {
     name: "Maximus Decimus Meridius",
-    universe: "Gladiator",
+    universe: "Action Heroes",
     imageUrl: null,
     strength: 7500, speed: 7500, intelligence: 7500, durability: 7500,
     specialAbility: "Roman legion general's tactical mind in gladiatorial arena; unification of prisoners into a coordinated fighting unit in minutes; exceptional swordsmanship; will not die before his purpose is fulfilled — revenge and honor",
@@ -802,7 +802,7 @@ const newChars = [
   },
   {
     name: "King Leonidas",
-    universe: "Sparta / 300",
+    universe: "Action Heroes",
     imageUrl: null,
     strength: 8500, speed: 7500, intelligence: 8000, durability: 8500,
     specialAbility: "300 Spartans + Thermopylae Pass — turned elite Spartan training into a strategic chokepoint that held the Persian army for three days; shield wall tactics (phalanx); personal combat ability that killed Persian generals one-on-one",
@@ -907,7 +907,7 @@ const newChars = [
   },
   {
     name: "Zamasu",
-    universe: "Dragon Ball Super",
+    universe: "Dragon Ball",
     imageUrl: null,
     strength: 9200, speed: 9200, intelligence: 9500, durability: 9500,
     specialAbility: "Holy Wrath energy projection; Fused Zamasu form with Goku Black; immortality via Super Dragon Balls; divine energy that specifically burns mortal life force; spreads as a multiversal infection when destroyed",
@@ -916,7 +916,7 @@ const newChars = [
   },
   {
     name: "Zeno",
-    universe: "Dragon Ball Super",
+    universe: "Dragon Ball",
     imageUrl: null,
     strength: 10000, speed: 10000, intelligence: 4000, durability: 10000,
     specialAbility: "Erase — instantaneous deletion of anything from existence, including universes; no technique, no kata, no explanation; erased two universes in anger as a child; Future Zeno + Present Zeno deleted all surviving universes in the Tournament of Power timeline",
@@ -1021,7 +1021,7 @@ const newChars = [
   },
   {
     name: "Noctis Lucis Caelum",
-    universe: "Final Fantasy XV",
+    universe: "Final Fantasy",
     imageUrl: null,
     strength: 8000, speed: 9000, intelligence: 7500, durability: 8000,
     specialAbility: "Armiger Arsenal — warp-strikes across any distance with all thirteen royal arms simultaneously; Royal Glaive technique; Ring of the Lucii — instant kills via Old Wall summon; Oracle's power absorbed at endgame",
