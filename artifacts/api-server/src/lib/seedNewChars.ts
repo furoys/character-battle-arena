@@ -1639,9 +1639,38 @@ const newChars = [
     description: "Shayera Hol — a Thanagarian warrior who carries the memories of every life she has ever lived, all of them spent fighting. Her nth metal mace doesn't just hurt magic users. It ends them.",
     behaviorTags: ["aggressive", "close-quarters", "defensive"],
   },
+  {
+    name: "Lucifer Morningstar",
+    universe: "DC Comics",
+    imageUrl: "/characters/lucifer-morningstar.png",
+    strength: 9800000, speed: 9800000, intelligence: 9900000, durability: 9900000,
+    specialAbility: "Nigh-omnipotent reality manipulation; can erase anything from existence; infinite energy projection; total control of divine light (the Morningstar Flame); immortality; absorb and redirect the power of the Presence; create or unmake universes; absolute authority in his own creation",
+    weaknesses: "Has voluntarily surrendered his divine portfolio; constrained by his own pride and free will; the Presence outranks him absolutely; chooses non-interference more often than not",
+    description: "The Lightbringer. The First of the Fallen. God's most glorious creation and most infamous rebel. Lucifer Morningstar rules the DC/Vertigo multiverse's metaphysical top tier — a nigh-omnipotent being who literally walked out of Hell because he was bored, then built his own universe just to prove he could.",
+    behaviorTags: ["reality-warper", "cosmic", "long-range"],
+  },
+  {
+    name: "Living Tribunal",
+    universe: "Marvel Comics",
+    imageUrl: "/characters/the-living-tribunal.png",
+    strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
+    specialAbility: "Absolute authority over the entire Marvel multiverse; can instantly nullify the power of any being including Infinity Stones; reality restructuring on cosmic scale; omniscience across all timelines and dimensions; can erase entire universes; his three faces represent equity, vengeance, and necessity and must agree before he acts",
+    weaknesses: "Requires unanimous agreement across all three faces before intervening; will not act in purely personal conflicts or mortal squabbles; surpassed only by the One-Above-All and the Beyonders",
+    description: "The Living Tribunal is Marvel's supreme judge — a single entity that spans every universe in the multiverse simultaneously. He has voided the Infinity Gauntlet with a gesture. He doesn't fight. He adjudicates. When all three of his faces agree, reality itself bends to his ruling.",
+    behaviorTags: ["cosmic", "reality-warper", "defensive"],
+  },
 ];
 
 export async function seedNewChars(): Promise<void> {
+  // Remove duplicate "The Living Tribunal" (kept canonical "Living Tribunal")
+  const duplicateNames = ["The Living Tribunal", "Mr. Fantastic"];
+  const dupDeleted = await db
+    .delete(charactersTable)
+    .where(inArray(charactersTable.name, duplicateNames));
+  if ((dupDeleted.rowCount ?? 0) > 0) {
+    console.log(`[seed] Removed ${dupDeleted.rowCount} duplicate character(s)`);
+  }
+
   // Remove legacy universes that are no longer part of the roster
   const removedUniverses = ["Animals", "Animal Kingdom"];
   const deleted = await db
