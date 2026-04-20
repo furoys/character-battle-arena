@@ -230,13 +230,14 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
                   onClick={e => { e.stopPropagation(); onToggleFavorite(); }}
                   className="absolute top-1.5 right-1.5 transition-all duration-150"
                   style={{
-                    fontSize: 13,
+                    fontSize: isFavorite ? 16 : 14,
                     lineHeight: 1,
-                    color: isFavorite ? "#fbbf24" : "rgba(255,255,255,0.18)",
-                    transform: isFavorite ? "scale(1.15)" : "scale(1)",
-                    filter: isFavorite ? "drop-shadow(0 0 4px #fbbf2480)" : "none",
-                    background: "none",
-                    border: "none",
+                    color: isFavorite ? "#fbbf24" : hovered ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.28)",
+                    transform: isFavorite ? "scale(1.15)" : hovered ? "scale(1.05)" : "scale(1)",
+                    filter: isFavorite ? "drop-shadow(0 0 5px #fbbf2480)" : "none",
+                    background: isFavorite ? "rgba(251,191,36,0.12)" : hovered ? "rgba(255,255,255,0.08)" : "none",
+                    border: isFavorite ? "1px solid rgba(251,191,36,0.3)" : "1px solid transparent",
+                    borderRadius: 4,
                     padding: "2px 3px",
                     cursor: "pointer",
                   }}
