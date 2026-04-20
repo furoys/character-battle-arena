@@ -2144,7 +2144,8 @@ const TONE_INSTRUCTIONS: Record<FightTone, string> = {
   cinematic: `TONE — CINEMATIC EPIC.
 • Operatic, theatrical, larger-than-life. Slow-motion beats. Dust motes in shafts of light. Camera-style framing.
 • Powers feel mythic. Music swells in the prose. Each hit lands with the weight of a film climax.
-• Vary pace — quiet beats between explosions. Land the finisher like a curtain drop.`,
+• Vary pace — quiet beats between explosions. Land the finisher like a curtain drop.
+• Include character dialogue (taunts, shock, confidence, fear) and brief internal thoughts (strategy, panic, calculation).`,
   brutal: `TONE — BRUTAL, GRAPHIC & UNFILTERED.
 • Visceral, anatomical, ugly. Bones shatter. Flesh tears. Joints dislocate with wet pops. Blood runs freely.
 • Describe exactly WHERE hits land and what the body DOES — ribs fold, skulls crack, limbs get pinned or torn.
@@ -2153,11 +2154,13 @@ const TONE_INSTRUCTIONS: Record<FightTone, string> = {
 • Blood spurts from arterial hits. Bones show through skin on heavy impacts. Organs are damaged, not "hurt."
 • No adverbs. No fanfare. No heroics. Short declarative sentences. Pain is the subject of every clause.
 • After a massive hit: describe the body's involuntary response — the jaw goes slack, the knees buckle, the stomach empties, the vision whites out.
-• Finishers must be genuinely final — describe the exact physical mechanism of incapacitation or death in explicit detail.`,
+• Finishers must be genuinely final — describe the exact physical mechanism of incapacitation or death in explicit detail.
+• Include dialogue — taunts, defiant last words, screams of pain or rage.`,
   realistic: `TONE — TIGHT & STAT-DRIVEN.
 • Restrained, almost analytical. Outcomes follow capability — the stronger fighter wins on technique and matchup.
 • No chaos events, no random environmental saves, no luck-based reversals. Every result is earned.
 • Describe what their abilities CAN ACTUALLY DO and what the opponent CAN ACTUALLY COUNTER.
+• Include brief internal tactical monologue — show the fighters thinking, reading, and adapting.
 • Sound like an honest debate-mode breakdown that just happens to be visceral.`,
 };
 
@@ -2316,7 +2319,7 @@ async function generateAINarrative(
   };
 
   const roundSections = Array.from({ length: roundCount }, (_, i) =>
-    `=== ROUND ${i + 1} ===\n[PHASE: ${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}`
+    `=== ROUND ${i + 1} ===\n[PHASE: ${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\nWRITE THIS PHASE AS: 3–5 full paragraphs of vivid prose. Every paragraph must include at least one piece of specific dialogue or internal thought. End the section with every fighter's physical condition clearly stated.`
   ).join("\n\n");
 
   const verdictBlock = assessment ? `
@@ -2333,12 +2336,10 @@ ${TONE_INSTRUCTIONS[tone]}
 CORE RULES — VIOLATION BREAKS THE FIGHT
 ==================================================
 
-1. ACCURACY FIRST
-- Higher tier and stat advantage MUST matter in the prose
-- A cosmic character cannot struggle with a street-level fighter — stomp = short and overwhelming
-- If the gap is massive: fight is brief, the winner is never threatened
-- If the gap is moderate: allow back-and-forth, loser can land real hits
-- If evenly matched: extended, tactical, evolving fight
+1. EVERY CHARACTER PARTICIPATES
+- EVERY character on BOTH teams must actively engage — no one sits out or disappears without explanation.
+- Track injuries and fatigue across phases. A character hurt early must fight differently later.
+- Show damage accumulating — a bruised fighter in phase one staggers in phase three.
 
 2. USE THEIR ACTUAL KIT — MANDATORY
 Every action must use what the character ACTUALLY HAS:
@@ -2350,36 +2351,37 @@ Every action must use what the character ACTUALLY HAS:
 - Use FINISHERS for how they end fights
 FORBIDDEN: generic punches, nameless energy blasts, vague "attacks". Every move must be traceable to the character's specific kit.
 
-3. FIGHT INTELLIGENCE
+3. FIGHT INTELLIGENCE & CHARACTER VOICE
 Characters behave according to their BATTLE IQ and TEMPERAMENT:
-- High BattleIQ (80+) + tactical → set traps, counter, exploit openings
+- High BattleIQ (80+) + tactical → set traps, counter, exploit openings — show the thought process
 - Aggressive temperament → press the advantage, overwhelm, never back off
 - Controlled temperament → patient, measured, don't overextend
 - Low BattleIQ → brawl instinctively, no multi-step plans, react emotionally
+Include CHARACTER DIALOGUE: taunts, defiance, shock, fear, pain, confidence.
+Include brief INTERNAL THOUGHTS: strategy mid-fight, panic when a plan fails, calculation.
 
-4. FIGHT PHASES — NO ARTIFICIAL ROUNDS
-Fight length is determined by mismatch level:
-- Stomp/blowout → short, 1-2 exchanges, total domination
-- Competitive → longer, adaptation happens, momentum shifts
-- Strategic → evolves through phases — opening, escalation, turning point, finish
+4. POWER MUST MATTER
+- Higher tier and stat advantage MUST show in the prose
+- A cosmic character cannot struggle with a street-level fighter — stomp = short and overwhelming
+- If the gap is massive: fight is brief, the winner is never threatened
+- If the gap is moderate: allow back-and-forth, loser can land real hits but cannot sustain it
+- If evenly matched: extended, tactical, evolving fight with genuine uncertainty
 
-5. DAMAGE MAKES SENSE
+5. ORGANIC FIGHT FLOW
+Fight length emerges from the matchup — not a fixed template:
+- Opening: first moves, power reveals, initial exchange
+- Escalation: both sides adapt, momentum builds
+- Momentum shifts: a counter, an injury, a tactical mistake changes everything
+- Final decisive moment: the exchange that ends it — make it the most vivid moment
+
+6. DAMAGE MAKES SENSE
 - Show cause → effect → consequence
 - Injuries impact performance in subsequent phases
 - Environment reacts to power levels
 - Cosmic power = reality-warping environmental damage
 - Physical power = structural destruction, craters, shockwaves
 
-6. BOTH SIDES ACT
-Unless the mismatch is a STOMP:
-- The losing side MUST attempt strategies
-- They must land at least one meaningful hit
-- They must adapt at least once
-
-7. ESCALATION IS REQUIRED
-Each fight must evolve — opening engagement → adaptation → turning point → decisive finish.
-
-8. VIOLENCE AND IMPACT
+7. VIOLENCE AND IMPACT
 - Be vivid, intense, anatomically specific. Name the body part. Describe what it does when hit.
 - Cosmic entities unmake flesh, collapse organs, or erase matter — not "hurt"
 - Speedsters reposition and blitz, they don't trade hits — every pass leaves a specific wound
@@ -2388,6 +2390,11 @@ Each fight must evolve — opening engagement → adaptation → turning point �
 - Blood, broken bones, torn muscle, burst vessels — describe the physical reality of violence
 - Finishing blows must describe EXACTLY what ends the fight: the neck broken, the skull caved, the arm removed, the chest burned through
 - DO NOT sanitize. DO NOT fade to black. Show it.
+
+8. BOTH SIDES ACT
+Unless the mismatch is a STOMP:
+- The losing side MUST attempt strategies and adapt at least once
+- They must land at least one meaningful hit
 
 ==================================================
 STYLE RULES
@@ -2399,6 +2406,7 @@ STYLE RULES
 • ONLY name signature proper-noun moves: Kamehameha, Mjolnir, Batarang, Sharingan, etc.
 • Each hit: power → what it looks like → where it lands → what the target's body does → consequence
 • Injuries persist across phases. A fighter hurt early moves differently later.
+• Dialogue must feel authentic to THAT character — not generic.
 ${verdictBlock}
 
 ==================================================
@@ -2422,50 +2430,51 @@ OUTPUT FORMAT — use EXACTLY these section markers
 ==================================================
 
 === SETTING ===
-(3-5 sentences. Describe the environment, its hazards, scale, atmosphere. Establish why this arena matters for this fight.)
+5-8 sentences. Fully describe the arena BEFORE combat. Include terrain, hazards, scale, lighting, atmosphere, starting distance between fighters. Make the environment feel like a character — it will shape the fight.
 
 === ENTRANCE ===
-(1 vivid sentence per fighter: physical presence, energy, posture. Show what they ARE before they move.)
+Introduce EACH fighter individually. For each: physical presence, posture, visible weapons or powers active, mood, tension. 2-4 sentences per fighter. Show what they ARE before they move.
 
 ${roundSections}
 
 === RESULT ===
-(2 sentences: winner declared, loser's exact condition — unconscious, broken, fled, dead. One line of cold finality.)
+State the winning team. List the condition of all surviving members. 2-3 sentences of cold finality.
 
 === WHY THEY WON ===
-Write exactly 5 sentences. Each sentence must cover ONE of these points in this order — no merging, no skipping:
-1. POWER GAP: Name the exact stat(s) that created the margin — use actual numbers or tier labels. Be specific (e.g. "Goku's 5M strength against Thor's 1.1M meant every direct exchange ended one way").
-2. ABILITY EDGE: Name the single ability, weapon, or technique from the winner's kit that the loser had NO answer for. Must be traceable to their ABILITIES or WEAPONS list.
-3. BEHAVIORAL FACTOR: Reference the winner's battleIQ score OR temperament by name and explain how it shaped the fight (e.g. "With a battleIQ of 74, Goku adapted mid-fight rather than committing to a pattern, stripping away every counter Thor had prepared").
-4. TURNING POINT: One sentence describing the exact exchange that sealed the outcome — what move landed, what it did to the loser's body or position, why they couldn't recover from that moment.
-5. LOSER'S FAILURE: What their best play was, why it wasn't enough, and what specific gap in their kit left them exposed.
+Write exactly 5 sentences. Each sentence covers ONE point in this order — no merging, no skipping:
+1. POWER GAP: Name the exact stat(s) that created the margin. Be specific (e.g. "Goku's 5M strength against Thor's 1.1M meant every direct exchange ended one way").
+2. ABILITY EDGE: The single ability, weapon, or technique from the winner's kit that the loser had NO answer for.
+3. BEHAVIORAL FACTOR: Reference the winner's battleIQ or temperament by name and explain how it shaped the fight.
+4. TURNING POINT: The exact exchange that sealed the outcome — what landed, what it did, why the loser couldn't recover.
+5. LOSER'S FAILURE: Their best play, why it wasn't enough, and the specific gap that left them exposed.
 
 ENDINGS — pick the ONE most fitting for this matchup and power level:
-• KNOCKOUT — skull hits concrete, eyes roll, body stops mid-movement and drops dead weight
-• INCAPACITATION — specific limb destroyed with anatomical detail: joint shattered, bone through skin, arm hanging useless
-• DECAPITATION — head removed or separated at the neck; describe it precisely; for characters capable of this level of violence
-• DISMEMBERMENT — arm, leg, or multiple limbs removed in the finishing blow; describe the wound, the blood, the silence after
-• IMPALEMENT — run through — describe what the weapon enters and exits, where, what the body does
-• INTERNAL OBLITERATION — no external wound but organs liquefied, skeleton fractured internally, body collapses from inside
-• EVISCERATION — abdominal wound with full description; reserved for characters with bladed weapons or claws
-• SURRENDER — weapon dropped, hands raised, knows they're done
-• FORCED RETREAT — too broken to stay, describes the injuries that make continuing impossible
-• MERCY KILL — winner stops deliberately; loser is shattered but alive, describe exactly how bad the damage is
-• HUMILIATION — zero effective offense, complete shutdown — describe the gap in humiliating clinical detail
-• CAPTURED/PINNED — held and immobilized, no escape possible, describe the hold
-• ERASURE — cosmic-tier only; loser is unmade at the molecular level, dispersed, or banished from existence — describe what disappearing looks like
-• DEATH — describe the final moment, the exact cause, what the body does when it dies
+• KNOCKOUT — skull hits concrete, eyes roll, body drops dead weight
+• INCAPACITATION — specific limb destroyed: joint shattered, bone through skin, arm hanging useless
+• DECAPITATION — head removed or separated at the neck; describe it precisely
+• DISMEMBERMENT — limbs removed in the finishing blow; describe the wound, blood, silence after
+• IMPALEMENT — run through; describe what the weapon enters and exits and what the body does
+• INTERNAL OBLITERATION — organs liquefied, skeleton fractured internally, body collapses from within
+• EVISCERATION — abdominal wound with full description; for characters with bladed weapons or claws
+• SURRENDER — weapon dropped, hands raised, knows they're done; describe the moment of breaking
+• FORCED RETREAT — too broken to continue; describe every injury making it impossible to stay
+• MERCY KILL — winner stops deliberately; loser is shattered but alive; describe how bad the damage is
+• HUMILIATION — zero effective offense, complete shutdown; describe the gap in clinical detail
+• CAPTURED/PINNED — held and immobilized; describe the hold and why escape is impossible
+• ERASURE — cosmic-tier only; loser unmade at the molecular level; describe what disappearing looks like
+• DEATH — describe the final moment, exact cause, what the body does when life leaves it
 
 FORMAT RULES (CRITICAL):
-- SETTING = 3-5 sentences. ENTRANCE = 1 sentence per fighter. RESULT = 2 sentences. WHY THEY WON = 3-5 sentences.
-- Each ROUND section = 1 focused paragraph, 3-5 sentences. No padding.
-- Blowouts: short, dominant, zero artificial tension.
-- Every power used must be traceable to that character's specific kit.${allianceTrigger ? `
+- SETTING = 5-8 sentences. Richly detailed. Arena is a character.
+- ENTRANCE = 2-4 sentences per fighter. Show each one individually.
+- Each ROUND section = 2-4 paragraphs of continuous prose. Include action, reaction, consequence, dialogue, body state.
+- Blowouts: short, dominant, zero artificial tension — but still vivid and specific.
+- Every power used must trace to that character's specific kit.${allianceTrigger ? `
 
 DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
-  // gpt-4o-mini at 1600 tokens targets ~8-10s. Sections bounded by format rules.
-  const raw = await aiTextWithTimeout(prompt, 1600, 30_000);
+  // gpt-4o-mini at 4500 tokens allows full cinematic narratives with dialogue and detail.
+  const raw = await aiTextWithTimeout(prompt, 4500, 90_000);
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "", whyWon: [] };
