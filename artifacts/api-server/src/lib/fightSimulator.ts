@@ -1884,14 +1884,15 @@ function assessMatchup(team1: Character[], team2: Character[]): MatchupAssessmen
   else if (ratio >= 1.10)      mismatchLevel = "CLOSE";
   else                         mismatchLevel = "TOSSUP";
 
-  // Severe BLOWOUTS (hard counter or 3+ tier gap) collapse to 1 round.
+  // Round count: min 3, max 7. Stomps end quickly; tossups go the distance.
   const severeBlowout = hardCounter || absTierGap >= 3;
   const roundCount =
-    severeBlowout                ? 1 :
-    mismatchLevel === "BLOWOUT"  ? 2 :
-    mismatchLevel === "DOMINANT" ? 3 :
-    mismatchLevel === "SOLID"    ? 4 :
-                                   5;
+    severeBlowout                ? 3 :
+    mismatchLevel === "BLOWOUT"  ? 3 :
+    mismatchLevel === "DOMINANT" ? 4 :
+    mismatchLevel === "SOLID"    ? 5 :
+    mismatchLevel === "CLOSE"    ? 6 :
+                                   7;
 
   // Speed blitz hint.
   let speedNote = "";
@@ -2872,12 +2873,12 @@ function mapAiTierToInternal(t: number): Tier {
 
 // Map win_rate_out_of_10 to mismatch level + round count.
 function mapWinRateToMismatch(rate: number): { mismatch: MismatchLevel; rounds: number } {
-  if (rate >= 9.5) return { mismatch: "BLOWOUT",  rounds: 1 };
-  if (rate >= 9.0) return { mismatch: "BLOWOUT",  rounds: 2 };
-  if (rate >= 7.5) return { mismatch: "DOMINANT", rounds: 3 };
-  if (rate >= 6.5) return { mismatch: "SOLID",    rounds: 4 };
-  if (rate >= 5.5) return { mismatch: "CLOSE",    rounds: 5 };
-  return             { mismatch: "TOSSUP",         rounds: 5 };
+  if (rate >= 9.5) return { mismatch: "BLOWOUT",  rounds: 3 };
+  if (rate >= 9.0) return { mismatch: "BLOWOUT",  rounds: 3 };
+  if (rate >= 7.5) return { mismatch: "DOMINANT", rounds: 4 };
+  if (rate >= 6.5) return { mismatch: "SOLID",    rounds: 5 };
+  if (rate >= 5.5) return { mismatch: "CLOSE",    rounds: 6 };
+  return             { mismatch: "TOSSUP",         rounds: 7 };
 }
 
 async function aiAssessMatchup(
