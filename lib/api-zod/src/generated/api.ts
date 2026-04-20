@@ -178,6 +178,10 @@ export const SimulateFightBody = zod.object({
     .describe(
       "Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun\/debate accepted as legacy aliases of cinematic\/realistic.)",
     ),
+  upset: zod
+    .boolean()
+    .optional()
+    .describe("If true, bypasses the verdict cache and runs a full fresh simulation. Result is not stored."),
 });
 
 export const SimulateFightResponse = zod.object({
@@ -241,6 +245,18 @@ export const SimulateFightResponse = zod.object({
     .array(zod.string())
     .optional()
     .describe("AI-generated array of reasons why the winner won (5 sentences)"),
+  settled: zod
+    .boolean()
+    .optional()
+    .describe("True if the verdict came from the cache (same winner guaranteed on rematch)."),
+  winRate: zod
+    .number()
+    .optional()
+    .describe("Winner's estimated win rate 50-100. Only shown when ≤65 (genuinely close matchup)."),
+  rematchCount: zod
+    .number()
+    .optional()
+    .describe("How many times this matchup has been run before."),
   simulatedAt: zod.coerce.date(),
 });
 

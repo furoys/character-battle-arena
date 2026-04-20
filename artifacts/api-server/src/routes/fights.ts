@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { inArray, desc, eq } from "drizzle-orm";
-import { db, charactersTable, fightsTable } from "@workspace/db";
+import { db, charactersTable, fightsTable, fightCacheTable } from "@workspace/db";
 import {
   SimulateFightBody,
   ListFightsResponse,
@@ -10,6 +10,26 @@ import {
 import { simulateFight } from "../lib/fightSimulator";
 
 const router: IRouter = Router();
+
+// ── Cache key helpers ─────────────────────────────────────────────────────────
+function getCacheKey(
+  team1Ids: number[],
+  team2Ids: number[],
+): { cacheKey: string; teamAIsTeam1: boolean } {
+  const aKey = [...team1Ids].sort((x, y) => x - y).join(",");
+  const bKey = [...team2Ids].sort((x, y) => x - y).join(",");
+  const teamAIsTeam1 = aKey <= bKey;
+  const cacheKey = teamAIsTeam1 ? `${aKey}|${bKey}` : `${bKey}|${aKey}`;
+  return { cacheKey, teamAIsTeam1 };
+}
+
+// Map fight difficulty to win rate %
+function difficultyToWinRate(difficulty: string): number {
+  if (difficulty === "easy") return 90;
+  if (difficulty === "moderate") return 72;
+  if (difficulty === "hard") return 57;
+  return 75;
+}
 
 router.get("/fights", async (req, res): Promise<void> => {
   const fights = await db
@@ -65,7 +85,7 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic" } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false } = parsed.data;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
@@ -84,8 +104,84 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const result = await simulateFight(team1, team2, mode ?? "realistic");
+  // ── Cache lookup ──────────────────────────────────────────────────────────
+  const { cacheKey, teamAIsTeam1 } = getCacheKey(team1Ids, team2Ids);
+  let cachedResolution = null;
+  let cachedEntry = null;
+  let rematchCount = 0;
+  let settled = false;
+  let winRate: number | undefined;
 
+  if (!upset) {
+    const [existing] = await db
+      .select()
+      .from(fightCacheTable)
+      .where(eq(fightCacheTable.cacheKey, cacheKey))
+      .limit(1);
+
+    if (existing) {
+      cachedEntry = existing;
+      rematchCount = existing.rematchCount;
+      settled = true;
+      winRate = existing.winRate;
+
+      // Adjust winner to match user's team1/team2 perspective
+      const cachedWinnerTeam = teamAIsTeam1
+        ? existing.winnerTeam
+        : existing.winnerTeam === 1 ? 2 : 1;
+
+      cachedResolution = {
+        winner: cachedWinnerTeam === 1 ? "Team 1" : "Team 2",
+        difficulty: existing.difficulty,
+        fightType: existing.fightType,
+        keyFactors: existing.keyFactors,
+        turningPoint: existing.turningPoint,
+        loserShowcase: existing.loserShowcase,
+        winnerProof: existing.winnerProof,
+      };
+    }
+  }
+
+  // ── Run fight simulation (Stage 2 only if cache hit, full if miss) ─────────
+  const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount);
+
+  // ── Store verdict in cache if this was a fresh simulation ────────────────
+  if (!upset && !cachedEntry && result.resolution) {
+    const r = result.resolution;
+    const winnerTeamCanonical = teamAIsTeam1
+      ? result.winner
+      : result.winner === 1 ? 2 : 1;
+
+    try {
+      await db.insert(fightCacheTable).values({
+        cacheKey,
+        teamAIds: teamAIsTeam1 ? team1Ids : team2Ids,
+        teamBIds: teamAIsTeam1 ? team2Ids : team1Ids,
+        winnerTeam: winnerTeamCanonical,
+        winRate: difficultyToWinRate(r.difficulty),
+        difficulty: r.difficulty,
+        fightType: r.fightType,
+        keyFactors: r.keyFactors,
+        turningPoint: r.turningPoint,
+        loserShowcase: r.loserShowcase,
+        winnerProof: r.winnerProof,
+        rematchCount: 0,
+      });
+      winRate = difficultyToWinRate(r.difficulty);
+    } catch {
+      // Unique constraint race — another request beat us, ignore
+    }
+  }
+
+  // ── Increment rematch counter in cache ────────────────────────────────────
+  if (cachedEntry) {
+    await db
+      .update(fightCacheTable)
+      .set({ rematchCount: cachedEntry.rematchCount + 1 })
+      .where(eq(fightCacheTable.id, cachedEntry.id));
+  }
+
+  // ── Persist fight record ──────────────────────────────────────────────────
   const [saved] = await db
     .insert(fightsTable)
     .values({
@@ -112,6 +208,9 @@ router.post("/fights", async (req, res): Promise<void> => {
       arenaIntro: result.arenaIntro ?? "",
       intro: result.intro ?? "",
       whyWon: result.whyWon ?? [],
+      settled,
+      winRate: winRate !== undefined && winRate <= 65 ? winRate : undefined,
+      rematchCount,
       simulatedAt: saved.simulatedAt,
     }),
   );
