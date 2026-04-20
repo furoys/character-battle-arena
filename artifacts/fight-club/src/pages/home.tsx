@@ -254,6 +254,7 @@ export function Home() {
 
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
+  const [upsetMode, setUpsetMode] = useState(false);
   const toggleFavorite = (id: number) => {
     setFavorites(prev => {
       const next = new Set(prev);
@@ -374,7 +375,7 @@ export function Home() {
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic" } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
   };
 
   const handleRandomFight = () => {
@@ -617,6 +618,58 @@ export function Home() {
               </button>
             </div>
 
+            {/* Upset Mode toggle */}
+            <div className="px-2 pb-1.5 flex items-center justify-between">
+              <button
+                onClick={() => setUpsetMode(m => !m)}
+                className="flex items-center gap-1.5 transition-all duration-200 active:scale-[0.97]"
+                style={{ cursor: "pointer", background: "none", border: "none", padding: 0 }}
+                title={upsetMode ? "Upset Mode ON — bypasses cached verdict, runs a fresh sim" : "Upset Mode OFF — cached verdict used for consistency"}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 14,
+                    borderRadius: 7,
+                    background: upsetMode ? "rgba(255,160,0,0.8)" : "rgba(255,255,255,0.1)",
+                    border: upsetMode ? "1px solid rgba(255,160,0,0.9)" : "1px solid rgba(255,255,255,0.15)",
+                    position: "relative",
+                    transition: "background 0.2s, border 0.2s",
+                    flexShrink: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: upsetMode ? "#fff" : "rgba(255,255,255,0.35)",
+                      position: "absolute",
+                      top: 1,
+                      left: upsetMode ? 15 : 2,
+                      transition: "left 0.2s, background 0.2s",
+                    }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontFamily: "var(--font-display, monospace)",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: upsetMode ? "rgba(255,160,0,0.9)" : "rgba(255,255,255,0.3)",
+                    transition: "color 0.2s",
+                  }}
+                >
+                  UPSET MODE
+                </span>
+              </button>
+              {upsetMode && (
+                <span style={{ fontSize: 8, color: "rgba(255,160,0,0.6)", letterSpacing: "0.1em", fontFamily: "var(--font-display, monospace)" }}>
+                  BYPASSES VERDICT CACHE
+                </span>
+              )}
+            </div>
 
             {/* Picking indicator */}
             <div
@@ -867,7 +920,7 @@ export function Home() {
           open={showModal}
           onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic" } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
           }}
           result={simulateFight.data || null}
           isSimulating={simulateFight.isPending}

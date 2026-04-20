@@ -131,9 +131,9 @@ router.post("/fights", async (req, res): Promise<void> => {
         : existing.winnerTeam === 1 ? 2 : 1;
 
       cachedResolution = {
-        winner: cachedWinnerTeam === 1 ? "Team 1" : "Team 2",
-        difficulty: existing.difficulty,
-        fightType: existing.fightType,
+        winner: (cachedWinnerTeam === 1 ? "Team 1" : "Team 2") as "Team 1" | "Team 2",
+        difficulty: existing.difficulty as "easy" | "moderate" | "hard",
+        fightType: existing.fightType as "stomp" | "one-sided" | "close",
         keyFactors: existing.keyFactors,
         turningPoint: existing.turningPoint,
         loserShowcase: existing.loserShowcase,

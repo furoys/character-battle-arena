@@ -44,5 +44,3 @@ export const fightsTable = pgTable("fights", {
 });
 
 export type Fight = typeof fightsTable.$inferSelect;
-
-export type Fight = typeof fightsTable.$inferSelect;
