@@ -3803,3 +3803,9 @@ id = "XQ5x9X_SE9sXOhnAqi50_"
 uri = "file://character-list.txt"
 type = "text"
 title = "A.v.A — Full Character Roster (638 characters)"
+
+[[outputs]]
+id = "i9HU_VKez_bq_8d6tLPzS"
+uri = "file://ava-app.tar.gz"
+type = "unspecified"
+title = "A.v.A — Full Source Code Export"
