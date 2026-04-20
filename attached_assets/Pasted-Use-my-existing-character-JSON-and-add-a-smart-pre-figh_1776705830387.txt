@@ -1,0 +1,116 @@
+Use my existing character JSON and add a smart pre-fight synergy bonus and weakness system without changing anything else in the app.
+
+IMPORTANT:
+
+- Do not rewrite my current fight engine
+- Do not change my UI
+- Do not change my narration structure
+- Do not replace my existing stats system
+- Do not alter any unrelated logic
+- Only add a new layer that reads my existing character data and applies temporary fight modifiers before the fight begins
+
+GOAL:
+Create an intelligent modifier system that uses the data I already have in each character entry, especially:
+
+- stats
+- traits
+- v3Profile.archetypes
+- v3Profile.abilities
+- v3Profile.combatStyle
+- v3Profile.specialRules
+- v3Profile.counters
+- v3Profile.weaknesses
+
+The system should:
+
+1. Run before the fight simulation starts
+2. Apply temporary bonuses and penalties for that fight only
+3. Return modified versions of the selected fighters
+4. Preserve the original character data
+5. Generate short notes explaining what bonuses or weaknesses were triggered
+
+REQUIREMENTS:
+
+1. SYNERGY BONUSES
+   Use existing character information to detect smart synergy between teammates.
+   Examples:
+
+- Characters with similar team identity, fighting style, or complementary archetypes should gain small bonuses
+- Tactical/strategist characters should boost team coordination when paired with strong allies
+- Characters with matching combat styles or archetypes should gain improved effectiveness together
+- Characters with leadership-style profiles should improve ally performance slightly
+- Characters with abilities that naturally support each other should gain a teamwork bonus
+
+Examples of valid synergy logic:
+
+- strategist + bruiser = better setup and execution
+- ranged-blaster + frontline bruiser = spacing/control bonus
+- multiple comic-book teammates with similar heroic alignment = small coordination bonus
+- multiple characters with tactical combat styles = improved combatSkill/battleIQ efficiency
+- healing/regeneration allies may gain attrition bonus in longer fights
+
+2. WEAKNESS / COUNTER PENALTIES
+   Use existing character data to apply matchup disadvantages.
+   Examples:
+
+- If an enemy matches something listed in a character’s v3Profile.counters, apply a penalty
+- If a character’s v3Profile.weaknesses logically applies in the current matchup, apply a penalty
+- If a fragile or human-level fighter faces overwhelming cosmic/reality-hax type opponents, apply a survivability penalty
+- Setup-based characters should be penalized against rushdown/pressure opponents
+- Physical fighters should suffer against enemies that explicitly counter close-range combat
+- Characters with human durability should be penalized against massively stronger opponents
+
+3. ONLY USE WHAT IS ALREADY IN MY DATA
+   Do not require a full rewrite of my roster.
+   You may safely infer synergy and weakness logic from:
+
+- archetypes
+- combatStyle
+- counters
+- weaknesses
+- traits
+- abilities
+- specialRules
+
+If needed, create a small helper/adapter function that reads my current structure, but do not force me to rebuild my JSON.
+
+4. SAFE MODIFIER RULES
+   Keep bonuses and penalties reasonable.
+   Suggested ranges:
+
+- small synergy bonus: +2 to +4
+- strong synergy bonus: +5 to +8
+- small weakness penalty: -2 to -4
+- strong weakness penalty: -5 to -10
+  Do not make the system overpower the base stats.
+  Clamp final values safely.
+
+5. OUTPUT
+   Create:
+
+- a reusable function that takes Team A and Team B
+- applies synergy bonuses and weakness penalties to every selected fighter
+- returns modified fighters plus notes for what triggered
+- keeps original roster data unchanged
+
+6. INTEGRATION
+   Hook this into the current fight flow at the point right before fight simulation/narration starts.
+   It should:
+
+- read selected teams
+- calculate temporary modifiers
+- pass modified fighters into the existing fight engine
+- not change anything else in the app
+
+7. IMPORTANT LOGIC NOTES
+
+- Every fighter on both teams must be processed
+- Team synergy should be based on actual ally compatibility, not random bonus stacking
+- Weaknesses should be matchup-aware, not always active
+- If no relevant synergy or weakness is found, leave the character unchanged
+- Preserve compatibility with my current roster format
+
+Please implement this as a focused patch only.
+Do not refactor unrelated parts of the project.
+Do not redesign existing systems.
+Just add the new intelligent synergy/weakness modifier layer and wire it into the current battle flow.
