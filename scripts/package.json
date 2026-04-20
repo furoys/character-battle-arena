@@ -12,6 +12,7 @@
     "seed-dc-marvel-expansion": "tsx ./src/seed-dc-marvel-expansion.ts",
     "seed-disney-and-animals": "tsx ./src/seed-disney-and-animals.ts",
     "seed-action-expansion": "tsx ./src/seed-action-expansion.ts",
+    "add-disney-50": "tsx ./src/add-disney-50.ts",
     "enrich-characters": "tsx ./src/enrich-characters.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
