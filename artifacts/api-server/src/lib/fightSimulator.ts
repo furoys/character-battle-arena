@@ -2141,27 +2141,23 @@ export function normalizeTone(input: string | undefined): FightTone {
 }
 
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
-  cinematic: `TONE — CINEMATIC EPIC.
-• Operatic, theatrical, larger-than-life. Slow-motion beats. Dust motes in shafts of light. Camera-style framing.
-• Powers feel mythic. Music swells in the prose. Each hit lands with the weight of a film climax.
-• Vary pace — quiet beats between explosions. Land the finisher like a curtain drop.
-• Include character dialogue (taunts, shock, confidence, fear) and brief internal thoughts (strategy, panic, calculation).`,
-  brutal: `TONE — BRUTAL, GRAPHIC & UNFILTERED.
-• Visceral, anatomical, ugly. Bones shatter. Flesh tears. Joints dislocate with wet pops. Blood runs freely.
-• Describe exactly WHERE hits land and what the body DOES — ribs fold, skulls crack, limbs get pinned or torn.
-• Graphic physical damage is REQUIRED: deep lacerations, broken teeth, fractured orbital bones, internal bleeding shown through coughing blood, limbs that stop working.
-• Dismemberment, decapitation, and fatal injuries are on the table when power levels justify it — describe them with clinical specificity.
-• Blood spurts from arterial hits. Bones show through skin on heavy impacts. Organs are damaged, not "hurt."
-• No adverbs. No fanfare. No heroics. Short declarative sentences. Pain is the subject of every clause.
-• After a massive hit: describe the body's involuntary response — the jaw goes slack, the knees buckle, the stomach empties, the vision whites out.
-• Finishers must be genuinely final — describe the exact physical mechanism of incapacitation or death in explicit detail.
-• Include dialogue — taunts, defiant last words, screams of pain or rage.`,
-  realistic: `TONE — TIGHT & STAT-DRIVEN.
-• Restrained, almost analytical. Outcomes follow capability — the stronger fighter wins on technique and matchup.
-• No chaos events, no random environmental saves, no luck-based reversals. Every result is earned.
-• Describe what their abilities CAN ACTUALLY DO and what the opponent CAN ACTUALLY COUNTER.
-• Include brief internal tactical monologue — show the fighters thinking, reading, and adapting.
-• Sound like an honest debate-mode breakdown that just happens to be visceral.`,
+  cinematic: `TONE: Intense, dramatic, and cinematic. Every sentence must move the fight forward.
+• Prose is vivid and readable — not purple, not abstract, not padded.
+• Vary pacing: short punchy sentences for fast action, longer ones for weight and consequence.
+• Dialogue is authentic to each character — one voice never sounds like another.
+• Show internal reactions: what a fighter notices, fears, calculates, or refuses to accept.
+• Cosmic scale should feel vast but still readable. Street-level should feel physical and grounded.`,
+  brutal: `TONE: Raw, anatomical, unsparing.
+• Describe exactly where hits land and what the body does — bones, tissue, breath, blood.
+• No heroics. Short declarative sentences. Pain drives every clause.
+• Injuries compound: something broken in round one is still broken at the end.
+• Finishers are final — describe the exact mechanism of incapacitation clearly.
+• Dialogue: taunts, defiant last words, involuntary sounds of pain.`,
+  realistic: `TONE: Analytical and grounded. Every outcome follows from capability.
+• No lucky reversals, no chaos saves. Outcomes are earned by stats, skills, and matchup logic.
+• Show the fighters reading each other — adjusting, countering, exploiting openings.
+• Describe what abilities CAN actually do and what the opponent CAN actually counter.
+• Write like a sharp breakdown that happens to be vivid prose, not a stat dump.`,
 };
 
 async function generateAINarrative(
@@ -2184,27 +2180,36 @@ async function generateAINarrative(
     const v3 = c.v3Profile as any;
     const tier = c.tier || "Unknown";
     const pgi = c.powerGapIndex != null ? ` | Power-Gap: ${c.powerGapIndex}/10` : "";
-    const abilities = v3?.abilities?.length ? v3.abilities.join(", ") : c.specialAbility?.slice(0, 120);
-    const weapons = v3?.weapons?.filter(Boolean).join(", ") || "";
-    const gadgets = v3?.gadgets?.filter(Boolean).join(", ") || "";
+
+    // Build a named MOVE LIST — split abilities into discrete entries the AI can cite by name
+    const rawAbilities: string[] = v3?.abilities?.length
+      ? v3.abilities
+      : (c.specialAbility || "").split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
+    const moveList = rawAbilities.slice(0, 8).map((a: string, i: number) => {
+      // Capitalize first word as a pseudo move-name
+      const clean = a.trim();
+      return `    ${i + 1}. ${clean}`;
+    }).join("\n");
+
+    const weapons = [...(v3?.weapons || []), ...(v3?.gadgets || [])].filter(Boolean).join(", ") || "";
     const combatStyle = v3?.combatStyle?.filter(Boolean).join(", ") || "";
     const temperament = v3?.temperament || "";
     const battleIQ = v3?.battleIQ != null ? `${v3.battleIQ}/100` : "";
     const finishers = v3?.finishers?.filter(Boolean).join(", ") || "";
     const specialRules = v3?.specialRules?.filter(Boolean).join("; ") || "";
     const mobility = v3?.mobilityType?.filter(Boolean).join(", ") || "";
-    const weakness = v3?.weaknesses?.filter(Boolean).join(", ") || c.weaknesses?.slice(0, 80) || "";
+    const weakness = v3?.weaknesses?.filter(Boolean).join(", ") || c.weaknesses?.slice(0, 100) || "";
+
     return [
       `${c.name} (${c.universe} | Tier: ${tier}${pgi})`,
-      `  ABILITIES: ${abilities || "none specified"}`,
-      weapons   ? `  WEAPONS: ${weapons}` : null,
-      gadgets   ? `  GADGETS: ${gadgets}` : null,
-      combatStyle ? `  COMBAT STYLE: ${combatStyle}` : null,
-      mobility  ? `  MOBILITY: ${mobility}` : null,
+      `  WHAT THEY CAN DO:\n${moveList}`,
+      weapons      ? `  WEAPONS/TOOLS: ${weapons}` : null,
+      combatStyle  ? `  HOW THEY FIGHT: ${combatStyle}` : null,
+      mobility     ? `  MOVEMENT: ${mobility}` : null,
       (battleIQ || temperament) ? `  BATTLE IQ: ${battleIQ || "?"} | TEMPERAMENT: ${temperament || "balanced"}` : null,
-      finishers ? `  FINISHERS: ${finishers}` : null,
+      finishers    ? `  FINISHERS: ${finishers}` : null,
       specialRules ? `  SPECIAL RULES: ${specialRules}` : null,
-      weakness  ? `  WEAKNESSES: ${weakness}` : null,
+      weakness     ? `  WEAKNESS: ${weakness}` : null,
     ].filter(Boolean).join("\n");
   };
   const team1Info = team1.map(charProfile).join("\n\n");
@@ -2275,51 +2280,43 @@ async function generateAINarrative(
   };
 
   const directiveFor = (idx: number, total: number): string => {
-    const r = rd(idx);
     const isFirst = idx === 0;
     const isLast  = idx === total - 1;
-    const winnerSide = assessment?.verdict === 1 ? team1 : team2;
-    const winnerSideNames = new Set(winnerSide.map(c => c.name));
-    const focusName =
-      r && (dominantArc || isLast) && !winnerSideNames.has(r.attackerName)
-        ? winnerNames
-        : r?.attackerName ?? winnerNames;
-    const hp = hpNote(idx);
 
     if (dominantArc) {
       if (isFirst && isLast)
-        return `DIRECTION: This is a stomp — write it as one. ${winnerNames} ends ${loserNames} in the opening exchange. The gap is unbridgeable. Use their specific abilities, weapons, and combat style. ${loserNames} barely registers what hits them. ${hp}`;
+        return `This is a decisive stomp. ${winnerNames} controls the entire exchange. Show the specific abilities that create the gap — make it feel inevitable, not lazy. ${loserNames} attempts a real response; it fails completely and shows why.`;
       if (isFirst)
-        return `DIRECTION: ${winnerNames} (focus: ${focusName}) establishes total control from the first move. Show their kit in action — weapons, mobility, combat style. ${loserNames} tries one response. It fails completely. ${hp}`;
+        return `${winnerNames} establishes control immediately using their actual abilities and fighting style. ${loserNames} tries something from their kit — it does not work. Show exactly why.`;
       if (isLast)
-        return `DIRECTION: ${winnerNames} delivers the finishing blow using a specific ability or finisher from their kit. ${loserNames} goes down and does not get up. One of the ENDINGS below applies — choose the most fitting. ${hp}`;
-      return `DIRECTION: ${loserNames} attempts something desperate using their actual kit — it is countered or absorbed. ${winnerNames} (focus: ${focusName}) answers with superior capability. ${hp}`;
+        return `${winnerNames} finishes it. Use a signature ability or tactic from their kit. The ending must be specific, decisive, and earned. Show what ends the fight and what happens to the loser.`;
+      return `${loserNames} attempts something desperate using their actual abilities. ${winnerNames} counters it with superior capability. Show both sides acting — then show why the gap is unbridgeable.`;
     }
 
     if (mismatch === "SOLID") {
       if (isFirst)
-        return `DIRECTION: ${winnerNames} (focus: ${focusName}) establishes control — use their combat style and abilities. ${loserNames} tries a counter using their specific kit. It's read and neutralized. ${hp}`;
+        return `${winnerNames} takes early control using their fighting style and specific abilities. ${loserNames} finds a counter — it lands but doesn't shift momentum. Show both sides actively competing.`;
       if (isLast)
-        return `DIRECTION: ${winnerNames} closes out using a finisher or decisive ability from their kit. ${loserNames} made their best play — it wasn't enough. Choose a fitting ENDING from the list. ${hp}`;
-      return `DIRECTION: ${winnerNames} (focus: ${focusName}) continues dictating the fight. ${loserNames} adapts once using their actual abilities — it buys a moment, not a win. ${hp}`;
+        return `${winnerNames} closes it out. ${loserNames} makes their best play — show it clearly. Then show why it falls short and how ${winnerNames} ends the fight.`;
+      return `${winnerNames} stays in control but ${loserNames} pushes back with their actual kit. There are real exchanges — just not a level playing field. Show the difference in capability through action, not description.`;
     }
 
     // CLOSE / TOSSUP
     if (isFirst)
-      return `DIRECTION: Opening exchange — both sides use their actual kit. Describe the power activation in full sensory detail. First blood. Show HOW each fighter approaches: their combat style, preferred range, temperament. ${hp}`;
-    if (idx === 1)
-      return `DIRECTION: Escalation — both sides reveal more. Each character's unique abilities should create the escalation. One side edges ahead but it is NOT decisive. (Focus: ${focusName}) ${hp}`;
-    if (idx === Math.floor(total / 2))
-      return `DIRECTION: TURNING POINT — something shifts. A desperate counter, an ability used in a new way, a hit that changes the fight's momentum. Make the outcome feel genuinely uncertain. ${hp}`;
-    if (idx === total - 2)
-      return `DIRECTION: Last stand — ${loserNames} throws everything they have using their actual abilities and finishers. It nearly works. ${winnerNames} absorbs it and answers. ${hp}`;
+      return `The opening exchange. Both sides move first using their actual abilities and combat style. Show how each fighter approaches — their preferred range, instincts, temperament. First contact lands. First blood.`;
+    if (idx === 1 && total > 2)
+      return `Escalation. Both sides have read the first exchange and adapt. Each character uses more of their kit. One side edges ahead — but it is not decisive yet. Show the shift through action.`;
+    if (idx === Math.floor(total / 2) && total >= 3)
+      return `TURNING POINT. Something breaks in the fight. A counter lands clean, an injury changes how someone moves, a tactical mistake opens a window. Make this the moment the outcome becomes readable.`;
+    if (idx === total - 2 && total >= 4)
+      return `${loserNames} throws everything at ${winnerNames}. Their best abilities, their best read. It nearly works. Show ${winnerNames} absorbing or surviving it — then answering.`;
     if (isLast)
-      return `DIRECTION: Decisive finish — ${winnerNames} ends it using a signature ability or finisher from their kit. Most vivid, most visceral moment in the fight. Pick a fitting ENDING from the list. ${hp}`;
-    return `DIRECTION: Mid-fight exchange — (Focus: ${focusName}) real damage on both sides. Each character uses their actual tools, not generic attacks. ${hp}`;
+      return `The decisive finish. ${winnerNames} ends it with something specific from their kit. This is the most vivid moment of the fight. Show the final blow, what it does, and what the loser's body or will does in response.`;
+    return `Both sides in full exchange. Real damage on both sides. Every character uses their specific tools — no generic attacks. Show cause, effect, and consequence.`;
   };
 
   const roundSections = Array.from({ length: roundCount }, (_, i) =>
-    `=== ROUND ${i + 1} ===\n[PHASE: ${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\nWRITE THIS PHASE AS: 3–5 full paragraphs of vivid prose. Every paragraph must include at least one piece of specific dialogue or internal thought. End the section with every fighter's physical condition clearly stated.`
+    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`
   ).join("\n\n");
 
   const verdictBlock = assessment ? `
@@ -2328,89 +2325,42 @@ LOCKED VERDICT — you MUST honor this exactly:
 ${assessment.reasoning}
 ${winnerNames} wins. Honor the mismatch level in every beat. Do NOT give the weaker side moments the verdict says they cannot have.` : "";
 
-  const prompt = `You are a cinematic fight simulation engine.
+  const prompt = `You are a cinematic battle writer for a versus app.
 
 ${TONE_INSTRUCTIONS[tone]}
 
 ==================================================
-CORE RULES — VIOLATION BREAKS THE FIGHT
+YOUR JOB
 ==================================================
-
-1. EVERY CHARACTER PARTICIPATES
-- EVERY character on BOTH teams must actively engage — no one sits out or disappears without explanation.
-- Track injuries and fatigue across phases. A character hurt early must fight differently later.
-- Show damage accumulating — a bruised fighter in phase one staggers in phase three.
-
-2. USE THEIR ACTUAL KIT — MANDATORY
-Every action must use what the character ACTUALLY HAS:
-- Use the ABILITIES list for what they can do
-- Use WEAPONS and GADGETS for what tools they carry
-- Use COMBAT STYLE for HOW they fight (trap-setter vs brawler vs blitzer vs summoner)
-- Use MOBILITY TYPE to determine how they reposition
-- Use SPECIAL RULES exactly as stated
-- Use FINISHERS for how they end fights
-FORBIDDEN: generic punches, nameless energy blasts, vague "attacks". Every move must be traceable to the character's specific kit.
-
-3. FIGHT INTELLIGENCE & CHARACTER VOICE
-Characters behave according to their BATTLE IQ and TEMPERAMENT:
-- High BattleIQ (80+) + tactical → set traps, counter, exploit openings — show the thought process
-- Aggressive temperament → press the advantage, overwhelm, never back off
-- Controlled temperament → patient, measured, don't overextend
-- Low BattleIQ → brawl instinctively, no multi-step plans, react emotionally
-Include CHARACTER DIALOGUE: taunts, defiance, shock, fear, pain, confidence.
-Include brief INTERNAL THOUGHTS: strategy mid-fight, panic when a plan fails, calculation.
-
-4. POWER MUST MATTER
-- Higher tier and stat advantage MUST show in the prose
-- A cosmic character cannot struggle with a street-level fighter — stomp = short and overwhelming
-- If the gap is massive: fight is brief, the winner is never threatened
-- If the gap is moderate: allow back-and-forth, loser can land real hits but cannot sustain it
-- If evenly matched: extended, tactical, evolving fight with genuine uncertainty
-
-5. ORGANIC FIGHT FLOW
-Fight length emerges from the matchup — not a fixed template:
-- Opening: first moves, power reveals, initial exchange
-- Escalation: both sides adapt, momentum builds
-- Momentum shifts: a counter, an injury, a tactical mistake changes everything
-- Final decisive moment: the exchange that ends it — make it the most vivid moment
-
-6. DAMAGE MAKES SENSE
-- Show cause → effect → consequence
-- Injuries impact performance in subsequent phases
-- Environment reacts to power levels
-- Cosmic power = reality-warping environmental damage
-- Physical power = structural destruction, craters, shockwaves
-
-7. VIOLENCE AND IMPACT
-- Be vivid, intense, anatomically specific. Name the body part. Describe what it does when hit.
-- Cosmic entities unmake flesh, collapse organs, or erase matter — not "hurt"
-- Speedsters reposition and blitz, they don't trade hits — every pass leaves a specific wound
-- Mages/sorcerers control the field, summon, exploit conditions
-- Every hit lands with weight appropriate to the power level
-- Blood, broken bones, torn muscle, burst vessels — describe the physical reality of violence
-- Finishing blows must describe EXACTLY what ends the fight: the neck broken, the skull caved, the arm removed, the chest burned through
-- DO NOT sanitize. DO NOT fade to black. Show it.
-
-8. BOTH SIDES ACT
-Unless the mismatch is a STOMP:
-- The losing side MUST attempt strategies and adapt at least once
-- They must land at least one meaningful hit
+Write a fight that reads like a real narrated scene — not a stat dump, not a turn log, not a game recap.
+Every sentence must move the fight forward. Make the reader feel the stakes.
 
 ==================================================
-STYLE RULES
+CHARACTER RULES
 ==================================================
-• Cinematic, brutal, clear cause-and-effect
-• No repetition. Every sentence must move the fight forward.
-• BANNED PHRASES: "exchanged blows", "fought fiercely", "unleashed their power", "clash of titans", "duel", "battle ensued", "attacks again"
-• Convert abilities to PHYSICAL OBSERVABLE ACTIONS — never say "uses super strength", show the wall caving and the chest folding
-• ONLY name signature proper-noun moves: Kamehameha, Mjolnir, Batarang, Sharingan, etc.
-• Each hit: power → what it looks like → where it lands → what the target's body does → consequence
-• Injuries persist across phases. A fighter hurt early moves differently later.
-• Dialogue must feel authentic to THAT character — not generic.
-${verdictBlock}
+- Respect canon scale. If one side massively outclasses the other, show it clearly. Do not force fake back-and-forth.
+- If the fight ends fast, let it end fast. If it is close, let it breathe.
+- Every ability used must come from that character's actual kit (see WHAT THEY CAN DO below).
+- Powers are expressed through visible action and consequence — never as abstract stat phrases.
+  WRONG: "hits them with omnipotence" / "uses super strength" / "unleashes her power"
+  RIGHT: "The Mjolnir arcs down and the shockwave splits the concrete in a ten-meter ring" / "She drove her knee into his ribs with enough force to fold the armor plating inward"
+- Injuries accumulate and affect performance. A fighter hurt early moves differently later.
+- Every fighter on both teams must contribute. No one disappears.
+- Cosmic beings feel vast and incomprehensible but must remain readable — no abstract cosmic spam.
+- Street-level fighters feel physical, tactical, grounded.
+- Dialogue must sound like THAT character, not generic hero-speak.
 
 ==================================================
-COMBATANT DATA
+DO NOT
+==================================================
+- Do not write like a game recap or patch notes.
+- Do not use phrases like: "absolute power," "maximum range," "from an angle that shouldn't exist," "clash of titans," "exchanged blows," "fought fiercely," "unleashed their power."
+- Do not repeat the same attack wording.
+- Do not ignore any fighter on either side.
+- Do not summarize what happened — show it happening.
+
+==================================================
+FIGHT DATA
 ==================================================
 
 TEAM 1:
@@ -2424,52 +2374,46 @@ ${arena.flavor.join(" ")}
 
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
 ${specialNotes ? `SPECIAL EVENTS: ${specialNotes}` : ""}
+${verdictBlock}
+
+==================================================
+DAMAGE STATE GOING INTO EACH PHASE
+==================================================
+Use these HP states to calibrate injuries in the prose. Show these states physically — don't ignore them.
+${Array.from({ length: roundCount }, (_, i) => `Phase ${i + 1}: ${hpNote(i)}`).join("\n")}
 
 ==================================================
 OUTPUT FORMAT — use EXACTLY these section markers
 ==================================================
 
 === SETTING ===
-5-8 sentences. Fully describe the arena BEFORE combat. Include terrain, hazards, scale, lighting, atmosphere, starting distance between fighters. Make the environment feel like a character — it will shape the fight.
+3 to 5 strong sentences. Establish the environment, scale, atmosphere, hazards, lighting, and the starting positions of each fighter.
+The arena must feel real and match the tone of the fighters. No generic floating platforms unless that's the actual arena.
 
 === ENTRANCE ===
-Introduce EACH fighter individually. For each: physical presence, posture, visible weapons or powers active, mood, tension. 2-4 sentences per fighter. Show what they ARE before they move.
+Introduce each fighter. Show their physical presence, visible weapons or active powers, posture, and emotional state.
+2 to 3 sentences per fighter. Show what they ARE before they move. Make each one distinct.
 
 ${roundSections}
 
 === RESULT ===
-State the winning team. List the condition of all surviving members. 2-3 sentences of cold finality.
+One clean line declaring the winner. Then 2 to 3 sentences explaining why, in plain language. State the condition of any survivors.
 
 === WHY THEY WON ===
-Write exactly 5 sentences. Each sentence covers ONE point in this order — no merging, no skipping:
-1. POWER GAP: Name the exact stat(s) that created the margin. Be specific (e.g. "Goku's 5M strength against Thor's 1.1M meant every direct exchange ended one way").
-2. ABILITY EDGE: The single ability, weapon, or technique from the winner's kit that the loser had NO answer for.
-3. BEHAVIORAL FACTOR: Reference the winner's battleIQ or temperament by name and explain how it shaped the fight.
-4. TURNING POINT: The exact exchange that sealed the outcome — what landed, what it did, why the loser couldn't recover.
-5. LOSER'S FAILURE: Their best play, why it wasn't enough, and the specific gap that left them exposed.
+Write exactly 5 numbered sentences. Each covers ONE of these points in order:
+1. POWER GAP: The specific stat or scale advantage that created the margin.
+2. ABILITY EDGE: The one ability or tool from the winner's kit the loser had no answer for.
+3. BEHAVIORAL FACTOR: How the winner's intelligence, temperament, or experience shaped the outcome.
+4. TURNING POINT: The exact exchange that sealed it — what happened and why the loser couldn't recover.
+5. LOSER'S FAILURE: Their best attempt, why it fell short, and what left them exposed.
 
-ENDINGS — pick the ONE most fitting for this matchup and power level:
-• KNOCKOUT — skull hits concrete, eyes roll, body drops dead weight
-• INCAPACITATION — specific limb destroyed: joint shattered, bone through skin, arm hanging useless
-• DECAPITATION — head removed or separated at the neck; describe it precisely
-• DISMEMBERMENT — limbs removed in the finishing blow; describe the wound, blood, silence after
-• IMPALEMENT — run through; describe what the weapon enters and exits and what the body does
-• INTERNAL OBLITERATION — organs liquefied, skeleton fractured internally, body collapses from within
-• EVISCERATION — abdominal wound with full description; for characters with bladed weapons or claws
-• SURRENDER — weapon dropped, hands raised, knows they're done; describe the moment of breaking
-• FORCED RETREAT — too broken to continue; describe every injury making it impossible to stay
-• MERCY KILL — winner stops deliberately; loser is shattered but alive; describe how bad the damage is
-• HUMILIATION — zero effective offense, complete shutdown; describe the gap in clinical detail
-• CAPTURED/PINNED — held and immobilized; describe the hold and why escape is impossible
-• ERASURE — cosmic-tier only; loser unmade at the molecular level; describe what disappearing looks like
-• DEATH — describe the final moment, exact cause, what the body does when life leaves it
-
-FORMAT RULES (CRITICAL):
-- SETTING = 5-8 sentences. Richly detailed. Arena is a character.
-- ENTRANCE = 2-4 sentences per fighter. Show each one individually.
-- Each ROUND section = 2-4 paragraphs of continuous prose. Include action, reaction, consequence, dialogue, body state.
-- Blowouts: short, dominant, zero artificial tension — but still vivid and specific.
-- Every power used must trace to that character's specific kit.${allianceTrigger ? `
+FORMAT RULES:
+- SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
+- ENTRANCE = 2 to 3 sentences per fighter. Distinct, specific, in character.
+- Each ROUND/PHASE = 3 to 6 paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter.
+- Blowouts = short and dominant, but still vivid and specific — never just "X won easily."
+- RESULT = clean and final. No flowery wrap-up.
+- WHY THEY WON = exactly 5 numbered sentences.${allianceTrigger ? `
 
 DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
