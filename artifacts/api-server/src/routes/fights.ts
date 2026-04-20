@@ -8,7 +8,6 @@ import {
   GetFightResponse,
 } from "@workspace/api-zod";
 import { simulateFight } from "../lib/fightSimulator";
-import { generateImageBuffer } from "@workspace/integrations-openai-ai-server";
 
 const router: IRouter = Router();
 
@@ -57,46 +56,6 @@ router.get("/fights/:id", async (req, res): Promise<void> => {
       simulatedAt: fight.simulatedAt,
     }),
   );
-});
-
-router.post("/fights/round-image", async (req, res): Promise<void> => {
-  const { narrative, attackerName, defenderName, attackType, roundLabel, roundNumber, team1Names, team2Names } = req.body;
-
-  if (!narrative || !attackerName || !defenderName) {
-    res.status(400).json({ error: "Missing required fields" });
-    return;
-  }
-
-  try {
-    const energyType = String(attackType ?? "energy").replace(/[^\w\s]/g, "").trim() || "energy";
-    const label = String(roundLabel ?? "").replace(/[^\w\s]/g, "").trim();
-    const roundNum = Number(roundNumber) || 1;
-
-    // Describe the scene through energy/atmosphere only — no real character names, no combat verbs.
-    // This avoids the content safety filter which blocks known superhero names + fight context.
-    const atmosWords = String(narrative)
-      .replace(/\b(kill|dead|blood|gore|murder|slash|stab|wound|bleed|smash|crush|destroy)\b/gi, "")
-      .replace(/\b\w+Man\b|\b\w+woman\b|Batman|Superman|Spider|Thor|Hulk|Flash|Joker|Thanos/gi, "a powerful figure")
-      .slice(0, 100)
-      .replace(/\n/g, " ")
-      .trim();
-
-    const prompt = [
-      `Epic comic book splash panel — ${label} moment, Round ${roundNum}.`,
-      `Two powerful figures locked in a dramatic standoff, ${energyType} energy crackling brilliantly between them.`,
-      atmosWords ? `Scene atmosphere: ${atmosWords}.` : "",
-      "Art direction: Marvel/DC graphic novel style, cinematic dramatic lighting, intense vivid colors,",
-      "glowing energy auras, dynamic heroic composition, dark moody sky,",
-      "no text anywhere, no speech bubbles, no words, painterly illustration quality.",
-    ].filter(Boolean).join(" ");
-
-    const imageBuffer = await generateImageBuffer(prompt, "1024x1024");
-    const base64 = imageBuffer.toString("base64");
-    res.json({ imageDataUrl: `data:image/png;base64,${base64}` });
-  } catch (err) {
-    console.error("[round-image] error:", err);
-    res.status(500).json({ error: "Image generation failed" });
-  }
 });
 
 router.post("/fights", async (req, res): Promise<void> => {
