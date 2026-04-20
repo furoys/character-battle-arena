@@ -1,0 +1,501 @@
+Marvel,DC
+Spider-Man,Batman
+Iron Man,Superman
+Captain America,Wonder Woman
+Thor,Flash
+Hulk,Aquaman
+Wolverine,Green Lantern
+Deadpool,Cyborg
+Black Panther,Nightwing
+Doctor Strange,Batgirl
+Scarlet Witch,Robin
+Captain Marvel,Joker
+Daredevil,Harley Quinn
+Punisher,Lex Luthor
+Ghost Rider,Darkseid
+Venom,Doomsday
+Carnage,Deathstroke
+Magneto,Raven
+Loki,Starfire
+Thanos,Beast Boy
+Ultron,Constantine
+Green Goblin,Shazam
+Doctor Doom,Black Adam
+Galactus,Green Arrow
+Silver Surfer,Hawkgirl
+Jean Grey,Martian Manhunter
+Storm,Supergirl
+Cyclops,Zatanna
+Rogue,Bane
+Gambit,Scarecrow
+Nightcrawler,Penguin
+Colossus,Two-Face
+Beast,Riddler
+Iceman,Poison Ivy
+Emma Frost,Brainiac
+Mystique,Sinestro
+Sabretooth,Reverse Flash
+Juggernaut,Blue Beetle
+Apocalypse,Booster Gold
+Mr Fantastic,Swamp Thing
+Invisible Woman,Batman Variant 39
+Human Torch,Superman Variant 40
+Thing,Wonder Woman Variant 41
+Namor,Flash Variant 42
+Moon Knight,Aquaman Variant 43
+Blade,Green Lantern Variant 44
+Spider-Man Variant 45,Cyborg Variant 45
+Iron Man Variant 46,Nightwing Variant 46
+Captain America Variant 47,Batgirl Variant 47
+Thor Variant 48,Robin Variant 48
+Hulk Variant 49,Joker Variant 49
+Wolverine Variant 50,Harley Quinn Variant 50
+Deadpool Variant 51,Lex Luthor Variant 51
+Black Panther Variant 52,Darkseid Variant 52
+Doctor Strange Variant 53,Doomsday Variant 53
+Scarlet Witch Variant 54,Deathstroke Variant 54
+Captain Marvel Variant 55,Raven Variant 55
+Daredevil Variant 56,Starfire Variant 56
+Punisher Variant 57,Beast Boy Variant 57
+Ghost Rider Variant 58,Constantine Variant 58
+Venom Variant 59,Shazam Variant 59
+Carnage Variant 60,Black Adam Variant 60
+Magneto Variant 61,Green Arrow Variant 61
+Loki Variant 62,Hawkgirl Variant 62
+Thanos Variant 63,Martian Manhunter Variant 63
+Ultron Variant 64,Supergirl Variant 64
+Green Goblin Variant 65,Zatanna Variant 65
+Doctor Doom Variant 66,Bane Variant 66
+Galactus Variant 67,Scarecrow Variant 67
+Silver Surfer Variant 68,Penguin Variant 68
+Jean Grey Variant 69,Two-Face Variant 69
+Storm Variant 70,Riddler Variant 70
+Cyclops Variant 71,Poison Ivy Variant 71
+Rogue Variant 72,Brainiac Variant 72
+Gambit Variant 73,Sinestro Variant 73
+Nightcrawler Variant 74,Reverse Flash Variant 74
+Colossus Variant 75,Blue Beetle Variant 75
+Beast Variant 76,Booster Gold Variant 76
+Iceman Variant 77,Swamp Thing Variant 77
+Emma Frost Variant 78,Batman Variant 78
+Mystique Variant 79,Superman Variant 79
+Sabretooth Variant 80,Wonder Woman Variant 80
+Juggernaut Variant 81,Flash Variant 81
+Apocalypse Variant 82,Aquaman Variant 82
+Mr Fantastic Variant 83,Green Lantern Variant 83
+Invisible Woman Variant 84,Cyborg Variant 84
+Human Torch Variant 85,Nightwing Variant 85
+Thing Variant 86,Batgirl Variant 86
+Namor Variant 87,Robin Variant 87
+Moon Knight Variant 88,Joker Variant 88
+Blade Variant 89,Harley Quinn Variant 89
+Spider-Man Variant 90,Lex Luthor Variant 90
+Iron Man Variant 91,Darkseid Variant 91
+Captain America Variant 92,Doomsday Variant 92
+Thor Variant 93,Deathstroke Variant 93
+Hulk Variant 94,Raven Variant 94
+Wolverine Variant 95,Starfire Variant 95
+Deadpool Variant 96,Beast Boy Variant 96
+Black Panther Variant 97,Constantine Variant 97
+Doctor Strange Variant 98,Shazam Variant 98
+Scarlet Witch Variant 99,Black Adam Variant 99
+Captain Marvel Variant 100,Green Arrow Variant 100
+Daredevil Variant 101,Hawkgirl Variant 101
+Punisher Variant 102,Martian Manhunter Variant 102
+Ghost Rider Variant 103,Supergirl Variant 103
+Venom Variant 104,Zatanna Variant 104
+Carnage Variant 105,Bane Variant 105
+Magneto Variant 106,Scarecrow Variant 106
+Loki Variant 107,Penguin Variant 107
+Thanos Variant 108,Two-Face Variant 108
+Ultron Variant 109,Riddler Variant 109
+Green Goblin Variant 110,Poison Ivy Variant 110
+Doctor Doom Variant 111,Brainiac Variant 111
+Galactus Variant 112,Sinestro Variant 112
+Silver Surfer Variant 113,Reverse Flash Variant 113
+Jean Grey Variant 114,Blue Beetle Variant 114
+Storm Variant 115,Booster Gold Variant 115
+Cyclops Variant 116,Swamp Thing Variant 116
+Rogue Variant 117,Batman Variant 117
+Gambit Variant 118,Superman Variant 118
+Nightcrawler Variant 119,Wonder Woman Variant 119
+Colossus Variant 120,Flash Variant 120
+Beast Variant 121,Aquaman Variant 121
+Iceman Variant 122,Green Lantern Variant 122
+Emma Frost Variant 123,Cyborg Variant 123
+Mystique Variant 124,Nightwing Variant 124
+Sabretooth Variant 125,Batgirl Variant 125
+Juggernaut Variant 126,Robin Variant 126
+Apocalypse Variant 127,Joker Variant 127
+Mr Fantastic Variant 128,Harley Quinn Variant 128
+Invisible Woman Variant 129,Lex Luthor Variant 129
+Human Torch Variant 130,Darkseid Variant 130
+Thing Variant 131,Doomsday Variant 131
+Namor Variant 132,Deathstroke Variant 132
+Moon Knight Variant 133,Raven Variant 133
+Blade Variant 134,Starfire Variant 134
+Spider-Man Variant 135,Beast Boy Variant 135
+Iron Man Variant 136,Constantine Variant 136
+Captain America Variant 137,Shazam Variant 137
+Thor Variant 138,Black Adam Variant 138
+Hulk Variant 139,Green Arrow Variant 139
+Wolverine Variant 140,Hawkgirl Variant 140
+Deadpool Variant 141,Martian Manhunter Variant 141
+Black Panther Variant 142,Supergirl Variant 142
+Doctor Strange Variant 143,Zatanna Variant 143
+Scarlet Witch Variant 144,Bane Variant 144
+Captain Marvel Variant 145,Scarecrow Variant 145
+Daredevil Variant 146,Penguin Variant 146
+Punisher Variant 147,Two-Face Variant 147
+Ghost Rider Variant 148,Riddler Variant 148
+Venom Variant 149,Poison Ivy Variant 149
+Carnage Variant 150,Brainiac Variant 150
+Magneto Variant 151,Sinestro Variant 151
+Loki Variant 152,Reverse Flash Variant 152
+Thanos Variant 153,Blue Beetle Variant 153
+Ultron Variant 154,Booster Gold Variant 154
+Green Goblin Variant 155,Swamp Thing Variant 155
+Doctor Doom Variant 156,Batman Variant 156
+Galactus Variant 157,Superman Variant 157
+Silver Surfer Variant 158,Wonder Woman Variant 158
+Jean Grey Variant 159,Flash Variant 159
+Storm Variant 160,Aquaman Variant 160
+Cyclops Variant 161,Green Lantern Variant 161
+Rogue Variant 162,Cyborg Variant 162
+Gambit Variant 163,Nightwing Variant 163
+Nightcrawler Variant 164,Batgirl Variant 164
+Colossus Variant 165,Robin Variant 165
+Beast Variant 166,Joker Variant 166
+Iceman Variant 167,Harley Quinn Variant 167
+Emma Frost Variant 168,Lex Luthor Variant 168
+Mystique Variant 169,Darkseid Variant 169
+Sabretooth Variant 170,Doomsday Variant 170
+Juggernaut Variant 171,Deathstroke Variant 171
+Apocalypse Variant 172,Raven Variant 172
+Mr Fantastic Variant 173,Starfire Variant 173
+Invisible Woman Variant 174,Beast Boy Variant 174
+Human Torch Variant 175,Constantine Variant 175
+Thing Variant 176,Shazam Variant 176
+Namor Variant 177,Black Adam Variant 177
+Moon Knight Variant 178,Green Arrow Variant 178
+Blade Variant 179,Hawkgirl Variant 179
+Spider-Man Variant 180,Martian Manhunter Variant 180
+Iron Man Variant 181,Supergirl Variant 181
+Captain America Variant 182,Zatanna Variant 182
+Thor Variant 183,Bane Variant 183
+Hulk Variant 184,Scarecrow Variant 184
+Wolverine Variant 185,Penguin Variant 185
+Deadpool Variant 186,Two-Face Variant 186
+Black Panther Variant 187,Riddler Variant 187
+Doctor Strange Variant 188,Poison Ivy Variant 188
+Scarlet Witch Variant 189,Brainiac Variant 189
+Captain Marvel Variant 190,Sinestro Variant 190
+Daredevil Variant 191,Reverse Flash Variant 191
+Punisher Variant 192,Blue Beetle Variant 192
+Ghost Rider Variant 193,Booster Gold Variant 193
+Venom Variant 194,Swamp Thing Variant 194
+Carnage Variant 195,Batman Variant 195
+Magneto Variant 196,Superman Variant 196
+Loki Variant 197,Wonder Woman Variant 197
+Thanos Variant 198,Flash Variant 198
+Ultron Variant 199,Aquaman Variant 199
+Green Goblin Variant 200,Green Lantern Variant 200
+Doctor Doom Variant 201,Cyborg Variant 201
+Galactus Variant 202,Nightwing Variant 202
+Silver Surfer Variant 203,Batgirl Variant 203
+Jean Grey Variant 204,Robin Variant 204
+Storm Variant 205,Joker Variant 205
+Cyclops Variant 206,Harley Quinn Variant 206
+Rogue Variant 207,Lex Luthor Variant 207
+Gambit Variant 208,Darkseid Variant 208
+Nightcrawler Variant 209,Doomsday Variant 209
+Colossus Variant 210,Deathstroke Variant 210
+Beast Variant 211,Raven Variant 211
+Iceman Variant 212,Starfire Variant 212
+Emma Frost Variant 213,Beast Boy Variant 213
+Mystique Variant 214,Constantine Variant 214
+Sabretooth Variant 215,Shazam Variant 215
+Juggernaut Variant 216,Black Adam Variant 216
+Apocalypse Variant 217,Green Arrow Variant 217
+Mr Fantastic Variant 218,Hawkgirl Variant 218
+Invisible Woman Variant 219,Martian Manhunter Variant 219
+Human Torch Variant 220,Supergirl Variant 220
+Thing Variant 221,Zatanna Variant 221
+Namor Variant 222,Bane Variant 222
+Moon Knight Variant 223,Scarecrow Variant 223
+Blade Variant 224,Penguin Variant 224
+Spider-Man Variant 225,Two-Face Variant 225
+Iron Man Variant 226,Riddler Variant 226
+Captain America Variant 227,Poison Ivy Variant 227
+Thor Variant 228,Brainiac Variant 228
+Hulk Variant 229,Sinestro Variant 229
+Wolverine Variant 230,Reverse Flash Variant 230
+Deadpool Variant 231,Blue Beetle Variant 231
+Black Panther Variant 232,Booster Gold Variant 232
+Doctor Strange Variant 233,Swamp Thing Variant 233
+Scarlet Witch Variant 234,Batman Variant 234
+Captain Marvel Variant 235,Superman Variant 235
+Daredevil Variant 236,Wonder Woman Variant 236
+Punisher Variant 237,Flash Variant 237
+Ghost Rider Variant 238,Aquaman Variant 238
+Venom Variant 239,Green Lantern Variant 239
+Carnage Variant 240,Cyborg Variant 240
+Magneto Variant 241,Nightwing Variant 241
+Loki Variant 242,Batgirl Variant 242
+Thanos Variant 243,Robin Variant 243
+Ultron Variant 244,Joker Variant 244
+Green Goblin Variant 245,Harley Quinn Variant 245
+Doctor Doom Variant 246,Lex Luthor Variant 246
+Galactus Variant 247,Darkseid Variant 247
+Silver Surfer Variant 248,Doomsday Variant 248
+Jean Grey Variant 249,Deathstroke Variant 249
+Storm Variant 250,Raven Variant 250
+Cyclops Variant 251,Starfire Variant 251
+Rogue Variant 252,Beast Boy Variant 252
+Gambit Variant 253,Constantine Variant 253
+Nightcrawler Variant 254,Shazam Variant 254
+Colossus Variant 255,Black Adam Variant 255
+Beast Variant 256,Green Arrow Variant 256
+Iceman Variant 257,Hawkgirl Variant 257
+Emma Frost Variant 258,Martian Manhunter Variant 258
+Mystique Variant 259,Supergirl Variant 259
+Sabretooth Variant 260,Zatanna Variant 260
+Juggernaut Variant 261,Bane Variant 261
+Apocalypse Variant 262,Scarecrow Variant 262
+Mr Fantastic Variant 263,Penguin Variant 263
+Invisible Woman Variant 264,Two-Face Variant 264
+Human Torch Variant 265,Riddler Variant 265
+Thing Variant 266,Poison Ivy Variant 266
+Namor Variant 267,Brainiac Variant 267
+Moon Knight Variant 268,Sinestro Variant 268
+Blade Variant 269,Reverse Flash Variant 269
+Spider-Man Variant 270,Blue Beetle Variant 270
+Iron Man Variant 271,Booster Gold Variant 271
+Captain America Variant 272,Swamp Thing Variant 272
+Thor Variant 273,Batman Variant 273
+Hulk Variant 274,Superman Variant 274
+Wolverine Variant 275,Wonder Woman Variant 275
+Deadpool Variant 276,Flash Variant 276
+Black Panther Variant 277,Aquaman Variant 277
+Doctor Strange Variant 278,Green Lantern Variant 278
+Scarlet Witch Variant 279,Cyborg Variant 279
+Captain Marvel Variant 280,Nightwing Variant 280
+Daredevil Variant 281,Batgirl Variant 281
+Punisher Variant 282,Robin Variant 282
+Ghost Rider Variant 283,Joker Variant 283
+Venom Variant 284,Harley Quinn Variant 284
+Carnage Variant 285,Lex Luthor Variant 285
+Magneto Variant 286,Darkseid Variant 286
+Loki Variant 287,Doomsday Variant 287
+Thanos Variant 288,Deathstroke Variant 288
+Ultron Variant 289,Raven Variant 289
+Green Goblin Variant 290,Starfire Variant 290
+Doctor Doom Variant 291,Beast Boy Variant 291
+Galactus Variant 292,Constantine Variant 292
+Silver Surfer Variant 293,Shazam Variant 293
+Jean Grey Variant 294,Black Adam Variant 294
+Storm Variant 295,Green Arrow Variant 295
+Cyclops Variant 296,Hawkgirl Variant 296
+Rogue Variant 297,Martian Manhunter Variant 297
+Gambit Variant 298,Supergirl Variant 298
+Nightcrawler Variant 299,Zatanna Variant 299
+Colossus Variant 300,Bane Variant 300
+Beast Variant 301,Scarecrow Variant 301
+Iceman Variant 302,Penguin Variant 302
+Emma Frost Variant 303,Two-Face Variant 303
+Mystique Variant 304,Riddler Variant 304
+Sabretooth Variant 305,Poison Ivy Variant 305
+Juggernaut Variant 306,Brainiac Variant 306
+Apocalypse Variant 307,Sinestro Variant 307
+Mr Fantastic Variant 308,Reverse Flash Variant 308
+Invisible Woman Variant 309,Blue Beetle Variant 309
+Human Torch Variant 310,Booster Gold Variant 310
+Thing Variant 311,Swamp Thing Variant 311
+Namor Variant 312,Batman Variant 312
+Moon Knight Variant 313,Superman Variant 313
+Blade Variant 314,Wonder Woman Variant 314
+Spider-Man Variant 315,Flash Variant 315
+Iron Man Variant 316,Aquaman Variant 316
+Captain America Variant 317,Green Lantern Variant 317
+Thor Variant 318,Cyborg Variant 318
+Hulk Variant 319,Nightwing Variant 319
+Wolverine Variant 320,Batgirl Variant 320
+Deadpool Variant 321,Robin Variant 321
+Black Panther Variant 322,Joker Variant 322
+Doctor Strange Variant 323,Harley Quinn Variant 323
+Scarlet Witch Variant 324,Lex Luthor Variant 324
+Captain Marvel Variant 325,Darkseid Variant 325
+Daredevil Variant 326,Doomsday Variant 326
+Punisher Variant 327,Deathstroke Variant 327
+Ghost Rider Variant 328,Raven Variant 328
+Venom Variant 329,Starfire Variant 329
+Carnage Variant 330,Beast Boy Variant 330
+Magneto Variant 331,Constantine Variant 331
+Loki Variant 332,Shazam Variant 332
+Thanos Variant 333,Black Adam Variant 333
+Ultron Variant 334,Green Arrow Variant 334
+Green Goblin Variant 335,Hawkgirl Variant 335
+Doctor Doom Variant 336,Martian Manhunter Variant 336
+Galactus Variant 337,Supergirl Variant 337
+Silver Surfer Variant 338,Zatanna Variant 338
+Jean Grey Variant 339,Bane Variant 339
+Storm Variant 340,Scarecrow Variant 340
+Cyclops Variant 341,Penguin Variant 341
+Rogue Variant 342,Two-Face Variant 342
+Gambit Variant 343,Riddler Variant 343
+Nightcrawler Variant 344,Poison Ivy Variant 344
+Colossus Variant 345,Brainiac Variant 345
+Beast Variant 346,Sinestro Variant 346
+Iceman Variant 347,Reverse Flash Variant 347
+Emma Frost Variant 348,Blue Beetle Variant 348
+Mystique Variant 349,Booster Gold Variant 349
+Sabretooth Variant 350,Swamp Thing Variant 350
+Juggernaut Variant 351,Batman Variant 351
+Apocalypse Variant 352,Superman Variant 352
+Mr Fantastic Variant 353,Wonder Woman Variant 353
+Invisible Woman Variant 354,Flash Variant 354
+Human Torch Variant 355,Aquaman Variant 355
+Thing Variant 356,Green Lantern Variant 356
+Namor Variant 357,Cyborg Variant 357
+Moon Knight Variant 358,Nightwing Variant 358
+Blade Variant 359,Batgirl Variant 359
+Spider-Man Variant 360,Robin Variant 360
+Iron Man Variant 361,Joker Variant 361
+Captain America Variant 362,Harley Quinn Variant 362
+Thor Variant 363,Lex Luthor Variant 363
+Hulk Variant 364,Darkseid Variant 364
+Wolverine Variant 365,Doomsday Variant 365
+Deadpool Variant 366,Deathstroke Variant 366
+Black Panther Variant 367,Raven Variant 367
+Doctor Strange Variant 368,Starfire Variant 368
+Scarlet Witch Variant 369,Beast Boy Variant 369
+Captain Marvel Variant 370,Constantine Variant 370
+Daredevil Variant 371,Shazam Variant 371
+Punisher Variant 372,Black Adam Variant 372
+Ghost Rider Variant 373,Green Arrow Variant 373
+Venom Variant 374,Hawkgirl Variant 374
+Carnage Variant 375,Martian Manhunter Variant 375
+Magneto Variant 376,Supergirl Variant 376
+Loki Variant 377,Zatanna Variant 377
+Thanos Variant 378,Bane Variant 378
+Ultron Variant 379,Scarecrow Variant 379
+Green Goblin Variant 380,Penguin Variant 380
+Doctor Doom Variant 381,Two-Face Variant 381
+Galactus Variant 382,Riddler Variant 382
+Silver Surfer Variant 383,Poison Ivy Variant 383
+Jean Grey Variant 384,Brainiac Variant 384
+Storm Variant 385,Sinestro Variant 385
+Cyclops Variant 386,Reverse Flash Variant 386
+Rogue Variant 387,Blue Beetle Variant 387
+Gambit Variant 388,Booster Gold Variant 388
+Nightcrawler Variant 389,Swamp Thing Variant 389
+Colossus Variant 390,Batman Variant 390
+Beast Variant 391,Superman Variant 391
+Iceman Variant 392,Wonder Woman Variant 392
+Emma Frost Variant 393,Flash Variant 393
+Mystique Variant 394,Aquaman Variant 394
+Sabretooth Variant 395,Green Lantern Variant 395
+Juggernaut Variant 396,Cyborg Variant 396
+Apocalypse Variant 397,Nightwing Variant 397
+Mr Fantastic Variant 398,Batgirl Variant 398
+Invisible Woman Variant 399,Robin Variant 399
+Human Torch Variant 400,Joker Variant 400
+Thing Variant 401,Harley Quinn Variant 401
+Namor Variant 402,Lex Luthor Variant 402
+Moon Knight Variant 403,Darkseid Variant 403
+Blade Variant 404,Doomsday Variant 404
+Spider-Man Variant 405,Deathstroke Variant 405
+Iron Man Variant 406,Raven Variant 406
+Captain America Variant 407,Starfire Variant 407
+Thor Variant 408,Beast Boy Variant 408
+Hulk Variant 409,Constantine Variant 409
+Wolverine Variant 410,Shazam Variant 410
+Deadpool Variant 411,Black Adam Variant 411
+Black Panther Variant 412,Green Arrow Variant 412
+Doctor Strange Variant 413,Hawkgirl Variant 413
+Scarlet Witch Variant 414,Martian Manhunter Variant 414
+Captain Marvel Variant 415,Supergirl Variant 415
+Daredevil Variant 416,Zatanna Variant 416
+Punisher Variant 417,Bane Variant 417
+Ghost Rider Variant 418,Scarecrow Variant 418
+Venom Variant 419,Penguin Variant 419
+Carnage Variant 420,Two-Face Variant 420
+Magneto Variant 421,Riddler Variant 421
+Loki Variant 422,Poison Ivy Variant 422
+Thanos Variant 423,Brainiac Variant 423
+Ultron Variant 424,Sinestro Variant 424
+Green Goblin Variant 425,Reverse Flash Variant 425
+Doctor Doom Variant 426,Blue Beetle Variant 426
+Galactus Variant 427,Booster Gold Variant 427
+Silver Surfer Variant 428,Swamp Thing Variant 428
+Jean Grey Variant 429,Batman Variant 429
+Storm Variant 430,Superman Variant 430
+Cyclops Variant 431,Wonder Woman Variant 431
+Rogue Variant 432,Flash Variant 432
+Gambit Variant 433,Aquaman Variant 433
+Nightcrawler Variant 434,Green Lantern Variant 434
+Colossus Variant 435,Cyborg Variant 435
+Beast Variant 436,Nightwing Variant 436
+Iceman Variant 437,Batgirl Variant 437
+Emma Frost Variant 438,Robin Variant 438
+Mystique Variant 439,Joker Variant 439
+Sabretooth Variant 440,Harley Quinn Variant 440
+Juggernaut Variant 441,Lex Luthor Variant 441
+Apocalypse Variant 442,Darkseid Variant 442
+Mr Fantastic Variant 443,Doomsday Variant 443
+Invisible Woman Variant 444,Deathstroke Variant 444
+Human Torch Variant 445,Raven Variant 445
+Thing Variant 446,Starfire Variant 446
+Namor Variant 447,Beast Boy Variant 447
+Moon Knight Variant 448,Constantine Variant 448
+Blade Variant 449,Shazam Variant 449
+Spider-Man Variant 450,Black Adam Variant 450
+Iron Man Variant 451,Green Arrow Variant 451
+Captain America Variant 452,Hawkgirl Variant 452
+Thor Variant 453,Martian Manhunter Variant 453
+Hulk Variant 454,Supergirl Variant 454
+Wolverine Variant 455,Zatanna Variant 455
+Deadpool Variant 456,Bane Variant 456
+Black Panther Variant 457,Scarecrow Variant 457
+Doctor Strange Variant 458,Penguin Variant 458
+Scarlet Witch Variant 459,Two-Face Variant 459
+Captain Marvel Variant 460,Riddler Variant 460
+Daredevil Variant 461,Poison Ivy Variant 461
+Punisher Variant 462,Brainiac Variant 462
+Ghost Rider Variant 463,Sinestro Variant 463
+Venom Variant 464,Reverse Flash Variant 464
+Carnage Variant 465,Blue Beetle Variant 465
+Magneto Variant 466,Booster Gold Variant 466
+Loki Variant 467,Swamp Thing Variant 467
+Thanos Variant 468,Batman Variant 468
+Ultron Variant 469,Superman Variant 469
+Green Goblin Variant 470,Wonder Woman Variant 470
+Doctor Doom Variant 471,Flash Variant 471
+Galactus Variant 472,Aquaman Variant 472
+Silver Surfer Variant 473,Green Lantern Variant 473
+Jean Grey Variant 474,Cyborg Variant 474
+Storm Variant 475,Nightwing Variant 475
+Cyclops Variant 476,Batgirl Variant 476
+Rogue Variant 477,Robin Variant 477
+Gambit Variant 478,Joker Variant 478
+Nightcrawler Variant 479,Harley Quinn Variant 479
+Colossus Variant 480,Lex Luthor Variant 480
+Beast Variant 481,Darkseid Variant 481
+Iceman Variant 482,Doomsday Variant 482
+Emma Frost Variant 483,Deathstroke Variant 483
+Mystique Variant 484,Raven Variant 484
+Sabretooth Variant 485,Starfire Variant 485
+Juggernaut Variant 486,Beast Boy Variant 486
+Apocalypse Variant 487,Constantine Variant 487
+Mr Fantastic Variant 488,Shazam Variant 488
+Invisible Woman Variant 489,Black Adam Variant 489
+Human Torch Variant 490,Green Arrow Variant 490
+Thing Variant 491,Hawkgirl Variant 491
+Namor Variant 492,Martian Manhunter Variant 492
+Moon Knight Variant 493,Supergirl Variant 493
+Blade Variant 494,Zatanna Variant 494
+Spider-Man Variant 495,Bane Variant 495
+Iron Man Variant 496,Scarecrow Variant 496
+Captain America Variant 497,Penguin Variant 497
+Thor Variant 498,Two-Face Variant 498
+Hulk Variant 499,Riddler Variant 499
