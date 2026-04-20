@@ -1,5 +1,6 @@
 import type { Character } from "@workspace/db";
 import { computeSynergy } from "./synergies";
+import { applyFightModifiers } from "./fightModifiers";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 export interface FightRound {
@@ -2828,6 +2829,13 @@ function autoDetectBrutalTone(team1: Character[], team2: Character[]): boolean {
 }
 
 export async function simulateFight(team1: Character[], team2: Character[], mode: string = "cinematic"): Promise<FightResult> {
+  // ── Pre-fight modifiers: synergy bonuses + weakness penalties ─────────────
+  // Applies temporary stat adjustments based on v3Profile archetype/combatStyle
+  // pairings and matchup-aware weakness detection. Originals are never mutated.
+  const { modTeam1, modTeam2 } = applyFightModifiers(team1, team2);
+  team1 = modTeam1;
+  team2 = modTeam2;
+
   const brutal = autoDetectBrutalTone(team1, team2);
   const tone = brutal ? "brutal" : normalizeTone(mode);
   const base1 = teamPower(team1);
