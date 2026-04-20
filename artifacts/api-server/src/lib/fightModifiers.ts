@@ -109,12 +109,16 @@ function applyDeltas(
   };
 }
 
+// ── Shared delta type ─────────────────────────────────────────────────────────
+
+type StatDeltas = Partial<Record<"strength" | "speed" | "intelligence" | "durability", number>>;
+
 // ── Synergy detection (within-team) ──────────────────────────────────────────
 
 interface SynergyRule {
   label: string;
   /** Returns per-character deltas keyed by character index */
-  apply: (team: Character[]) => Map<number, Partial<Record<"strength" | "speed" | "intelligence" | "durability", number>>>;
+  apply: (team: Character[]) => Map<number, StatDeltas>;
 }
 
 const SYNERGY_RULES: SynergyRule[] = [
@@ -122,7 +126,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Tactician/Bruiser Pairing",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       const tacticianIdx = team.findIndex(c => hasArchetype(c, "tactical", "strategist", "support"));
       const bruiserIdx   = team.findIndex((c, i) =>
         i !== tacticianIdx && hasArchetype(c, "bruiser", "brawler", "berserker", "aggressive", "powerhouse")
@@ -139,7 +143,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Ranged/Frontline Spacing",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       const rangedIdx = team.findIndex(c =>
         preferredRange(c) === "long" || hasArchetype(c, "ranged", "blaster", "sniper", "artillery", "marksman")
       );
@@ -160,7 +164,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Martial Expert Coordination",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       const experts = team
         .map((c, i) => ({ c, i }))
         .filter(({ c }) => hasArchetype(c, "martial-expert", "martial expert", "fighter", "swordsman", "assassin", "ninja", "monk"));
@@ -177,7 +181,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Hunter Pack Coordination",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       const hunters = team
         .map((c, i) => ({ c, i }))
         .filter(({ c }) => hasArchetype(c, "hunter", "predator", "tracker", "bounty-hunter"));
@@ -194,7 +198,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "High-IQ Commander Presence",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       if (team.length < 2) return out;
       const commanderIdx = team.findIndex(c => battleIQ(c) >= 85);
       if (commanderIdx === -1) return out;
@@ -209,7 +213,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Regeneration/Healer Attrition Bonus",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       if (team.length < 2) return out;
       const healerIdx = team.findIndex(c =>
         hasArchetype(c, "healer", "support", "regenerat") ||
@@ -228,7 +232,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Leadership Presence",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       if (team.length < 2) return out;
       const leaderIdx = team.findIndex(c => hasArchetype(c, "leader", "commander", "captain"));
       if (leaderIdx === -1) return out;
@@ -243,7 +247,7 @@ const SYNERGY_RULES: SynergyRule[] = [
   {
     label: "Unified Combat Range",
     apply(team) {
-      const out = new Map<number, any>();
+      const out = new Map<number, StatDeltas>();
       if (team.length < 2) return out;
       const ranges = team.map(preferredRange).filter(r => r === "close" || r === "long");
       if (ranges.length !== team.length) return out;
@@ -398,8 +402,6 @@ const WEAKNESS_CATEGORIES: WeaknessCategory[] = [
 ];
 
 // ── Merge deltas ──────────────────────────────────────────────────────────────
-
-type StatDeltas = Partial<Record<"strength" | "speed" | "intelligence" | "durability", number>>;
 
 function mergeDeltas(a: StatDeltas, b: StatDeltas): StatDeltas {
   const out: StatDeltas = { ...a };
