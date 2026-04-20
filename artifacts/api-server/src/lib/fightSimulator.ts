@@ -2323,23 +2323,30 @@ export function normalizeTone(input: string | undefined): FightTone {
 }
 
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
-  cinematic: `TONE: Intense, dramatic, and cinematic. Every sentence must move the fight forward.
-• Prose is vivid and readable — not purple, not abstract, not padded.
+  cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching.
+• Every sentence must move the fight forward. No padding.
 • Vary pacing: short punchy sentences for fast action, longer ones for weight and consequence.
+• Injuries are real — blood, broken bones, torn tissue, pain that changes how a fighter moves. Do not sanitize.
+• If a blow is devastating, describe what it does to the body: where it lands, what breaks, what the fighter feels.
 • Dialogue is authentic to each character — one voice never sounds like another.
 • Show internal reactions: what a fighter notices, fears, calculates, or refuses to accept.
-• Cosmic scale should feel vast but still readable. Street-level should feel physical and grounded.`,
-  brutal: `TONE: Raw, anatomical, unsparing.
-• Describe exactly where hits land and what the body does — bones, tissue, breath, blood.
-• No heroics. Short declarative sentences. Pain drives every clause.
-• Injuries compound: something broken in round one is still broken at the end.
-• Finishers are final — describe the exact mechanism of incapacitation clearly.
-• Dialogue: taunts, defiant last words, involuntary sounds of pain.`,
-  realistic: `TONE: Analytical and grounded. Every outcome follows from capability.
+• Finishers should feel final — show the exact mechanism and the physical result.
+• Cosmic scale should feel vast but still readable. Street-level should feel physical, painful, and grounded.`,
+  brutal: `TONE: Raw, anatomical, merciless. This is not a movie. It is a dissection of violence.
+• Name exactly where hits land: jaw, temple, solar plexus, floating ribs, knee, throat, spine.
+• Describe what the body does: bones crack, cartilage compresses, blood fills the mouth, a knee hyperextends the wrong way.
+• Short declarative sentences. Pain drives every clause.
+• Injuries compound without exception — something broken in round one is functionally broken for the rest of the fight.
+• Characters feel their wounds: they spit blood, guard a cracked rib, can't fully extend an arm, blink through a swelling eye.
+• Finishers are anatomically specific and final — describe the exact moment of incapacitation and what causes it.
+• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing.
+• Do NOT soften the ending. If it ends in death, it ends in death. Show what that looks like.`,
+  realistic: `TONE: Analytical and physically honest. Every outcome follows from capability and anatomy.
 • No lucky reversals, no chaos saves. Outcomes are earned by stats, skills, and matchup logic.
+• Injuries are real and cumulative — show how damage changes a fighter's movement, guard, and decision-making.
+• Describe what hits do to the body clearly and without softening: where they land, what the physical effect is.
 • Show the fighters reading each other — adjusting, countering, exploiting openings.
-• Describe what abilities CAN actually do and what the opponent CAN actually counter.
-• Write like a sharp breakdown that happens to be vivid prose, not a stat dump.`,
+• Write like a sharp breakdown that happens to be vivid and visceral prose, not a stat dump.`,
 };
 
 async function generateAINarrative(
@@ -2407,15 +2414,15 @@ async function generateAINarrative(
 
   const rd = (i: number) => roundSimData[i];
 
-  // Build per-round HP delta strings so the AI can calibrate damage weight
-  // Translate an HP value into a physical condition the prose must reflect.
+  // Build per-round HP delta strings so the AI can calibrate damage weight.
+  // Translate an HP value into a specific physical condition the prose must show.
   const condition = (hp: number): string => {
-    if (hp >= 85) return "fresh, unhurt — full power, no limitations";
-    if (hp >= 65) return "bruised — split lip, blood on teeth, breathing harder, still functional";
-    if (hp >= 45) return "visibly damaged — gash across cheek or torso, one eye swelling shut, slowed footwork, favoring injured side";
-    if (hp >= 25) return "badly hurt — ribs cracked, bleeding from multiple wounds, guard failing, each breath a gasp, movement compromised";
-    if (hp >= 10) return "barely standing — blood loss significant, one limb barely functional, vision strobing, held together by refusal to fall";
-    return "destroyed — cannot stand unaided, bones broken, bleeding internally, every breath a wet rattle, finished";
+    if (hp >= 85) return "fresh — no meaningful damage, moving at full capability, nothing hurts yet";
+    if (hp >= 65) return "marked — split lip, blood on teeth, bruised ribs from a clean hit, breathing slightly harder; still dangerous, nothing structural broken";
+    if (hp >= 45) return "damaged — a deep cut bleeding freely, one eye half-shut and swelling, footwork degraded, favoring one side; trying not to show it but the body is already lying";
+    if (hp >= 25) return "badly hurt — probable rib fracture making every breath sharp, at least one wound bleeding without stopping, guard breaking down, reflexes a half-beat slow, each movement costs something";
+    if (hp >= 10) return "near-finished — significant blood loss pooling on the ground, one arm or leg no longer reliable, vision tunneling at the edges, staying upright through refusal alone; one clean hit ends this";
+    return "destroyed — cannot stand without support, bones broken, bleeding from multiple wounds including internally, each breath audible and wet, body has already surrendered even if the mind hasn't";
   };
 
   const hpNote = (idx: number) => {
@@ -3433,39 +3440,45 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   }
 
   // Generic outcome pools, weighted by tone.
-  // Each tone keeps death in the pool, but it's one option among many — not the default.
   const realisticPool = [
-    `${loserNames} — knocked unconscious mid-sentence.`,
-    `${loserNames} — arm snapped, ribs caved, done fighting.`,
-    `${loserNames} — on their knees, hands raised, yielding.`,
-    `${loserNames} — dragged off the field by whoever's left standing.`,
-    `${loserNames} — conscious, beaten, refusing to get up again.`,
-    `${loserNames} — forced into full retreat, cover blown.`,
-    `${loserNames} — pinned and unable to move. Held there.`,
-    `${loserNames} — outclassed from the first exchange. Exhausted, embarrassed, done.`,
-    `${loserNames} — spared. ${winnerNames} chose not to finish it.`,
-    `${loserNames} — dead.`,
+    `${loserNames} — knocked unconscious, dropped mid-motion, lights out before they hit the ground.`,
+    `${loserNames} — arm snapped at the elbow, ribs caved, done fighting. They know it too.`,
+    `${loserNames} — on their knees, blood dripping from a split brow, hands up. Over.`,
+    `${loserNames} — dragged off the field by whoever's left standing. Not moving under their own power.`,
+    `${loserNames} — conscious, beaten, staring at the ceiling. Not getting up again.`,
+    `${loserNames} — forced into full retreat, bleeding, nothing left to fight with.`,
+    `${loserNames} — pinned, both shoulders down, unable to move. Held there until they stop struggling.`,
+    `${loserNames} — outclassed from the first exchange. Exhausted, wrecked, finished.`,
+    `${loserNames} — spared. ${winnerNames} stood over them and walked away. The mercy stings worse.`,
+    `${loserNames} — dead. Clean and final.`,
+    `${loserNames} — jaw broken, one eye swollen completely shut, something wrong inside. They'll live, probably.`,
+    `${loserNames} — concussed and bleeding, the world still spinning when they hit the ground.`,
   ];
   const cinematicPool = [
-    `${loserNames} — knelt, sword at their throat, the hall gone silent.`,
-    `${loserNames} — cast down, cape torn, unable to rise.`,
-    `${loserNames} — broken in every way that matters. Alive. Watching.`,
-    `${loserNames} — banished, vanished, gone before the dust settled.`,
-    `${loserNames} — humbled. ${winnerNames} walked past them without a second glance.`,
-    `${loserNames} — surrendered. The legend, ended on one knee.`,
-    `${loserNames} — carried off by loyalists. They will remember this.`,
-    `${loserNames} — dead. The era ends with them.`,
+    `${loserNames} — knelt, a blade at their throat, the arena gone completely silent.`,
+    `${loserNames} — cast down hard, armor split, unable to rise. The silence after is louder than the fight.`,
+    `${loserNames} — broken in every way that matters. Alive. Watching ${winnerNames} walk away.`,
+    `${loserNames} — gone before the dust settled. Banished, scattered, removed.`,
+    `${loserNames} — humbled in a way they will never fully explain to anyone. ${winnerNames} didn't even look back.`,
+    `${loserNames} — surrendered. Whatever legend they were is smaller now.`,
+    `${loserNames} — carried off the field, bleeding, unconscious. Their people will remember this differently than it happened.`,
+    `${loserNames} — dead. The blood is already soaking into the ground. The era ends with them.`,
+    `${loserNames} — left where they fell. ${winnerNames} had no comment. None was needed.`,
+    `${loserNames} — alive. Barely. They'll spend a long time thinking about what just happened.`,
   ];
   const brutalPool = [
-    `${loserNames} — unconscious in a spreading pool of their own blood.`,
-    `${loserNames} — spine folded wrong, breathing shallow, not getting up.`,
-    `${loserNames} — ribs through the lung. Alive for now.`,
-    `${loserNames} — jaw wired shut by whatever just hit them. They tap out.`,
-    `${loserNames} — crippled. Whatever they were, they aren't anymore.`,
-    `${loserNames} — pinned face-down with a knee between their shoulder blades, submitting.`,
-    `${loserNames} — unconscious. ${winnerNames} didn't bother with a finisher.`,
-    `${loserNames} — dead. It was ugly and fast.`,
-    `${loserNames} — bled out on the floor.`,
+    `${loserNames} — face-down, unconscious, lying in a spreading pool of their own blood.`,
+    `${loserNames} — spine wrenched at an angle it was not built for. Breathing, shallow and wrong.`,
+    `${loserNames} — ribs punched through into the lung cavity. The sound they make is not a word.`,
+    `${loserNames} — jaw shattered. They tapped out through a hand signal because speaking stopped being an option.`,
+    `${loserNames} — crippled. Whatever they were before this fight, they are less now.`,
+    `${loserNames} — pinned face-down, a knee grinding between their shoulder blades, arms at wrong angles. Submitting to stop the damage.`,
+    `${loserNames} — dead. ${winnerNames} didn't need a finisher — the damage had already done the work.`,
+    `${loserNames} — bled out. Slowly enough that there was time to realize it was happening.`,
+    `${loserNames} — skull fractured on impact with the ground. Not dead. Not awake. Somewhere between.`,
+    `${loserNames} — both knees failed. They crumpled where they stood. ${winnerNames} stepped over them.`,
+    `${loserNames} — throat crushed. Still breathing, technically. Just not well.`,
+    `${loserNames} — dead. It was fast. Fast does not mean painless.`,
   ];
 
   const pool =
