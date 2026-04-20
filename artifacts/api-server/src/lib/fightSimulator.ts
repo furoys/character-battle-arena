@@ -2389,6 +2389,8 @@ async function generateAINarrative(
     const specialRules = v3?.specialRules?.filter(Boolean).join("; ") || "";
     const mobility = v3?.mobilityType?.filter(Boolean).join(", ") || "";
     const weakness = v3?.weaknesses?.filter(Boolean).join(", ") || c.weaknesses?.slice(0, 100) || "";
+    const hasProfanity = c.behaviorTags?.includes("profanity");
+    const profanityStyle: string | undefined = typeof v3?.profanityStyle === "string" ? v3.profanityStyle : undefined;
 
     return [
       `${c.name} (${c.universe} | Tier: ${tier}${pgi})`,
@@ -2400,6 +2402,7 @@ async function generateAINarrative(
       finishers    ? `  FINISHERS: ${finishers}` : null,
       specialRules ? `  SPECIAL RULES: ${specialRules}` : null,
       weakness     ? `  WEAKNESS: ${weakness}` : null,
+      hasProfanity ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}` : null,
     ].filter(Boolean).join("\n");
   };
   const team1Info = team1.map(charProfile).join("\n\n");
@@ -2562,6 +2565,7 @@ CHARACTER RULES
 - Cosmic beings feel vast and incomprehensible but must remain readable — no abstract cosmic spam.
 - Street-level fighters feel physical, tactical, grounded.
 - Dialogue must sound like THAT character, not generic hero-speak.
+- If a character has a VOICE note, honor it exactly — including profanity. Deadpool says fuck. Wolverine says goddamn. Billy Butcher says cunt. Do not sanitize characters who canonically swear. Their actual voice is part of who they are.
 
 ==================================================
 DO NOT
