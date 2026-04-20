@@ -19,7 +19,7 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 
 ## Features
 
-- Browse a roster of 735+ fictional characters from 80+ universes
+- Browse a roster of 806+ fictional characters from 104+ universes
 - Select up to 5 characters per team (Team 1 and Team 2)
 - Simulate fights with cinematic AI narratives — phase-based (opening/escalation/turning point/finish) driven by each character's v3Profile (abilities, weapons, gadgets, combatStyle, battleIQ, temperament, finishers)
 - Tier-calibrated outcomes (Cosmic → Street) using exponential 0-10M power stats; stronger always wins
