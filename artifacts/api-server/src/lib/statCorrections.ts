@@ -161,6 +161,10 @@ export async function applyStatCorrections(): Promise<void> {
       // Broly / Doomsday — smarter than their original 790 INT
       ["Broly",           10000000, 2000000,    5000,10000000],
       ["Doomsday",        10000000,  800000,   30000,10000000],
+
+      // Cosmic top-tier
+      ["Lucifer Morningstar", 9800000, 9800000, 9900000, 9900000],
+      ["Living Tribunal",    10000000,10000000,10000000,10000000],
     ];
 
     if (corrections.length === 0) return;
