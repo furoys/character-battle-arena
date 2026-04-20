@@ -485,6 +485,64 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
                 background: `linear-gradient(to right, transparent, ${teamColorHex}, transparent)`,
               }}
             />
+
+            {/* Cache status badge + win rate */}
+            <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+              {result.settled ? (
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontFamily: "var(--font-display, monospace)",
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    color: "#00e87a",
+                    background: "rgba(0,232,122,0.08)",
+                    border: "1px solid rgba(0,232,122,0.3)",
+                    borderRadius: 2,
+                    padding: "2px 7px",
+                  }}
+                  title="This verdict is cached — rematches will always produce the same winner."
+                >
+                  ✓ VERDICT LOCKED
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontFamily: "var(--font-display, monospace)",
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,160,0,0.8)",
+                    background: "rgba(255,160,0,0.06)",
+                    border: "1px solid rgba(255,160,0,0.2)",
+                    borderRadius: 2,
+                    padding: "2px 7px",
+                  }}
+                  title="Live simulation — result not yet cached or Upset Mode was active."
+                >
+                  ⚡ LIVE SIM
+                </span>
+              )}
+              {result.winRate !== undefined && (
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontFamily: "var(--font-display, monospace)",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.4)",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 2,
+                    padding: "2px 7px",
+                  }}
+                  title="Winner's estimated win rate for this matchup — shown only for close fights."
+                >
+                  WIN RATE: {result.winRate}%
+                </span>
+              )}
+            </div>
+
             <p className="mt-4 text-xs sm:text-sm text-muted-foreground max-w-sm leading-relaxed italic mx-auto">
               {result.summary}
             </p>
