@@ -3100,10 +3100,26 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     else if (winner === 2 && hp2 <= hp1) { const t = hp2; hp2 = Math.max(hp1, t + 1); hp1 = t; }
   }
 
-  // Whenever we changed the outcome, rewrite the per-round HP timeline so the
-  // displayed HP arc cannot contradict the declared winner. We interpolate
-  // monotonically from 100 down to the final HP across all rounds.
-  if (overrode || assessment.forceDominant) {
+  // ── DAMAGE REALISM RULE ──────────────────────────────────────────────────
+  // Winners should almost never finish at 100 HP. Even in a clear victory,
+  // the losing side lands at least one meaningful action. Only pure BLOWOUT
+  // matchups (where the opponent realistically cannot react at all) get a
+  // clean 100. For everything else, apply minimum damage to the winner.
+  const winnerHpRaw = winner === 1 ? hp1 : hp2;
+  const isExtremeBlowout = assessment.mismatchLevel === "BLOWOUT";
+  if (!isExtremeBlowout && winnerHpRaw >= 95) {
+    const minWinnerDamage =
+      assessment.mismatchLevel === "DOMINANT" ? Math.floor(Math.random() * 16) + 10 // 10-25
+      : assessment.mismatchLevel === "SOLID"  ? Math.floor(Math.random() * 16) + 15 // 15-30
+      :                                         Math.floor(Math.random() * 21) + 20; // 20-40 (CLOSE)
+    if (winner === 1) hp1 = Math.max(60, hp1 - minWinnerDamage);
+    else              hp2 = Math.max(60, hp2 - minWinnerDamage);
+  }
+
+  // Whenever we changed the outcome or applied the realism rule, rewrite the
+  // per-round HP timeline so the displayed arc matches the final HP values.
+  const realismApplied = !isExtremeBlowout && winnerHpRaw >= 95;
+  if (overrode || assessment.forceDominant || realismApplied) {
     const winFinal  = winner === 1 ? hp1 : hp2;
     const loseFinal = winner === 1 ? hp2 : hp1;
     const total = rounds.length;
