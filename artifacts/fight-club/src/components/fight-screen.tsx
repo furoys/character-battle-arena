@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
 import { ChevronLeft, Swords, Zap, Trophy } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
@@ -327,8 +327,12 @@ const ROUND_LABELS: Record<number, { label: string; accent: string }> = {
   4: { label: "Finale",        accent: "#ffd700" },
 };
 
-// RoundBlock: slides in and fades text visible shortly after mount
-function RoundBlock({ round, index }: { round: FightRound; index: number }) {
+// RoundBlock: slides in, shows narrative, then comic panel image below
+function RoundBlock({ round, index, imageState }: {
+  round: FightRound;
+  index: number;
+  imageState?: string | null; // undefined=not requested, null=loading, string=dataUrl or "error"
+}) {
   const [visible, setVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
 
@@ -372,7 +376,7 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
           {round.attacker} · {round.attackType}
         </span>
       </div>
-      {/* Narrative — full paragraph(s) */}
+      {/* Narrative */}
       <div
         className={`border-l-2 pl-4 transition-all duration-400 ${textVisible ? "opacity-100" : "opacity-0"}`}
         style={{ borderColor: `${accentColor}40` }}
@@ -381,6 +385,48 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
           {round.narrative}
         </p>
       </div>
+
+      {/* Comic panel — appears below the narrative once requested */}
+      {imageState !== undefined && (
+        <div className="mt-5 overflow-hidden rounded" style={{ border: `1px solid ${accentColor}20` }}>
+          {imageState === null ? (
+            /* Loading skeleton */
+            <div
+              className="w-full flex flex-col items-center justify-center gap-3"
+              style={{ aspectRatio: "1 / 1", background: "rgba(255,255,255,0.02)" }}
+            >
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full animate-bounce"
+                    style={{ background: accentColor, opacity: 0.5, animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </div>
+              <span className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                Generating comic panel…
+              </span>
+            </div>
+          ) : imageState !== "error" ? (
+            <img
+              src={imageState}
+              alt={`Round ${round.round} comic panel`}
+              className="w-full block animate-in fade-in duration-700"
+              style={{ display: "block" }}
+            />
+          ) : (
+            <div
+              className="w-full flex items-center justify-center"
+              style={{ aspectRatio: "1 / 1", background: "rgba(255,0,85,0.04)" }}
+            >
+              <span className="text-[9px] uppercase tracking-widest" style={{ color: "rgba(255,0,85,0.3)" }}>
+                Panel unavailable
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -390,87 +436,99 @@ export function FightScreen({
   team1Names, team2Names,
   team1Images = [], team2Images = [],
 }: FightScreenProps) {
-  const [visibleCount, setVisibleCount] = useState(0);
-  const [allRoundsDone, setAllRoundsDone] = useState(false);
+  // currentRound: number of rounds the user has clicked through to see (0=none, 1=first shown…)
+  const [currentRound, setCurrentRound] = useState(0);
+  // roundImages: null=loading, string=dataUrl or "error", undefined=not requested
+  const [roundImages, setRoundImages] = useState<Record<number, string | null>>({});
   const [showVictory, setShowVictory] = useState(false);
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Clear all pending auto-reveal timers
-  const clearTimers = () => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-  };
+  const allRoundsDone = result ? currentRound >= result.rounds.length : false;
 
-  // Auto-reveal all rounds in sequence, then mark done
+  // Async image generation for a single round
+  const requestRoundImage = useCallback(async (idx: number, round: FightRound) => {
+    setRoundImages(prev => ({ ...prev, [idx]: null })); // null = loading
+    try {
+      const resp = await fetch("/api/fights/round-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          narrative: round.narrative,
+          attackerName: round.attacker,
+          defenderName: round.defender,
+          attackType: round.attackType,
+          roundNumber: round.round,
+          roundLabel: ROUND_LABELS[idx]?.label ?? "",
+        }),
+      });
+      if (!resp.ok) throw new Error("non-ok");
+      const data = await resp.json() as { imageDataUrl?: string };
+      setRoundImages(prev => ({ ...prev, [idx]: data.imageDataUrl ?? "error" }));
+    } catch {
+      setRoundImages(prev => ({ ...prev, [idx]: "error" }));
+    }
+  }, []);
+
+  // When fight result arrives: auto-show first round and kick off its image generation
   useEffect(() => {
-    clearTimers();
     if (open && result && !isSimulating) {
-      setVisibleCount(0);
-      setAllRoundsDone(false);
+      setCurrentRound(0);
+      setRoundImages({});
       setShowVictory(false);
       setAttackingTeam(0);
-
-      const totalRounds = result.rounds.length;
-      // Stagger: first round at 400ms, then every 1400ms
-      // Round 3 (turning point) gets extra 500ms dramatic pause
-      let elapsed = 400;
-      for (let i = 0; i < totalRounds; i++) {
-        const extraPause = i === 2 ? 500 : 0;
-        elapsed += extraPause;
-        const delay = elapsed;
-        const t = setTimeout(() => {
-          setVisibleCount(i + 1);
-          setAttackingTeam((i % 2 === 0 ? 1 : 2) as 1 | 2);
-        }, delay);
-        timersRef.current.push(t);
-        elapsed += 1400;
-      }
-      // Mark all done 800ms after the last round appears
-      const doneDelay = elapsed + 800;
-      const tDone = setTimeout(() => setAllRoundsDone(true), doneDelay);
-      timersRef.current.push(tDone);
+      const t = setTimeout(() => {
+        setCurrentRound(1);
+        setAttackingTeam(1);
+        if (result.rounds[0]) requestRoundImage(0, result.rounds[0]);
+      }, 400);
+      return () => clearTimeout(t);
     }
     if (!open) {
-      setVisibleCount(0);
-      setAllRoundsDone(false);
+      setCurrentRound(0);
+      setRoundImages({});
       setShowVictory(false);
       setAttackingTeam(0);
     }
-    return clearTimers;
-  }, [open, result, isSimulating]);
+  }, [open, result, isSimulating, requestRoundImage]);
+
+  // Continue: reveal next round and kick off its image
+  const handleContinue = useCallback(() => {
+    if (!result) return;
+    const nextIdx = currentRound; // index of the round being newly revealed
+    const newCount = currentRound + 1;
+    setCurrentRound(newCount);
+    setAttackingTeam((nextIdx % 2 === 0 ? 1 : 2) as 1 | 2);
+    if (result.rounds[nextIdx]) requestRoundImage(nextIdx, result.rounds[nextIdx]);
+  }, [currentRound, result, requestRoundImage]);
+
+  // Skip: show all rounds at once, no image generation for remaining
+  const handleSkip = useCallback(() => {
+    if (!result) return;
+    setCurrentRound(result.rounds.length);
+  }, [result]);
 
   // Rematch: reset fight state then trigger a new fight
   const handleRematch = () => {
     setShowVictory(false);
-    setAllRoundsDone(false);
-    setVisibleCount(0);
+    setCurrentRound(0);
+    setRoundImages({});
     setAttackingTeam(0);
     onRematch?.();
   };
 
-  // Skip: cancel auto-reveal and jump straight to all rounds + results button
-  const handleSkip = () => {
-    if (!result) return;
-    clearTimers();
-    setVisibleCount(result.rounds.length);
-    setAllRoundsDone(true);
-  };
-
   useEffect(() => {
-    if (visibleCount > 0 || allRoundsDone) {
+    if (currentRound > 0 || allRoundsDone) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [visibleCount, allRoundsDone]);
+  }, [currentRound, allRoundsDone]);
 
   let team1HpPct = 100;
   let team2HpPct = 100;
   if (result && result.rounds.length > 0) {
-    const shownRounds = result.rounds.slice(0, visibleCount);
+    const shownRounds = result.rounds.slice(0, currentRound);
     if (shownRounds.length > 0) {
       const last = shownRounds[shownRounds.length - 1]!;
-      // HP is on a 0-100 scale from the server — use it directly as a percentage
       team1HpPct = Math.max(0, Math.min(100, last.team1Hp));
       team2HpPct = Math.max(0, Math.min(100, last.team2Hp));
     }
@@ -562,10 +620,41 @@ export function FightScreen({
                   </div>
                 )}
 
-                {/* 3–5. ROUNDS — auto-revealed in sequence */}
-                {result.rounds.slice(0, visibleCount).map((round, idx) => (
-                  <RoundBlock key={idx} round={round} index={idx} />
+                {/* 3–N. ROUNDS — revealed one by one via Continue clicks */}
+                {result.rounds.slice(0, currentRound).map((round, idx) => (
+                  <RoundBlock
+                    key={idx}
+                    round={round}
+                    index={idx}
+                    imageState={roundImages[idx]}
+                  />
                 ))}
+
+                {/* Continue button — appears after last visible round while more remain */}
+                {currentRound > 0 && !allRoundsDone && (
+                  <button
+                    onClick={handleContinue}
+                    className="w-full animate-in fade-in zoom-in-95 duration-500 mt-2 active:scale-95 transition-transform"
+                  >
+                    <div
+                      className="w-full py-4 flex items-center justify-center gap-3"
+                      style={{
+                        background: "rgba(255,0,85,0.06)",
+                        border: "1px solid rgba(255,0,85,0.25)",
+                      }}
+                    >
+                      <span
+                        className="font-display text-sm uppercase tracking-[0.3em]"
+                        style={{ color: "#ff0055", animation: "continuePulse 1.6s ease-in-out infinite" }}
+                      >
+                        Continue →
+                      </span>
+                      <span className="text-[9px] text-muted-foreground/40 uppercase tracking-widest">
+                        Round {currentRound + 1} of {result.rounds.length}
+                      </span>
+                    </div>
+                  </button>
+                )}
 
                 {/* All rounds done — dramatic winner reveal prompt */}
                 {allRoundsDone && result && (
@@ -573,7 +662,6 @@ export function FightScreen({
                     onClick={() => setShowVictory(true)}
                     className="w-full animate-in fade-in zoom-in-95 duration-700 mt-4"
                   >
-                    {/* Winner flash banner */}
                     <div
                       className="w-full py-5 flex flex-col items-center gap-2"
                       style={{
@@ -631,17 +719,17 @@ export function FightScreen({
           {/* Right side — context-sensitive */}
           {result && !isSimulating && (
             <div className="flex items-center gap-3">
-              {/* Skip — jumps ahead while auto-reveal is in progress */}
-              {!allRoundsDone && (
+              {/* Skip all — jumps to end without generating images */}
+              {!allRoundsDone && currentRound > 0 && (
                 <button
                   onClick={handleSkip}
-                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
                 >
-                  Skip
+                  Skip All
                 </button>
               )}
 
-              {/* See Results — appears automatically once all rounds are shown */}
+              {/* See Results — once all rounds are shown */}
               {allRoundsDone && (
                 <button
                   onClick={() => setShowVictory(true)}
