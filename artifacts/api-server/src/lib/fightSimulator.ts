@@ -1622,6 +1622,19 @@ interface MatchupAssessment {
   upsetCondition:    string | null;      // realistic path for the underdog (or null if none)
 }
 
+// ─── Stage 1: Fight Resolution Object ─────────────────────────────────────────
+// Produced BEFORE any narrative is written. Stage 2 (narrative) only dramatizes
+// this pre-decided result — it cannot change the winner or invent new factors.
+interface FightResolution {
+  winner:         "Team 1" | "Team 2";
+  difficulty:     "easy" | "moderate" | "hard";
+  fightType:      "stomp" | "one-sided" | "close";
+  keyFactors:     string[];   // 2–4 specific matchup-driven reasons the winner wins
+  turningPoint:   string;     // the specific moment that decided the fight
+  loserShowcase:  string[];   // 2–3 things the loser actually accomplished
+  winnerProof:    string[];   // 2–3 concrete proofs the winner's victory was earned
+}
+
 // ── Hax / capability inventory ───────────────────────────────────────────
 // Returns the set of "win-condition tools" present on a team.
 const HAX_KEYS = [
@@ -1677,11 +1690,30 @@ function deriveWinCondition(
   if (speedRatio >= 1.8)
     return `${winnerName} blitzes — ${loserName} can't track the movement, takes hits before a guard goes up.`;
 
-  // 5) Regen outlast — winner has regen, loser has no finisher.
-  if (winHax.has("regen") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
+  // 5) Regen outlast — winner has regen, loser does NOT have regen AND has no kill switch
+  if (winHax.has("regen") && !loseHax.has("regen") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
     return `${winnerName} outlasts ${loserName} — regeneration nullifies every hit they can land.`;
-  if (winHax.has("immortal") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
+  if (winHax.has("immortal") && !loseHax.has("regen") && !loseHax.has("dura-bypass") && !loseHax.has("soul") && !loseHax.has("bfr"))
     return `${winnerName} can't be put down by anything ${loserName} brings — they wear them out and finish at leisure.`;
+
+  // 5b) Both sides regenerate — regen is NOT the deciding factor.
+  // Resolve by: lethality advantage, combat skill, or damage-output differential.
+  if (winHax.has("regen") && loseHax.has("regen")) {
+    const winnerHasLethality = winHax.has("dura-bypass") || winHax.has("soul") ||
+      winnerTeam.some(c => /adamantium|vibranium|divine blade|soul sword|black blade|muramasa|hell?fire|carbonadium|nth metal/i
+        .test(`${c.specialAbility} ${c.description}`));
+    if (winnerHasLethality)
+      return `${winnerName} has weapons that deal damage ${loserName}'s regeneration cannot fully erase — lethality advantage wins the war of attrition.`;
+    const winnerAvgInt = winnerTeam.reduce((s, c) => s + c.intelligence, 0) / winnerTeam.length;
+    const loserAvgInt  = loserTeam.reduce((s, c) => s + c.intelligence, 0)  / loserTeam.length;
+    if (winnerAvgInt > loserAvgInt * 1.2)
+      return `With both sides regenerating, ${winnerName}'s superior combat consistency and fewer tactical mistakes decide the attrition war.`;
+    const winnerAvgStr = winnerTeam.reduce((s, c) => s + c.strength, 0) / winnerTeam.length;
+    const loserAvgStr  = loserTeam.reduce((s, c) => s + c.strength, 0)  / loserTeam.length;
+    if (winnerAvgStr > loserAvgStr * 1.2)
+      return `With both sides regenerating, ${winnerName}'s greater damage output per exchange means ${loserName}'s healing is always playing catch-up.`;
+    return `With both sides regenerating, ${winnerName} wins by dealing more damage per exchange — ${loserName}'s healing cannot compensate for the raw output differential.`;
+  }
 
   // 6) Mismatch-driven defaults.
   if (mismatch === "BLOWOUT")
@@ -1955,6 +1987,154 @@ function assessMatchup(team1: Character[], team2: Character[]): MatchupAssessmen
   };
 }
 
+// ─── Stage 1: Build Fight Resolution ─────────────────────────────────────────
+// Called AFTER assessMatchup / aiAssessMatchup. Produces the concrete resolution
+// object that Stage 2 (narrative) must dramatize — winner is already locked.
+function buildFightResolution(
+  winnerTeam: Character[],
+  loserTeam:  Character[],
+  winHax:     Set<string>,
+  loseHax:    Set<string>,
+  assessment: MatchupAssessment,
+): FightResolution {
+  const winnerNames = winnerTeam.map(c => c.name).join(" & ");
+  const loserNames  = loserTeam.map(c => c.name).join(" & ");
+
+  // ── fightType + difficulty ───────────────────────────────────────────────
+  const fightType: FightResolution["fightType"] =
+    assessment.mismatchLevel === "BLOWOUT"  ? "stomp"     :
+    assessment.mismatchLevel === "DOMINANT" ? "one-sided" : "close";
+
+  const difficulty: FightResolution["difficulty"] =
+    (assessment.mismatchLevel === "BLOWOUT" || assessment.mismatchLevel === "DOMINANT") ? "easy" :
+    assessment.mismatchLevel === "SOLID" ? "moderate" : "hard";
+
+  // ── Stat comparisons ─────────────────────────────────────────────────────
+  const avgStat  = (team: Character[], fn: (c: Character) => number) =>
+    team.reduce((s, c) => s + fn(c), 0) / team.length;
+
+  const winSpeed = avgStat(winnerTeam, c => c.speed);
+  const losSpeed = avgStat(loserTeam,  c => c.speed);
+  const speedRatio = losSpeed > 0 ? winSpeed / losSpeed : 1;
+
+  const winDur = avgStat(winnerTeam, c => c.durability);
+  const losDur = avgStat(loserTeam,  c => c.durability);
+
+  const winStr = avgStat(winnerTeam, c => c.strength);
+  const losStr = avgStat(loserTeam,  c => c.strength);
+
+  const winInt = avgStat(winnerTeam, c => c.intelligence);
+  const losInt = avgStat(loserTeam,  c => c.intelligence);
+
+  // ── Key Factors (2–4 specific matchup reasons) ───────────────────────────
+  const keyFactors: string[] = [];
+
+  // Speed blitz
+  if (speedRatio >= 1.8)
+    keyFactors.push(`${winnerNames} moved too fast to track — ${loserNames} could not form defensive responses before hits landed`);
+  else if (speedRatio >= 1.3)
+    keyFactors.push(`${winnerNames} consistently won the exchange tempo — landed first, reset faster, forced ${loserNames} to react`);
+
+  // Hax advantages (most impactful first)
+  if (winHax.has("reality") || winHax.has("reality-warper"))
+    keyFactors.push(`${winnerNames} could rewrite the conditions of the fight — ${loserNames} had no defense against reality manipulation`);
+  else if (winHax.has("dura-bypass") || winHax.has("soul"))
+    keyFactors.push(`${winnerNames} could bypass ${loserNames}'s durability directly — toughness and armor provided no protection`);
+  else if (winHax.has("mind-ctrl") && !loseHax.has("mind-ctrl"))
+    keyFactors.push(`${winnerNames}'s psychic offense bypassed physical defense entirely — the body fought for the wrong side`);
+  else if (winHax.has("bfr") && !loseHax.has("bfr"))
+    keyFactors.push(`${winnerNames} could end the fight via sealing or banishment — ${loserNames} had no counter to battlefield removal`);
+  else if (winHax.has("intangible") && !loseHax.has("dura-bypass") && !loseHax.has("magic") && !loseHax.has("soul"))
+    keyFactors.push(`${winnerNames}'s intangibility made ${loserNames}'s physical offense largely useless`);
+
+  // Regen advantage (only when loser has no regen)
+  if (winHax.has("regen") && !loseHax.has("regen") && !loseHax.has("dura-bypass"))
+    keyFactors.push(`${winnerNames} healed through damage that would have finished ${loserNames} — the loser's offense could not accumulate`);
+
+  // Durability gap
+  if (winDur > losDur * 1.5 && keyFactors.length < 3)
+    keyFactors.push(`${winnerNames} absorbed what ${loserNames} threw at them — the loser's best offense could not disable a fighter built to take far worse`);
+
+  // Raw power gap
+  const winAvgRaw = avgStat(winnerTeam, c => (c.strength + c.speed + c.intelligence + c.durability) / 4);
+  const losAvgRaw = avgStat(loserTeam,  c => (c.strength + c.speed + c.intelligence + c.durability) / 4);
+  const rawRatio  = losAvgRaw > 0 ? winAvgRaw / losAvgRaw : 1;
+
+  if (rawRatio >= 2.0 && keyFactors.length < 3)
+    keyFactors.push(`The scale gap was decisive — ${loserNames} operates at a level where their entire offense does not meaningfully threaten ${winnerNames}`);
+  else if (rawRatio >= 1.35 && keyFactors.length < 3)
+    keyFactors.push(`${winnerNames} had the statistical edge across every meaningful category — the margin in strength, speed, and durability was consistent`);
+
+  // Combat intelligence
+  if (winInt > losInt * 1.25 && keyFactors.length < 4)
+    keyFactors.push(`${winnerNames} read the fight better — adapted faster, exploited the openings ${loserNames} did not know they were leaving`);
+
+  // Guarantee at least 2 entries
+  if (keyFactors.length === 0)
+    keyFactors.push(`${winnerNames} had the decisive advantage in core combat output — the margin held across every phase`);
+  if (keyFactors.length === 1) {
+    if (fightType === "close")
+      keyFactors.push(`In a close fight, ${winnerNames} found the right answer at the critical moment — execution over raw ability`);
+    else
+      keyFactors.push(`${loserNames} had no reliable mechanism to keep ${winnerNames} down across the full fight duration`);
+  }
+
+  // ── Turning Point ─────────────────────────────────────────────────────────
+  // Use the mechanically-derived win condition — more specific than a generic phrase.
+  const turningPoint = assessment.winCondition;
+
+  // ── Loser Showcase (what the loser actually did well) ────────────────────
+  const loserShowcase: string[] = [];
+
+  if (losSpeed >= winSpeed * 0.85)
+    loserShowcase.push(`${loserNames} matched ${winnerNames}'s pace in the opening — speed was not the gap in the early exchanges`);
+  if (loseHax.has("tactical"))
+    loserShowcase.push(`${loserNames} used tactics effectively — controlled range, identified openings, and forced ${winnerNames} to adjust`);
+  if (loseHax.has("regen") && fightType !== "stomp")
+    loserShowcase.push(`${loserNames} refused to stay down — regeneration kept them relevant longer than raw damage should have allowed`);
+  if ((loseHax.has("energy-proj") || loseHax.has("magic") || loseHax.has("cosmic")) && fightType !== "stomp")
+    loserShowcase.push(`${loserNames} landed powerful ranged attacks that forced ${winnerNames} to actively defend rather than purely press`);
+  if (losDur >= winDur * 0.85 && fightType !== "stomp")
+    loserShowcase.push(`${loserNames} absorbed punishment and kept fighting — durability was not the deciding gap`);
+  if (losStr >= winStr * 0.85 && fightType !== "stomp")
+    loserShowcase.push(`${loserNames}'s striking output was real — ${winnerNames} took meaningful hits and felt them`);
+
+  if (loserShowcase.length === 0) {
+    if (fightType === "stomp")
+      loserShowcase.push(`${loserNames} attempted their best techniques — none of them changed what was coming`);
+    else
+      loserShowcase.push(`${loserNames} made ${winnerNames} earn it — the result was never certain until the final exchange`);
+  }
+
+  // ── Winner Proof (why the winner's result was inevitable) ────────────────
+  const winnerProof: string[] = [];
+  winnerProof.push(assessment.winCondition);
+
+  if (winHax.has("regen") && !loseHax.has("regen"))
+    winnerProof.push(`Every wound ${loserNames} inflicted closed — the loser did work that never accumulated into a threat`);
+  else if (winHax.has("regen") && loseHax.has("regen"))
+    winnerProof.push(`With both sides healing, ${winnerNames}'s greater damage output per exchange meant recovery always favored the winner`);
+
+  if (speedRatio >= 1.5)
+    winnerProof.push(`${loserNames} could not maintain defensive positioning — speed forced them to take hits they had no answer to`);
+
+  if (assessment.hardCounter)
+    winnerProof.push(`This was a hard counter — ${loserNames} had no tool in their kit that addresses what ${winnerNames} brings`);
+
+  if (winnerProof.length < 2)
+    winnerProof.push(`${winnerNames} set the pace of every phase — ${loserNames} was always reacting, never controlling`);
+
+  return {
+    winner:        assessment.verdict === 1 ? "Team 1" : "Team 2",
+    difficulty,
+    fightType,
+    keyFactors:    keyFactors.slice(0, 4),
+    turningPoint,
+    loserShowcase: loserShowcase.slice(0, 3),
+    winnerProof:   winnerProof.slice(0, 3),
+  };
+}
+
 // Apply a concrete damage bonus when an attacker's power type exploits a defender's known weakness.
 // This makes weaknesses mechanically meaningful, not just narrative flavor.
 function getWeaknessBonus(attacker: Character, defender: Character): number {
@@ -2170,6 +2350,7 @@ async function generateAINarrative(
   tone: FightTone = "cinematic",
   assessment?: MatchupAssessment,
   allianceTrigger?: boolean,
+  resolution?: FightResolution,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2320,11 +2501,34 @@ async function generateAINarrative(
     `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`
   ).join("\n\n");
 
+  // Stage 1 resolution brief — specific pre-computed factors the narrative must use.
+  const resolutionBrief = resolution ? `
+
+==================================================
+BATTLE LOGIC BRIEF (Stage 1 — pre-decided result)
+==================================================
+FIGHT TYPE: ${resolution.fightType.toUpperCase()}
+DIFFICULTY: ${resolution.difficulty.toUpperCase()}
+
+KEY FACTORS (why ${winnerNames} wins — use these, do not invent substitutes):
+${resolution.keyFactors.map((f, i) => `${i + 1}. ${f}`).join("\n")}
+
+TURNING POINT: ${resolution.turningPoint}
+
+WHAT ${loserNames.toUpperCase()} DID WELL (show these in the prose — loser must look credible):
+${resolution.loserShowcase.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+
+WINNER PROOF (show these in the prose — these seal the result):
+${resolution.winnerProof.map((p, i) => `${i + 1}. ${p}`).join("\n")}` : "";
+
   const verdictBlock = assessment ? `
 
 LOCKED VERDICT — you MUST honor this exactly:
 ${assessment.reasoning}
-${winnerNames} wins. Honor the mismatch level in every beat. Do NOT give the weaker side moments the verdict says they cannot have.` : "";
+${resolutionBrief}
+${winnerNames} wins. Honor the mismatch level in every beat. Do NOT give the weaker side moments the verdict says they cannot have.` : resolutionBrief ? `
+${resolutionBrief}
+${winnerNames} wins.` : "";
 
   const prompt = `You are a cinematic battle writer for a versus app.
 
@@ -2401,12 +2605,17 @@ ${roundSections}
 One clean line declaring the winner. Then 2 to 3 sentences explaining why, in plain language. State the condition of any survivors.
 
 === WHY THEY WON ===
-Write exactly 5 numbered sentences. Each covers ONE of these points in order:
-1. POWER GAP: The specific stat or scale advantage that created the margin.
-2. ABILITY EDGE: The one ability or tool from the winner's kit the loser had no answer for.
-3. BEHAVIORAL FACTOR: How the winner's intelligence, temperament, or experience shaped the outcome.
-4. TURNING POINT: The exact exchange that sealed it — what happened and why the loser couldn't recover.
-5. LOSER'S FAILURE: Their best attempt, why it fell short, and what left them exposed.
+Write exactly 5 numbered sentences. Be matchup-specific — no generic labels, no abstract phrases.
+Each sentence covers ONE pre-determined point from the battle logic:
+${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that created the margin."}
+2. ${resolution.keyFactors[1] ?? resolution.keyFactors[0] ?? "The ability or tool the loser had no answer for."}
+3. LOSER SHOWCASE: ${resolution.loserShowcase[0] ?? "The loser's best moment — what they actually accomplished."} Expand into one honest sentence about their performance.
+4. TURNING POINT: ${resolution.turningPoint} Expand into one vivid, specific sentence.
+5. WINNER PROOF: ${resolution.winnerProof[0] ?? "Why the result was inevitable."} Expand into one decisive closing sentence.` : `1. THE DECISIVE ADVANTAGE: The specific stat or scale gap that created the margin — not generic, tied to these fighters.
+2. THE ABILITY THAT DECIDED IT: The one capability from the winner's kit the loser had no answer for.
+3. LOSER'S BEST MOMENT: What the loser actually accomplished — they must look credible, not embarrassing.
+4. THE TURNING POINT: The exact exchange that sealed it and why the loser couldn't recover from it.
+5. WHY IT ENDED: The winner's specific finishing mechanism and why the loser's remaining options were exhausted.`}
 
 FORMAT RULES:
 - SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
@@ -2560,6 +2769,39 @@ For team battles:
 - Simulate the most likely flow of battle
 
 ====================
+WIN CONDITION REQUIREMENT
+====================
+
+A character can ONLY win if they have a realistic way to permanently end the fight.
+Valid win conditions include:
+- lethal melee damage sufficient to incapacitate
+- decapitation or dismemberment beyond recovery
+- energy overload or total physical shutdown
+- battlefield removal (sealing, banishment, BFR)
+- reality warping that ends the fight
+- soul or mind destruction
+- stamina exhaustion combined with finishing capability
+- regeneration negation followed by a finisher
+
+A character CANNOT win simply by surviving.
+A character CANNOT win simply because they regenerate.
+A character CANNOT win if their only notable trait is defense without offense.
+
+====================
+REGENERATION RESOLUTION RULE
+====================
+
+When BOTH fighters have regeneration:
+- Do NOT default to the one with higher healing.
+- Regeneration vs regeneration is a war of DAMAGE OUTPUT and LETHALITY.
+- Evaluate instead:
+  1. Who deals more damage per exchange?
+  2. Who has weapons or attacks that bypass regeneration? (adamantium, soul attacks, dura-bypass)
+  3. Who has better combat skill and consistency?
+  4. Who has better stamina or can force the other to spend more healing?
+- The winner in regen-vs-regen is the one whose healing OUTPACES the damage they take — which means they ALSO deal more than the opponent can heal.
+
+====================
 DECISION RULES
 ====================
 
@@ -2568,6 +2810,7 @@ DECISION RULES
 - Do NOT create random upsets
 - Only allow upset paths if clearly explainable and repeatable
 - Be decisive and consistent
+- Never allow a character to win without a real win condition
 
 ====================
 OUTPUT FORMAT (JSON ONLY)
@@ -3264,7 +3507,24 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
   }));
 
   const allianceTrigger = hasAllianceTrigger(team1, team2);
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger);
+
+  // ── Stage 1: Build the pre-decided result object ──────────────────────────
+  // Winner + all factors are already locked by the assessment. This gives the
+  // narrative writer a concrete, matchup-specific brief to work from.
+  const winTeamForResolution  = winner === 1 ? team1 : team2;
+  const loseTeamForResolution = winner === 1 ? team2 : team1;
+  const resolutionWinHax  = teamHax(winTeamForResolution);
+  const resolutionLoseHax = teamHax(loseTeamForResolution);
+  const fightResolution = buildFightResolution(
+    winTeamForResolution,
+    loseTeamForResolution,
+    resolutionWinHax,
+    resolutionLoseHax,
+    assessment,
+  );
+
+  // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
