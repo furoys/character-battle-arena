@@ -20,6 +20,17 @@ export interface FightResult {
   arenaIntro?: string;
   intro?: string;
   whyWon?: string[];
+  resolution?: FightResolution;
+}
+
+export interface FightResolution {
+  winner:         "Team 1" | "Team 2";
+  difficulty:     "easy" | "moderate" | "hard";
+  fightType:      "stomp" | "one-sided" | "close";
+  keyFactors:     string[];
+  turningPoint:   string;
+  loserShowcase:  string[];
+  winnerProof:    string[];
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -1625,15 +1636,7 @@ interface MatchupAssessment {
 // ─── Stage 1: Fight Resolution Object ─────────────────────────────────────────
 // Produced BEFORE any narrative is written. Stage 2 (narrative) only dramatizes
 // this pre-decided result — it cannot change the winner or invent new factors.
-interface FightResolution {
-  winner:         "Team 1" | "Team 2";
-  difficulty:     "easy" | "moderate" | "hard";
-  fightType:      "stomp" | "one-sided" | "close";
-  keyFactors:     string[];   // 2–4 specific matchup-driven reasons the winner wins
-  turningPoint:   string;     // the specific moment that decided the fight
-  loserShowcase:  string[];   // 2–3 things the loser actually accomplished
-  winnerProof:    string[];   // 2–3 concrete proofs the winner's victory was earned
-}
+// (FightResolution type is exported from the top of this file)
 
 // ── Hax / capability inventory ───────────────────────────────────────────
 // Returns the set of "win-condition tools" present on a team.
@@ -2359,6 +2362,7 @@ async function generateAINarrative(
   assessment?: MatchupAssessment,
   allianceTrigger?: boolean,
   resolution?: FightResolution,
+  rematchCount = 0,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2592,6 +2596,18 @@ ${arena.flavor.join(" ")}
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
 ${specialNotes ? `SPECIAL EVENTS: ${specialNotes}` : ""}
 ${verdictBlock}
+${rematchCount > 0 ? `
+==================================================
+REMATCH #${rematchCount} — WRITE A COMPLETELY FRESH STORY ARC
+==================================================
+This matchup has been simulated ${rematchCount} time${rematchCount > 1 ? "s" : ""} before. The WINNER is locked — that never changes.
+But everything else MUST be different:
+- Different opening exchange and pace
+- Different decisive round (it cannot be the same round as before)
+- Different turning point scenario
+- Different character moments and dialogue
+- Different finishing sequence
+Do NOT recycle the same dramatic beats. Make this a story that could not have been the previous one.` : ""}
 
 ==================================================
 DAMAGE STATE GOING INTO EACH PHASE
@@ -3083,7 +3099,13 @@ function autoDetectBrutalTone(team1: Character[], team2: Character[]): boolean {
   return maxScore >= 4 || totalScore >= 6;
 }
 
-export async function simulateFight(team1: Character[], team2: Character[], mode: string = "cinematic"): Promise<FightResult> {
+export async function simulateFight(
+  team1: Character[],
+  team2: Character[],
+  mode: string = "cinematic",
+  cachedResolution?: FightResolution | null,
+  rematchCount = 0,
+): Promise<FightResult> {
   // ── Pre-fight modifiers: synergy bonuses + weakness penalties ─────────────
   // Applies temporary stat adjustments based on v3Profile archetype/combatStyle
   // pairings and matchup-aware weakness detection. Originals are never mutated.
@@ -3348,8 +3370,11 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   // Force the verdict from the logical decision system. If the random walk
   // produced a different winner, override — the assessment is the source of truth.
+  // If a cachedResolution is provided, its winner overrides the assessment.
   const hpWinner: 1 | 2 = hp1 >= hp2 ? 1 : 2;
-  const winner: 1 | 2 = assessment.verdict;
+  const winner: 1 | 2 = cachedResolution
+    ? (cachedResolution.winner === "Team 1" ? 1 : 2)
+    : assessment.verdict;
   const overrode = hpWinner !== winner;
 
   if (assessment.forceDominant) {
@@ -3526,23 +3551,29 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
 
   const allianceTrigger = hasAllianceTrigger(team1, team2);
 
-  // ── Stage 1: Build the pre-decided result object ──────────────────────────
-  // Winner + all factors are already locked by the assessment. This gives the
-  // narrative writer a concrete, matchup-specific brief to work from.
-  const winTeamForResolution  = winner === 1 ? team1 : team2;
-  const loseTeamForResolution = winner === 1 ? team2 : team1;
-  const resolutionWinHax  = teamHax(winTeamForResolution);
-  const resolutionLoseHax = teamHax(loseTeamForResolution);
-  const fightResolution = buildFightResolution(
-    winTeamForResolution,
-    loseTeamForResolution,
-    resolutionWinHax,
-    resolutionLoseHax,
-    assessment,
-  );
+  // ── Stage 1: Build (or reuse) the pre-decided result object ─────────────
+  // If a cachedResolution is provided (rematch), skip the build and reuse it
+  // so the winner and key factors stay canonically identical.
+  let fightResolution: FightResolution;
+  if (cachedResolution) {
+    fightResolution = cachedResolution;
+  } else {
+    const winTeamForResolution  = winner === 1 ? team1 : team2;
+    const loseTeamForResolution = winner === 1 ? team2 : team1;
+    const resolutionWinHax  = teamHax(winTeamForResolution);
+    const resolutionLoseHax = teamHax(loseTeamForResolution);
+    fightResolution = buildFightResolution(
+      winTeamForResolution,
+      loseTeamForResolution,
+      resolutionWinHax,
+      resolutionLoseHax,
+      assessment,
+    );
+  }
 
   // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution);
+  // rematchCount > 0 triggers "write a fresh different story arc" instruction.
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
@@ -3581,6 +3612,7 @@ export async function simulateFight(team1: Character[], team2: Character[], mode
     arenaIntro: finalArenaIntro,
     intro: finalIntro,
     whyWon: aiResult.whyWon ?? [],
+    resolution: fightResolution,
   };
 }
 
