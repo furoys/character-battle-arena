@@ -1679,6 +1679,16 @@ const newChars = [
     description: "Mr. Mxyzptlk is a 5th-dimensional imp for whom the laws of physics are a suggestion and reality is a plaything. When he's not causing chaos for fun, he's casually doing things that no 3D being — including Superman — can comprehend, let alone counter. He once helped Superman fight the Presence. For fun.",
     behaviorTags: ["reality-warper", "cosmic", "trickster"],
   },
+  {
+    name: "The Presence",
+    universe: "DC Comics",
+    imageUrl: "/characters/the-presence.png",
+    strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
+    specialAbility: "Absolute omnipotence — the source and sustainer of all DC existence; created the multiverse, the angels, the New Gods, and every cosmic hierarchy beneath him; wields the Word of Creation (a single utterance unmakes or remakes reality); his Spectre is the extension of his wrath; can appear in any form or none; exists above time, space, and metaphysics; no being in DC continuity surpasses him",
+    weaknesses: "Operates through agents rather than direct intervention by philosophical choice; his non-interference stance has allowed suffering and catastrophe to persist; Elaine Belloc once absorbed a fraction of his power during the Lucifer series, suggesting the portfolio is transferable under extreme circumstances",
+    description: "The Presence is the DC multiverse's God — the source of all light, life, and law. He created the Spectre as his wrath, Lucifer Morningstar as his most radiant angel, and the Endless as personifications of fundamental forces. When Lucifer quit Hell and built his own universe just to defy him, the Presence let him — because even that was within his plan. He does not fight. He simply is. Every cosmic being in DC continuity — Darkseid, the Anti-Monitor, Perpetua, the Source Wall itself — exists beneath his notice. The only question when the Presence enters a fight is not whether he wins. It's whether the fight qualifies as something he acknowledges.",
+    behaviorTags: ["reality-warper", "cosmic", "defensive"],
+  },
 ];
 
 export async function seedNewChars(): Promise<void> {
