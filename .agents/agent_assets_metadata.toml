@@ -3738,6 +3738,60 @@ uri = "file://artifacts/fight-club/public/characters/troy-wilson.png"
 type = "image"
 title = "troy wilson gangster portrait"
 
+[[generated]]
+id = "_11G_yqiBKWPHohW30f_T"
+uri = "file://artifacts/fight-club/public/characters/flash.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "DD7yWyNCNLjdG-gwRno_y"
+uri = "file://artifacts/fight-club/public/characters/hawkgirl.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "msBPcj2U1E5jmQrsQM1lB"
+uri = "file://artifacts/fight-club/public/characters/joker.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "HPRhxXXtxcyLaithWg2-M"
+uri = "file://artifacts/fight-club/public/characters/iceman.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "P0WUAOTbGS21JXKVoigVB"
+uri = "file://artifacts/fight-club/public/characters/thing.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "pHPmtT5TvAhW159fs24eG"
+uri = "file://artifacts/fight-club/public/characters/emma-frost.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6sdEtbzsZrn14owFM8FIL"
+uri = "file://artifacts/fight-club/public/characters/punisher.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "KpxeBHMqMlhtiB_MXDa4g"
+uri = "file://artifacts/fight-club/public/characters/wasp.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SPcnWbbj5FhcF8DgalNjV"
+uri = "file://artifacts/fight-club/public/characters/mystique.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
