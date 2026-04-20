@@ -1659,6 +1659,26 @@ const newChars = [
     description: "The Living Tribunal is Marvel's supreme judge — a single entity that spans every universe in the multiverse simultaneously. He has voided the Infinity Gauntlet with a gesture. He doesn't fight. He adjudicates. When all three of his faces agree, reality itself bends to his ruling.",
     behaviorTags: ["cosmic", "reality-warper", "defensive"],
   },
+  {
+    name: "Doctor Manhattan",
+    universe: "DC Comics",
+    imageUrl: "/characters/dr-manhattan.png",
+    strength: 9500000, speed: 9800000, intelligence: 9700000, durability: 9900000,
+    specialAbility: "Absolute matter and energy manipulation at the subatomic level; simultaneous existence across all points in time; teleportation; size alteration up to miles tall; disintegration and reassembly of anything; can create and destroy life; sees all possible timelines; restructured the entire DC multiverse during Doomsday Clock",
+    weaknesses: "Emotionally detached — loses interest in outcomes; intrinsic fields can be disrupted by tachyon particles (temporarily); free will of others complicates his timeline predictions",
+    description: "Dr. Jonathan Osterman — a physicist who was disintegrated in an Intrinsic Field Subtractor and rebuilt himself from pure energy. He is not a superhero. He is a god who still remembers being human, and that memory is fading. He restructured the DC multiverse with a thought.",
+    behaviorTags: ["cosmic", "reality-warper", "long-range"],
+  },
+  {
+    name: "Mr. Mxyzptlk",
+    universe: "DC Comics",
+    imageUrl: "/characters/mr-mxyzptlk.png",
+    strength: 9000000, speed: 9500000, intelligence: 9000000, durability: 9200000,
+    specialAbility: "5th-dimensional magic that operates completely outside 3D physical laws; can rewrite reality on a whim; transmutation of matter and energy; immune to all 3D-universe attacks; has powered Superman to near-omnipotence; once assisted against the Presence; reality erasure; unlimited wish-granting",
+    weaknesses: "Bound by his own game rules — can be tricked into saying his name backwards (Kltpzyxm) to return to the 5th dimension; treats everything as a game and can be outsmarted",
+    description: "Mr. Mxyzptlk is a 5th-dimensional imp for whom the laws of physics are a suggestion and reality is a plaything. When he's not causing chaos for fun, he's casually doing things that no 3D being — including Superman — can comprehend, let alone counter. He once helped Superman fight the Presence. For fun.",
+    behaviorTags: ["reality-warper", "cosmic", "trickster"],
+  },
 ];
 
 export async function seedNewChars(): Promise<void> {
