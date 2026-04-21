@@ -5,7 +5,6 @@ import { Character } from "@workspace/api-client-react/src/generated/api.schemas
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
-import { AgeGate } from "@/components/age-gate";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
@@ -432,7 +431,6 @@ export function Home() {
 
   return (
     <>
-      <AgeGate />
       <style>{`
         @keyframes scanMove {
           from { transform: translateY(0); }
