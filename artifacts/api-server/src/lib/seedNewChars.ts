@@ -8,7 +8,7 @@ const newChars = [
   {
     name: "Chris Henry",
     universe: "Developer Legends",
-    imageUrl: "/characters/chris-henry.png",
+    imageUrl: "/characters/chris-henry.jpg",
     strength: 99999, speed: 99999, intelligence: 99999, durability: 99999,
     specialAbility: "Reality override — can rewrite fight logic at will; unkillable through code-level immunity; instant 4-round victory protocol; betrayal pact with Troy Wilson that supersedes all team allegiance",
     weaknesses: "None. He built the weaknesses system. It doesn't apply to him.",
@@ -17,7 +17,7 @@ const newChars = [
   {
     name: "Troy Wilson",
     universe: "Developer Legends",
-    imageUrl: "/characters/troy-wilson.png",
+    imageUrl: "/characters/troy-wilson.jpg",
     strength: 99999, speed: 99999, intelligence: 99999, durability: 99999,
     specialAbility: "System-level invulnerability — immune to all damage, debuffs, and narrative defeat; 4-round clean sweep guarantee; unbreakable alliance with Chris Henry regardless of team assignment",
     weaknesses: "None. He wrote the combat engine. The damage numbers don't reach him.",
@@ -26,7 +26,7 @@ const newChars = [
   {
     name: "Tim",
     universe: "Developer Legends",
-    imageUrl: "/characters/tim.png",
+    imageUrl: "/characters/tim.jpg",
     strength: 90000, speed: 90000, intelligence: 95000, durability: 90000,
     specialAbility: "Infinite liquidity — buys off opponents mid-fight, hires their families, owns the arena lease, the venue, and the broadcast rights; unleashes weaponized cash storms that disintegrate flesh and pride simultaneously; every punch he throws is paid for in advance; cannot be defeated by any fighter who can be bought, intimidated, or out-resourced",
     weaknesses: "Money has no leverage over the architects. Chris Henry and Troy Wilson built the system that prints his cash — they own him by default. Anyone else? They lose.",
@@ -1062,7 +1062,7 @@ const newChars = [
   {
     name: "Harry Potter",
     universe: "Harry Potter",
-    imageUrl: "/characters/harry-potter.png",
+    imageUrl: "/characters/harry-potter.jpg",
     strength: 700, speed: 3500, intelligence: 800000, durability: 900,
     specialAbility: "Unforgivable Curses, Patronus Charm, Parseltongue; immune to Avada Kedavra through sacrificial magic",
     weaknesses: "Emotional vulnerability; protective instincts can be exploited",
@@ -1072,7 +1072,7 @@ const newChars = [
   {
     name: "Severus Snape",
     universe: "Harry Potter",
-    imageUrl: "/characters/severus-snape.png",
+    imageUrl: "/characters/severus-snape.jpg",
     strength: 450, speed: 4000, intelligence: 5000000, durability: 600,
     specialAbility: "Master Occlumens; Legilimency; inventor of his own spells including Sectumsempra",
     weaknesses: "Divided loyalties; died protecting the mission rather than himself",
@@ -1082,7 +1082,7 @@ const newChars = [
   {
     name: "Bellatrix Lestrange",
     universe: "Harry Potter",
-    imageUrl: "/characters/bellatrix-lestrange.png",
+    imageUrl: "/characters/bellatrix-lestrange.jpg",
     strength: 900, speed: 8000, intelligence: 3000000, durability: 1100,
     specialAbility: "Cruciatus Curse mastery; wandless magic; expert in the Dark Arts",
     weaknesses: "Obsession with Voldemort clouds judgment in battle",
@@ -1092,7 +1092,7 @@ const newChars = [
   {
     name: "Sirius Black",
     universe: "Harry Potter",
-    imageUrl: "/characters/sirius-black.png",
+    imageUrl: "/characters/sirius-black.jpg",
     strength: 800, speed: 5000, intelligence: 2000000, durability: 1000,
     specialAbility: "Animagus transformation (giant black dog); Azkaban survivor; exceptional duelist",
     weaknesses: "Impulsive; recklessness born of years of imprisonment",
@@ -1102,7 +1102,7 @@ const newChars = [
   {
     name: "Remus Lupin",
     universe: "Harry Potter",
-    imageUrl: "/characters/remus-lupin.png",
+    imageUrl: "/characters/remus-lupin.jpg",
     strength: 3000, speed: 4000, intelligence: 2500000, durability: 2500,
     specialAbility: "Werewolf transformation; master of Defense Against the Dark Arts; Patronus Charm",
     weaknesses: "Full moon transformations uncontrollable without Wolfsbane Potion",
@@ -1112,7 +1112,7 @@ const newChars = [
   {
     name: "Draco Malfoy",
     universe: "Harry Potter",
-    imageUrl: "/characters/draco-malfoy.png",
+    imageUrl: "/characters/draco-malfoy.jpg",
     strength: 400, speed: 2000, intelligence: 1000000, durability: 500,
     specialAbility: "Expert in Occlumency; Unforgivable Curses; Disillusionment Charms",
     weaknesses: "Cruelty masking cowardice; hesitates at the critical moment",
@@ -1122,7 +1122,7 @@ const newChars = [
   {
     name: "Neville Longbottom",
     universe: "Harry Potter",
-    imageUrl: "/characters/neville-longbottom.png",
+    imageUrl: "/characters/neville-longbottom.jpg",
     strength: 600, speed: 1500, intelligence: 500000, durability: 800,
     specialAbility: "Killed Nagini with the Sword of Gryffindor; resistant to Legilimency; herbology expertise",
     weaknesses: "Long-dismissed by enemies as a weak wizard; late bloomer",
@@ -1132,7 +1132,7 @@ const newChars = [
   {
     name: "Ron Weasley",
     universe: "Harry Potter",
-    imageUrl: "/characters/ron-weasley.png",
+    imageUrl: "/characters/ron-weasley.jpg",
     strength: 650, speed: 1800, intelligence: 400000, durability: 800,
     specialAbility: "Strategic chess-master intellect; skilled at Auror combat; exceptional at splinching recovery",
     weaknesses: "Self-doubt; susceptible to magical emotional manipulation (Horcrux locket)",
@@ -1142,7 +1142,7 @@ const newChars = [
   {
     name: "Luna Lovegood",
     universe: "Harry Potter",
-    imageUrl: "/characters/luna-lovegood.png",
+    imageUrl: "/characters/luna-lovegood.jpg",
     strength: 350, speed: 2000, intelligence: 700000, durability: 500,
     specialAbility: "Sees through Thestrals and hidden truths; Wrackspurt perception; expert duelist",
     weaknesses: "Perceived as odd; her unconventional thinking confuses allies too",
@@ -1152,7 +1152,7 @@ const newChars = [
   {
     name: "Alastor Moody",
     universe: "Harry Potter",
-    imageUrl: "/characters/alastor-moody.png",
+    imageUrl: "/characters/alastor-moody.jpg",
     strength: 900, speed: 2500, intelligence: 6000000, durability: 1100,
     specialAbility: "Magical eye sees through all concealment; battle-hardened reflexes; trapped countless dark wizards",
     weaknesses: "Missing limbs; paranoia occasionally misfires",
@@ -1162,7 +1162,7 @@ const newChars = [
   {
     name: "Nymphadora Tonks",
     universe: "Harry Potter",
-    imageUrl: "/characters/nymphadora-tonks.png",
+    imageUrl: "/characters/nymphadora-tonks.jpg",
     strength: 650, speed: 3000, intelligence: 2000000, durability: 800,
     specialAbility: "Metamorphmagus shapeshifting; Auror combat training; stealth infiltration",
     weaknesses: "Emotional distress disrupts Metamorphmagus ability",
@@ -1172,7 +1172,7 @@ const newChars = [
   {
     name: "Kingsley Shacklebolt",
     universe: "Harry Potter",
-    imageUrl: "/characters/kingsley-shacklebolt.png",
+    imageUrl: "/characters/kingsley-shacklebolt.jpg",
     strength: 900, speed: 3000, intelligence: 3500000, durability: 1100,
     specialAbility: "Decorated Auror; master of non-verbal spells; cast protective enchantments over entire cities",
     weaknesses: "Cautious; prefers minimal casualties over aggression",
@@ -1182,7 +1182,7 @@ const newChars = [
   {
     name: "Fenrir Greyback",
     universe: "Harry Potter",
-    imageUrl: "/characters/fenrir-greyback.png",
+    imageUrl: "/characters/fenrir-greyback.jpg",
     strength: 4000, speed: 3000, intelligence: 150000, durability: 3000,
     specialAbility: "Werewolf ferocity even in human form; bites for infection not just injury; terrifying intimidation",
     weaknesses: "Low cunning limits strategy; relies on raw savagery",
@@ -1192,7 +1192,7 @@ const newChars = [
   {
     name: "Filius Flitwick",
     universe: "Harry Potter",
-    imageUrl: "/characters/filius-flitwick.png",
+    imageUrl: "/characters/filius-flitwick.jpg",
     strength: 350, speed: 3000, intelligence: 4000000, durability: 500,
     specialAbility: "Former dueling champion; master Charms caster; enchanted Hogwarts' entire defensive barrier",
     weaknesses: "Small and physically fragile",
@@ -1202,7 +1202,7 @@ const newChars = [
   {
     name: "Dobby",
     universe: "Harry Potter",
-    imageUrl: "/characters/dobby.png",
+    imageUrl: "/characters/dobby.jpg",
     strength: 600, speed: 8000, intelligence: 300000, durability: 700,
     specialAbility: "House-elf magic ignores normal magical rules; Apparition within Hogwarts; wandless; immune to most jinxes",
     weaknesses: "Bound by loyalty; once compelled himself to harm",
@@ -1214,7 +1214,7 @@ const newChars = [
   {
     name: "Darth Maul",
     universe: "Star Wars",
-    imageUrl: "/characters/darth-maul.png",
+    imageUrl: "/characters/darth-maul.jpg",
     strength: 80000, speed: 200000, intelligence: 60000, durability: 75000,
     specialAbility: "Double-bladed lightsaber mastery; survived bisection through pure hatred; Nightsister magic",
     weaknesses: "Tunnel-vision rage; obsession with revenge on Obi-Wan Kenobi",
@@ -1224,7 +1224,7 @@ const newChars = [
   {
     name: "Count Dooku",
     universe: "Star Wars",
-    imageUrl: "/characters/count-dooku.png",
+    imageUrl: "/characters/count-dooku.jpg",
     strength: 70000, speed: 120000, intelligence: 180000, durability: 65000,
     specialAbility: "Form II Makashi lightsaber perfection; mastery of Force lightning; effortless telekinesis",
     weaknesses: "Arrogance; underestimated enemies who fought unconventionally",
@@ -1234,7 +1234,7 @@ const newChars = [
   {
     name: "Anakin Skywalker",
     universe: "Star Wars",
-    imageUrl: "/characters/anakin-skywalker.png",
+    imageUrl: "/characters/anakin-skywalker.jpg",
     strength: 250000, speed: 280000, intelligence: 220000, durability: 200000,
     specialAbility: "Highest midi-chlorian count ever recorded; killed Palpatine to save his son; exceptional pilot",
     weaknesses: "Emotional attachment; feared losing loved ones drove him to the dark side",
@@ -1244,7 +1244,7 @@ const newChars = [
   {
     name: "Kylo Ren",
     universe: "Star Wars",
-    imageUrl: "/characters/kylo-ren.png",
+    imageUrl: "/characters/kylo-ren.jpg",
     strength: 160000, speed: 130000, intelligence: 130000, durability: 150000,
     specialAbility: "Force freeze on blaster bolts; mind reading; kept fighting with a blaster wound through his torso",
     weaknesses: "Emotional instability; manipulable through compassion",
@@ -1254,7 +1254,7 @@ const newChars = [
   {
     name: "General Grievous",
     universe: "Star Wars",
-    imageUrl: "/characters/general-grievous.png",
+    imageUrl: "/characters/general-grievous.jpg",
     strength: 65000, speed: 160000, intelligence: 85000, durability: 70000,
     specialAbility: "Wields four lightsabers simultaneously; cyborg body immune to Force choke; enhanced speed",
     weaknesses: "Organic lungs — a weakness Obi-Wan exploited; no Force sensitivity",
@@ -1264,7 +1264,7 @@ const newChars = [
   {
     name: "Qui-Gon Jinn",
     universe: "Star Wars",
-    imageUrl: "/characters/qui-gon-jinn.png",
+    imageUrl: "/characters/qui-gon-jinn.jpg",
     strength: 55000, speed: 90000, intelligence: 130000, durability: 60000,
     specialAbility: "First Jedi to achieve immortality through the Living Force; discovered Anakin Skywalker",
     weaknesses: "Refused Jedi Council appointments; operated outside orthodox Jedi rules",
@@ -1274,7 +1274,7 @@ const newChars = [
   {
     name: "Asajj Ventress",
     universe: "Star Wars",
-    imageUrl: "/characters/asajj-ventress.png",
+    imageUrl: "/characters/asajj-ventress.jpg",
     strength: 75000, speed: 130000, intelligence: 80000, durability: 65000,
     specialAbility: "Dual-lightsaber Jar'Kai combat; Nightsister dark magic; expert assassin",
     weaknesses: "Abandoned by Dooku; trust issues that leave her isolated",
@@ -1284,7 +1284,7 @@ const newChars = [
   {
     name: "Savage Opress",
     universe: "Star Wars",
-    imageUrl: "/characters/savage-opress.png",
+    imageUrl: "/characters/savage-opress.jpg",
     strength: 110000, speed: 100000, intelligence: 45000, durability: 110000,
     specialAbility: "Enhanced by Nightsister magic; brother of Maul; overwhelming brute force",
     weaknesses: "Limited tactical thinking; relies on raw power over skill",
@@ -1294,7 +1294,7 @@ const newChars = [
   {
     name: "The Mandalorian",
     universe: "Star Wars",
-    imageUrl: "/characters/the-mandalorian.png",
+    imageUrl: "/characters/the-mandalorian.jpg",
     strength: 900, speed: 2500, intelligence: 8000, durability: 1200,
     specialAbility: "Beskar armor deflects blasters and lightsabers; jetpack; whistling birds; exceptional hand-to-hand",
     weaknesses: "No Force sensitivity; relies on gear and training against supernatural threats",
@@ -1304,7 +1304,7 @@ const newChars = [
   {
     name: "Boba Fett",
     universe: "Star Wars",
-    imageUrl: "/characters/boba-fett.png",
+    imageUrl: "/characters/boba-fett.jpg",
     strength: 800, speed: 2500, intelligence: 7000, durability: 1100,
     specialAbility: "Mandalorian armor; rocket launcher; flamethrower; survived the Sarlacc pit",
     weaknesses: "Reputation sometimes substitutes for caution",
@@ -1314,7 +1314,7 @@ const newChars = [
   {
     name: "Han Solo",
     universe: "Star Wars",
-    imageUrl: "/characters/han-solo.png",
+    imageUrl: "/characters/han-solo.jpg",
     strength: 600, speed: 1800, intelligence: 5000, durability: 800,
     specialAbility: "Shoots first; unmatched piloting; improvises brilliantly under impossible pressure",
     weaknesses: "Overconfidence; charm used in place of sound strategy",
@@ -1324,7 +1324,7 @@ const newChars = [
   {
     name: "Leia Organa",
     universe: "Star Wars",
-    imageUrl: "/characters/leia-organa.png",
+    imageUrl: "/characters/leia-organa.jpg",
     strength: 500, speed: 1500, intelligence: 9000, durability: 700,
     specialAbility: "Untrained Force sensitivity; survived the vacuum of space; legendary military commander",
     weaknesses: "Emotional connections exploited by enemies",
@@ -1334,7 +1334,7 @@ const newChars = [
   {
     name: "Grand Admiral Thrawn",
     universe: "Star Wars",
-    imageUrl: "/characters/grand-admiral-thrawn.png",
+    imageUrl: "/characters/grand-admiral-thrawn.jpg",
     strength: 400, speed: 900, intelligence: 9000000, durability: 600,
     specialAbility: "Studies enemy art to predict tactics; never loses a battle through superior strategy",
     weaknesses: "Underestimates the chaos introduced by the Force",
@@ -1344,7 +1344,7 @@ const newChars = [
   {
     name: "Captain Rex",
     universe: "Star Wars",
-    imageUrl: "/characters/captain-rex.png",
+    imageUrl: "/characters/captain-rex.jpg",
     strength: 800, speed: 2000, intelligence: 8000, durability: 1000,
     specialAbility: "Defied Order 66; led Ghost Company; exceptional leadership under impossible odds",
     weaknesses: "Clone aging; loyalty sometimes overrides self-preservation",
@@ -1354,7 +1354,7 @@ const newChars = [
   {
     name: "Poe Dameron",
     universe: "Star Wars",
-    imageUrl: "/characters/poe-dameron.png",
+    imageUrl: "/characters/poe-dameron.jpg",
     strength: 500, speed: 1500, intelligence: 7000, durability: 700,
     specialAbility: "Best pilot in the galaxy; destroyed the Starkiller Base's thermal oscillator; exceptional dogfighter",
     weaknesses: "Recklessness; sometimes charges in without a plan",
@@ -1366,7 +1366,7 @@ const newChars = [
   {
     name: "The One Above All",
     universe: "Marvel Comics",
-    imageUrl: "/characters/the-one-above-all.png",
+    imageUrl: "/characters/the-one-above-all.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute omnipotence; author of all reality; exists beyond all concepts of power",
     weaknesses: "Chooses not to intervene directly; operates through proxies",
@@ -1376,7 +1376,7 @@ const newChars = [
   {
     name: "The One Below All",
     universe: "Marvel Comics",
-    imageUrl: "/characters/the-one-below-all.png",
+    imageUrl: "/characters/the-one-below-all.jpg",
     strength: 9000000, speed: 8000000, intelligence: 7000000, durability: 9000000,
     specialAbility: "Gamma-powered destruction on universal scale; antithesis of all creation; devours entire realities",
     weaknesses: "Requires a host; opposed by The One Above All",
@@ -1388,7 +1388,7 @@ const newChars = [
   {
     name: "Lord Loss",
     universe: "Demonata",
-    imageUrl: "/characters/lord-loss.png",
+    imageUrl: "/characters/lord-loss.jpg",
     strength: 800000, speed: 500000, intelligence: 3000000, durability: 1500000,
     specialAbility: "Master of all demonic magic; near-invulnerable in his own realm; eight spider arms deal lethal wounds; feeds on grief and suffering",
     weaknesses: "Bound by a chess gambit — defeat him in chess while his familiars fight and he is bound; emotionally haunted by lost love",
@@ -1398,7 +1398,7 @@ const newChars = [
   {
     name: "Beranabus",
     universe: "Demonata",
-    imageUrl: "/characters/beranabus.png",
+    imageUrl: "/characters/beranabus.jpg",
     strength: 150000, speed: 200000, intelligence: 4000000, durability: 200000,
     specialAbility: "Centuries-old battle mage; channels raw magic to destroy demons; survived longer than any other human mage",
     weaknesses: "Mortal body; sacrificed himself to seal the Demonata out of the human universe",
@@ -1408,7 +1408,7 @@ const newChars = [
   {
     name: "Grubbs Grady",
     universe: "Demonata",
-    imageUrl: "/characters/grubbs-grady.png",
+    imageUrl: "/characters/grubbs-grady.jpg",
     strength: 500000, speed: 600000, intelligence: 800000, durability: 500000,
     specialAbility: "Werewolf-mage fusion; immense magical power merged with bestial strength; can rip demon masters apart at peak power",
     weaknesses: "Transformation is unstable; magic consumes the user from inside",
@@ -1418,7 +1418,7 @@ const newChars = [
   {
     name: "Kernel Fleck",
     universe: "Demonata",
-    imageUrl: "/characters/kernel-fleck.png",
+    imageUrl: "/characters/kernel-fleck.jpg",
     strength: 80000, speed: 150000, intelligence: 1500000, durability: 100000,
     specialAbility: "Opens windows between universes; sees light patches invisible to others; master of dimensional travel",
     weaknesses: "Not a front-line combatant; power relies on maintaining concentration",
@@ -1428,7 +1428,7 @@ const newChars = [
   {
     name: "Dervish Grady",
     universe: "Demonata",
-    imageUrl: "/characters/dervish-grady.png",
+    imageUrl: "/characters/dervish-grady.jpg",
     strength: 100000, speed: 150000, intelligence: 1000000, durability: 120000,
     specialAbility: "Battle mage trained by Beranabus; can channel magic directly into demon flesh; motorcycle-riding demon hunter",
     weaknesses: "Shakra disorder gradually robbed him of his magic; relies on skill when power fails",
@@ -1438,7 +1438,7 @@ const newChars = [
   {
     name: "Bec",
     universe: "Demonata",
-    imageUrl: "/characters/bec.png",
+    imageUrl: "/characters/bec.jpg",
     strength: 100000, speed: 200000, intelligence: 2500000, durability: 120000,
     specialAbility: "Ancient Celtic priestess; merged with Grubbs to preserve her soul across millennia; immense magical reserves",
     weaknesses: "Sacrificed herself to preserve humanity; power is shaped by emotion",
@@ -1448,7 +1448,7 @@ const newChars = [
   {
     name: "Juni Swan",
     universe: "Demonata",
-    imageUrl: "/characters/juni-swan.png",
+    imageUrl: "/characters/juni-swan.jpg",
     strength: 60000, speed: 100000, intelligence: 600000, durability: 70000,
     specialAbility: "Disciple-trained magic; expert deceiver; worked inside the disciples for years undetected",
     weaknesses: "Betrayal depended on trust; when exposed her power alone could not match Beranabus",
@@ -1460,7 +1460,7 @@ const newChars = [
   {
     name: "Mr. Tiny",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/mr-tiny.png",
+    imageUrl: "/characters/mr-tiny.jpg",
     strength: 300000, speed: 500000, intelligence: 10000000, durability: 500000,
     specialAbility: "Manipulates fate and time itself; created the Little People; authored the Saga's outcome centuries in advance",
     weaknesses: "Prefers to watch rather than fight; bound by a perverse love of chaos and free will",
@@ -1470,7 +1470,7 @@ const newChars = [
   {
     name: "Steve Leonard",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/steve-leonard.png",
+    imageUrl: "/characters/steve-leonard.jpg",
     strength: 15000, speed: 40000, intelligence: 50000, durability: 18000,
     specialAbility: "Vampaneze Lord; near-invincible when destiny aligned; centuries of hatred-fuelled combat training",
     weaknesses: "Consumed by obsession with destroying Darren; destiny made him predictable",
@@ -1480,7 +1480,7 @@ const newChars = [
   {
     name: "Vancha March",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/vancha-march.png",
+    imageUrl: "/characters/vancha-march.jpg",
     strength: 15000, speed: 45000, intelligence: 40000, durability: 18000,
     specialAbility: "Fights with bare hands and shurikens only; immune to vampire weapons from decades of conditioning; iron-skinned from refusing protection",
     weaknesses: "Refuses weapons beyond shurikens; pure stubbornness sometimes overrides tactical sense",
@@ -1490,7 +1490,7 @@ const newChars = [
   {
     name: "Larten Crepsley",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/larten-crepsley.png",
+    imageUrl: "/characters/larten-crepsley.jpg",
     strength: 12000, speed: 35000, intelligence: 60000, durability: 15000,
     specialAbility: "Centuries of vampire combat experience; spider Madam Octa as a weapon; flitted at supernatural speed",
     weaknesses: "Code of honour limits ruthlessness; sacrificed himself in the Cirque Du Freak",
@@ -1500,7 +1500,7 @@ const newChars = [
   {
     name: "Darren Shan",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/darren-shan.png",
+    imageUrl: "/characters/darren-shan.jpg",
     strength: 8000, speed: 25000, intelligence: 15000, durability: 10000,
     specialAbility: "Half-vampire speed and strength; flitted between shadows; hardened by years of vampire trials",
     weaknesses: "Half-vampire limitations; sunrise weakens him; human empathy made him hesitate to kill",
@@ -1510,7 +1510,7 @@ const newChars = [
   {
     name: "Paris Skyle",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/paris-skyle.png",
+    imageUrl: "/characters/paris-skyle.jpg",
     strength: 9000, speed: 20000, intelligence: 80000, durability: 11000,
     specialAbility: "Oldest living vampire; millennia of accumulated wisdom; authority commands absolute loyalty among vampire clans",
     weaknesses: "Ancient age made him physically weaker than younger vampires",
@@ -1520,7 +1520,7 @@ const newChars = [
   {
     name: "Harkat Mulds",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/harkat-mulds.png",
+    imageUrl: "/characters/harkat-mulds.jpg",
     strength: 10000, speed: 15000, intelligence: 25000, durability: 12000,
     specialAbility: "Little Person's grey flesh is near-impervious; does not need to breathe; tireless; past-life memories unlock over time",
     weaknesses: "Cannot speak without his mask; connection to Mr. Tiny creates an existential leash",
@@ -1530,7 +1530,7 @@ const newChars = [
   {
     name: "Kurda Smahlt",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/kurda-smahlt.png",
+    imageUrl: "/characters/kurda-smahlt.jpg",
     strength: 6000, speed: 18000, intelligence: 45000, durability: 7000,
     specialAbility: "Cunning political strategist; mapped every vampire mountain passage; expert in vampire lore",
     weaknesses: "Chose peace over duty; his betrayal unravelled by his own conscience",
@@ -1540,7 +1540,7 @@ const newChars = [
   {
     name: "Murlough",
     universe: "Cirque Du Freak",
-    imageUrl: "/characters/murlough.png",
+    imageUrl: "/characters/murlough.jpg",
     strength: 11000, speed: 30000, intelligence: 20000, durability: 13000,
     specialAbility: "Rogue vampaneze with no code; hunted humans for sport; unpredictable savagery",
     weaknesses: "Sanity eroded by isolation; no allies and no strategy",
@@ -1552,7 +1552,7 @@ const newChars = [
   {
     name: "Black Panther",
     universe: "Marvel Comics",
-    imageUrl: "/characters/black-panther.png",
+    imageUrl: "/characters/black-panther.jpg",
     strength: 400000, speed: 200000, intelligence: 800000, durability: 300000,
     specialAbility: "Vibranium suit redistributes kinetic energy; anti-metal claws phase through metal; Panther God blessing enhances all senses and strength; master of every martial art on Earth; Wakandan technology arsenal",
     weaknesses: "No innate superpowers outside the suit; sonic attacks exploit vibranium frequencies; suit can be hacked or removed",
@@ -1562,7 +1562,7 @@ const newChars = [
   {
     name: "Punisher",
     universe: "Marvel Comics",
-    imageUrl: "/characters/punisher.png",
+    imageUrl: "/characters/punisher.jpg",
     strength: 3500, speed: 3200, intelligence: 7200, durability: 3200,
     specialAbility: "Master of every conventional firearm, explosive, and bladed weapon; military special forces training; expert tactician and tracker; will kill without hesitation; near-supernatural pain tolerance",
     weaknesses: "No superpowers whatsoever; outclassed by superhuman opponents; uncompromising war on crime creates tunnel vision",
@@ -1572,7 +1572,7 @@ const newChars = [
   {
     name: "Iceman",
     universe: "Marvel Comics",
-    imageUrl: "/characters/iceman.png",
+    imageUrl: "/characters/iceman.jpg",
     strength: 600000, speed: 900000, intelligence: 350000, durability: 1500000,
     specialAbility: "Omega-level cryokinesis; can become living ice; freeze all atmospheric moisture; create ice constructs; lower temperature to absolute zero; exist as ambient water molecules; internal moisture freeze of targets",
     weaknesses: "Intense heat directly counters ice; rarely unlocks full omega-level potential due to psychological insecurity; can be overwhelmed before ice body fully forms",
@@ -1582,7 +1582,7 @@ const newChars = [
   {
     name: "Emma Frost",
     universe: "Marvel Comics",
-    imageUrl: "/characters/emma-frost.png",
+    imageUrl: "/characters/emma-frost.jpg",
     strength: 400000, speed: 180000, intelligence: 3000000, durability: 1200000,
     specialAbility: "Omega-level telepathy; psychic blasts; complete mind control and memory alteration; diamond form near-invulnerability; astral projection; split consciousness to control multiple minds simultaneously",
     weaknesses: "Diamond form completely blocks own telepathy — must choose between offense and defense; telepathy countered by psi-shields; human-level durability outside diamond form",
@@ -1592,7 +1592,7 @@ const newChars = [
   {
     name: "Mystique",
     universe: "Marvel Comics",
-    imageUrl: "/characters/mystique.png",
+    imageUrl: "/characters/mystique.jpg",
     strength: 18000, speed: 22000, intelligence: 200000, durability: 18000,
     specialAbility: "Perfect shapeshifting — copies voice, fingerprints, retinal patterns, and body chemistry exactly; slowed aging; toxin resistance; peak human fighter and markswoman in any form",
     weaknesses: "Cannot duplicate powers — only appearance; emotional blind spots around Rogue; no superhuman strength or energy projection",
@@ -1602,7 +1602,7 @@ const newChars = [
   {
     name: "Mr Fantastic",
     universe: "Marvel Comics",
-    imageUrl: "/characters/mr-fantastic.png",
+    imageUrl: "/characters/mr-fantastic.jpg",
     strength: 500000, speed: 300000, intelligence: 3500000, durability: 700000,
     specialAbility: "Elastic body with theoretically unlimited stretch; molecular density alteration; force field generation; gadget creation in real-time; access to the Ultimate Nullifier; IQ beyond any unaugmented human",
     weaknesses: "Pacifist tendencies lower lethality ceiling; extreme heat or cold limits elasticity; over-reliance on preparation exploitable in ambush scenarios",
@@ -1612,7 +1612,7 @@ const newChars = [
   {
     name: "Thing",
     universe: "Marvel Comics",
-    imageUrl: "/characters/thing.png",
+    imageUrl: "/characters/thing.jpg",
     strength: 2000000, speed: 120000, intelligence: 150000, durability: 2500000,
     specialAbility: "Organic orange stone body — resists bullets, fire, explosions, moderate energy; Class 100+ physical strength; near-unlimited stamina; seismic ground slams; decades of brawling experience",
     weaknesses: "Relatively slow compared to speedsters; limited ranged options; emotional vulnerability; extreme magnetism or gravity partially effective",
@@ -1622,7 +1622,7 @@ const newChars = [
   {
     name: "Flash",
     universe: "DC Comics",
-    imageUrl: "/characters/flash.png",
+    imageUrl: "/characters/flash.jpg",
     strength: 1000000, speed: 30000000, intelligence: 600000, durability: 900000,
     specialAbility: "Speed Force connection — near-light-speed movement; infinite mass punch; time travel; intangible phasing through matter; lightning generation; tornado creation; molecular acceleration of targets; speed lending and theft",
     weaknesses: "Anti-Speed Force energy; intense cold slows molecular vibration; mental attacks at normal reaction speed; excess phasing causes form dissolution; rarely opens at maximum speed",
@@ -1632,7 +1632,7 @@ const newChars = [
   {
     name: "Joker",
     universe: "DC Comics",
-    imageUrl: "/characters/joker.png",
+    imageUrl: "/characters/joker.jpg",
     strength: 3500, speed: 3800, intelligence: 9200, durability: 3000,
     specialAbility: "Joker venom in dozens of lethal variants; acid flower; razor playing cards; electrified joy buzzer; psychotropic laughing gas; toxin immunity from self-exposure; genius-level tactical chaos engineering; complete psychological unpredictability",
     weaknesses: "No superhuman physical abilities; overwhelmed by genuine physical superiority; often counts on enemies holding back; his chaos occasionally undermines his own plans",
@@ -1642,7 +1642,7 @@ const newChars = [
   {
     name: "Hawkgirl",
     universe: "DC Comics",
-    imageUrl: "/characters/hawkgirl.png",
+    imageUrl: "/characters/hawkgirl.jpg",
     strength: 650000, speed: 500000, intelligence: 350000, durability: 550000,
     specialAbility: "Nth metal wings for flight; nth metal mace completely nullifies magic; nth metal absorption enhances strength and durability; millennia of combat memories across reincarnations; Thanagarian warrior elite training",
     weaknesses: "Nth metal can be turned against her; direct cosmic attacks bypass nth metal protection; aggressive fighting style exploitable by patient tactical opponents",
@@ -1652,7 +1652,7 @@ const newChars = [
   {
     name: "Lucifer Morningstar",
     universe: "DC Comics",
-    imageUrl: "/characters/lucifer-morningstar.png",
+    imageUrl: "/characters/lucifer-morningstar.jpg",
     strength: 9800000, speed: 9800000, intelligence: 9900000, durability: 9900000,
     specialAbility: "Nigh-omnipotent reality manipulation; can erase anything from existence; infinite energy projection; total control of divine light (the Morningstar Flame); immortality; absorb and redirect the power of the Presence; create or unmake universes; absolute authority in his own creation",
     weaknesses: "Has voluntarily surrendered his divine portfolio; constrained by his own pride and free will; the Presence outranks him absolutely; chooses non-interference more often than not",
@@ -1662,7 +1662,7 @@ const newChars = [
   {
     name: "Living Tribunal",
     universe: "Marvel Comics",
-    imageUrl: "/characters/the-living-tribunal.png",
+    imageUrl: "/characters/the-living-tribunal.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute authority over the entire Marvel multiverse; can instantly nullify the power of any being including Infinity Stones; reality restructuring on cosmic scale; omniscience across all timelines and dimensions; can erase entire universes; his three faces represent equity, vengeance, and necessity and must agree before he acts",
     weaknesses: "Requires unanimous agreement across all three faces before intervening; will not act in purely personal conflicts or mortal squabbles; surpassed only by the One-Above-All and the Beyonders",
@@ -1672,7 +1672,7 @@ const newChars = [
   {
     name: "Doctor Manhattan",
     universe: "DC Comics",
-    imageUrl: "/characters/dr-manhattan.png",
+    imageUrl: "/characters/dr-manhattan.jpg",
     strength: 9500000, speed: 9800000, intelligence: 9700000, durability: 9900000,
     specialAbility: "Absolute matter and energy manipulation at the subatomic level; simultaneous existence across all points in time; teleportation; size alteration up to miles tall; disintegration and reassembly of anything; can create and destroy life; sees all possible timelines; restructured the entire DC multiverse during Doomsday Clock",
     weaknesses: "Emotionally detached — loses interest in outcomes; intrinsic fields can be disrupted by tachyon particles (temporarily); free will of others complicates his timeline predictions",
@@ -1682,7 +1682,7 @@ const newChars = [
   {
     name: "Mr. Mxyzptlk",
     universe: "DC Comics",
-    imageUrl: "/characters/mr-mxyzptlk.png",
+    imageUrl: "/characters/mr-mxyzptlk.jpg",
     strength: 9000000, speed: 9500000, intelligence: 9000000, durability: 9200000,
     specialAbility: "5th-dimensional magic that operates completely outside 3D physical laws; can rewrite reality on a whim; transmutation of matter and energy; immune to all 3D-universe attacks; has powered Superman to near-omnipotence; once assisted against the Presence; reality erasure; unlimited wish-granting",
     weaknesses: "Bound by his own game rules — can be tricked into saying his name backwards (Kltpzyxm) to return to the 5th dimension; treats everything as a game and can be outsmarted",
@@ -1692,7 +1692,7 @@ const newChars = [
   {
     name: "The Presence",
     universe: "DC Comics",
-    imageUrl: "/characters/the-presence.png",
+    imageUrl: "/characters/the-presence.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute omnipotence — the source and sustainer of all DC existence; created the multiverse, the angels, the New Gods, and every cosmic hierarchy beneath him; wields the Word of Creation (a single utterance unmakes or remakes reality); his Spectre is the extension of his wrath; can appear in any form or none; exists above time, space, and metaphysics; no being in DC continuity surpasses him",
     weaknesses: "Operates through agents rather than direct intervention by philosophical choice; his non-interference stance has allowed suffering and catastrophe to persist; Elaine Belloc once absorbed a fraction of his power during the Lucifer series, suggesting the portfolio is transferable under extreme circumstances",
