@@ -3605,13 +3605,29 @@ export async function simulateFight(
         return `${t1Line} ${t2Line} The space between them goes quiet. Nobody bothers with words.`;
       })();
 
+  // Build whyWon fallback from fightResolution when AI omits or truncates the section.
+  // Mirrors the format the AI produces: key factors first, then labelled showcase/turning/proof.
+  const finalWhyWon: string[] = aiResult.whyWon?.length
+    ? aiResult.whyWon
+    : (() => {
+        const out: string[] = [];
+        for (const kf of fightResolution.keyFactors.slice(0, 2)) out.push(kf);
+        if (fightResolution.loserShowcase.length > 0)
+          out.push(`LOSER SHOWCASE: ${fightResolution.loserShowcase[0]}`);
+        if (fightResolution.turningPoint)
+          out.push(`TURNING POINT: ${fightResolution.turningPoint}`);
+        if (fightResolution.winnerProof.length > 0)
+          out.push(`WINNER PROOF: ${fightResolution.winnerProof[0]}`);
+        return out;
+      })();
+
   return {
     winner,
     rounds: finalRounds,
     summary: finalSummary,
     arenaIntro: finalArenaIntro,
     intro: finalIntro,
-    whyWon: aiResult.whyWon ?? [],
+    whyWon: finalWhyWon,
     resolution: fightResolution,
   };
 }
