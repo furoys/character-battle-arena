@@ -107,111 +107,17 @@ function PortraitPillar({
   );
 }
 
-function fmtK(n: number): string {
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Math.round(n));
-}
+// Labels that may prefix a whyWon item — rendered as styled badges
+const REASON_LABELS = ["LOSER SHOWCASE", "TURNING POINT", "WINNER PROOF", "KEY FACTOR"] as const;
 
-function computeReasons(result: FightResult): string[] {
-  const winner     = result.winner;
-  const winnerTeam: Character[] = winner === 1 ? (result.team1 ?? []) : (result.team2 ?? []);
-  const loserTeam: Character[]  = winner === 1 ? (result.team2 ?? []) : (result.team1 ?? []);
-  const rounds: FightRound[]    = result.rounds ?? [];
-
-  const candidates: Array<{ weight: number; text: string }> = [];
-
-  const winPow = winnerTeam.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
-  const losPow = loserTeam.reduce( (s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
-  const powDiff = Math.max(winPow, losPow) > 0 ? (winPow - losPow) / Math.max(winPow, losPow) : 0;
-  if (powDiff > 0.15) {
-    candidates.push({ weight: 4, text: `Dominant power advantage — combined rating ${fmtK(winPow)} vs ${fmtK(losPow)}. On paper, this was never close.` });
-  } else if (powDiff > 0.06) {
-    candidates.push({ weight: 2, text: `Modest but consistent power edge — ${fmtK(winPow)} vs ${fmtK(losPow)} total rating across all stats.` });
-  } else if (Math.abs(powDiff) <= 0.03 && winnerTeam.length > 0) {
-    candidates.push({ weight: 1, text: `Nearly identical total power ratings (${fmtK(winPow)} vs ${fmtK(losPow)}). This was decided by execution, not numbers.` });
-  }
-
-  const winSpd = winnerTeam.length ? winnerTeam.reduce((s, c) => s + c.speed, 0) / winnerTeam.length : 0;
-  const losSpd = loserTeam.length  ? loserTeam.reduce( (s, c) => s + c.speed, 0) / loserTeam.length  : 0;
-  const spdDiff = Math.max(winSpd, losSpd) > 0 ? (winSpd - losSpd) / Math.max(winSpd, losSpd) : 0;
-  if (spdDiff > 0.15) {
-    candidates.push({ weight: 3, text: `Speed was the deciding factor — avg ${fmtK(winSpd)} vs ${fmtK(losSpd)}. Faster team controls who hits first, every time.` });
-  } else if (spdDiff > 0.08) {
-    candidates.push({ weight: 2, text: `Speed advantage gave them initiative — avg ${fmtK(winSpd)} vs ${fmtK(losSpd)}.` });
-  }
-
-  const winnerNames = new Set(winnerTeam.map(c => c.name));
-  const normalRounds = rounds.filter(r => !r.attackType?.startsWith("chaos") && r.attackType !== "betrayal");
-  const winAttacks = normalRounds.filter(r => winnerNames.has(r.attacker)).length;
-  const initPct = normalRounds.length > 0 ? Math.round((winAttacks / normalRounds.length) * 100) : 50;
-  if (initPct >= 62) {
-    candidates.push({ weight: 2, text: `Controlled the pace — initiated ${winAttacks} of ${normalRounds.length} exchanges (${initPct}%). The other side was always reacting.` });
-  } else if (initPct <= 40 && normalRounds.length > 0) {
-    candidates.push({ weight: 2, text: `Won despite fighting reactively — attacking only ${winAttacks} of ${normalRounds.length} rounds. Counterattacking was their weapon.` });
-  }
-
-  const winHpKey = winner === 1 ? "team1Hp" : "team2Hp";
-  const losHpKey = winner === 1 ? "team2Hp" : "team1Hp";
-  const minWinHp = rounds.length > 0 ? Math.min(...rounds.map(r => (r as Record<string, number>)[winHpKey] ?? 100)) : 100;
-  if (minWinHp <= 12) {
-    candidates.push({ weight: 4, text: `Survived near-death at ${minWinHp}% HP and refused to go down. The comeback was the fight.` });
-  } else if (minWinHp <= 28) {
-    candidates.push({ weight: 2, text: `Took serious damage — reached ${minWinHp}% HP at their worst — but had more left in the tank.` });
-  } else if (minWinHp >= 50) {
-    candidates.push({ weight: 2, text: `Never truly threatened — lowest HP was ${minWinHp}%. Controlled from start to finish.` });
-  }
-
-  let wasLosing = false;
-  for (const r of rounds) {
-    const wHp = (r as Record<string, number>)[winHpKey] ?? 100;
-    const lHp = (r as Record<string, number>)[losHpKey] ?? 100;
-    if (lHp > wHp + 22) { wasLosing = true; break; }
-  }
-  if (wasLosing) {
-    candidates.push({ weight: 4, text: `They were losing — significantly — and won anyway. That's the kind of result people argue about.` });
-  }
-
-  const chaosRounds = rounds.filter(r => r.attackType?.startsWith("chaos"));
-  if (chaosRounds.length >= 2) {
-    const loserNamesSet = new Set(loserTeam.map(c => c.name));
-    const chaosHitLoser  = chaosRounds.filter(r => loserNamesSet.has(r.defender)).length;
-    const chaosHitWinner = chaosRounds.length - chaosHitLoser;
-    if (chaosHitLoser >= 2 && chaosHitLoser > chaosHitWinner) {
-      candidates.push({ weight: 1, text: `Chaos events were disproportionately unkind to the other side — ${chaosHitLoser} vs ${chaosHitWinner}. Luck played a role.` });
+function parseReasonLabel(text: string): { label: string | null; body: string } {
+  for (const lbl of REASON_LABELS) {
+    const prefix = `${lbl}:`;
+    if (text.toUpperCase().startsWith(prefix)) {
+      return { label: lbl, body: text.slice(prefix.length).trim() };
     }
   }
-
-  const winStr = winnerTeam.length ? winnerTeam.reduce((s, c) => s + c.strength, 0) / winnerTeam.length : 0;
-  const losStr = loserTeam.length  ? loserTeam.reduce( (s, c) => s + c.strength, 0) / loserTeam.length  : 0;
-  if (Math.max(winStr, losStr) > 0 && (winStr - losStr) / Math.max(winStr, losStr) > 0.2 && powDiff < 0.1) {
-    candidates.push({ weight: 2, text: `Strength was the differentiator — avg ${fmtK(winStr)} vs ${fmtK(losStr)}. Every hit landed with more force.` });
-  }
-
-  const winDur = winnerTeam.length ? winnerTeam.reduce((s, c) => s + c.durability, 0) / winnerTeam.length : 0;
-  const losDur = loserTeam.length  ? loserTeam.reduce( (s, c) => s + c.durability, 0) / loserTeam.length  : 0;
-  if (Math.max(winDur, losDur) > 0 && (winDur - losDur) / Math.max(winDur, losDur) > 0.18) {
-    candidates.push({ weight: 2, text: `Durability advantage was the anchor — avg ${fmtK(winDur)} vs ${fmtK(losDur)}. They absorbed punishment the other side couldn't.` });
-  }
-
-  const winInt = winnerTeam.length ? winnerTeam.reduce((s, c) => s + c.intelligence, 0) / winnerTeam.length : 0;
-  const losInt = loserTeam.length  ? loserTeam.reduce( (s, c) => s + c.intelligence, 0) / loserTeam.length  : 0;
-  if (Math.max(winInt, losInt) > 0 && (winInt - losInt) / Math.max(winInt, losInt) > 0.2 && powDiff < 0.08) {
-    candidates.push({ weight: 2, text: `Intelligence advantage mattered here — avg ${fmtK(winInt)} vs ${fmtK(losInt)}. In a close fight, smarter fighters adapt.` });
-  }
-
-  candidates.sort((a, b) => b.weight - a.weight);
-
-  const losFirstNames = loserTeam.map(c => c.name.split(" ")[0]).join(" and ");
-  const fallbacks = [
-    `${losFirstNames} had the tools. They just didn't have the answer.`,
-    `In ${rounds.length} rounds, the margins add up. Every small edge compounded into this result.`,
-    `Sometimes the stats don't predict the outcome. This was one of those fights.`,
-  ];
-
-  const top = candidates.slice(0, 3).map(r => r.text);
-  while (top.length < 3) {
-    top.push(fallbacks[top.length] ?? fallbacks[0]!);
-  }
-  return top;
+  return { label: null, body: text };
 }
 
 function attackBadge(type: string | undefined): { label: string; color: string } | null {
@@ -337,11 +243,7 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
   const [copied, setCopied]   = useState(false);
   const [shared, setShared]   = useState(false);
 
-  // Prefer AI-generated whyWon sentences; fall back to stat-computed reasons
-  const reasons               = useMemo(
-    () => (result.whyWon && result.whyWon.length > 0 ? result.whyWon : computeReasons(result)),
-    [result],
-  );
+  const reasons = result.whyWon ?? [];
 
   const winnerTeam: Character[] = result.winner === 1 ? (result.team1 ?? []) : (result.team2 ?? []);
   const teamColor    = result.winner === 1 ? "team1" : "team2";
@@ -559,26 +461,41 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
               Why they won
             </p>
             <div className="flex flex-col gap-2">
-              {reasons.map((reason, i) => (
-                <div
-                  key={i}
-                  className="flex gap-3 items-start px-4 py-3 rounded"
-                  style={{
-                    background: `${teamColorHex}08`,
-                    border: `1px solid ${teamColorHex}1e`,
-                  }}
-                >
-                  <span
-                    className="font-display text-sm font-bold flex-shrink-0 mt-px"
-                    style={{ color: teamColorHex, opacity: 0.65 }}
+              {reasons.map((reason, i) => {
+                const { label, body } = parseReasonLabel(reason);
+                return (
+                  <div
+                    key={i}
+                    className="flex gap-3 items-start px-4 py-3 rounded"
+                    style={{
+                      background: `${teamColorHex}08`,
+                      border: `1px solid ${teamColorHex}1e`,
+                    }}
                   >
-                    {i + 1}
-                  </span>
-                  <p className="text-sm leading-snug" style={{ color: "rgba(255,255,255,0.75)" }}>
-                    {reason}
-                  </p>
-                </div>
-              ))}
+                    <span
+                      className="font-display text-sm font-bold flex-shrink-0 mt-px"
+                      style={{ color: teamColorHex, opacity: 0.65 }}
+                    >
+                      {i + 1}
+                    </span>
+                    <p className="text-sm leading-snug" style={{ color: "rgba(255,255,255,0.75)" }}>
+                      {label && (
+                        <span
+                          className="inline-block text-[9px] font-bold tracking-widest uppercase rounded px-1.5 py-0.5 mr-2 align-middle"
+                          style={{
+                            background: `${teamColorHex}22`,
+                            color: teamColorHex,
+                            letterSpacing: "0.12em",
+                          }}
+                        >
+                          {label}
+                        </span>
+                      )}
+                      {body}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
