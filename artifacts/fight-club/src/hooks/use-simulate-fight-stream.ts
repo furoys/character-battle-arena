@@ -60,7 +60,8 @@ function* parseSseEvents(buffer: string): Generator<{ event: string; data: strin
 export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {}) {
   const [data, setData] = useState<FightResult | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [ready, setReady] = useState(false); // true once init arrived → UI can leave loading sequence
+  const [ready, setReady] = useState(false); // true once init arrived → arena/HP can render in background
+  const [streaming, setStreaming] = useState(false); // true once first text chunk landed → UI can leave loading sequence
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const optsRef = useRef(opts);
@@ -72,6 +73,7 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     setData(null);
     setIsPending(false);
     setReady(false);
+    setStreaming(false);
     setError(null);
   }, []);
 
@@ -214,6 +216,8 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             const cur = (liveBuffers.get(upper) ?? "") + append;
             liveBuffers.set(upper, cur);
             applyContent(upper, cur);
+            // First real text chunk landed — let the UI leave the loader.
+            setStreaming(true);
             scheduleFlush();
             return;
           }
@@ -225,6 +229,8 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             // delta-built buffer and flushes immediately.
             liveBuffers.set(upper, content);
             applyContent(upper, content);
+            // Section landed (e.g. cache hit path with no preceding deltas).
+            setStreaming(true);
             setData({ ...working, rounds: [...working.rounds] });
             return;
           }
@@ -232,6 +238,9 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
           if (event === "complete") {
             const full = payload as FightResult;
             setData(full);
+            // Cache-hit path may emit complete without ever sending a delta;
+            // make sure the UI exits the loader in that case too.
+            setStreaming(true);
             setIsPending(false);
             optsRef.current.onComplete?.(full);
           }
@@ -269,5 +278,5 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     })();
   }, []);
 
-  return { data, isPending, ready, error, mutate, reset };
+  return { data, isPending, ready, streaming, error, mutate, reset };
 }

@@ -927,7 +927,7 @@ export function Home() {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
           }}
           result={censoredResult}
-          isSimulating={simulateFight.isPending && !simulateFight.ready}
+          isSimulating={simulateFight.isPending && !simulateFight.streaming}
           team1Names={team1.map(c => c.name)}
           team2Names={team2.map(c => c.name)}
           team1Images={team1.map(c => c.imageUrl)}
