@@ -3376,9 +3376,14 @@ export async function simulateFight(
   // produced a different winner, override — the assessment is the source of truth.
   // If a cachedResolution is provided, its winner overrides the assessment.
   const hpWinner: 1 | 2 = hp1 >= hp2 ? 1 : 2;
+  // Developer-Legend hierarchy override:
+  //   Architects (Chris/Troy) outrank Tim → their team always wins.
+  //   Tim outranks every mortal → his team always wins.
+  // Cached rematches still respect their stored winner.
+  const devOverride = cachedResolution ? null : devLegendWinner(team1, team2);
   const winner: 1 | 2 = cachedResolution
     ? (cachedResolution.winner === "Team 1" ? 1 : 2)
-    : assessment.verdict;
+    : (devOverride ?? assessment.verdict);
   const overrode = hpWinner !== winner;
 
   if (assessment.forceDominant) {
