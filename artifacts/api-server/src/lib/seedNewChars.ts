@@ -24,7 +24,7 @@ const newChars = [
     description: "The other half of this arena's foundation. Troy Wilson doesn't fight fair — he fights definitively. Opponents facing him aren't facing a character; they're facing the person who decided how this all works. The result was decided before the first round.",
   },
   {
-    name: "Tim",
+    name: "Tim Johnston",
     universe: "Developer Legends",
     imageUrl: "/characters/tim.jpg",
     strength: 90000, speed: 90000, intelligence: 95000, durability: 90000,
@@ -1703,7 +1703,9 @@ const newChars = [
 
 export async function seedNewChars(): Promise<void> {
   // Remove duplicate "The Living Tribunal" (kept canonical "Living Tribunal")
-  const duplicateNames = ["The Living Tribunal", "Mr. Fantastic"];
+  // Also remove the legacy bare-name "Tim" row — the canonical Developer Legend
+  // is "Tim Johnston" and prod ended up with both after the rename.
+  const duplicateNames = ["The Living Tribunal", "Mr. Fantastic", "Tim"];
   const dupDeleted = await db
     .delete(charactersTable)
     .where(inArray(charactersTable.name, duplicateNames));
