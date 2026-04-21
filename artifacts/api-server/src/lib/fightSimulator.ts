@@ -2234,30 +2234,73 @@ async function aiTextWithTimeout(
 
 // Build a section-boundary watcher. Each call to onDelta(accumulated) re-parses
 // the streaming text via parseSections; any section that has a NEXT marker
-// after it is complete and gets emitted exactly once. Call onEnd at stream end
-// to flush the final (last) section.
-export function makeSectionStreamer(onSection: (name: string, content: string) => void) {
-  const emitted = new Set<string>();
+// after it is complete and gets emitted exactly once via onSection.
+//
+// If onSectionDelta is provided, the watcher ALSO emits per-chunk incremental
+// growth of the currently in-progress (last) section, so the consumer can
+// type-out text as the AI writes it instead of waiting for the next === marker
+// to commit the whole paragraph. Trailing partial markers (e.g. "=== ROU") are
+// stripped from deltas so the user never sees marker fragments.
+//
+// Call onEnd at stream end to flush the final (last) section to onSection.
+export function makeSectionStreamer(
+  onSection: (name: string, content: string) => void,
+  onSectionDelta?: (name: string, append: string) => void,
+) {
+  const completed = new Set<string>();
+  const lastEmittedLen = new Map<string, number>();
+
+  // Trim a trailing partial "=== ..." marker from in-progress section content.
+  const stripPartialMarker = (s: string) => s.replace(/\n*={1,3}[^\n]*$/g, "").replace(/\n*=+\s*$/g, "");
+
   return {
     onDelta(accumulated: string) {
       const sections = parseSections(accumulated);
       const entries = [...sections.entries()];
-      // All entries except the last are bounded by the next marker → complete.
+
+      // Bounded sections (all but last) → finalize once. Flush any unsent tail
+      // through onSectionDelta first so the typewriter ends on the full text,
+      // then emit the canonical onSection event.
       for (let i = 0; i < entries.length - 1; i++) {
         const [name, content] = entries[i]!;
-        if (!emitted.has(name) && content.trim()) {
-          emitted.add(name);
-          onSection(name, content);
+        if (completed.has(name) || !content.trim()) continue;
+        if (onSectionDelta) {
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+          }
+        }
+        lastEmittedLen.set(name, content.length);
+        completed.add(name);
+        onSection(name, content);
+      }
+
+      // In-progress (last) section → stream incremental growth.
+      if (onSectionDelta && entries.length > 0) {
+        const [name, raw] = entries[entries.length - 1]!;
+        if (!completed.has(name)) {
+          const content = stripPartialMarker(raw);
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+            lastEmittedLen.set(name, content.length);
+          }
         }
       }
     },
     onEnd(accumulated: string) {
       const sections = parseSections(accumulated);
       for (const [name, content] of sections.entries()) {
-        if (!emitted.has(name) && content.trim()) {
-          emitted.add(name);
-          onSection(name, content);
+        if (completed.has(name) || !content.trim()) continue;
+        if (onSectionDelta) {
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+          }
         }
+        lastEmittedLen.set(name, content.length);
+        completed.add(name);
+        onSection(name, content);
       }
     },
   };
@@ -2413,6 +2456,7 @@ async function generateAINarrative(
   resolution?: FightResolution,
   rematchCount = 0,
   onSection?: (name: string, content: string) => void,
+  onSectionDelta?: (name: string, append: string) => void,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2773,8 +2817,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
-    const streamerA = onSection ? makeSectionStreamer(onSection) : null;
-    const streamerB = onSection ? makeSectionStreamer(onSection) : null;
+    const streamerA = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
+    const streamerB = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
 
     const [rawA, rawB] = await Promise.all([
       aiTextWithTimeout(promptA, tokensA, 75_000, streamerA?.onDelta),
@@ -2789,7 +2833,7 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
     const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
-    const streamer = onSection ? makeSectionStreamer(onSection) : null;
+    const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
     raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000, streamer?.onDelta);
     streamer?.onEnd(raw);
   }
@@ -3255,6 +3299,11 @@ export interface SimulateFightProgress {
   // Fired each time a === MARKER === bounded section finishes streaming from
   // the narrative AI (e.g. SETTING, ENTRANCE, ROUND 1, RESULT, WHY THEY WON).
   onSection?: (name: string, content: string) => void;
+  // Fired with incremental new characters of the currently in-progress
+  // section as the AI writes it. Lets the UI typewrite text live instead of
+  // waiting for the next === marker. The `append` is the new chars to
+  // concatenate to whatever the consumer already has for `name`.
+  onSectionDelta?: (name: string, append: string) => void;
 }
 
 export async function simulateFight(
@@ -3757,7 +3806,7 @@ export async function simulateFight(
 
   // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
   // rematchCount > 0 triggers "write a fresh different story arc" instruction.
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount, progress?.onSection);
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount, progress?.onSection, progress?.onSectionDelta);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
