@@ -5,7 +5,10 @@ import { Character } from "@workspace/api-client-react/src/generated/api.schemas
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
+import { AgeGate } from "@/components/age-gate";
 import { AvaLogo } from "@/components/ava-logo";
+import { useAgeMode } from "@/hooks/use-age-mode";
+import { censorFightResult } from "@/lib/profanity-filter";
 import { Search, Shuffle, Swords, X, Zap, AlertTriangle } from "lucide-react";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
@@ -322,6 +325,12 @@ export function Home() {
     },
   });
 
+  const { isMinor } = useAgeMode();
+  const censoredResult = useMemo(
+    () => (simulateFight.data ? (isMinor ? censorFightResult(simulateFight.data) : simulateFight.data) : null),
+    [simulateFight.data, isMinor]
+  );
+
   // IntersectionObserver — appends PAGE_SIZE cards when the sentinel scrolls into view.
   // Must live AFTER filteredCharacters is declared (avoids TDZ).
   useEffect(() => {
@@ -423,6 +432,7 @@ export function Home() {
 
   return (
     <>
+      <AgeGate />
       <style>{`
         @keyframes scanMove {
           from { transform: translateY(0); }
@@ -918,7 +928,7 @@ export function Home() {
           onRematch={() => {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
           }}
-          result={simulateFight.data || null}
+          result={censoredResult}
           isSimulating={simulateFight.isPending && !simulateFight.ready}
           team1Names={team1.map(c => c.name)}
           team2Names={team2.map(c => c.name)}
