@@ -1,6 +1,7 @@
 import { db } from "@workspace/db";
 import { charactersTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import charactersFullDump from "./charactersFullDump.json" with { type: "json" };
 
 const newChars = [
   // ── Developer Legends — unkillable, max everything ──────────────────────────
@@ -1723,5 +1724,30 @@ export async function seedNewChars(): Promise<void> {
   }
   if (inserted > 0) {
     console.log(`[seed] Inserted ${inserted} new character(s)`);
+  }
+
+  // Full-roster sync: insert any character from the canonical JSON dump that
+  // is missing from THIS database (covers production after a deploy where the
+  // prod DB hasn't seen recent character additions). Idempotent — existing
+  // characters are skipped by name.
+  const existingNames = new Set(
+    (await db.select({ name: charactersTable.name }).from(charactersTable))
+      .map(r => r.name),
+  );
+  const dumpRows = charactersFullDump as Array<Record<string, unknown>>;
+  let dumpInserted = 0;
+  for (const row of dumpRows) {
+    const name = row.name as string;
+    if (existingNames.has(name)) continue;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await db.insert(charactersTable).values(row as any);
+      dumpInserted++;
+    } catch (err) {
+      console.error(`[seed] Failed to insert ${name}:`, err);
+    }
+  }
+  if (dumpInserted > 0) {
+    console.log(`[seed] Synced ${dumpInserted} character(s) from full roster dump`);
   }
 }
