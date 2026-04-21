@@ -58,6 +58,7 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 - Format: `=== ARENA ===` intro + `=== ROUND N ===` sections parsed by regex in `generateAINarrative()`
 - Fight rounds capped at 6–8 to keep AI generation under 80 seconds
 - Falls back to template-based narratives if AI times out or errors
+- Narrative generation is parallelized for fights with 3+ rounds: Call A writes SETTING + ENTRANCE + first half of rounds; Call B writes second half + RESULT + WHY THEY WON. Both calls share the same character profiles, locked verdict, resolution brief, and HP timeline. Each is wrapped in PARTIAL OUTPUT MODE framing so the model emits only the requested sections starting with the first === marker. Outputs are concatenated; existing parseSections (first-wins on duplicates) merges them. Roughly 25–40% wall-clock reduction with no quality change.
 
 ## Notes
 

@@ -2517,9 +2517,65 @@ async function generateAINarrative(
     return `Both sides in full exchange. Real damage on both sides. Every character uses their specific tools — no generic attacks. Show cause, effect, and consequence.`;
   };
 
-  const roundSections = Array.from({ length: roundCount }, (_, i) =>
-    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`
-  ).join("\n\n");
+  const buildRoundSection = (i: number) =>
+    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`;
+  const roundSections = Array.from({ length: roundCount }, (_, i) => buildRoundSection(i)).join("\n\n");
+
+  // Section builders — used to create either a single full prompt or two
+  // half-prompts that run in parallel for faster wall-clock time.
+  const settingSection = `=== SETTING ===
+3 to 5 strong sentences. Establish the environment, scale, atmosphere, hazards, lighting, and the starting positions of each fighter.
+The arena must feel real and match the tone of the fighters. No generic floating platforms unless that's the actual arena.`;
+
+  const entranceSection = `=== ENTRANCE ===
+Introduce each fighter. Show their physical presence, visible weapons or active powers, posture, and emotional state.
+2 to 3 sentences per fighter. Show what they ARE before they move. Make each one distinct.`;
+
+  const resultSection = `=== RESULT ===
+One clean line declaring the winner. Then 2 to 3 sentences explaining why, in plain language. State the condition of any survivors.`;
+
+  const whyWonSection = `=== WHY THEY WON ===
+Write exactly 5 numbered sentences. Be matchup-specific — no generic labels, no abstract phrases.
+Each sentence covers ONE pre-determined point from the battle logic:
+${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that created the margin."}
+2. ${resolution.keyFactors[1] ?? resolution.keyFactors[0] ?? "The ability or tool the loser had no answer for."}
+3. LOSER SHOWCASE: ${resolution.loserShowcase[0] ?? "The loser's best moment — what they actually accomplished."} Expand into one honest sentence about their performance.
+4. TURNING POINT: ${resolution.turningPoint} Expand into one vivid, specific sentence.
+5. WINNER PROOF: ${resolution.winnerProof[0] ?? "Why the result was inevitable."} Expand into one decisive closing sentence.` : `1. THE DECISIVE ADVANTAGE: The specific stat or scale gap that created the margin — not generic, tied to these fighters.
+2. THE ABILITY THAT DECIDED IT: The one capability from the winner's kit the loser had no answer for.
+3. LOSER'S BEST MOMENT: What the loser actually accomplished — they must look credible, not embarrassing.
+4. THE TURNING POINT: The exact exchange that sealed it and why the loser couldn't recover from it.
+5. WHY IT ENDED: The winner's specific finishing mechanism and why the loser's remaining options were exhausted.`}`;
+
+  const buildOutputFormat = (opts: { intro: boolean; rounds: number[]; outro: boolean; isPartial?: boolean; isSecondHalf?: boolean }): string => {
+    const blocks: string[] = [];
+    if (opts.isPartial) {
+      const firstMarker = opts.intro
+        ? "=== SETTING ==="
+        : `=== ROUND ${opts.rounds[0]! + 1} ===`;
+      const skipNote = opts.isSecondHalf
+        ? `IMPORTANT — PARTIAL OUTPUT MODE:
+- This is the SECOND HALF of the fight. The SETTING, ENTRANCE, and ROUNDS 1–${opts.rounds[0]} have ALREADY been written by another pass — DO NOT rewrite them.
+- Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no "continue", no "got it", no apology, no commentary of any kind.
+- Treat the fight state as if those earlier sections happened exactly as the BATTLE LOGIC BRIEF and DAMAGE STATE describe. The HP values you see at the start of YOUR rounds are the current state.
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Nothing else.`
+        : `IMPORTANT — PARTIAL OUTPUT MODE:
+- This is the FIRST HALF of the fight. Another pass will write the remaining rounds, RESULT, and WHY THEY WON.
+- Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no commentary.
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Do NOT write RESULT or WHY THEY WON — those belong to the other pass. Do NOT add a closing remark.`;
+      blocks.push(skipNote);
+    }
+    if (opts.intro) {
+      blocks.push(settingSection);
+      blocks.push(entranceSection);
+    }
+    for (const i of opts.rounds) blocks.push(buildRoundSection(i));
+    if (opts.outro) {
+      blocks.push(resultSection);
+      blocks.push(whyWonSection);
+    }
+    return blocks.join("\n\n");
+  };
 
   // Stage 1 resolution brief — specific pre-computed factors the narrative must use.
   const resolutionBrief = resolution ? `
@@ -2625,31 +2681,7 @@ ${Array.from({ length: roundCount }, (_, i) => `Phase ${i + 1}: ${hpNote(i)}`).j
 OUTPUT FORMAT — use EXACTLY these section markers
 ==================================================
 
-=== SETTING ===
-3 to 5 strong sentences. Establish the environment, scale, atmosphere, hazards, lighting, and the starting positions of each fighter.
-The arena must feel real and match the tone of the fighters. No generic floating platforms unless that's the actual arena.
-
-=== ENTRANCE ===
-Introduce each fighter. Show their physical presence, visible weapons or active powers, posture, and emotional state.
-2 to 3 sentences per fighter. Show what they ARE before they move. Make each one distinct.
-
-${roundSections}
-
-=== RESULT ===
-One clean line declaring the winner. Then 2 to 3 sentences explaining why, in plain language. State the condition of any survivors.
-
-=== WHY THEY WON ===
-Write exactly 5 numbered sentences. Be matchup-specific — no generic labels, no abstract phrases.
-Each sentence covers ONE pre-determined point from the battle logic:
-${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that created the margin."}
-2. ${resolution.keyFactors[1] ?? resolution.keyFactors[0] ?? "The ability or tool the loser had no answer for."}
-3. LOSER SHOWCASE: ${resolution.loserShowcase[0] ?? "The loser's best moment — what they actually accomplished."} Expand into one honest sentence about their performance.
-4. TURNING POINT: ${resolution.turningPoint} Expand into one vivid, specific sentence.
-5. WINNER PROOF: ${resolution.winnerProof[0] ?? "Why the result was inevitable."} Expand into one decisive closing sentence.` : `1. THE DECISIVE ADVANTAGE: The specific stat or scale gap that created the margin — not generic, tied to these fighters.
-2. THE ABILITY THAT DECIDED IT: The one capability from the winner's kit the loser had no answer for.
-3. LOSER'S BEST MOMENT: What the loser actually accomplished — they must look credible, not embarrassing.
-4. THE TURNING POINT: The exact exchange that sealed it and why the loser couldn't recover from it.
-5. WHY IT ENDED: The winner's specific finishing mechanism and why the loser's remaining options were exhausted.`}
+__OUTPUT_FORMAT_BLOCK__
 
 FORMAT RULES:
 - SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
@@ -2666,12 +2698,47 @@ CRITICAL OUTPUT DISCIPLINE:
 
 DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
-  // Token budget: scale with fight length so every round + WHY THEY WON always fit.
-  // Base 2500 covers SETTING + ENTRANCE + RESULT + WHY THEY WON.
-  // Each round needs ~900 tokens with gpt-4o (it writes much longer paragraphs
-  // than gpt-4o-mini). Cap at 12000 to stay well inside gpt-4o's 16K output limit.
-  const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
-  const raw = await aiTextWithTimeout(prompt, narrativeTokens, 90_000);
+  // Helper to splice the per-call output-format block into the master prompt.
+  const promptWithOutputBlock = (outputBlock: string) =>
+    prompt.replace("__OUTPUT_FORMAT_BLOCK__", outputBlock);
+
+  // Per-section token estimates (gpt-4o):
+  //   SETTING + ENTRANCE ≈ 800 tokens
+  //   each ROUND          ≈ 900 tokens
+  //   RESULT + WHY THEY WON ≈ 1200 tokens
+  // For fights with 3+ rounds we split the work across two AI calls that run
+  // in parallel, halving the wall-clock time. Quality is unchanged because
+  // both calls receive the identical character profiles, locked verdict,
+  // resolution brief, and full HP timeline.
+  const allRoundIdx = Array.from({ length: roundCount }, (_, i) => i);
+  let raw: string;
+  if (roundCount >= 3) {
+    const mid = Math.ceil(roundCount / 2); // 4→2, 5→3, 6→3, 7→4
+    const firstHalf = allRoundIdx.slice(0, mid);
+    const secondHalf = allRoundIdx.slice(mid);
+
+    const promptA = promptWithOutputBlock(
+      buildOutputFormat({ intro: true, rounds: firstHalf, outro: false, isPartial: true, isSecondHalf: false }),
+    );
+    const promptB = promptWithOutputBlock(
+      buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
+    );
+    const tokensA = Math.min(12000, 800 + firstHalf.length * 900);
+    const tokensB = Math.min(12000, 1200 + secondHalf.length * 900);
+
+    const [rawA, rawB] = await Promise.all([
+      aiTextWithTimeout(promptA, tokensA, 75_000),
+      aiTextWithTimeout(promptB, tokensB, 75_000),
+    ]);
+    raw = `${rawA}\n\n${rawB}`;
+  } else {
+    // Short fights: single call is already fast enough.
+    const fullPrompt = promptWithOutputBlock(
+      buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
+    );
+    const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
+    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000);
+  }
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "", whyWon: [] };
