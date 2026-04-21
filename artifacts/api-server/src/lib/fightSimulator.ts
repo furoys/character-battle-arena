@@ -2190,7 +2190,15 @@ interface RoundSimData {
 }
 
 // Race a streaming AI call against a hard timeout, returning the raw text.
-async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: number): Promise<string> {
+// Optional onDelta is invoked with the accumulated text after each chunk —
+// used to detect section boundaries for SSE streaming. Network/parsing
+// behavior is identical with or without onDelta — quality is unchanged.
+async function aiTextWithTimeout(
+  prompt: string,
+  maxTokens: number,
+  timeoutMs: number,
+  onDelta?: (accumulated: string) => void,
+): Promise<string> {
   return new Promise<string>((resolve) => {
     const ac = new AbortController();
     let text = "";
@@ -2207,7 +2215,12 @@ async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: n
         );
         for await (const chunk of stream) {
           const delta = chunk.choices[0]?.delta?.content;
-          if (delta) text += delta;
+          if (delta) {
+            text += delta;
+            if (onDelta) {
+              try { onDelta(text); } catch { /* swallow — never break the stream */ }
+            }
+          }
         }
         clearTimeout(deadline);
         resolve(text);
@@ -2217,6 +2230,37 @@ async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: n
       }
     })();
   });
+}
+
+// Build a section-boundary watcher. Each call to onDelta(accumulated) re-parses
+// the streaming text via parseSections; any section that has a NEXT marker
+// after it is complete and gets emitted exactly once. Call onEnd at stream end
+// to flush the final (last) section.
+export function makeSectionStreamer(onSection: (name: string, content: string) => void) {
+  const emitted = new Set<string>();
+  return {
+    onDelta(accumulated: string) {
+      const sections = parseSections(accumulated);
+      const entries = [...sections.entries()];
+      // All entries except the last are bounded by the next marker → complete.
+      for (let i = 0; i < entries.length - 1; i++) {
+        const [name, content] = entries[i]!;
+        if (!emitted.has(name) && content.trim()) {
+          emitted.add(name);
+          onSection(name, content);
+        }
+      }
+    },
+    onEnd(accumulated: string) {
+      const sections = parseSections(accumulated);
+      for (const [name, content] of sections.entries()) {
+        if (!emitted.has(name) && content.trim()) {
+          emitted.add(name);
+          onSection(name, content);
+        }
+      }
+    },
+  };
 }
 
 // Parse AI narrative that uses === MARKER === delimiters into a map of MARKER -> content.
@@ -2368,6 +2412,7 @@ async function generateAINarrative(
   allianceTrigger?: boolean,
   resolution?: FightResolution,
   rematchCount = 0,
+  onSection?: (name: string, content: string) => void,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2726,10 +2771,17 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const tokensA = Math.min(12000, 800 + firstHalf.length * 900);
     const tokensB = Math.min(12000, 1200 + secondHalf.length * 900);
 
+    // Per-call section streamers — each watches its own buffer for completed
+    // === MARKER === blocks and forwards them to the SSE consumer in real time.
+    const streamerA = onSection ? makeSectionStreamer(onSection) : null;
+    const streamerB = onSection ? makeSectionStreamer(onSection) : null;
+
     const [rawA, rawB] = await Promise.all([
-      aiTextWithTimeout(promptA, tokensA, 75_000),
-      aiTextWithTimeout(promptB, tokensB, 75_000),
+      aiTextWithTimeout(promptA, tokensA, 75_000, streamerA?.onDelta),
+      aiTextWithTimeout(promptB, tokensB, 75_000, streamerB?.onDelta),
     ]);
+    streamerA?.onEnd(rawA);
+    streamerB?.onEnd(rawB);
     raw = `${rawA}\n\n${rawB}`;
   } else {
     // Short fights: single call is already fast enough.
@@ -2737,7 +2789,9 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
     const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
-    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000);
+    const streamer = onSection ? makeSectionStreamer(onSection) : null;
+    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000, streamer?.onDelta);
+    streamer?.onEnd(raw);
   }
 
   if (!raw.trim()) {
@@ -3181,12 +3235,35 @@ function autoDetectBrutalTone(team1: Character[], team2: Character[]): boolean {
   return maxScore >= 4 || totalScore >= 6;
 }
 
+export interface SimulateFightProgress {
+  // Fired right after Stage 1 (math sim + AI assessment + arena selection)
+  // completes, BEFORE the narrative AI call. Carries enough info for the UI
+  // to render the fight banner and per-round HP placeholders while narrative
+  // sections stream in.
+  onInit?: (info: {
+    winner: number;
+    arena: { name: string; description: string; hazards?: string[] };
+    rounds: Array<{
+      round: number;
+      attacker: 1 | 2;
+      narrative: string;
+      team1Hp: number;
+      team2Hp: number;
+    }>;
+    summary: string;
+  }) => void;
+  // Fired each time a === MARKER === bounded section finishes streaming from
+  // the narrative AI (e.g. SETTING, ENTRANCE, ROUND 1, RESULT, WHY THEY WON).
+  onSection?: (name: string, content: string) => void;
+}
+
 export async function simulateFight(
   team1: Character[],
   team2: Character[],
   mode: string = "cinematic",
   cachedResolution?: FightResolution | null,
   rematchCount = 0,
+  progress?: SimulateFightProgress,
 ): Promise<FightResult> {
   // ── Pre-fight modifiers: synergy bonuses + weakness penalties ─────────────
   // Applies temporary stat adjustments based on v3Profile archetype/combatStyle
@@ -3658,9 +3735,29 @@ export async function simulateFight(
     );
   }
 
+  // ── Init signal: emit before narrative AI runs so UI can render the fight
+  // banner + per-round HP placeholders while sections stream in. Narratives
+  // are empty here — they'll fill in via onSection events.
+  if (progress?.onInit) {
+    try {
+      progress.onInit({
+        winner,
+        arena: { name: arena.name, description: arena.flavor.join(" ") },
+        rounds: rounds.map((r) => ({
+          round: r.round,
+          attacker: team1.some(c => c.name === r.attacker) ? 1 : 2,
+          narrative: "",
+          team1Hp: r.team1Hp,
+          team2Hp: r.team2Hp,
+        })),
+        summary: "",
+      });
+    } catch { /* never break the fight on UI hook errors */ }
+  }
+
   // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
   // rematchCount > 0 triggers "write a fresh different story arc" instruction.
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount);
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount, progress?.onSection);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({
