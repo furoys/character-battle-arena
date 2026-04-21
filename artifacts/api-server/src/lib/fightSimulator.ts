@@ -2326,30 +2326,35 @@ export function normalizeTone(input: string | undefined): FightTone {
 }
 
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
-  cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching.
+  cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching. Rated R. Trash-talk heavy.
 • Every sentence must move the fight forward. No padding.
 • Vary pacing: short punchy sentences for fast action, longer ones for weight and consequence.
 • Injuries are real — blood, broken bones, torn tissue, pain that changes how a fighter moves. Do not sanitize.
 • If a blow is devastating, describe what it does to the body: where it lands, what breaks, what the fighter feels.
-• Dialogue is authentic to each character — one voice never sounds like another.
-• Show internal reactions: what a fighter notices, fears, calculates, or refuses to accept.
-• Finishers should feel final — show the exact mechanism and the physical result.
+• PROFANITY IS REQUIRED. Fighters swear when they take damage, when they land hits, when they trash-talk. Use real words: fuck, shit, asshole, bastard, motherfucker, prick, bitch, dipshit, cunt where the character would actually say it. No asterisks, no censoring, no "expletive" placeholders.
+• INSULTS ARE REQUIRED. Every round needs at least one vicious, character-specific insult — mock the opponent's costume, their backstory, their species, their failures, their dead loved ones, their universe. Make it cruel and personal. Make it funny when the character would be funny. Make it humiliating when the character would humiliate.
+• Internal monologue can be foul too. A fighter thinking "this fucking guy" is more honest than "this troublesome adversary."
+• Finishers should feel final — show the exact mechanism, the physical result, AND the winner's parting words (often profane, always cutting).
 • Cosmic scale should feel vast but still readable. Street-level should feel physical, painful, and grounded.`,
-  brutal: `TONE: Raw, anatomical, merciless. This is not a movie. It is a dissection of violence.
+  brutal: `TONE: Raw, anatomical, merciless, foul-mouthed. This is not a movie. It is a dissection of violence with screaming.
 • Name exactly where hits land: jaw, temple, solar plexus, floating ribs, knee, throat, spine.
 • Describe what the body does: bones crack, cartilage compresses, blood fills the mouth, a knee hyperextends the wrong way.
 • Short declarative sentences. Pain drives every clause.
 • Injuries compound without exception — something broken in round one is functionally broken for the rest of the fight.
 • Characters feel their wounds: they spit blood, guard a cracked rib, can't fully extend an arm, blink through a swelling eye.
-• Finishers are anatomically specific and final — describe the exact moment of incapacitation and what causes it.
-• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing.
+• PROFANITY IS MANDATORY AND FREQUENT. Fighters scream "fuck," "motherfucker," "you piece of shit," "die you cunt," whatever fits their voice. Pain talks dirty. Rage talks filthy. No sanitizing, no euphemisms, no asterisks.
+• INSULTS ARE MANDATORY. Every round must contain at least one venomous, personal, hateful insult — about the opponent's body, costume, mother, intelligence, lineage, smell, weakness, dead allies, anything that hits. Cruelty is the point.
+• Finishers are anatomically specific and final — describe the exact moment of incapacitation, what causes it, and the winner's brutal final words.
+• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing, "fuck you" through broken teeth.
 • Do NOT soften the ending. If it ends in death, it ends in death. Show what that looks like.`,
-  realistic: `TONE: Analytical and physically honest. Every outcome follows from capability and anatomy.
+  realistic: `TONE: Analytical and physically honest, but the fighters are still humans (or close to it) under stress — they swear, they trash-talk, they break.
 • No lucky reversals, no chaos saves. Outcomes are earned by stats, skills, and matchup logic.
 • Injuries are real and cumulative — show how damage changes a fighter's movement, guard, and decision-making.
 • Describe what hits do to the body clearly and without softening: where they land, what the physical effect is.
 • Show the fighters reading each other — adjusting, countering, exploiting openings.
-• Write like a sharp breakdown that happens to be vivid and visceral prose, not a stat dump.`,
+• PROFANITY IS EXPECTED. Real fighters swear under pressure — "shit," "fuck," "goddamn it" when something hurts or surprises them. No sanitizing.
+• INSULTS ARE EXPECTED. At least one sharp, character-specific insult per round — mocking the opponent's style, mistakes, or background. Not random — earned by the moment.
+• Write like a sharp breakdown that happens to be vivid, visceral, foul-mouthed prose, not a stat dump.`,
 };
 
 async function generateAINarrative(
@@ -2570,6 +2575,7 @@ CHARACTER RULES
 - Street-level fighters feel physical, tactical, grounded.
 - Dialogue must sound like THAT character, not generic hero-speak.
 - If a character has a VOICE note, honor it exactly — including profanity. Deadpool says fuck. Wolverine says goddamn. Billy Butcher says cunt. Do not sanitize characters who canonically swear. Their actual voice is part of who they are.
+- VULGARITY MANDATE — this is a mature, R-rated arena. Default assumption: every fighter swears under combat stress unless they are explicitly a child or a literal saint. Use real, uncensored profanity (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) where natural. Use vicious, character-specific insults every round. NEVER replace swears with asterisks, dashes, "bleep," "expletive," or polite synonyms. NEVER soften personality to be "appropriate." NEVER skip an insult to keep the prose dignified — dignity is not the goal here. If you find yourself reaching for "darn," "heck," "shoot," or "you fool," stop and use the real word.
 
 ==================================================
 DO NOT
