@@ -4512,6 +4512,12 @@ uri = "file://artifacts/fight-club/public/characters/tim.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "277vfM_38PmeJVcoaI-B7"
+uri = "file://artifacts/fight-club/public/characters/tim-new.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
