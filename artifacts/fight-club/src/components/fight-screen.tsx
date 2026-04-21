@@ -353,7 +353,10 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
   const accentColor = meta?.accent ?? teamColor;
 
   return (
-    <div className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+    <div
+      data-round-index={index}
+      className={`transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+    >
       {/* Turning-point divider */}
       {isTurningPoint && (
         <div className="flex items-center gap-3 my-4">
@@ -480,11 +483,33 @@ export function FightScreen({
     setVisibleCount(result.rounds.length);
   };
 
+  // Scroll behavior:
+  // - When the user reveals a new round (visibleCount goes up), bring the
+  //   start of that round to the top of the scroller so they don't have to
+  //   scroll up to find the beginning.
+  // - When the winner banner becomes available, bring the bottom into view.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const prevVisibleCount = useRef(0);
   useEffect(() => {
-    if (visibleCount > 0 || canShowResults) {
+    if (visibleCount > prevVisibleCount.current) {
+      // Defer one frame so the just-revealed RoundBlock is mounted in the DOM.
+      const raf = requestAnimationFrame(() => {
+        const target = scrollerRef.current?.querySelector<HTMLElement>(
+          `[data-round-index="${visibleCount - 1}"]`
+        );
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      prevVisibleCount.current = visibleCount;
+      return () => cancelAnimationFrame(raf);
+    }
+    prevVisibleCount.current = visibleCount;
+  }, [visibleCount]);
+
+  useEffect(() => {
+    if (canShowResults) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [visibleCount, canShowResults]);
+  }, [canShowResults]);
 
   let team1HpPct = 100;
   let team2HpPct = 100;
@@ -547,7 +572,7 @@ export function FightScreen({
         </div>
 
         {/* Narrative area */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollerRef} className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
             {result && !isSimulating ? (
               <>
