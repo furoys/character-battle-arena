@@ -932,6 +932,7 @@ export function Home() {
           team2Names={team2.map(c => c.name)}
           team1Images={team1.map(c => c.imageUrl)}
           team2Images={team2.map(c => c.imageUrl)}
+          completedSections={simulateFight.completedSections}
         />
       </div>
 

@@ -120,6 +120,11 @@ interface FightScreenProps {
   team2Names: string[];
   team1Images?: (string | null | undefined)[];
   team2Images?: (string | null | undefined)[];
+  // UPPERCASE section names that have received their canonical final content
+  // from the streaming hook. Drives the manual progression buttons — we only
+  // show "BEGIN MATCH" or "NEXT ROUND →" once the AI has finished writing
+  // the section the user is currently reading.
+  completedSections?: Set<string>;
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -393,144 +398,93 @@ export function FightScreen({
   open, onClose, onRematch, result, isSimulating,
   team1Names, team2Names,
   team1Images = [], team2Images = [],
+  completedSections,
 }: FightScreenProps) {
+  // Manual progression: the user controls the pace via "BEGIN MATCH" then
+  // "NEXT ROUND →" buttons. visibleCount counts how many round narratives
+  // are revealed (rounds beyond visibleCount stay hidden until clicked).
   const [visibleCount, setVisibleCount] = useState(0);
-  const [allRoundsDone, setAllRoundsDone] = useState(false);
+  const [matchBegun, setMatchBegun] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Clear all pending auto-reveal timers
-  const clearTimers = () => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-  };
-
-  // Keep latest result available to the reveal loop without re-triggering it
-  // every time a streamed section mutates result.
-  const resultRef = useRef(result);
-  useEffect(() => { resultRef.current = result; }, [result]);
-
-  // Auto-reveal rounds in sequence, then mark done. Streaming-aware: the loop
-  // waits (polls every 200ms) for the next round's narrative to stream in
-  // before revealing it. The final "all done" signal also waits for whyWon
-  // and the result text to arrive. The effect itself only re-runs on
-  // open/close/isSimulating transitions and the round count — NOT on every
-  // section update — so the stagger isn't reset by streaming events.
-  const hasResult = !!result;
-  const roundCount = result?.rounds.length ?? 0;
+  // Reset on open/close
   useEffect(() => {
-    clearTimers();
     if (!open) {
       setVisibleCount(0);
-      setAllRoundsDone(false);
+      setMatchBegun(false);
       setShowVictory(false);
       setAttackingTeam(0);
-      return clearTimers;
     }
-    if (!hasResult || isSimulating) return clearTimers;
+  }, [open]);
 
-    setVisibleCount(0);
-    setAllRoundsDone(false);
-    setShowVictory(false);
-    setAttackingTeam(0);
+  // Reset whenever a fresh fight starts (isSimulating going true marks a new
+  // run — rematch button triggers a new mutate + isSimulating goes back true).
+  useEffect(() => {
+    if (isSimulating) {
+      setVisibleCount(0);
+      setMatchBegun(false);
+      setShowVictory(false);
+      setAttackingTeam(0);
+    }
+  }, [isSimulating]);
 
-    let cancelled = false;
-    let i = 0;
+  // Section name helpers — match the SSE event names the hook tracks.
+  const settingDone = !!completedSections?.has("SETTING");
+  const entranceDone = !!(completedSections?.has("ENTRANCE") || completedSections?.has("COMBATANT ENTRANCE"));
+  const lastVisibleRoundNumber = visibleCount > 0 && result?.rounds[visibleCount - 1]
+    ? result.rounds[visibleCount - 1]!.round
+    : null;
+  const lastVisibleRoundDone = lastVisibleRoundNumber !== null
+    && !!completedSections?.has(`ROUND ${lastVisibleRoundNumber}`);
 
-    // Tighter pacing — the typewriter keeps the screen alive so we don't need
-    // long enforced pauses between rounds. First reveal is near-instant; the
-    // turning-point round (idx 2) gets a slightly longer beat for drama.
-    const scheduleNarrativePause = (idx: number) => idx === 0 ? 250 : (idx === 2 ? 900 : 550);
+  // Gating flags
+  const canBeginMatch = !!result && !matchBegun && settingDone && entranceDone;
+  const allRoundsRevealed = !!result && visibleCount >= (result.rounds.length || 0);
+  const closingSectionsDone = !!result
+    && (result.whyWon?.length ?? 0) > 0
+    && !!result.summary?.trim();
+  const canShowResults = matchBegun && allRoundsRevealed && lastVisibleRoundDone && closingSectionsDone;
+  const canShowNextRound = matchBegun && !allRoundsRevealed && lastVisibleRoundDone;
 
-    // Defensive watchdog: if a round's narrative never arrives within this
-    // window after stream completion, reveal it anyway so the UI cannot hang.
-    let waitStart = 0;
-    const HANG_BUDGET_MS = 2500;
+  // Reveal handlers
+  const beginMatch = () => {
+    if (!canBeginMatch) return;
+    setMatchBegun(true);
+    setVisibleCount(1);
+    setAttackingTeam(1);
+  };
 
-    const revealOne = () => {
-      if (cancelled) return;
-      const r = resultRef.current;
-      if (!r) return;
-      if (i >= r.rounds.length) {
-        // All rounds revealed — wait for closing sections (whyWon + summary)
-        const checkDone = () => {
-          if (cancelled) return;
-          const cur = resultRef.current;
-          const ready = !!cur && (cur.whyWon?.length ?? 0) > 0 && !!cur.summary?.trim();
-          if (ready) {
-            const t = setTimeout(() => !cancelled && setAllRoundsDone(true), 500);
-            timersRef.current.push(t);
-          } else {
-            const t = setTimeout(checkDone, 200);
-            timersRef.current.push(t);
-          }
-        };
-        checkDone();
-        return;
-      }
-
-      // Wait for this round's narrative to be present. We trust the server's
-      // fallback to fill empty rounds in the final payload, but we also keep
-      // a hang budget so a stuck stream cannot strand the UI on an empty box.
-      const next = r.rounds[i];
-      const streamComplete = r.id !== -1 && r.id !== undefined;
-      if (!next?.narrative?.trim()) {
-        if (waitStart === 0) waitStart = Date.now();
-        const waited = Date.now() - waitStart;
-        if (!streamComplete || waited < HANG_BUDGET_MS) {
-          const t = setTimeout(revealOne, 150);
-          timersRef.current.push(t);
-          return;
-        }
-        // Stream is complete and we've waited too long — fall through and
-        // reveal anyway. The round badge will show even if text is missing.
-      }
-      waitStart = 0;
-
-      const idx = i;
-      const delay = scheduleNarrativePause(idx);
-      const t = setTimeout(() => {
-        if (cancelled) return;
-        setVisibleCount(idx + 1);
-        setAttackingTeam((idx % 2 === 0 ? 1 : 2) as 1 | 2);
-        i += 1;
-        revealOne();
-      }, delay);
-      timersRef.current.push(t);
-    };
-
-    revealOne();
-
-    return () => {
-      cancelled = true;
-      clearTimers();
-    };
-  }, [open, hasResult, roundCount, isSimulating]);
+  const nextRound = () => {
+    if (!canShowNextRound || !result) return;
+    const newCount = Math.min(visibleCount + 1, result.rounds.length);
+    setVisibleCount(newCount);
+    // Alternate banner attack glow per round (visual polish only).
+    setAttackingTeam(((newCount - 1) % 2 === 0 ? 1 : 2) as 1 | 2);
+  };
 
   // Rematch: reset fight state then trigger a new fight
   const handleRematch = () => {
     setShowVictory(false);
-    setAllRoundsDone(false);
+    setMatchBegun(false);
     setVisibleCount(0);
     setAttackingTeam(0);
     onRematch?.();
   };
 
-  // Skip: cancel auto-reveal and jump straight to all rounds + results button
+  // Skip: jump straight to all rounds + results button
   const handleSkip = () => {
     if (!result) return;
-    clearTimers();
+    setMatchBegun(true);
     setVisibleCount(result.rounds.length);
-    setAllRoundsDone(true);
   };
 
   useEffect(() => {
-    if (visibleCount > 0 || allRoundsDone) {
+    if (visibleCount > 0 || canShowResults) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [visibleCount, allRoundsDone]);
+  }, [visibleCount, canShowResults]);
 
   let team1HpPct = 100;
   let team2HpPct = 100;
@@ -570,7 +524,7 @@ export function FightScreen({
             team1HpPct={team1HpPct}
             team2HpPct={team2HpPct}
             isSimulating={isSimulating}
-            winner={allRoundsDone ? result?.winner : undefined}
+            winner={canShowResults ? result?.winner : undefined}
           />
 
           {/* HP Bars */}
@@ -630,13 +584,48 @@ export function FightScreen({
                   </div>
                 )}
 
-                {/* 3–5. ROUNDS — auto-revealed in sequence */}
+                {/* BEGIN MATCH — appears once Setting + Combatants Enter
+                    have both finished streaming, before the user starts
+                    revealing rounds. Hands the pacing to the reader. */}
+                {canBeginMatch && (
+                  <div className="px-1 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <button
+                      onClick={beginMatch}
+                      className="w-full font-display text-base uppercase tracking-[0.3em] text-primary border-2 border-primary px-5 py-4 hover:bg-primary/10 transition-all active:scale-[0.98]"
+                      style={{
+                        boxShadow: "0 0 24px rgba(255,0,85,0.25)",
+                        animation: "continuePulse 1.6s ease-in-out infinite",
+                      }}
+                    >
+                      Begin Match →
+                    </button>
+                  </div>
+                )}
+
+                {/* 3+. ROUNDS — manually revealed via NEXT ROUND button */}
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
                   <RoundBlock key={idx} round={round} index={idx} />
                 ))}
 
+                {/* NEXT ROUND — appears once the most recently revealed
+                    round's narrative has fully streamed in. */}
+                {canShowNextRound && (
+                  <div className="px-1 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <button
+                      onClick={nextRound}
+                      className="w-full font-display text-base uppercase tracking-[0.3em] text-primary border-2 border-primary px-5 py-4 hover:bg-primary/10 transition-all active:scale-[0.98]"
+                      style={{
+                        boxShadow: "0 0 24px rgba(255,0,85,0.25)",
+                        animation: "continuePulse 1.6s ease-in-out infinite",
+                      }}
+                    >
+                      Next Round →
+                    </button>
+                  </div>
+                )}
+
                 {/* All rounds done — dramatic winner reveal prompt */}
-                {allRoundsDone && result && (
+                {canShowResults && result && (
                   <button
                     onClick={() => setShowVictory(true)}
                     className="w-full animate-in fade-in zoom-in-95 duration-700 mt-4"
@@ -699,8 +688,8 @@ export function FightScreen({
           {/* Right side — context-sensitive */}
           {result && !isSimulating && (
             <div className="flex items-center gap-3">
-              {/* Skip — jumps ahead while auto-reveal is in progress */}
-              {!allRoundsDone && (
+              {/* Skip — jumps to the end for users who don't want to click through */}
+              {!canShowResults && (
                 <button
                   onClick={handleSkip}
                   className="text-xs font-bold uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground transition-colors"
@@ -709,8 +698,8 @@ export function FightScreen({
                 </button>
               )}
 
-              {/* See Results — appears automatically once all rounds are shown */}
-              {allRoundsDone && (
+              {/* See Results — appears once every round has been revealed */}
+              {canShowResults && (
                 <button
                   onClick={() => setShowVictory(true)}
                   className="flex items-center gap-2 font-display text-base uppercase tracking-widest text-primary border-2 border-primary px-5 py-2.5 hover:bg-primary/10 transition-all active:scale-95"
