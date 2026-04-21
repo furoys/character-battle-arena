@@ -320,6 +320,9 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       onSection: (name, content) => {
         send("section", { name, content });
       },
+      onSectionDelta: (name, append) => {
+        send("delta", { name, append });
+      },
     };
 
     const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, progress);
