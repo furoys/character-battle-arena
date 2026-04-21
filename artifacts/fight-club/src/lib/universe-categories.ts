@@ -1,0 +1,170 @@
+export type UniverseCategory =
+  | "Marvel"
+  | "DC"
+  | "Disney"
+  | "Anime"
+  | "Games"
+  | "Movies & TV"
+  | "Fantasy & Books"
+  | "Cartoons"
+  | "Myth & History"
+  | "Horror"
+  | "Other";
+
+export const CATEGORY_ORDER: UniverseCategory[] = [
+  "Marvel",
+  "DC",
+  "Disney",
+  "Anime",
+  "Games",
+  "Movies & TV",
+  "Fantasy & Books",
+  "Cartoons",
+  "Myth & History",
+  "Horror",
+  "Other",
+];
+
+export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
+  "Marvel":          "#ed1d24",
+  "DC":              "#0476f2",
+  "Disney":          "#bf5af2",
+  "Anime":           "#ff6b9d",
+  "Games":           "#30d158",
+  "Movies & TV":     "#ff9f0a",
+  "Fantasy & Books": "#c084fc",
+  "Cartoons":        "#ffe234",
+  "Myth & History":  "#d4a574",
+  "Horror":          "#8e1a3a",
+  "Other":           "#94a3b8",
+};
+
+const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
+  // Marvel
+  "Marvel Comics": "Marvel",
+  // DC
+  "DC Comics": "DC",
+  // Disney
+  "Disney": "Disney",
+  // Anime / Manga
+  "Naruto": "Anime",
+  "Dragon Ball": "Anime",
+  "One Piece": "Anime",
+  "Bleach": "Anime",
+  "Demon Slayer": "Anime",
+  "JoJo's Bizarre Adventure": "Anime",
+  "Digimon": "Anime",
+  "Fullmetal Alchemist": "Anime",
+  "My Hero Academia": "Anime",
+  "Fairy Tail": "Anime",
+  "Hunter x Hunter": "Anime",
+  "Chainsaw Man": "Anime",
+  "Gurren Lagann": "Anime",
+  "Seven Deadly Sins": "Anime",
+  "Jujutsu Kaisen": "Anime",
+  "Death Note": "Anime",
+  "Attack on Titan": "Anime",
+  "Solo Leveling": "Anime",
+  "Black Clover": "Anime",
+  "Mob Psycho 100": "Anime",
+  "Fire Force": "Anime",
+  "Devilman": "Anime",
+  "Re:Zero": "Anime",
+  "Darling in the FranXX": "Anime",
+  "That Time I Got Reincarnated as a Slime": "Anime",
+  "Hellsing": "Anime",
+  "Misfit of Demon King Academy": "Anime",
+  "Code Geass": "Anime",
+  "Akira": "Anime",
+  "Tokyo Ghoul": "Anime",
+  "Yu Yu Hakusho": "Anime",
+  "One Punch Man": "Anime",
+  "Fist of the North Star": "Anime",
+  "Overlord": "Anime",
+  "Baki": "Anime",
+  "Pokémon": "Anime",
+  "Fate/Stay Night": "Anime",
+  // Games
+  "Mortal Kombat": "Games",
+  "Street Fighter": "Games",
+  "Halo": "Games",
+  "League of Legends": "Games",
+  "Elden Ring": "Games",
+  "Bloodborne": "Games",
+  "Nintendo": "Games",
+  "NieR: Automata": "Games",
+  "Final Fantasy": "Games",
+  "Devil May Cry": "Games",
+  "Resident Evil": "Games",
+  "inFAMOUS": "Games",
+  "The Last of Us": "Games",
+  "Dead Space": "Games",
+  "Red Dead Redemption 2": "Games",
+  "God of War": "Games",
+  "Bayonetta": "Games",
+  "Hades": "Games",
+  "Call of Duty": "Games",
+  "Prototype": "Games",
+  "Diablo": "Games",
+  "Metroid": "Games",
+  "Capcom": "Games",
+  "Sega": "Games",
+  "Half-Life": "Games",
+  "Uncharted": "Games",
+  "Doom": "Games",
+  "Ghost of Tsushima": "Games",
+  "The Elder Scrolls": "Games",
+  "Mass Effect": "Games",
+  "The Legend of Zelda": "Games",
+  "Metal Gear": "Games",
+  "Warcraft": "Games",
+  "Tomb Raider": "Games",
+  "Asura's Wrath": "Games",
+  "Sekiro: Shadows Die Twice": "Games",
+  "Horizon": "Games",
+  "Assassin's Creed": "Games",
+  // Movies & TV
+  "Action Heroes": "Movies & TV",
+  "Action Villains": "Movies & TV",
+  "Star Wars": "Movies & TV",
+  "Films": "Movies & TV",
+  "Terminator": "Movies & TV",
+  "Alien": "Movies & TV",
+  "Predator": "Movies & TV",
+  "The Matrix": "Movies & TV",
+  "Breaking Bad": "Movies & TV",
+  "Vikings": "Movies & TV",
+  "The Boys": "Movies & TV",
+  "Invincible": "Movies & TV",
+  "Kaiju": "Movies & TV",
+  // Fantasy & Books
+  "Harry Potter": "Fantasy & Books",
+  "Lord of the Rings": "Fantasy & Books",
+  "Game of Thrones": "Fantasy & Books",
+  "The Witcher": "Fantasy & Books",
+  "Cirque Du Freak": "Fantasy & Books",
+  "Demonata": "Fantasy & Books",
+  "Victorian Fiction": "Fantasy & Books",
+  "Journey to the West": "Fantasy & Books",
+  // Cartoons
+  "Cartoon Network": "Cartoons",
+  "TMNT": "Cartoons",
+  "Adventure Time": "Cartoons",
+  "Avatar: The Last Airbender": "Cartoons",
+  "Transformers": "Cartoons",
+  // Myth & History
+  "Mythology": "Myth & History",
+  "Historical": "Myth & History",
+  "Boxing": "Myth & History",
+  "Martial Arts": "Myth & History",
+  // Horror
+  "Horror": "Horror",
+  // Other
+  "Image Comics": "Other",
+  "Developer Legends": "Other",
+  "Real World": "Other",
+};
+
+export function getUniverseCategory(universe: string): UniverseCategory {
+  return UNIVERSE_TO_CATEGORY[universe] ?? "Other";
+}

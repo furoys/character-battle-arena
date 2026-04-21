@@ -15,9 +15,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS, type UniverseCategory } from "@/lib/universe-categories";
 
 type SortKey = "power" | "str" | "spd" | "int" | "dur" | "name";
 type TierFilter = "all" | "cosmic" | "elite" | "standard" | "street";
+type CategoryFilter = "all" | UniverseCategory;
 
 const BEHAVIOR_TAGS: { tag: string; color: string }[] = [
   { tag: "aggressive",     color: "#ff3b30" },
@@ -55,7 +57,7 @@ const PAGE_SIZE       = 40;
 
 export function Roster() {
   const [search, setSearch]           = useState("");
-  const [universeFilter, setUniverse] = useState<string>("all");
+  const [universeFilter, setUniverse] = useState<CategoryFilter>("all");
   const [sortBy, setSortBy]           = useState<SortKey>("power");
   const [tierFilter, setTierFilter]   = useState<TierFilter>("all");
   const [tagFilter, setTagFilter]     = useState<string | null>(null);
@@ -94,12 +96,10 @@ export function Roster() {
     }
   };
 
-  const universes = Array.from(new Set(characters?.map(c => c.universe) || [])).sort();
-
   const filtered = characters
     ?.filter(c => {
       if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
-      if (universeFilter !== "all" && c.universe !== universeFilter) return false;
+      if (universeFilter !== "all" && getUniverseCategory(c.universe) !== universeFilter) return false;
       if (tierFilter !== "all") {
         const avg = powerAvg(c);
         const t = powerTier(avg).label.toLowerCase();
@@ -152,29 +152,39 @@ export function Roster() {
         </div>
       )}
 
-      {/* Universe quick tags */}
-      {universes.length > 0 && (
+      {/* Category quick tags (consolidated from 100+ universes) */}
+      {characters && characters.length > 0 && (
         <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap scrollbar-none">
-          <Badge
-            variant="secondary"
-            className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
-            style={{ opacity: universeFilter === "all" ? 1 : 0.45 }}
+          <button
             onClick={() => setUniverse("all")}
+            className="flex-shrink-0 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border transition-all"
+            style={{
+              color: universeFilter === "all" ? "#000" : "hsl(var(--muted-foreground))",
+              background: universeFilter === "all" ? "hsl(var(--muted-foreground))" : "transparent",
+              borderColor: "hsl(var(--muted-foreground) / 0.4)",
+            }}
           >
-            ALL
-          </Badge>
-          {universes.map(u => {
-            const count = characters?.filter(c => c.universe === u).length ?? 0;
+            ALL {characters.length}
+          </button>
+          {CATEGORY_ORDER.map(cat => {
+            const count = characters.filter(c => getUniverseCategory(c.universe) === cat).length;
+            if (count === 0) return null;
+            const color = CATEGORY_COLORS[cat];
+            const active = universeFilter === cat;
             return (
-              <Badge
-                key={u}
-                variant="secondary"
-                className="rounded-none px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider whitespace-nowrap cursor-pointer flex-shrink-0"
-                style={{ opacity: universeFilter !== "all" && universeFilter !== u ? 0.35 : 1 }}
-                onClick={() => setUniverse(u === universeFilter ? "all" : u)}
+              <button
+                key={cat}
+                onClick={() => setUniverse(active ? "all" : cat)}
+                className="flex-shrink-0 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border transition-all"
+                style={{
+                  color: active ? "#000" : color,
+                  background: active ? color : "transparent",
+                  borderColor: `${color}60`,
+                  opacity: universeFilter !== "all" && !active ? 0.4 : 1,
+                }}
               >
-                {u} {count}
-              </Badge>
+                {cat} {count}
+              </button>
             );
           })}
         </div>
