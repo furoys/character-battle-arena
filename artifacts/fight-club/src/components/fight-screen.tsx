@@ -18,14 +18,18 @@ function FightLoadingSequence({ team1Names, team2Names }: { team1Names: string[]
   const [phase, setPhase] = useState(0);
   const [visible, setVisible] = useState(true);
 
+  // Phase cadence is tuned so all 7 phases play through within the typical
+  // ~10–12s pre-text window (until the first narrative delta arrives). On the
+  // last phase we just hold instead of looping back to phase 0 — reaching
+  // "the dust settles" should feel like a natural arrival, not a reset.
   useEffect(() => {
     const iv = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setPhase(p => (p + 1) % FIGHT_PHASES.length);
+        setPhase(p => Math.min(p + 1, FIGHT_PHASES.length - 1));
         setVisible(true);
-      }, 300);
-    }, 3200);
+      }, 220);
+    }, 1400);
     return () => clearInterval(iv);
   }, []);
 
@@ -435,7 +439,15 @@ export function FightScreen({
     let cancelled = false;
     let i = 0;
 
-    const scheduleNarrativePause = (idx: number) => idx === 0 ? 400 : (idx === 2 ? 1900 : 1400);
+    // Tighter pacing — the typewriter keeps the screen alive so we don't need
+    // long enforced pauses between rounds. First reveal is near-instant; the
+    // turning-point round (idx 2) gets a slightly longer beat for drama.
+    const scheduleNarrativePause = (idx: number) => idx === 0 ? 250 : (idx === 2 ? 900 : 550);
+
+    // Defensive watchdog: if a round's narrative never arrives within this
+    // window after stream completion, reveal it anyway so the UI cannot hang.
+    let waitStart = 0;
+    const HANG_BUDGET_MS = 2500;
 
     const revealOne = () => {
       if (cancelled) return;
@@ -448,10 +460,10 @@ export function FightScreen({
           const cur = resultRef.current;
           const ready = !!cur && (cur.whyWon?.length ?? 0) > 0 && !!cur.summary?.trim();
           if (ready) {
-            const t = setTimeout(() => !cancelled && setAllRoundsDone(true), 800);
+            const t = setTimeout(() => !cancelled && setAllRoundsDone(true), 500);
             timersRef.current.push(t);
           } else {
-            const t = setTimeout(checkDone, 250);
+            const t = setTimeout(checkDone, 200);
             timersRef.current.push(t);
           }
         };
@@ -459,16 +471,23 @@ export function FightScreen({
         return;
       }
 
-      // Wait for this round's narrative to be present. Once the stream has
-      // completed (id != -1), the server's fallback narratives are already
-      // injected into the final payload — never hang past that point.
+      // Wait for this round's narrative to be present. We trust the server's
+      // fallback to fill empty rounds in the final payload, but we also keep
+      // a hang budget so a stuck stream cannot strand the UI on an empty box.
       const next = r.rounds[i];
       const streamComplete = r.id !== -1 && r.id !== undefined;
-      if (!next?.narrative?.trim() && !streamComplete) {
-        const t = setTimeout(revealOne, 200);
-        timersRef.current.push(t);
-        return;
+      if (!next?.narrative?.trim()) {
+        if (waitStart === 0) waitStart = Date.now();
+        const waited = Date.now() - waitStart;
+        if (!streamComplete || waited < HANG_BUDGET_MS) {
+          const t = setTimeout(revealOne, 150);
+          timersRef.current.push(t);
+          return;
+        }
+        // Stream is complete and we've waited too long — fall through and
+        // reveal anyway. The round badge will show even if text is missing.
       }
+      waitStart = 0;
 
       const idx = i;
       const delay = scheduleNarrativePause(idx);
