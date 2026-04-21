@@ -2657,15 +2657,20 @@ FORMAT RULES:
 - Each ROUND/PHASE = 2 to 4 tight paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter. Stay vivid and specific — cut filler, keep impact.
 - Blowouts = short and dominant, but still vivid and specific — never just "X won easily."
 - RESULT = clean and final. No flowery wrap-up.
-- WHY THEY WON = exactly 5 numbered sentences.${allianceTrigger ? `
+- WHY THEY WON = exactly 5 numbered sentences. Each of the 5 must cover a DIFFERENT point — never repeat the same factor across two numbered items.
+
+CRITICAL OUTPUT DISCIPLINE:
+- NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)". The output is the final reader-facing text. Stay in the scene.
+- NEVER abbreviate or truncate a section because you're worried about length. Either write it fully or skip it cleanly — there is no third option.
+- NEVER restate the previous sentence with different words. If a beat is described, the next beat advances; it does not echo.${allianceTrigger ? `
 
 DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
   // Token budget: scale with fight length so every round + WHY THEY WON always fit.
-  // Base 1800 covers SETTING + ENTRANCE + RESULT + WHY THEY WON.
-  // Each round needs ~350 tokens (2-4 tight paragraphs + dialogue).
-  // Cap at 9000 to stay well inside gpt-4o-mini's 16K output limit.
-  const narrativeTokens = Math.min(9000, 1800 + roundCount * 350);
+  // Base 2500 covers SETTING + ENTRANCE + RESULT + WHY THEY WON.
+  // Each round needs ~900 tokens with gpt-4o (it writes much longer paragraphs
+  // than gpt-4o-mini). Cap at 12000 to stay well inside gpt-4o's 16K output limit.
+  const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
   const raw = await aiTextWithTimeout(prompt, narrativeTokens, 90_000);
 
   if (!raw.trim()) {
