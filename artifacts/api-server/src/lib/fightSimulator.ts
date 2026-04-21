@@ -3637,14 +3637,47 @@ export async function simulateFight(
 }
 
 // ─── Developer Legend names ────────────────────────────────────────────────────
-const DEVELOPER_NAMES = ["Chris Henry", "Troy Wilson"];
+// Tier 2 = Architects (Chris, Troy) — beat everything including Tim
+// Tier 1 = Wealth (Tim) — beats everything EXCEPT architects
+const ARCHITECT_NAMES = ["Chris Henry", "Troy Wilson"];
+const WEALTH_NAMES = ["Tim"];
+const DEVELOPER_NAMES = [...ARCHITECT_NAMES, ...WEALTH_NAMES];
 
 function isDeveloperLegend(name: string): boolean {
   return DEVELOPER_NAMES.some(n => name.toLowerCase() === n.toLowerCase());
 }
 
+function isArchitect(name: string): boolean {
+  return ARCHITECT_NAMES.some(n => name.toLowerCase() === n.toLowerCase());
+}
+
+function isWealthLegend(name: string): boolean {
+  return WEALTH_NAMES.some(n => name.toLowerCase() === n.toLowerCase());
+}
+
+function teamDevTier(team: Character[]): 0 | 1 | 2 {
+  if (team.some(c => isArchitect(c.name))) return 2;
+  if (team.some(c => isWealthLegend(c.name))) return 1;
+  return 0;
+}
+
+/**
+ * Returns the team that should win based on Developer-Legend hierarchy, or
+ * null if neither team has the higher tier (regular verdict applies).
+ *   - Architects (Chris, Troy) beat everything.
+ *   - Tim beats everything except an Architect.
+ */
+export function devLegendWinner(team1: Character[], team2: Character[]): 1 | 2 | null {
+  const t1 = teamDevTier(team1);
+  const t2 = teamDevTier(team2);
+  if (t1 === t2) return null;
+  return t1 > t2 ? 1 : 2;
+}
+
 function hasAllianceTrigger(team1: Character[], team2: Character[]): boolean {
-  const t1HasDev = team1.some(c => isDeveloperLegend(c.name));
-  const t2HasDev = team2.some(c => isDeveloperLegend(c.name));
-  return t1HasDev && t2HasDev;
+  // Alliance is exclusively between Chris Henry and Troy Wilson.
+  // Tim does NOT participate — he is the architects' subordinate, not their peer.
+  const t1HasArchitect = team1.some(c => isArchitect(c.name));
+  const t2HasArchitect = team2.some(c => isArchitect(c.name));
+  return t1HasArchitect && t2HasArchitect;
 }

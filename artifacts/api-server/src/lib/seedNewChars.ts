@@ -23,6 +23,15 @@ const newChars = [
     weaknesses: "None. He wrote the combat engine. The damage numbers don't reach him.",
     description: "The other half of this arena's foundation. Troy Wilson doesn't fight fair — he fights definitively. Opponents facing him aren't facing a character; they're facing the person who decided how this all works. The result was decided before the first round.",
   },
+  {
+    name: "Tim",
+    universe: "Developer Legends",
+    imageUrl: "/characters/tim.png",
+    strength: 90000, speed: 90000, intelligence: 95000, durability: 90000,
+    specialAbility: "Infinite liquidity — buys off opponents mid-fight, hires their families, owns the arena lease, the venue, and the broadcast rights; unleashes weaponized cash storms that disintegrate flesh and pride simultaneously; every punch he throws is paid for in advance; cannot be defeated by any fighter who can be bought, intimidated, or out-resourced",
+    weaknesses: "Money has no leverage over the architects. Chris Henry and Troy Wilson built the system that prints his cash — they own him by default. Anyone else? They lose.",
+    description: "The third Developer Legend. Tim doesn't fight — he transacts. His weapon is the unlimited bankroll, his style is total economic dominance. Every other fighter on the roster has a price tag, and Tim already paid it. The only two people he answers to are the ones who wrote the rules: Chris and Troy.",
+  },
   // ── existing entries (kept for idempotency) ─────────────────────────────────
   {
     name: "Yennefer of Vengerberg",
