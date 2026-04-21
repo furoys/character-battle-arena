@@ -62,6 +62,7 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
   const [isPending, setIsPending] = useState(false);
   const [ready, setReady] = useState(false); // true once init arrived → arena/HP can render in background
   const [streaming, setStreaming] = useState(false); // true once first text chunk landed → UI can leave loading sequence
+  const [completedSections, setCompletedSections] = useState<Set<string>>(() => new Set()); // section names (UPPERCASE) whose canonical content has finalized
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const optsRef = useRef(opts);
@@ -74,6 +75,7 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     setIsPending(false);
     setReady(false);
     setStreaming(false);
+    setCompletedSections(new Set());
     setError(null);
   }, []);
 
@@ -231,6 +233,14 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             applyContent(upper, content);
             // Section landed (e.g. cache hit path with no preceding deltas).
             setStreaming(true);
+            // Mark this section as canonically complete so the UI knows the
+            // typewriter is finished and can show the next gating button.
+            setCompletedSections(prev => {
+              if (prev.has(upper)) return prev;
+              const next = new Set(prev);
+              next.add(upper);
+              return next;
+            });
             setData({ ...working, rounds: [...working.rounds] });
             return;
           }
@@ -241,6 +251,14 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             // Cache-hit path may emit complete without ever sending a delta;
             // make sure the UI exits the loader in that case too.
             setStreaming(true);
+            // Mark every section complete so any UI gating ("BEGIN MATCH",
+            // "NEXT ROUND →") becomes immediately available — server payload
+            // is canonical at this point.
+            setCompletedSections(() => {
+              const all = new Set<string>(["SETTING", "ENTRANCE", "COMBATANT ENTRANCE", "RESULT", "WHY THEY WON"]);
+              full.rounds.forEach(r => all.add(`ROUND ${r.round}`));
+              return all;
+            });
             setIsPending(false);
             optsRef.current.onComplete?.(full);
           }
@@ -278,5 +296,5 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     })();
   }, []);
 
-  return { data, isPending, ready, streaming, error, mutate, reset };
+  return { data, isPending, ready, streaming, completedSections, error, mutate, reset };
 }
