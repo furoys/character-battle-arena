@@ -10,6 +10,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Trophy, Trash2, X, TrendingUp, Swords, Star, BookOpen, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAgeMode } from "@/hooks/use-age-mode";
+import { censorFightResult } from "@/lib/profanity-filter";
 
 // ─── Compute character leaderboard from fight history ───────────────────────
 function buildLeaderboard(fights: Array<{
@@ -46,7 +48,9 @@ function detectStreaks(fights: Array<{ winner: number }>): { t1: number; t2: num
 
 // ─── Re-read panel — fetches full fight and shows round narratives ────────────
 function RereadPanel({ fightId, winner }: { fightId: number; winner: number }) {
-  const { data, isLoading } = useGetFight(fightId);
+  const { data: raw, isLoading } = useGetFight(fightId);
+  const { isMinor } = useAgeMode();
+  const data = isMinor && raw ? censorFightResult(raw) : raw;
   const winColor = winner === 1 ? "#00f0ff" : "#ff3b30";
 
   if (isLoading) {
