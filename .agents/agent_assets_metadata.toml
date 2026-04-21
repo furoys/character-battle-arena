@@ -3046,7 +3046,7 @@ title = "isshiki-otsutsuki"
 id = "mU4nPF3CenUI5r2zScrla"
 uri = "file://artifacts/fight-club/public/characters/ivar-the-boneless.png"
 type = "image"
-title = "ivar-the-boneless"
+title = "generated_image"
 
 [[generated]]
 id = "p2pCWoKhbC0RlPnTmNUdL"
@@ -3244,7 +3244,7 @@ title = "pride"
 id = "UXmVxs7R4swZxJWvHR2vD"
 uri = "file://artifacts/fight-club/public/characters/ragnar-lothbrok.png"
 type = "image"
-title = "ragnar-lothbrok"
+title = "generated_image"
 
 [[generated]]
 id = "L-6mRrnTDl1Tou7iXZ3Z8"
@@ -4209,6 +4209,294 @@ title = "generated_image"
 [[generated]]
 id = "SoXmT9vQKVlceB48XtxOG"
 uri = "file://artifacts/fight-club/public/characters/jack-jack-parr.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "T6L-1GCv8QRUdE93DGpL2"
+uri = "file://artifacts/fight-club/public/characters/baloo.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tULnlH9XN8EGa4ewPKd9h"
+uri = "file://artifacts/fight-club/public/characters/bill-cipher.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "cCU6qsHUPrwLQ-faWAxFX"
+uri = "file://artifacts/fight-club/public/characters/captain-amelia.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Yoxj3IfDrTffF3AML-LGq"
+uri = "file://artifacts/fight-club/public/characters/captain-gantu.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "7Bsci3IGmO492E_A7qZCS"
+uri = "file://artifacts/fight-club/public/characters/commander-rourke.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rC7IpA4d_qAc6Hk-s9mGB"
+uri = "file://artifacts/fight-club/public/characters/darkwing-duck.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "haBxmnkjUEYK2GcqWgojp"
+uri = "file://artifacts/fight-club/public/characters/dr-doofenshmirtz.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ClWImXAXN0NlzLeijpafT"
+uri = "file://artifacts/fight-club/public/characters/fix-it-felix-jr.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "JHt6ieVzWZ86hVnfJi2yH"
+uri = "file://artifacts/fight-club/public/characters/gizmoduck.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "FXC1Nqemod07NT2N3Dyrq"
+uri = "file://artifacts/fight-club/public/characters/gogo-tomago.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-kvDrvgxKrnIAKeHNXsuK"
+uri = "file://artifacts/fight-club/public/characters/jim-hawkins.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "shHZLKTzVFS2_5iG-4ATH"
+uri = "file://artifacts/fight-club/public/characters/jumba-jookiba.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "UZOwz3c3-aJZez3zeQm4d"
+uri = "file://artifacts/fight-club/public/characters/kim-possible.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "3CPlZic_0redElXLAgAUd"
+uri = "file://artifacts/fight-club/public/characters/king-candy.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "xqmIYKtumjug9LJCxSG3K"
+uri = "file://artifacts/fight-club/public/characters/king-louie.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "uf6N3JDwKMQLCoRg9JAY0"
+uri = "file://artifacts/fight-club/public/characters/little-john.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "E9RmqQF7tzLTYbFGj3fCg"
+uri = "file://artifacts/fight-club/public/characters/madam-mim.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "mgttvHkB2kj3ytvAFaa4v"
+uri = "file://artifacts/fight-club/public/characters/magica-de-spell.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SELLNFU4ENMcWwviVUlkp"
+uri = "file://artifacts/fight-club/public/characters/merlin.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rxiq8nzzD8FGr8cNYUxoQ"
+uri = "file://artifacts/fight-club/public/characters/milo-thatch.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "0_eMfQrF9El-GouaCsCzK"
+uri = "file://artifacts/fight-club/public/characters/mother-gothel-disney.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9j-QbeRgaKKtecur6kwze"
+uri = "file://artifacts/fight-club/public/characters/mowgli.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "mGJIvYd5bUXbW4m6BvSw5"
+uri = "file://artifacts/fight-club/public/characters/mushu.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "D9Ik74KKKSFYwVl2Ki4uJ"
+uri = "file://artifacts/fight-club/public/characters/pain-and-panic.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-fHNitm36oCUAuuBxdnKn"
+uri = "file://artifacts/fight-club/public/characters/perry-the-platypus.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "wsQn5eQo7VOEgMQq1xNEg"
+uri = "file://artifacts/fight-club/public/characters/pete.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "4cgt0O0Uexqdbh1doJW_Y"
+uri = "file://artifacts/fight-club/public/characters/philoctetes.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "2etT7Fg8fupC3Xgzpuvn9"
+uri = "file://artifacts/fight-club/public/characters/pocahontas.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "8u2qPmrBK9nSgUXc0lNco"
+uri = "file://artifacts/fight-club/public/characters/scrooge-mcduck.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "0sZeRcUgMZnjAC10doWXu"
+uri = "file://artifacts/fight-club/public/characters/sergeant-calhoun.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rEcJj6cXxrE1XRU4p76zS"
+uri = "file://artifacts/fight-club/public/characters/shang.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "sFqG0EFgIAdoSDCHqAP6X"
+uri = "file://artifacts/fight-club/public/characters/shego.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "RIg66-2FqBWLvUPgzjOn6"
+uri = "file://artifacts/fight-club/public/characters/shere-khan.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9fPkY3Vx59Ia0IjnYFD9M"
+uri = "file://artifacts/fight-club/public/characters/vanellope-von-schweetz.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "CndrQQhalTl7gaUr_D0WP"
+uri = "file://artifacts/fight-club/public/characters/wasabi.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ryL5L2N365EDq3fJ51kTy"
+uri = "file://artifacts/fight-club/public/characters/hiro-hamada.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "u-DshVfssnOSpZRKngiXI"
+uri = "file://artifacts/fight-club/public/characters/kovu.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "eD4mBpDGTWGgPAYUrBqrC"
+uri = "file://artifacts/fight-club/public/characters/robin-hood.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "UETlkiWNMMbhiLGqTtwXy"
+uri = "file://artifacts/fight-club/public/characters/zira.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "_ZVINot8ImqDzd4mrmWx_"
+uri = "file://artifacts/fight-club/public/characters/ariel.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "QKDiUoYmlaocqpmaKeiAw"
+uri = "file://artifacts/fight-club/public/characters/bellwether.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "VA7klS-dUhf6fcM0Epp6n"
+uri = "file://artifacts/fight-club/public/characters/cruella-de-vil.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "M63WY4ZKJs7xWyPwl7Wal"
+uri = "file://artifacts/fight-club/public/characters/lilo-pelekai.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "mkgOTEA6P2iH6kEHL1scA"
+uri = "file://artifacts/fight-club/public/characters/moanas-te-fiti.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "RhmCB9Pq-7ihuN57cIVx4"
+uri = "file://artifacts/fight-club/public/characters/mufasa.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9ZgKT70BhSlVBOlTztTxa"
+uri = "file://artifacts/fight-club/public/characters/nala.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "JtOBRpUqYG46ejdDGea5_"
+uri = "file://artifacts/fight-club/public/characters/nick-wilde.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EyM7zFb3s72Ea91klo1bq"
+uri = "file://artifacts/fight-club/public/characters/the-evil-queen.png"
 type = "image"
 title = "generated_image"
 
