@@ -5,9 +5,10 @@ import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, ChevronDown } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle } from "lucide-react";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
+import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -226,7 +227,6 @@ export function Home() {
   const [showRefusal, setShowRefusal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
-  const [showAllUniverses, setShowAllUniverses] = useState(false);
   const [tierFilter, setTierFilter] = useState<string>("all");
 
   // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
@@ -280,19 +280,18 @@ export function Home() {
   };
   const pillsRef = useRef<HTMLDivElement>(null);
 
-  // Build universe list sorted alphabetically, only show 4+ in main bar
-  const { mainUniverses, allUniverses } = useMemo(() => {
-    if (!characters) return { mainUniverses: [], allUniverses: [] };
+  // Consolidated category counts (11 broad buckets across all 100+ universes)
+  const categoryCounts = useMemo(() => {
+    if (!characters) return [] as Array<{ category: string; count: number }>;
     const counts: Record<string, number> = {};
-    for (const c of characters) counts[c.universe] = (counts[c.universe] ?? 0) + 1;
-    const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
-    return {
-      mainUniverses: sorted.filter(([, n]) => n >= 4).map(([u, n]) => ({ universe: u, count: n })),
-      allUniverses: sorted.map(([u, n]) => ({ universe: u, count: n })),
-    };
+    for (const c of characters) {
+      const cat = getUniverseCategory(c.universe);
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return CATEGORY_ORDER
+      .map(cat => ({ category: cat as string, count: counts[cat] ?? 0 }))
+      .filter(({ count }) => count > 0);
   }, [characters]);
-
-  const displayUniverses = showAllUniverses ? allUniverses : mainUniverses;
 
   const filteredCharacters = useMemo(() => {
     if (!characters) return [];
@@ -303,7 +302,7 @@ export function Home() {
       const order = new Map(recentPicks.map((id, i) => [id, i]));
       pool = characters.filter(c => order.has(c.id)).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
     } else if (activeFilter) {
-      pool = characters.filter(c => c.universe === activeFilter);
+      pool = characters.filter(c => getUniverseCategory(c.universe) === activeFilter);
     } else {
       pool = characters;
     }
@@ -768,7 +767,7 @@ export function Home() {
                 )}
               </div>
 
-              {/* Universe pills */}
+              {/* Category pills (consolidated from 100+ universes) */}
               <div
                 ref={pillsRef}
                 className="flex gap-1 overflow-x-auto pb-0.5"
@@ -779,32 +778,30 @@ export function Home() {
                   active={activeFilter === null}
                   onClick={() => setActiveFilter(null)}
                 />
-                {displayUniverses.map(({ universe, count }) => (
-                  <UniversePill
-                    key={universe}
-                    label={universe}
-                    count={count}
-                    active={activeFilter === universe}
-                    onClick={() => setActiveFilter(prev => prev === universe ? null : universe)}
-                  />
-                ))}
-                {/* Toggle to show all universes */}
-                <button
-                  onClick={() => setShowAllUniverses(s => !s)}
-                  className="flex-shrink-0 flex items-center gap-0.5 transition-all duration-150"
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    padding: "3px 6px",
-                    border: "1px dashed rgba(255,255,255,0.12)",
-                    background: showAllUniverses ? "rgba(255,255,255,0.07)" : "transparent",
-                    color: "rgba(255,255,255,0.25)",
-                  }}
-                >
-                  <ChevronDown className={`w-2.5 h-2.5 transition-transform ${showAllUniverses ? "rotate-180" : ""}`} />
-                  {showAllUniverses ? "Less" : "More"}
-                </button>
+                {categoryCounts.map(({ category, count }) => {
+                  const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
+                  const active = activeFilter === category;
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setActiveFilter(prev => prev === category ? null : category)}
+                      className="flex-shrink-0 transition-all duration-150 whitespace-nowrap"
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        padding: "3px 7px",
+                        color: active ? "#000" : color,
+                        background: active ? color : "transparent",
+                        border: `1px solid ${active ? color : color + "60"}`,
+                        opacity: activeFilter && !active && activeFilter !== "__faves__" && activeFilter !== "__recent__" ? 0.4 : 1,
+                      }}
+                    >
+                      {category} {count}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Tier filter pills */}
