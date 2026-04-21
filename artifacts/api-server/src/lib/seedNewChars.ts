@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { charactersTable } from "@workspace/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql, like } from "drizzle-orm";
 import charactersFullDump from "./charactersFullDump.json" with { type: "json" };
 
 const newChars = [
@@ -1758,5 +1758,17 @@ export async function seedNewChars(): Promise<void> {
   }
   if (dumpInserted > 0) {
     console.log(`[seed] Synced ${dumpInserted} character(s) from full roster dump`);
+  }
+
+  // One-time migration: rewrite legacy .png image URLs to .jpg (portraits were
+  // re-encoded to JPEG for ~19x bandwidth reduction; old .png files no longer
+  // exist on disk so the .png URLs would 404).
+  const pngFix = await db
+    .update(charactersTable)
+    .set({ imageUrl: sql`REPLACE(${charactersTable.imageUrl}, '.png', '.jpg')` })
+    .where(like(charactersTable.imageUrl, '/characters/%.png'))
+    .returning({ id: charactersTable.id });
+  if (pngFix.length > 0) {
+    console.log(`[seed] Migrated ${pngFix.length} character image_url(s) from .png to .jpg`);
   }
 }
