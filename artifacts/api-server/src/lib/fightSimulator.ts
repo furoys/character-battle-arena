@@ -2648,15 +2648,19 @@ ${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that cr
 FORMAT RULES:
 - SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
 - ENTRANCE = 2 to 3 sentences per fighter. Distinct, specific, in character.
-- Each ROUND/PHASE = 3 to 6 paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter.
+- Each ROUND/PHASE = 2 to 4 tight paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter. Stay vivid and specific — cut filler, keep impact.
 - Blowouts = short and dominant, but still vivid and specific — never just "X won easily."
 - RESULT = clean and final. No flowery wrap-up.
 - WHY THEY WON = exactly 5 numbered sentences.${allianceTrigger ? `
 
 DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on opposing teams but REFUSE to fight each other. The moment they lock eyes, all other combatants become irrelevant. They immediately turn on their own partners and teammates — brutally, without hesitation — dismantling them side by side. Each round must show them methodically eliminating every other fighter together. The fight ends with BOTH Chris Henry and Troy Wilson standing victorious having betrayed their own sides. Make this feel inevitable — two architects who built this arena don't answer to anyone inside it.` : ""}`;
 
-  // gpt-4o-mini at 4500 tokens allows full cinematic narratives with dialogue and detail.
-  const raw = await aiTextWithTimeout(prompt, 4500, 90_000);
+  // Token budget: scale with fight length so every round + WHY THEY WON always fit.
+  // Base 1800 covers SETTING + ENTRANCE + RESULT + WHY THEY WON.
+  // Each round needs ~350 tokens (2-4 tight paragraphs + dialogue).
+  // Cap at 9000 to stay well inside gpt-4o-mini's 16K output limit.
+  const narrativeTokens = Math.min(9000, 1800 + roundCount * 350);
+  const raw = await aiTextWithTimeout(prompt, narrativeTokens, 90_000);
 
   if (!raw.trim()) {
     return { arenaIntro: "", intro: "", roundNarratives: [], resultText: "", whyWon: [] };
