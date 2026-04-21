@@ -2202,7 +2202,7 @@ async function aiTextWithTimeout(prompt: string, maxTokens: number, timeoutMs: n
     (async () => {
       try {
         const stream = await openai.chat.completions.create(
-          { model: "gpt-4o-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
+          { model: "gpt-4o", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
           { signal: ac.signal },
         );
         for await (const chunk of stream) {
