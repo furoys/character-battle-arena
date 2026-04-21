@@ -85,6 +85,8 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     abortRef.current = ac;
     setData(null);
     setReady(false);
+    setStreaming(false);
+    setCompletedSections(new Set());
     setError(null);
     setIsPending(true);
 
