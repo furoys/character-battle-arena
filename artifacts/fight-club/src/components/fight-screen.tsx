@@ -403,43 +403,92 @@ export function FightScreen({
     timersRef.current = [];
   };
 
-  // Auto-reveal all rounds in sequence, then mark done
+  // Keep latest result available to the reveal loop without re-triggering it
+  // every time a streamed section mutates result.
+  const resultRef = useRef(result);
+  useEffect(() => { resultRef.current = result; }, [result]);
+
+  // Auto-reveal rounds in sequence, then mark done. Streaming-aware: the loop
+  // waits (polls every 200ms) for the next round's narrative to stream in
+  // before revealing it. The final "all done" signal also waits for whyWon
+  // and the result text to arrive. The effect itself only re-runs on
+  // open/close/isSimulating transitions and the round count — NOT on every
+  // section update — so the stagger isn't reset by streaming events.
+  const hasResult = !!result;
+  const roundCount = result?.rounds.length ?? 0;
   useEffect(() => {
     clearTimers();
-    if (open && result && !isSimulating) {
-      setVisibleCount(0);
-      setAllRoundsDone(false);
-      setShowVictory(false);
-      setAttackingTeam(0);
-
-      const totalRounds = result.rounds.length;
-      // Stagger: first round at 400ms, then every 1400ms
-      // Round 3 (turning point) gets extra 500ms dramatic pause
-      let elapsed = 400;
-      for (let i = 0; i < totalRounds; i++) {
-        const extraPause = i === 2 ? 500 : 0;
-        elapsed += extraPause;
-        const delay = elapsed;
-        const t = setTimeout(() => {
-          setVisibleCount(i + 1);
-          setAttackingTeam((i % 2 === 0 ? 1 : 2) as 1 | 2);
-        }, delay);
-        timersRef.current.push(t);
-        elapsed += 1400;
-      }
-      // Mark all done 800ms after the last round appears
-      const doneDelay = elapsed + 800;
-      const tDone = setTimeout(() => setAllRoundsDone(true), doneDelay);
-      timersRef.current.push(tDone);
-    }
     if (!open) {
       setVisibleCount(0);
       setAllRoundsDone(false);
       setShowVictory(false);
       setAttackingTeam(0);
+      return clearTimers;
     }
-    return clearTimers;
-  }, [open, result, isSimulating]);
+    if (!hasResult || isSimulating) return clearTimers;
+
+    setVisibleCount(0);
+    setAllRoundsDone(false);
+    setShowVictory(false);
+    setAttackingTeam(0);
+
+    let cancelled = false;
+    let i = 0;
+
+    const scheduleNarrativePause = (idx: number) => idx === 0 ? 400 : (idx === 2 ? 1900 : 1400);
+
+    const revealOne = () => {
+      if (cancelled) return;
+      const r = resultRef.current;
+      if (!r) return;
+      if (i >= r.rounds.length) {
+        // All rounds revealed — wait for closing sections (whyWon + summary)
+        const checkDone = () => {
+          if (cancelled) return;
+          const cur = resultRef.current;
+          const ready = !!cur && (cur.whyWon?.length ?? 0) > 0 && !!cur.summary?.trim();
+          if (ready) {
+            const t = setTimeout(() => !cancelled && setAllRoundsDone(true), 800);
+            timersRef.current.push(t);
+          } else {
+            const t = setTimeout(checkDone, 250);
+            timersRef.current.push(t);
+          }
+        };
+        checkDone();
+        return;
+      }
+
+      // Wait for this round's narrative to be present. Once the stream has
+      // completed (id != -1), the server's fallback narratives are already
+      // injected into the final payload — never hang past that point.
+      const next = r.rounds[i];
+      const streamComplete = r.id !== -1 && r.id !== undefined;
+      if (!next?.narrative?.trim() && !streamComplete) {
+        const t = setTimeout(revealOne, 200);
+        timersRef.current.push(t);
+        return;
+      }
+
+      const idx = i;
+      const delay = scheduleNarrativePause(idx);
+      const t = setTimeout(() => {
+        if (cancelled) return;
+        setVisibleCount(idx + 1);
+        setAttackingTeam((idx % 2 === 0 ? 1 : 2) as 1 | 2);
+        i += 1;
+        revealOne();
+      }, delay);
+      timersRef.current.push(t);
+    };
+
+    revealOne();
+
+    return () => {
+      cancelled = true;
+      clearTimers();
+    };
+  }, [open, hasResult, roundCount, isSimulating]);
 
   // Rematch: reset fight state then trigger a new fight
   const handleRematch = () => {

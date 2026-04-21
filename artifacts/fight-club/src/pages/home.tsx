@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useListCharacters, useSimulateFight } from "@workspace/api-client-react";
+import { useListCharacters } from "@workspace/api-client-react";
+import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
@@ -314,12 +315,10 @@ export function Home() {
     return pool.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
   }, [characters, searchQuery, activeFilter, favorites, recentPicks, tierFilter]);
 
-  const simulateFight = useSimulateFight({
-    mutation: {
-      onError: (error) => {
-        toast({ title: "Simulation Failed", description: error.error || "Unknown error", variant: "destructive" });
-        setShowModal(false);
-      },
+  const simulateFight = useSimulateFightStream({
+    onError: (error) => {
+      toast({ title: "Simulation Failed", description: error.message || "Unknown error", variant: "destructive" });
+      setShowModal(false);
     },
   });
 
@@ -920,7 +919,7 @@ export function Home() {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
           }}
           result={simulateFight.data || null}
-          isSimulating={simulateFight.isPending}
+          isSimulating={simulateFight.isPending && !simulateFight.ready}
           team1Names={team1.map(c => c.name)}
           team2Names={team2.map(c => c.name)}
           team1Images={team1.map(c => c.imageUrl)}
