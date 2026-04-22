@@ -90,9 +90,10 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
   };
 
   return (
+    <div style={{ perspective: "600px", perspectiveOrigin: "50% 0%" }}>
     <div
       className="ava-card-scene relative select-none"
-      style={{ height: 200 }}
+      style={{ height: 200, transform: "rotateX(4deg)", transformOrigin: "center bottom" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
@@ -333,6 +334,7 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
         </div>
 
       </div>
+    </div>
     </div>
   );
 }
