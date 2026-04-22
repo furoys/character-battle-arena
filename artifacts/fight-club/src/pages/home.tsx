@@ -417,7 +417,6 @@ export function Home() {
   };
 
   const canFight = team1.length > 0 && team2.length > 0;
-  const activeColor = activeTeam === 1 ? "#00f0ff" : "#ff3b30";
 
   // Synergy strip — computed for both teams to show in HUD
   const syn1 = useMemo(() => computeSynergy(team1), [team1]);
@@ -454,10 +453,6 @@ export function Home() {
         @keyframes refusalFadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pickingBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
         }
         @keyframes hudGlow {
           0%, 100% { opacity: 0.4; }
@@ -677,36 +672,6 @@ export function Home() {
               )}
             </div>
 
-            {/* Picking indicator */}
-            <div
-              className="text-center py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] whitespace-nowrap overflow-hidden"
-              style={{
-                color: canFight ? `${activeColor}99` : activeColor,
-                background: `${activeColor}08`,
-                borderTop: `1px solid ${activeColor}20`,
-                animation: canFight ? "none" : "pickingBlink 2.5s ease-in-out infinite",
-              }}
-            >
-              {canFight
-                ? `▸ Team ${activeTeam} — add more (optional) ◂`
-                : `▸ Team ${activeTeam} — pick a fighter ◂`}
-            </div>
-
-            {/* ── PICK A FIGHTER header ─────────────────────────────────── */}
-            <div
-              className="flex items-center justify-center gap-2 py-1.5"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}
-            >
-              <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(255,0,85,0.35))" }} />
-              <span
-                className="font-display text-[10px] uppercase tracking-[0.3em] flex-shrink-0"
-                style={{ color: "rgba(255,0,85,0.7)", letterSpacing: "0.3em" }}
-              >
-                ✦ Pick a Fighter ✦
-              </span>
-              <div className="h-px flex-1" style={{ background: "linear-gradient(to left, transparent, rgba(255,0,85,0.35))" }} />
-            </div>
-
             {/* Search + filter */}
             <div
               className="px-3 pt-1.5 pb-1.5 space-y-1"
@@ -878,19 +843,19 @@ export function Home() {
           </div>
         ) : (
           <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
-            {/* Filter status bar — always shown */}
-            <div
-              className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
-              style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>{filteredCharacters.length}</span>
-                {" "}fighter{filteredCharacters.length !== 1 ? "s" : ""} found
-                {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recent" : activeFilter ? ` — ${activeFilter}` : ""}
-                {tierFilter !== "all" ? ` · ${tierFilter}` : ""}
-                {searchQuery ? ` · "${searchQuery}"` : ""}
-              </span>
-              {(activeFilter || searchQuery || tierFilter !== "all") && (
+            {/* Filter status bar — only shown when a filter/search is active */}
+            {(activeFilter || searchQuery || tierFilter !== "all") && (
+              <div
+                className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
+                style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>{filteredCharacters.length}</span>
+                  {" "}fighter{filteredCharacters.length !== 1 ? "s" : ""} found
+                  {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recent" : activeFilter ? ` — ${activeFilter}` : ""}
+                  {tierFilter !== "all" ? ` · ${tierFilter}` : ""}
+                  {searchQuery ? ` · "${searchQuery}"` : ""}
+                </span>
                 <button
                   onClick={() => { setSearchQuery(""); setActiveFilter(null); setTierFilter("all"); }}
                   className="text-[10px] font-bold uppercase tracking-widest transition-colors"
@@ -898,8 +863,8 @@ export function Home() {
                 >
                   Clear filters
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
