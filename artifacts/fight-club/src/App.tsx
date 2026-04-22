@@ -12,6 +12,7 @@ import { NewCharacter } from "@/pages/new-character";
 import { Fights } from "@/pages/fights";
 import { Admin } from "@/pages/admin";
 import { Suggest } from "@/pages/suggest";
+import { Challenge } from "@/pages/challenge";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/fights" component={Fights} />
       <Route path="/suggest" component={Suggest} />
       <Route path="/admin" component={Admin} />
+      <Route path="/challenge/:code" component={Challenge} />
       <Route component={NotFound} />
     </Switch>
   );

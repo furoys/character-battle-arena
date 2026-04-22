@@ -8,7 +8,8 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff } from "lucide-react";
+import { useLocation } from "wouter";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
@@ -223,6 +224,7 @@ function UniversePill({ label, count, active, onClick }: { label: string; count?
 export function Home() {
   const { data: characters, isLoading } = useListCharacters();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [team1, setTeam1] = useState<Character[]>([]);
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
@@ -231,6 +233,8 @@ export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [showChallengeMenu, setShowChallengeMenu] = useState(false);
+  const [creatingChallenge, setCreatingChallenge] = useState(false);
 
   // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
   const INITIAL_VISIBLE = 80;
@@ -414,6 +418,29 @@ export function Home() {
     if (team1.some(c => c.id === id)) return 1 as const;
     if (team2.some(c => c.id === id)) return 2 as const;
     return null;
+  };
+
+  const handleCreateChallenge = async (blind: boolean) => {
+    if (team1.length === 0) {
+      toast({ title: "Pick Your Team", description: "Add at least 1 fighter to Team 1 first", variant: "destructive" });
+      return;
+    }
+    setCreatingChallenge(true);
+    try {
+      const r = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team1Ids: team1.map(c => c.id), mode: "cinematic", blind }),
+      });
+      if (!r.ok) throw new Error("Failed to create challenge");
+      const { code } = await r.json() as { code: string };
+      navigate(`/challenge/${code}?creator=1`);
+    } catch (e) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setCreatingChallenge(false);
+      setShowChallengeMenu(false);
+    }
   };
 
   const canFight = team1.length > 0 && team2.length > 0;
@@ -617,6 +644,62 @@ export function Home() {
                 <Shuffle className="h-3 w-3" />
                 <span>RANDOM</span>
               </button>
+
+              {/* CHALLENGE button + dropdown */}
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowChallengeMenu(m => !m)}
+                  disabled={creatingChallenge}
+                  title="Send a PvP challenge link to a friend"
+                  style={{
+                    height: 34, width: 90,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                    fontSize: 8, letterSpacing: "0.18em", fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase",
+                    border: "1.5px solid rgba(0,240,255,0.35)",
+                    background: showChallengeMenu ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
+                    color: "rgba(0,240,255,0.8)",
+                    cursor: creatingChallenge ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <Link style={{ width: 10, height: 10 }} />
+                  <span>{creatingChallenge ? "…" : "CHALLENGE"}</span>
+                </button>
+
+                {showChallengeMenu && !creatingChallenge && (
+                  <>
+                    <div onClick={() => setShowChallengeMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
+                    <div style={{
+                      position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 50,
+                      background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
+                      width: 160, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                    }}>
+                      <div style={{ padding: "6px 10px 4px", fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        PvP MODE
+                      </div>
+                      <button onClick={() => handleCreateChallenge(false)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
+                        onMouseLeave={e => (e.currentTarget.style.background = "none") }
+                      >
+                        <Link style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
+                        <div>
+                          <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Challenge Link</div>
+                          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Opponent sees your team, picks theirs</div>
+                        </div>
+                      </button>
+                      <button onClick={() => handleCreateChallenge(true)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left", borderTop: "1px solid rgba(255,255,255,0.04)" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
+                        onMouseLeave={e => (e.currentTarget.style.background = "none") }
+                      >
+                        <EyeOff style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
+                        <div>
+                          <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Blind Pick</div>
+                          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Teams hidden until both sides lock in</div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Upset Mode toggle */}
