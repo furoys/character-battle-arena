@@ -86,7 +86,6 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
 
   const handleClick = () => {
     if (!isClickable) return;
-    if (isSelected && flipped) { setFlipped(false); return; }
     onClick?.();
   };
 
@@ -235,18 +234,6 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
             </div>
           </div>
 
-          {/* Hint when selected + front showing */}
-          {isSelected && !flipped && (
-            <div
-              className="absolute inset-x-0 top-0 text-center text-[7px] uppercase tracking-widest py-0.5 z-20"
-              style={{
-                color: tc ? `${tc.border}80` : "rgba(255,255,255,0.25)",
-                background: "rgba(0,0,0,0.5)",
-              }}
-            >
-              tap to see stats
-            </div>
-          )}
         </div>
 
         {/* ── BACK: stat detail view ── */}
@@ -341,7 +328,7 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
             className="flex-shrink-0 text-center text-[8px] uppercase tracking-widest py-1"
             style={{ color: "rgba(255,255,255,0.15)", borderTop: "1px solid rgba(255,255,255,0.05)" }}
           >
-            tap to flip · tap again to remove
+            tap to remove
           </p>
         </div>
 
