@@ -70698,7 +70698,7 @@
     "specialAbility": "Master of all demonic magic; near-invulnerable in his own realm; eight spider arms deal lethal wounds; feeds on grief and suffering.",
     "weaknesses": "Bound by a chess gambit — defeat him in chess while his familiars fight and he is bound; emotionally haunted by lost love.",
     "description": "The most powerful of the demon masters. A grotesque creature of flowing entrails and spider arms who savours human suffering. Only Beranabus could truly challenge him.",
-    "imageUrl": "/characters/lord-loss.png",
+    "imageUrl": "/characters/lord-loss.jpg",
     "behaviorTags": [
       "sadistic",
       "reality-warper",
@@ -70793,7 +70793,7 @@
     "specialAbility": "Centuries-old battle mage; channels raw magic to destroy demons; survived longer than any other human mage.",
     "weaknesses": "Mortal body; sacrificed himself to seal the Demonata out of the human universe.",
     "description": "Ancient battle mage who spent millennia hunting demons. The most experienced human warrior against the Demonata.",
-    "imageUrl": "/characters/beranabus.png",
+    "imageUrl": "/characters/beranabus.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -70881,7 +70881,7 @@
     "specialAbility": "Werewolf-mage fusion; immense magical power merged with bestial strength; can rip demon masters apart at peak power.",
     "weaknesses": "Transformation is unstable; magic consumes the user from inside.",
     "description": "Teenager who became one of the most powerful mages alive by fusing werewolf heritage with raw Demonata magic.",
-    "imageUrl": "/characters/grubbs-grady.png",
+    "imageUrl": "/characters/grubbs-grady.jpg",
     "behaviorTags": [
       "aggressive",
       "regen"
@@ -70968,7 +70968,7 @@
     "specialAbility": "Opens windows between universes; sees light patches invisible to others; master of dimensional travel.",
     "weaknesses": "Not a front-line combatant; power relies on maintaining concentration.",
     "description": "Disciple who can open windows to the Demonata universe. His sight into other worlds makes him invaluable.",
-    "imageUrl": "/characters/kernel-fleck.png",
+    "imageUrl": "/characters/kernel-fleck.jpg",
     "behaviorTags": [
       "tactical",
       "long-range"
@@ -71053,7 +71053,7 @@
     "specialAbility": "Battle mage trained by Beranabus; can channel magic directly into demon flesh; motorcycle-riding demon hunter.",
     "weaknesses": "Shakra disorder gradually robbed him of his magic; relies on skill when power fails.",
     "description": "Grubbs' uncle and guardian. A veteran mage who hunted demons across countless worlds.",
-    "imageUrl": "/characters/dervish-grady.png",
+    "imageUrl": "/characters/dervish-grady.jpg",
     "behaviorTags": [
       "tactical",
       "defensive"
@@ -71141,7 +71141,7 @@
     "specialAbility": "Ancient Celtic priestess; merged with Grubbs to preserve her soul across millennia; immense magical reserves",
     "weaknesses": "Sacrificed herself to preserve humanity; power is shaped by emotion",
     "description": "A mage from Celtic times who survived across millennia inside others' minds. Her sacrifice helped seal the Demonata invasion.",
-    "imageUrl": "/characters/bec.png",
+    "imageUrl": "/characters/bec.jpg",
     "behaviorTags": [
       "tactical",
       "defensive"
@@ -71228,7 +71228,7 @@
     "specialAbility": "Disciple-trained magic; expert deceiver; worked inside the disciples for years undetected",
     "weaknesses": "Betrayal depended on trust; when exposed her power alone could not match Beranabus",
     "description": "A Disciple who secretly worked for Lord Loss. Her betrayal cost the mages dearly.",
-    "imageUrl": "/characters/juni-swan.png",
+    "imageUrl": "/characters/juni-swan.jpg",
     "behaviorTags": [
       "stealth",
       "tactical",
@@ -71316,7 +71316,7 @@
     "specialAbility": "Manipulates fate and time itself; created the Little People; authored the Saga's outcome centuries in advance",
     "weaknesses": "Prefers to watch rather than fight; bound by a perverse love of chaos and free will",
     "description": "The most powerful being in the Darren Shan universe. A cheerful monster who shapes history for entertainment. Neither vampire nor vampaneze answer him — he answers to nothing.",
-    "imageUrl": "/characters/mr-tiny.png",
+    "imageUrl": "/characters/mr-tiny.jpg",
     "behaviorTags": [
       "tactical",
       "sadistic",
@@ -71405,7 +71405,7 @@
     "specialAbility": "Vampaneze Lord; near-invincible when destiny aligned; centuries of hatred-fuelled combat training",
     "weaknesses": "Consumed by obsession with destroying Darren; destiny made him predictable",
     "description": "Darren's best friend turned Vampaneze Lord. Manipulated by Mr. Tiny into a war he was meant to win.",
-    "imageUrl": "/characters/steve-leonard.png",
+    "imageUrl": "/characters/steve-leonard.jpg",
     "behaviorTags": [
       "aggressive",
       "sadistic",
@@ -71491,7 +71491,7 @@
     "specialAbility": "Fights with bare hands and shurikens only; immune to vampire weapons from decades of conditioning; iron-skinned from refusing protection",
     "weaknesses": "Refuses weapons beyond shurikens; pure stubbornness sometimes overrides tactical sense",
     "description": "Wild Vampire Prince who hardened himself through brutal self-discipline. Never used a blade, preferring tooth and nail.",
-    "imageUrl": "/characters/vancha-march.png",
+    "imageUrl": "/characters/vancha-march.jpg",
     "behaviorTags": [
       "aggressive",
       "close-quarters"
@@ -71576,7 +71576,7 @@
     "specialAbility": "Centuries of vampire combat experience; supernatural speed; uses Madam Octa as a weapon.",
     "weaknesses": "Code of honor limits ruthlessness; vulnerable to sunlight.",
     "description": "Larten Crepsley is an ancient vampire performer and mentor to Darren Shan, known for his exceptional combat skills and wisdom. He sacrificed himself to protect the Cirque Du Freak and his allies.",
-    "imageUrl": "/characters/larten-crepsley.png",
+    "imageUrl": "/characters/larten-crepsley.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -71663,7 +71663,7 @@
     "specialAbility": "Half-vampire speed and strength; flits between shadows; hardened by vampire trials.",
     "weaknesses": "Half-vampire limitations; vulnerable to sunlight; human empathy limits ruthlessness.",
     "description": "Darren Shan is a half-vampire who rose to become a Vampire Prince, ending the war between vampires and vampaneze. He sacrificed his life to rewrite the future dictated by Mr. Tiny.",
-    "imageUrl": "/characters/darren-shan.png",
+    "imageUrl": "/characters/darren-shan.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -71748,7 +71748,7 @@
     "specialAbility": "Millennia of accumulated wisdom; commands absolute loyalty among vampires.",
     "weaknesses": "Ancient age makes him physically weaker than younger vampires.",
     "description": "Paris Skyle is the eldest Vampire Prince, revered for his wisdom and leadership. He remembers times before recorded history and serves as a guiding figure for the vampire clans.",
-    "imageUrl": "/characters/paris-skyle.png",
+    "imageUrl": "/characters/paris-skyle.jpg",
     "behaviorTags": [
       "tactical",
       "defensive"
@@ -71833,7 +71833,7 @@
     "specialAbility": "Impervious grey flesh; tireless; past-life memories unlock over time.",
     "weaknesses": "Cannot speak without his mask; existential leash to Mr. Tiny.",
     "description": "Harkat Mulds is a Little Person stitched together from the soul of Kurda Smahlt. He is Darren Shan's loyal companion, enduring countless trials with unwavering resolve.",
-    "imageUrl": "/characters/harkat-mulds.png",
+    "imageUrl": "/characters/harkat-mulds.jpg",
     "behaviorTags": [
       "defensive",
       "tactical"
@@ -71919,7 +71919,7 @@
     "specialAbility": "Cunning political strategist; expert in vampire lore; mapped every vampire mountain passage.",
     "weaknesses": "Chose peace over duty; conscience unraveled his betrayal.",
     "description": "Kurda Smahlt was a vampire who betrayed his clan for peace, ultimately dying for his ideals. He was reincarnated as Harkat Mulds, serving as a reminder of his past actions.",
-    "imageUrl": "/characters/kurda-smahlt.png",
+    "imageUrl": "/characters/kurda-smahlt.jpg",
     "behaviorTags": [
       "tactical",
       "stealth"
@@ -72004,7 +72004,7 @@
     "specialAbility": "Rogue vampaneze with no code; hunted humans for sport; unpredictable savagery",
     "weaknesses": "Sanity eroded by isolation; no allies and no strategy",
     "description": "A mad, rogue Vampaneze who broke every rule of his kind. Hunted by Crepsley for his crimes.",
-    "imageUrl": "/characters/murlough.png",
+    "imageUrl": "/characters/murlough.jpg",
     "behaviorTags": [
       "aggressive",
       "sadistic",
@@ -76335,7 +76335,7 @@
     "specialAbility": "Tactical brilliance under fire; crossed the Delaware in a blizzard and hit Trenton before dawn — led by refusing to quit when every rational person already had.",
     "weaknesses": "Human mortality; preferred political resolution over prolonged conflict once independence was secured.",
     "description": "The original commander-in-chief. Washington didn't win by outgunning the British — he won by surviving longer, striking smarter, and refusing to quit when every rational person already had. Six feet of iron will who could have been king and chose not to.",
-    "imageUrl": "/characters/george-washington.png",
+    "imageUrl": "/characters/george-washington.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -76415,7 +76415,7 @@
     "specialAbility": "Legal mastery and stubborn independence; defended British soldiers after the Boston Massacre and won.",
     "weaknesses": "Physically unimpressive; abrasive personality alienated allies.",
     "description": "The most underrated founder. Adams went to France alone and secured the alliance that won the Revolution. Cantankerous, brilliant, and utterly unbothered by being disliked.",
-    "imageUrl": "/characters/john-adams.png",
+    "imageUrl": "/characters/john-adams.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -76487,7 +76487,7 @@
     "specialAbility": "Polymath genius — authored the Declaration of Independence, founded the University of Virginia, and doubled the nation's size without firing a shot.",
     "weaknesses": "Hypocrisy between ideals and actions; physically not a fighter.",
     "description": "Jefferson wrote freedom for all men while owning 600 of them — a walking American contradiction. The Declaration of Independence in human form: impossibly idealistic, brilliantly written, and not quite living up to its own words.",
-    "imageUrl": "/characters/thomas-jefferson.png",
+    "imageUrl": "/characters/thomas-jefferson.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -76560,7 +76560,7 @@
     "specialAbility": "Architect of the U.S. Constitution and the Bill of Rights; anticipated every political threat and built counter-mechanisms directly into the founding document.",
     "weaknesses": "5'4\" and physically unmemorable; burned Washington was a bad look.",
     "description": "Madison wrote the Constitution. The whole thing. He came to Philadelphia having done more homework than anyone else in the room and produced the document that still governs 330 million people.",
-    "imageUrl": "/characters/james-madison.png",
+    "imageUrl": "/characters/james-madison.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -76633,7 +76633,7 @@
     "specialAbility": "Battle of Trenton survivor who led a charge and took a musket ball through the shoulder; later closed the Western Hemisphere to European colonization with the Monroe Doctrine.",
     "weaknesses": "Limited economic sophistication; era's simplicity overshadowed the presidency.",
     "description": "Monroe was at Trenton on Christmas night 1776 — shot in the shoulder carrying the flag, nearly bled out, and kept going. The last Founding Father president.",
-    "imageUrl": "/characters/james-monroe.png",
+    "imageUrl": "/characters/james-monroe.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -76707,7 +76707,7 @@
     "specialAbility": "Swam the Potomac daily into his 70s; argued the Amistad case before the Supreme Court at 73; served in Congress for 17 years after the presidency, fighting slavery every day.",
     "weaknesses": "Cold and unapproachable; lost the art of political coalition-building his father mastered.",
     "description": "After losing the presidency, JQA went back to Congress and personally argued the Amistad case. A female journalist sat on his clothes on the riverbank during his morning swim until he gave her an interview. Bizarre, brilliant, unstoppable.",
-    "imageUrl": "/characters/john-quincy-adams.png",
+    "imageUrl": "/characters/john-quincy-adams.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -76779,7 +76779,7 @@
     "specialAbility": "Survived a point-blank pistol shot to the chest and calmly waited for the smoke to clear before killing his opponent; when two assassins drew on him in the White House, both pistols misfired — he charged them with a cane.",
     "weaknesses": "Violent temper; reckless personal decisions; carried a bullet near his heart his entire life.",
     "description": "Old Hickory. Jackson was shot in the chest and finished the duel. Two assassins pulled pistols on him simultaneously — both misfired — and he charged them. He led the Battle of New Orleans winning 8-to-1 in casualties. The most physically dangerous man to ever occupy the White House.",
-    "imageUrl": "/characters/andrew-jackson.png",
+    "imageUrl": "/characters/andrew-jackson.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker"
@@ -76856,7 +76856,7 @@
     "specialAbility": "Invented the modern political party machine — the Albany Regency — coordinating disciplined electoral armies where only loose factions existed before.",
     "weaknesses": "Panic of 1837 hit on his watch; could not charm his way out of structural economic collapse.",
     "description": "The Little Magician. Van Buren invented the political party as an organized machine — before him, factions were loose. After him, they were armies. 5'6\" of pure political engineering.",
-    "imageUrl": "/characters/martin-van-buren.png",
+    "imageUrl": "/characters/martin-van-buren.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -76928,7 +76928,7 @@
     "specialAbility": "War hero of Tippecanoe who defeated Tecumseh's Confederacy; most experienced governor-general ever elected president.",
     "weaknesses": "Died 31 days into office — gave a 2-hour inauguration speech in the rain without a coat, contracted pneumonia, died.",
     "description": "Harrison defeated Tecumseh's unified confederacy at Tippecanoe and became a national hero. Then he gave the longest inauguration speech in history in the rain without a coat to prove he was tough, got pneumonia, and died. Shortest presidency. Most ironic death.",
-    "imageUrl": "/characters/william-henry-harrison.png",
+    "imageUrl": "/characters/william-henry-harrison.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior"
@@ -77004,7 +77004,7 @@
     "specialAbility": "Established presidential succession precedent by simply deciding he was president (not 'Acting President') when Harrison died — everyone objected and he didn't care.",
     "weaknesses": "Kicked out of the Whigs, rejected by Democrats; no party, no allies, no mandate.",
     "description": "'His Accidency.' Tyler decided he was actually president, not Acting President, and set the succession precedent for all 45 subsequent death-in-office scenarios. He then vetoed nearly everything Congress sent him.",
-    "imageUrl": "/characters/john-tyler.png",
+    "imageUrl": "/characters/john-tyler.jpg",
     "behaviorTags": [
       "defensive",
       "prep"
@@ -77075,7 +77075,7 @@
     "specialAbility": "Set four specific goals, achieved all four in exactly one term, expanded the U.S. by 1.2 million square miles, and retired. The most goal-oriented president in history.",
     "weaknesses": "Worked himself to death — died 103 days after leaving office, destroyed by the presidency.",
     "description": "Polk wrote down four goals. Texas. Oregon. California. Tariff reform. Four years later: done. He worked 12-hour days, never took a vacation, and dropped dead 3 months after leaving office.",
-    "imageUrl": "/characters/james-k-polk.png",
+    "imageUrl": "/characters/james-k-polk.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -77147,7 +77147,7 @@
     "specialAbility": "Won the Battle of Buena Vista 4-to-1 against Santa Anna by refusing the order to retreat; when asked to surrender, his reported reply was 'Tell him to go to hell.'",
     "weaknesses": "Died 16 months into his presidency; military instincts didn't translate to governance.",
     "description": "Old Rough and Ready. At Buena Vista, Santa Anna demanded Taylor's surrender with 4-to-1 odds. Taylor refused, counterattacked, and won. Sat sideways on his horse. Never wore a full uniform. The most dangerous man with a rifle in the army.",
-    "imageUrl": "/characters/zachary-taylor.png",
+    "imageUrl": "/characters/zachary-taylor.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior"
@@ -77224,7 +77224,7 @@
     "specialAbility": "Rose from indentured servitude to the presidency by self-education; opened Japan to Western trade via Commodore Perry; held the Union together through the most volatile compromise period.",
     "weaknesses": "Fugitive Slave Act enforcement destroyed his reputation.",
     "description": "Fillmore was literally a farm laborer under an indenture at 14. He taught himself to read with a dictionary and became president. Then he opened Japan.",
-    "imageUrl": "/characters/millard-fillmore.png",
+    "imageUrl": "/characters/millard-fillmore.jpg",
     "behaviorTags": [
       "prep",
       "defensive"
@@ -77296,7 +77296,7 @@
     "specialAbility": "Mexican War hero who fought at Contreras, Churubusco, and Chapultepec — wounded in battle and kept fighting; genuine personal bravery in combat was never in question.",
     "weaknesses": "Presidency inflamed slavery tensions; personal tragedies broke him.",
     "description": "Pierce was a genuine war hero who fainted once from a leg wound and was mocked for it — then kept fighting through two more major battles on the same leg. His presidency was another story.",
-    "imageUrl": "/characters/franklin-pierce.png",
+    "imageUrl": "/characters/franklin-pierce.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior"
@@ -77368,7 +77368,7 @@
     "specialAbility": "Excellent diplomat in foreign affairs; deliberately did nothing as Southern states seceded.",
     "weaknesses": "Watched the South secede and did nothing; widely considered the worst president in history.",
     "description": "Buchanan had a lazy eye pointing in two directions — somehow appropriate for a man who watched the country fall apart and couldn't decide which way to look. He waited out his term and handed the crisis to Lincoln.",
-    "imageUrl": "/characters/james-buchanan.png",
+    "imageUrl": "/characters/james-buchanan.jpg",
     "behaviorTags": [
       "defensive",
       "prep"
@@ -77438,7 +77438,7 @@
     "specialAbility": "Championship-level wrestler (299-1 career record); rail-splitter with one-handed axe strength that other men couldn't match with two; strategic genius who held the Union together through the bloodiest war in American history.",
     "weaknesses": "Depression and war exhaustion; not a trained soldier.",
     "description": "Lincoln was inducted into the Wrestling Hall of Fame — 299-1 with only one disputed defeat. Towering 6'4\" with freakish arm strength. The gentlest man alive who happened to be absolutely terrifying in physical confrontation.",
-    "imageUrl": "/characters/abraham-lincoln.png",
+    "imageUrl": "/characters/abraham-lincoln.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -77515,7 +77515,7 @@
     "specialAbility": "Entirely self-taught — never attended school; survived impeachment by one Senate vote; tailor with hands strong enough to work leather all day.",
     "weaknesses": "Stubborn racist opposition to Reconstruction; first president impeached.",
     "description": "Johnson taught himself to read, taught himself law, and then used it to obstruct Reconstruction. First president impeached. Survived by one vote. Refused to change a thing.",
-    "imageUrl": "/characters/andrew-johnson.png",
+    "imageUrl": "/characters/andrew-johnson.jpg",
     "behaviorTags": [
       "defensive",
       "aggressive"
@@ -77586,7 +77586,7 @@
     "specialAbility": "Relentless aggressive warfare — unlike every other Union general, Grant attacked regardless of cost and kept attacking; accepted 50,000 casualties in a month and kept advancing.",
     "weaknesses": "Alcoholism undermined judgment off the battlefield.",
     "description": "Sam Grant failed at everything until the war. He couldn't stop winning once it started. He was the general Lee feared because Grant simply would not stop. 'I can't spare this man, he fights.' — Lincoln.",
-    "imageUrl": "/characters/ulysses-grant.png",
+    "imageUrl": "/characters/ulysses-grant.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -77662,7 +77662,7 @@
     "specialAbility": "Wounded four times in battle, had five horses shot out from under him, and continued fighting every time — consistent personal battlefield courage throughout the Civil War.",
     "weaknesses": "Disputed election resolution undermined his legitimacy.",
     "description": "Hayes was shot in the arm at South Mountain, kept fighting, was shot again, had horses killed under him four times in the battle, and was still leading charges at the end.",
-    "imageUrl": "/characters/rutherford-hayes.png",
+    "imageUrl": "/characters/rutherford-hayes.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -77739,7 +77739,7 @@
     "specialAbility": "Could write Latin with one hand and Greek with the other simultaneously; Civil War general at Shiloh and Chickamauga; one of the most physically gifted men ever elected president.",
     "weaknesses": "Assassinated 200 days into presidency; his assassin's bullet wasn't fatal — the doctors who kept probing it were.",
     "description": "Garfield could write Latin with his left hand and Greek with his right simultaneously. He fought at Shiloh and Chickamauga. He was shot in 1881 and survived the bullet — but the 12 unsanitary doctors killed him with sepsis.",
-    "imageUrl": "/characters/james-garfield.png",
+    "imageUrl": "/characters/james-garfield.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -77815,7 +77815,7 @@
     "specialAbility": "Owned 80 pairs of trousers; surprised everyone by becoming a serious civil service reformer nobody expected from a machine politician.",
     "weaknesses": "Machine politician origin; terminal illness during most of presidency.",
     "description": "Arthur was considered a corrupt party hack when he became president. Then he signed the Pendleton Civil Service Reform Act and destroyed the spoils system that made him. He had 80 pairs of pants. He was secretly dying of kidney disease the entire time.",
-    "imageUrl": "/characters/chester-arthur.png",
+    "imageUrl": "/characters/chester-arthur.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -77887,7 +77887,7 @@
     "specialAbility": "Personally pulled the lever on two executions as sheriff before his presidency; had secret cancer surgery on a boat during his term; only president to serve two non-consecutive terms.",
     "weaknesses": "Free-market ideology during the Depression of the 1890s prolonged suffering.",
     "description": "Cleveland pulled the lever on two hangings as Erie County sheriff rather than hire someone. He had jaw cancer during his second term, had surgery on a friend's yacht, and lied about it for 25 years. Served twice non-consecutively.",
-    "imageUrl": "/characters/grover-cleveland.png",
+    "imageUrl": "/characters/grover-cleveland.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -77963,7 +77963,7 @@
     "specialAbility": "Civil War general whose command at Peach Tree Creek kept his regiment from being overrun; compact, cold, and absolutely reliable under fire.",
     "weaknesses": "So cold and distant he was called 'The Human Iceberg' — alienated nearly every political ally.",
     "description": "Harrison was 5'6\" and so cold that people said shaking his hand felt like holding a dead fish. His own party hated him by the end. But at Peach Tree Creek he held the line when bigger men broke.",
-    "imageUrl": "/characters/benjamin-harrison.png",
+    "imageUrl": "/characters/benjamin-harrison.jpg",
     "behaviorTags": [
       "tactical",
       "defensive"
@@ -78037,7 +78037,7 @@
     "specialAbility": "Drove a wagon of hot food and coffee into an artillery duel at Antietam because the men needed it; built the first modern presidential campaign; led the Spanish-American War.",
     "weaknesses": "Assassinated in 1901; allowed himself to shake hands in an uncontrolled crowd despite threats.",
     "description": "McKinley drove food and coffee into the middle of an artillery exchange at Antietam because the men needed it. As president he built the Republican Party machine that dominated American politics for 30 years.",
-    "imageUrl": "/characters/william-mckinley.png",
+    "imageUrl": "/characters/william-mckinley.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -78113,7 +78113,7 @@
     "specialAbility": "Former boxer, judo practitioner, big-game hunter, Rough Rider commander, and the only president to deliver a campaign speech after being shot in the chest — with the bullet still inside.",
     "weaknesses": "Recklessness; hearing loss from too much shooting; charged in where others assessed first.",
     "description": "Teddy Roosevelt was shot in the chest before a 90-minute campaign speech, felt the bullet wasn't in his lung, and gave the speech anyway with blood soaking his shirt. The most physically dangerous head of state in American history.",
-    "imageUrl": "/characters/theodore-roosevelt.png",
+    "imageUrl": "/characters/theodore-roosevelt.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -78196,7 +78196,7 @@
     "specialAbility": "Former collegiate wrestler with enormous physical strength; the only person to serve as both President and Chief Justice of the United States.",
     "weaknesses": "338 pounds; mobility severely limited; got stuck in the White House bathtub.",
     "description": "Taft was a legitimate wrestler at Yale. He weighed 338 pounds. Got stuck in the White House bathtub twice. Hated being president. Loved being Chief Justice. The only person to lead both the executive and judicial branches.",
-    "imageUrl": "/characters/william-taft.png",
+    "imageUrl": "/characters/william-taft.jpg",
     "behaviorTags": [
       "aggressive",
       "defensive"
@@ -78269,7 +78269,7 @@
     "specialAbility": "The most intellectual 20th-century president; his Fourteen Points redrew the map of Europe; proposed the League of Nations — the precursor to the United Nations.",
     "weaknesses": "Stroke left him incapacitated; refused to compromise on the League of Nations and lost it; profound racism.",
     "description": "Wilson ran Princeton like a general, then New Jersey, then won the presidency. After WWI he proposed the League of Nations — which his own Senate killed. He had a massive stroke campaigning for it.",
-    "imageUrl": "/characters/woodrow-wilson.png",
+    "imageUrl": "/characters/woodrow-wilson.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -78342,7 +78342,7 @@
     "specialAbility": "The most physically handsome president; gifted speechmaker; excellent poker player who won rooms he couldn't govern.",
     "weaknesses": "Teapot Dome scandal destroyed his legacy; died in office surrounded by corruption he enabled.",
     "description": "Harding was objectively handsome, played poker constantly, had multiple simultaneous affairs including in the White House coat closet. His administration was so corrupt it's a textbook case study. He died before the full extent became known.",
-    "imageUrl": "/characters/warren-harding.png",
+    "imageUrl": "/characters/warren-harding.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -78416,7 +78416,7 @@
     "specialAbility": "Governed through radical simplicity — said less in a day than most presidents say in an hour; reduced the national debt by 25% through deliberate restraint.",
     "weaknesses": "Roaring Twenties policies directly preceded the Great Depression.",
     "description": "A woman told Coolidge she'd bet she could get more than two words from him at dinner. He replied 'You lose.' He slept 10-11 hours a day. He asked aides why the government couldn't just do less. He is the most efficient man to ever hold the office.",
-    "imageUrl": "/characters/calvin-coolidge.png",
+    "imageUrl": "/characters/calvin-coolidge.jpg",
     "behaviorTags": [
       "defensive",
       "prep"
@@ -78487,7 +78487,7 @@
     "specialAbility": "Before the presidency, organized the feeding of 10 million starving Belgians during WWI — the greatest humanitarian administrator of the 20th century who became the wrong man at the wrong time.",
     "weaknesses": "Great Depression president; free-market ideology during collapse caused mass suffering.",
     "description": "Hoover organized the feeding of a nation of starving people with no precedent. He was called the 'Great Humanitarian' before becoming the 'Great Depression.' The same genius that saved Belgium failed on the economy because ideology overrode evidence.",
-    "imageUrl": "/characters/herbert-hoover.png",
+    "imageUrl": "/characters/herbert-hoover.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -78560,7 +78560,7 @@
     "specialAbility": "Governed from a wheelchair and defeated both the Great Depression and Nazi Germany; coordinated the largest military coalition in history.",
     "weaknesses": "Polio-induced paralysis; led in secret the extent of his disability.",
     "description": "FDR governed from a wheelchair and defeated both the Great Depression and Nazi Germany. He ran for president four times. The most consequential American of the 20th century who never threw a punch.",
-    "imageUrl": "/characters/franklin-d-roosevelt.png",
+    "imageUrl": "/characters/franklin-d-roosevelt.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -78636,7 +78636,7 @@
     "specialAbility": "The sign said 'The Buck Stops Here' and he meant it — ended WWII with atomic bombs, integrated the military, fired the most popular general alive, and never second-guessed a decision in his life.",
     "weaknesses": "Small-town instincts in a global arena.",
     "description": "Truman was told about the bomb the day after FDR died and had to decide whether to use it. He did. He fired MacArthur when the five-star general got too big for his boots. Every decision — final.",
-    "imageUrl": "/characters/harry-truman.png",
+    "imageUrl": "/characters/harry-truman.jpg",
     "behaviorTags": [
       "tactical",
       "defensive"
@@ -78711,7 +78711,7 @@
     "specialAbility": "Commanded the most complex military operation in history — D-Day — with six Allied nations and 156,000 troops; the supreme coordinator.",
     "weaknesses": "Delegate-heavy command; less effective in personal combat than systemic warfare.",
     "description": "Eisenhower never led a charge but organized the people who did. His genius was logistics, coalition management, and making Allied generals who hated each other work toward the same objective.",
-    "imageUrl": "/characters/dwight-eisenhower.png",
+    "imageUrl": "/characters/dwight-eisenhower.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -78786,7 +78786,7 @@
     "specialAbility": "The 'Johnson Treatment' — a physical as well as political assault; 6'4\" Texan who leaned into senators' personal space until they agreed; passed more domestic legislation than any president since FDR.",
     "weaknesses": "Ego and insecurity drove Vietnam escalation past strategic reason.",
     "description": "LBJ passed the Civil Rights Act, Medicare, Medicaid, and the Voting Rights Act by physically cornering senators and getting six inches from their face until they said yes.",
-    "imageUrl": "/characters/lyndon-johnson.png",
+    "imageUrl": "/characters/lyndon-johnson.jpg",
     "behaviorTags": [
       "intimidation",
       "tactical"
@@ -78859,7 +78859,7 @@
     "specialAbility": "Strategic genius in foreign policy — opened China, negotiated SALT I, ended Vietnam; the most strategically sophisticated president of the 20th century who sabotaged himself.",
     "weaknesses": "Paranoia and insecurity led to Watergate — the only president to resign.",
     "description": "Nixon opened China. He détente'd the Soviets. He ended the draft. If he hadn't wiretapped his own staff because he was afraid they didn't like him, he'd be on Mount Rushmore.",
-    "imageUrl": "/characters/richard-nixon.png",
+    "imageUrl": "/characters/richard-nixon.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -78932,7 +78932,7 @@
     "specialAbility": "Two-time All-American center at Michigan; turned down contracts from the Lions and Packers for Yale Law; physically the most athletic president of the 20th century.",
     "weaknesses": "Nixon pardon destroyed popularity before he had a chance; no electoral mandate as unelected president.",
     "description": "Ford was so good at football that the Lions and Packers both offered him contracts. He chose Yale Law. He's the only president never elected as either president or vice president.",
-    "imageUrl": "/characters/gerald-ford.png",
+    "imageUrl": "/characters/gerald-ford.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical"
@@ -79004,7 +79004,7 @@
     "specialAbility": "Naval nuclear engineer, marathon runner who personally brokered the Camp David Accords over 13 sleepless days; best post-presidential record of any president in history.",
     "weaknesses": "Too honest for the political climate; Iranian hostage crisis exposed limitations of moral authority.",
     "description": "Carter graduated top 10% in nuclear physics at the Naval Academy, brokered Camp David personally, and after the presidency spent decades building houses for the poor into his 90s. He won a Nobel Peace Prize. Probably the best human being to hold the office.",
-    "imageUrl": "/characters/jimmy-carter.png",
+    "imageUrl": "/characters/jimmy-carter.jpg",
     "behaviorTags": [
       "tactical",
       "prep",
@@ -79077,7 +79077,7 @@
     "specialAbility": "Youngest Navy pilot in WWII; survived being shot down over the Pacific; assembled 35 nations to liberate Kuwait in Operation Desert Storm.",
     "weaknesses": "Never escaped Reagan's shadow politically; lost reelection to an economy he couldn't control.",
     "description": "Bush flew 58 combat missions, was shot down at 20, bailed out over the Pacific while his crewmen died, and was rescued by submarine. Then he built the Cold War coalition that ended the Soviet Union and assembled 35 nations for the Gulf War.",
-    "imageUrl": "/characters/george-hw-bush.png",
+    "imageUrl": "/characters/george-hw-bush.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -79152,7 +79152,7 @@
     "specialAbility": "Extraordinary political intelligence and ability to make any individual feel like the most important person in the room; policy mastery; survived impeachment through sheer political skill.",
     "weaknesses": "Personal scandals repeatedly sabotaged political capital.",
     "description": "Clinton could remember every name, every face, every conversation he'd ever had. The longest economic expansion in American history. Budget surplus. He survived impeachment. His saxophone solo on Arsenio Hall helped win him an election.",
-    "imageUrl": "/characters/bill-clinton.png",
+    "imageUrl": "/characters/bill-clinton.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -79226,7 +79226,7 @@
     "specialAbility": "F-102 interceptor pilot; organized the NATO Article 5 response to 9/11 — the first and only invocation; launched the most significant military escalation since Vietnam.",
     "weaknesses": "Relied heavily on advisors; strategic decisions in Iraq are the defining counterargument to his leadership.",
     "description": "Bush flew F-102 jets. He cleared brush in Texas heat without complaint. He showed up in a flight suit on an aircraft carrier. Now he paints portraits of veterans. The complications of Iraq revealed the plan wasn't as complete as the landing.",
-    "imageUrl": "/characters/george-w-bush.png",
+    "imageUrl": "/characters/george-w-bush.jpg",
     "behaviorTags": [
       "tactical",
       "prep"
@@ -79301,7 +79301,7 @@
     "specialAbility": "Constitutional scholar and community organizer who built a grassroots coalition that rewrote presidential campaigns; ordered the operation that killed bin Laden.",
     "weaknesses": "Preference for deliberation over decisive action frustrated allies.",
     "description": "Obama taught constitutional law, organized the South Side of Chicago, gave a speech at 42 that made the country think he could be president — and then was. He ran the bin Laden raid from the Situation Room and then joked about it at the Correspondents' Dinner the same night.",
-    "imageUrl": "/characters/barack-obama.png",
+    "imageUrl": "/characters/barack-obama.jpg",
     "behaviorTags": [
       "tactical",
       "prep",
@@ -79378,7 +79378,7 @@
     "specialAbility": "Self-promotion and counter-punching as an art form; dominates any media cycle and shifts the frame of any argument through relentless unconventional pressure.",
     "weaknesses": "Impulsive decision-making; polarizing style.",
     "description": "Trump turned reality TV into political theater and reality TV into the Oval Office. He rewrote the rules of political communication so thoroughly that no one has figured out how to fight by the old rules since.",
-    "imageUrl": "/characters/donald-trump.png",
+    "imageUrl": "/characters/donald-trump.jpg",
     "behaviorTags": [
       "intimidation",
       "aggressive"
@@ -79450,7 +79450,7 @@
     "specialAbility": "Overcame a severe stutter and catastrophic personal tragedies to build one of the longest Senate careers in history; demonstrated remarkable physical endurance into his late 70s.",
     "weaknesses": "Age and cognitive concerns dominated his later presidency.",
     "description": "Biden overcame a stutter so severe his classmates called him 'Impedimenta.' Lost his wife, daughter, and son. Commuted from Delaware to Washington every day for 36 years so his kids could fall asleep in their own beds. Scranton Joe. The long game.",
-    "imageUrl": "/characters/joe-biden.png",
+    "imageUrl": "/characters/joe-biden.jpg",
     "behaviorTags": [
       "defensive",
       "prep"
@@ -79525,7 +79525,7 @@
     "specialAbility": "Terror as a weapon — destroyed cities not to take them but to break the will of the next one; commanded the most feared horse-cavalry force of the ancient world.",
     "weaknesses": "Died of a nosebleed on his wedding night — the Scourge of God stopped by his own capillaries.",
     "description": "The Scourge of God. Attila took the fractious Huns and made them a single unstoppable battering ram aimed at the dying Roman Empire. Cities surrendered before he arrived because the alternative was what happened to the last city. He died drunk on his wedding night from a nosebleed.",
-    "imageUrl": "/characters/attila-the-hun.png",
+    "imageUrl": "/characters/attila-the-hun.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -79607,7 +79607,7 @@
     "specialAbility": "Greatest tactical genius in history — crossed the Alps with 37 war elephants in winter; at Cannae destroyed a Roman army double his size using the first recorded double-envelopment, killing 70,000 in one afternoon.",
     "weaknesses": "Won every battle, lost the war — ran out of political support from Carthage.",
     "description": "Hannibal crossed the Alps with war elephants in winter and then obliterated Rome anyway. At Cannae he killed 70,000 Romans with 45,000 men — a ratio military officers still study as the ideal battle. He never lost a field engagement against Rome. He just ran out of army.",
-    "imageUrl": "/characters/hannibal-barca.png",
+    "imageUrl": "/characters/hannibal-barca.jpg",
     "behaviorTags": [
       "tactical",
       "prep",
@@ -79687,7 +79687,7 @@
     "specialAbility": "Gladiatorial combat master who escaped with a kitchen knife, built a 120,000-person slave army from nothing, and defeated six Roman consular armies in two years.",
     "weaknesses": "Ultimately surrounded and destroyed by Crassus; rebel army lacked political structure to become a state.",
     "description": "Spartacus escaped a gladiator school with a kitchen knife. He convinced 70 men to join him. Then 120,000. He defeated six Roman armies in two years. Only stopped when Crassus built a 40-mile wall across Italy.",
-    "imageUrl": "/characters/spartacus.png",
+    "imageUrl": "/characters/spartacus.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -79766,7 +79766,7 @@
     "specialAbility": "Led the most heroic last stand in military history — held Thermopylae with 300 Spartans against a Persian army of hundreds of thousands for three days, dying to buy Greece its survival.",
     "weaknesses": "Died at Thermopylae — the stand was a final sacrifice, not a winnable engagement.",
     "description": "Leonidas brought 300 Spartans to Thermopylae knowing the pass would fall. When asked to surrender weapons, he said 'Molon labe — Come and take them.' He held for three days. The delay bought Athens the evacuation that saved Greek civilization.",
-    "imageUrl": "/characters/leonidas-i.png",
+    "imageUrl": "/characters/leonidas-i.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -79847,7 +79847,7 @@
     "specialAbility": "United Western Europe for the first time since the fall of Rome through 53 military campaigns in 46 years; reorganized the continent's entire administrative and legal framework; his sword was named Joyeuse.",
     "weaknesses": "Empire fractured immediately after his death — entirely dependent on his personal control.",
     "description": "Charlemagne fought 53 campaigns in 46 years and won most of them. He united Western Europe, introduced standardized coinage, reformed the church, and established schools throughout the empire. He could speak four languages but never learned to write — practiced writing tablets under his pillow before sleep.",
-    "imageUrl": "/characters/charlemagne.png",
+    "imageUrl": "/characters/charlemagne.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -79929,7 +79929,7 @@
     "specialAbility": "Recaptured Jerusalem from the Crusaders and then released his prisoners rather than massacre them — won the moral war as thoroughly as the military one.",
     "weaknesses": "Generosity occasionally undermined strategic advantage.",
     "description": "Saladin defeated the Crusaders at Hattin, captured Jerusalem, and then freed thousands of prisoners. Richard the Lionheart fell sick mid-Crusade — Saladin sent a physician and fresh fruit. The most honorable man at the center of history's most brutal war.",
-    "imageUrl": "/characters/saladin.png",
+    "imageUrl": "/characters/saladin.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -80009,7 +80009,7 @@
     "specialAbility": "First into every breach — fought at the front in every engagement of the Third Crusade; at Jaffa waded ashore alone from a boat to rally his drowning force; challenged Saladin to personal single combat.",
     "weaknesses": "Terrible administrator; spent 10 months total in England as its king; died at 41 from a crossbow bolt.",
     "description": "Richard fought in the front ranks. Always. At Arsuf he rode along the battle line under fire personally restoring formation. He challenged Saladin to a duel. Saladin sent horses when Richard's died under him. He died at 41 from a crossbow bolt from a child defending a worthless castle.",
-    "imageUrl": "/characters/richard-the-lionheart.png",
+    "imageUrl": "/characters/richard-the-lionheart.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -80092,7 +80092,7 @@
     "specialAbility": "Took command of the French army at 17 with no military training, raised the siege of Orléans in 9 days, was wounded by an arrow — pulled it out herself — and led the final charge.",
     "weaknesses": "Burned at the stake at 19 — dead within two years of her greatest victories.",
     "description": "Joan was a peasant girl who walked into the French court, convinced the King, donned armor, and lifted the siege of Orléans in nine days. Wounded by an arrow at the Tourelles — pulled it out and led the final charge. Captured, tried for heresy, burned at 19. Canonized 500 years later.",
-    "imageUrl": "/characters/joan-of-arc.png",
+    "imageUrl": "/characters/joan-of-arc.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -80172,7 +80172,7 @@
     "specialAbility": "Psychological warfare through mass impalement — created a forest of 20,000 impaled corpses at Târgoviște that caused Sultan Mehmed II to turn his army around and go home.",
     "weaknesses": "Methods created enemies everywhere; betrayed by allies, imprisoned twice.",
     "description": "Vlad III impaled an Ottoman army of 23,000 on stakes outside his capital in rows by rank. Sultan Mehmed II arrived, saw the forest of dead, and went home. Inspiration for Dracula. That felt inevitable.",
-    "imageUrl": "/characters/vlad-the-impaler.png",
+    "imageUrl": "/characters/vlad-the-impaler.jpg",
     "behaviorTags": [
       "intimidation",
       "aggressive",
@@ -80249,7 +80249,7 @@
     "specialAbility": "The most comprehensive human mind in recorded history — painted the Mona Lisa, designed tanks and helicopters 400 years early, was the greatest anatomist and hydraulic engineer alive simultaneously.",
     "weaknesses": "Finished almost nothing; perfectionism and curiosity left dozens of genius projects incomplete.",
     "description": "Leonardo left 7,000 pages of notes. He designed a tank in 1487. He designed a helicopter. He made the Mona Lisa, The Last Supper, and also wrote the first accurate anatomical studies of the human heart. He was ambidextrous and could write mirrored text naturally. He never finished anything.",
-    "imageUrl": "/characters/leonardo-da-vinci.png",
+    "imageUrl": "/characters/leonardo-da-vinci.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -80327,7 +80327,7 @@
     "specialAbility": "Invented calculus as a side project during a plague year, explained gravity, decomposed light into the spectrum, and designed the reflecting telescope — essentially creating modern physics in 18 months.",
     "weaknesses": "Catastrophically bad at human relationships; held grudges for decades; pursued enemies with bureaucratic cruelty.",
     "description": "Newton invented a new branch of mathematics because regular math wasn't doing what he needed. He spent 18 months in plague isolation and essentially created modern physics. He later became Master of the Mint and prosecuted counterfeiters with what contemporaries called 'surprising personal intensity.'",
-    "imageUrl": "/characters/isaac-newton.png",
+    "imageUrl": "/characters/isaac-newton.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -80402,7 +80402,7 @@
     "specialAbility": "Designed alternating current, the electrical grid, remote control, radar, and the radio — mostly from mental models, speaking eight languages, with total recall.",
     "weaknesses": "Pathologically generous; let others claim his work; died in debt in a hotel room.",
     "description": "Tesla could do calculus in his head. He designed the AC electrical system from mental models. He invented the radio (Marconi stole it). He designed X-ray machines, remote control, death rays he never weaponized, and the entire modern electrical grid. He died alone in a New York hotel room having been paid almost nothing.",
-    "imageUrl": "/characters/nikola-tesla.png",
+    "imageUrl": "/characters/nikola-tesla.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -80478,7 +80478,7 @@
     "specialAbility": "Rewrote the laws of physics twice while working as a patent clerk; E=mc² led directly to nuclear energy, nuclear weapons, and everything after.",
     "weaknesses": "Could not drive, often got lost walking home; completely helpless in practical life.",
     "description": "Einstein published four papers in 1905 while working at a patent office: Brownian motion, photoelectric effect (Nobel Prize), special relativity, and E=mc². All four. In one year. As a clerk. He also sailed badly and played violin at a professional level.",
-    "imageUrl": "/characters/albert-einstein.png",
+    "imageUrl": "/characters/albert-einstein.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -80553,7 +80553,7 @@
     "specialAbility": "Won Nobel Prizes in two different sciences — the only person ever to do so; personally drove mobile X-ray units to WWI battlefields under artillery fire.",
     "weaknesses": "Died of radiation poisoning from the research that made her famous — her notebooks are still too radioactive to handle safely.",
     "description": "Marie Curie drove X-ray trucks to the WWI front lines and trained women to operate them. She won the Nobel Prize in Physics, then again in Chemistry. Her notebooks are stored in lead-lined boxes and require protective suits to view.",
-    "imageUrl": "/characters/marie-curie.png",
+    "imageUrl": "/characters/marie-curie.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -80630,7 +80630,7 @@
     "specialAbility": "The only Ptolemaic ruler to learn Egyptian — spoke nine languages; maintained Egyptian independence for 21 years against Rome through sheer diplomatic genius.",
     "weaknesses": "Egypt's independence died with her — killed herself rather than be paraded through Rome.",
     "description": "Cleopatra spoke nine languages and was the only ruler of her dynasty to bother learning Egyptian. She didn't seduce Caesar and Antony — she outmaneuvered them politically and those relationships were instruments of state policy. Rolled herself into a carpet to be smuggled past Caesar's guards.",
-    "imageUrl": "/characters/cleopatra.png",
+    "imageUrl": "/characters/cleopatra.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -80706,7 +80706,7 @@
     "specialAbility": "Led a rebellion that burned London, Colchester, and St Albans to the ground and killed 70,000 Romans; described as terrifyingly tall with a voice that carried across battlefields.",
     "weaknesses": "Tactical overconfidence at Watling Street — chose a position that nullified her cavalry advantage.",
     "description": "The Romans flogged Boudicca and assaulted her daughters. She raised the Iceni, drew in the Trinovantes, and sacked three Roman cities. She killed 70,000 people. Tacitus describes her with the energy of a man who realized he was afraid.",
-    "imageUrl": "/characters/boudicca.png",
+    "imageUrl": "/characters/boudicca.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -80786,7 +80786,7 @@
     "specialAbility": "Revolutionized Zulu warfare — abolished the throwing spear, replaced it with a short stabbing spear and large shield, trained barefoot soldiers to outlast anyone, and invented the bull horn encirclement.",
     "weaknesses": "Paranoia following his mother's death led to a reign of terror; assassinated by his own half-brothers.",
     "description": "Shaka didn't inherit an army — he built one by rejecting every assumption about how warfare worked. He was building toward something that might have changed the entire course of colonial Africa. Then his brothers killed him.",
-    "imageUrl": "/characters/shaka-zulu.png",
+    "imageUrl": "/characters/shaka-zulu.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -80863,7 +80863,7 @@
     "specialAbility": "The wealthiest individual in recorded human history — his 1324 pilgrimage with 60,000 people and 12 tons of gold flooded the Mediterranean gold market and caused a decade-long economic depression in Egypt.",
     "weaknesses": "Limited personal military capacity; wealth and logistics rather than personal combat.",
     "description": "Mansa Musa was so wealthy that when he passed through Cairo he gave away so much gold the Egyptian economy was destabilized for a decade. 60,000 attendants. 100 camels each carrying 300 lbs of gold. Estimated net worth: $400 billion adjusted for inflation.",
-    "imageUrl": "/characters/mansa-musa.png",
+    "imageUrl": "/characters/mansa-musa.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -80938,7 +80938,7 @@
     "specialAbility": "The First Emperor — unified China from seven warring kingdoms in 15 years; standardized currency, writing, and weights across a civilization of 40 million; built the Great Wall.",
     "weaknesses": "Paranoid terror regime; buried scholars alive; mercury poisoning from immortality pills; empire disintegrated within 15 years of his death.",
     "description": "Qin conquered six rival kingdoms in 15 years and declared himself the First Emperor. He standardized everything across the most populous civilization on earth. He sent armies searching for immortality pills while his doctors gave him mercury, which slowly killed him.",
-    "imageUrl": "/characters/qin-shi-huang.png",
+    "imageUrl": "/characters/qin-shi-huang.jpg",
     "behaviorTags": [
       "tactical",
       "aggressive",
@@ -81016,7 +81016,7 @@
     "specialAbility": "Doubled the size of Russia, destroyed the boyar nobility through systematic terror, created the first standing Russian army, and invented the oprichnina — a secret police force that rode with dog heads on their saddles.",
     "weaknesses": "Killed his own son and heir in a rage; paranoia undermined decades of administrative work.",
     "description": "Ivan IV conquered Kazan and Astrakhan, established the first Russian printing press, and created black-clad terror squads who rode with dog heads and brooms to symbolize sniffing out traitors. He killed his own son Ivan with a staff in a fight.",
-    "imageUrl": "/characters/ivan-the-terrible.png",
+    "imageUrl": "/characters/ivan-the-terrible.jpg",
     "behaviorTags": [
       "aggressive",
       "intimidation",
@@ -81094,7 +81094,7 @@
     "specialAbility": "6'8\" Tsar who worked in European shipyards incognito to learn shipbuilding, founded St. Petersburg on a swamp, built a navy from scratch, and defeated the most powerful military in northern Europe.",
     "weaknesses": "Brutal modernization created enormous domestic resentment.",
     "description": "Peter was 6'8\" and worked in Dutch and English shipyards under a false name to learn how to build a navy. He then modernized Russia top-down, founded a new capital on a swamp, built a navy from scratch, and defeated Charles XII of Sweden. He also personally performed surgery and executions when he felt like it.",
-    "imageUrl": "/characters/peter-the-great.png",
+    "imageUrl": "/characters/peter-the-great.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -81175,7 +81175,7 @@
     "specialAbility": "German princess who seized the Russian throne in a coup, expanded Russia more than any ruler since Peter, founded universities, and ran the largest country in the world solo for 34 years.",
     "weaknesses": "Serf conditions worsened despite Enlightenment rhetoric; Pugachev Rebellion exposed the gap between her ideals and governance.",
     "description": "Catherine arrived in Russia as a German teenager knowing no one, learned Russian, converted to Orthodoxy, survived being married to an unstable man, and then dethroned him. She ran Russia for 34 years, expanded its borders on every front, and corresponded with every major European intellectual alive.",
-    "imageUrl": "/characters/catherine-the-great.png",
+    "imageUrl": "/characters/catherine-the-great.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -81252,7 +81252,7 @@
     "specialAbility": "Personally rallied troops at Tilbury in armor against the Spanish Armada; ran the most sophisticated spy network in Europe via Walsingham; presided over the greatest flowering of English arts and exploration in history.",
     "weaknesses": "Executed her cousin; made enemies of every Catholic monarchy; died without an heir.",
     "description": "Elizabeth rode to Tilbury in armor and told her army she had the heart and stomach of a king. Her spy chief Walsingham ran an intelligence network fifty years ahead of anything else in Europe. The Armada was defeated. Shakespeare was writing. Drake was circumnavigating.",
-    "imageUrl": "/characters/queen-elizabeth-i.png",
+    "imageUrl": "/characters/queen-elizabeth-i.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -81328,7 +81328,7 @@
     "specialAbility": "Self-taught cavalry commander who went from country gentleman to military dictator of England in seven years; at Marston Moor and Naseby personally led charges that turned the battle.",
     "weaknesses": "Military dictatorship proved unsustainable — monarchy restored within two years of his death.",
     "description": "Cromwell was 40 and had never fought when the Civil War started. By the end he commanded the New Model Army, had the King executed, and became Lord Protector. Parliament had him dug up and executed after his death — his skull was on a spike for 20 years.",
-    "imageUrl": "/characters/oliver-cromwell.png",
+    "imageUrl": "/characters/oliver-cromwell.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -81407,7 +81407,7 @@
     "specialAbility": "Escaped slavery, self-educated in secret, wrote autobiographies so precise and detailed about his former masters that he risked recapture — the most dangerous pen in American history.",
     "weaknesses": "Operated at risk of re-enslavement his entire public life.",
     "description": "Douglass was enslaved and self-educated in secret. He escaped on a train with borrowed papers. He gave speeches so powerful people said he was too articulate to have been enslaved — so he wrote his autobiography with real names and dates that exposed him to recapture.",
-    "imageUrl": "/characters/frederick-douglass.png",
+    "imageUrl": "/characters/frederick-douglass.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -81483,7 +81483,7 @@
     "specialAbility": "Led 13 rescue missions freeing 70+ enslaved people via the Underground Railroad while carrying a revolver pointed at anyone who tried to turn back; first woman to command a U.S. military raid.",
     "weaknesses": "Suffered narcoleptic episodes from a childhood head injury; operated in constant mortal danger.",
     "description": "Tubman escaped slavery and then went back. Thirteen times. She carried a gun and told people that anyone who turned back would be shot — because a captured person would give up the route. She led the Combahee River Raid that freed 700 people. She never lost a single passenger.",
-    "imageUrl": "/characters/harriet-tubman.png",
+    "imageUrl": "/characters/harriet-tubman.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -81560,7 +81560,7 @@
     "specialAbility": "The Demon King who unified half of Japan — the first Japanese warlord to deploy firearms in coordinated volley fire, ending the age of traditional samurai warfare in an afternoon at Nagashino.",
     "weaknesses": "Betrayed at Honnō-ji by one of his own generals; could not survive treachery from within.",
     "description": "Nobunaga deployed 3,000 arquebuses in rotating volley fire at Nagashino, obliterating the Takeda cavalry. He was 49% of the way to unifying Japan when Akechi Mitsuhide surrounded his temple. He chose to die rather than surrender.",
-    "imageUrl": "/characters/oda-nobunaga.png",
+    "imageUrl": "/characters/oda-nobunaga.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -81639,7 +81639,7 @@
     "specialAbility": "The greatest strategist of the Three Kingdoms — invented the repeating crossbow, maintained the Shu Han war effort alone for 7 northern expeditions against an enemy three times his size, and was so feared Wei's generals refused to attack his camp even after he died.",
     "weaknesses": "Worked himself to death refusing to delegate; died at 53 from exhaustion.",
     "description": "Zhuge Liang invented military equipment, managed supply logistics for seven impossible campaigns, and was so perfectly positioned even in death that Wei's generals thought it was a trap. He died of overwork at 53.",
-    "imageUrl": "/characters/zhuge-liang.png",
+    "imageUrl": "/characters/zhuge-liang.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -81716,7 +81716,7 @@
     "specialAbility": "Commanded the largest chariot battle in history at Kadesh, was personally surrounded by Hittite forces, fought his way out alone, and spent 60 years building monuments to himself to make sure history couldn't forget.",
     "weaknesses": "Kadesh was at best a draw — he declared total victory and built temples about it for decades.",
     "description": "Ramesses II was surrounded at Kadesh with his guard scattered. He charged alone into the Hittite encirclement, broke through, and rallied his forces. Then he built more monuments to himself than any pharaoh before or after. He lived to 90 and outlived 13 heirs.",
-    "imageUrl": "/characters/ramesses-ii.png",
+    "imageUrl": "/characters/ramesses-ii.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -81796,7 +81796,7 @@
     "specialAbility": "Longest-reigning Ottoman sultan — led 13 personal campaigns, oversaw the peak of Ottoman power, and was considered the supreme legal and military authority in both East and West simultaneously.",
     "weaknesses": "Failed siege of Vienna; dependency on grand vizier created vulnerability.",
     "description": "Suleiman led 13 military campaigns personally. Under his reign the Ottoman Empire reached its greatest extent — from Algeria to Persia, from Hungary to Yemen. His own people called him Kanuni — the Lawgiver. Europeans called him Magnificent. Both were right.",
-    "imageUrl": "/characters/suleiman-the-magnificent.png",
+    "imageUrl": "/characters/suleiman-the-magnificent.jpg",
     "behaviorTags": [
       "tactical",
       "aggressive",
@@ -81877,7 +81877,7 @@
     "specialAbility": "Unified the Plains tribes and led the coalition that annihilated Custer's 7th Cavalry at Little Bighorn; his vision of the battle the night before was so accurate it made 3,000 warriors unbreakable.",
     "weaknesses": "Betrayed by the reservation system; assassinated by Indian police during the Ghost Dance movement.",
     "description": "Sitting Bull had a vision the night before Little Bighorn — soldiers falling into camp like grasshoppers from the sky. The next day Custer arrived. His combined Lakota-Cheyenne force destroyed them. He never fired a weapon at Little Bighorn himself — he prayed. Spiritual and military center of the most decisive Native American victory against the U.S. Army.",
-    "imageUrl": "/characters/sitting-bull.png",
+    "imageUrl": "/characters/sitting-bull.jpg",
     "behaviorTags": [
       "tactical",
       "warrior",
@@ -81954,7 +81954,7 @@
     "specialAbility": "The greatest tactical cavalry commander of the Plains wars — led the flanking charge at Little Bighorn and defeated General Crook at the Rosebud eight days earlier.",
     "weaknesses": "Killed by a bayonet while in military custody — never surrendered voluntarily.",
     "description": "Crazy Horse never allowed himself to be photographed. No verified photo of him exists. He commanded the flanking charge that broke Custer's force. He defeated General Crook at the Rosebud. He was stabbed while being held in custody. The man who never surrendered died in captivity.",
-    "imageUrl": "/characters/crazy-horse.png",
+    "imageUrl": "/characters/crazy-horse.jpg",
     "behaviorTags": [
       "aggressive",
       "berserker",
@@ -82034,7 +82034,7 @@
     "specialAbility": "Escaped U.S. military capture more than 35 times with fewer than 40 Apache warriors against 5,000 soldiers — used desert terrain in ways the Army couldn't replicate for 25 years.",
     "weaknesses": "Eventually surrendered due to exhaustion and starvation of his people.",
     "description": "Geronimo had 35 warriors. The U.S. Army had 5,000 soldiers plus Mexican scouts. He escaped their encirclement 35 times. Captured, imprisoned, and became famous enough to ride in Theodore Roosevelt's inauguration parade.",
-    "imageUrl": "/characters/geronimo.png",
+    "imageUrl": "/characters/geronimo.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -82112,7 +82112,7 @@
     "specialAbility": "The most patient of Japan's three unifiers — survived being held hostage twice in childhood, outlived Nobunaga and Hideyoshi, and at Sekigahara turned one afternoon's battle into 265 years of uninterrupted rule.",
     "weaknesses": "Won through waiting rather than brilliance — dependent on enemies making mistakes.",
     "description": "Ieyasu was held as a hostage for most of his childhood. He survived Nobunaga. He survived Hideyoshi. He won Sekigahara. And then the Tokugawa Shogunate lasted 265 years. 'Life is like carrying a heavy load while walking a long road.'",
-    "imageUrl": "/characters/tokugawa-ieyasu.png",
+    "imageUrl": "/characters/tokugawa-ieyasu.jpg",
     "behaviorTags": [
       "tactical",
       "defensive",
@@ -82190,7 +82190,7 @@
     "specialAbility": "Conquered the Aztec Empire with 500 men — allied with every tribe that hated the Aztecs, walked into a city of 200,000, seized the Emperor, and destroyed it all when things went wrong; burned his ships to remove the retreat option.",
     "weaknesses": "Methods were monstrous; enslaved and destroyed conquered populations.",
     "description": "Cortés arrived with 500 men and no authorization. He burned his ships so his men couldn't retreat. He walked into Tenochtitlan as Montezuma's guest. He then seized Montezuma, sparked a war, was driven out, came back, and destroyed the city that had impressed him.",
-    "imageUrl": "/characters/hernan-cortes.png",
+    "imageUrl": "/characters/hernan-cortes.jpg",
     "behaviorTags": [
       "tactical",
       "aggressive",
@@ -82269,7 +82269,7 @@
     "specialAbility": "Wrote the intellectual framework that shaped the 20th century's most consequential political movements — The Communist Manifesto and Das Kapital were the blueprint for revolutions affecting half of humanity.",
     "weaknesses": "Lived in poverty; couldn't maintain his own finances; ideas were twisted by those who claimed to follow them.",
     "description": "Marx spent his life in poverty researching the economics of poverty. He published The Communist Manifesto at 29. Revolutions he inspired reshaped Russia, China, Cuba, Vietnam, and dozens of other countries. He died owing rent.",
-    "imageUrl": "/characters/karl-marx.png",
+    "imageUrl": "/characters/karl-marx.jpg",
     "behaviorTags": [
       "prep",
       "tactical"
@@ -82343,7 +82343,7 @@
     "specialAbility": "Traveled from Venice to China at 17, spent 17 years at Kublai Khan's court, and returned with documentation of a world Europeans had no conception of — dictated the most influential travel book in history from prison.",
     "weaknesses": "Contemporaries thought he fabricated his accounts; couldn't prove the journey beyond his own testimony.",
     "description": "Marco Polo was 17 when he left and 41 when he got back. He spent 17 years in Kublai Khan's employment. He was captured in a naval battle on the way home and dictated The Travels of Marco Polo in prison. People called him a liar until the 20th century when archaeology confirmed his locations.",
-    "imageUrl": "/characters/marco-polo.png",
+    "imageUrl": "/characters/marco-polo.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -82421,7 +82421,7 @@
     "specialAbility": "Led the first circumnavigation of the globe — lost four of his five ships and died in the Philippines before completing the journey himself; the man who proved the Earth was a sphere.",
     "weaknesses": "Died in a battle he didn't need to fight; his crew finished the circumnavigation without him.",
     "description": "Magellan led five ships and 270 men. He found the Strait that bears his name, crossed the Pacific for the first time by any European, and then died in a battle in the Philippines he joined voluntarily to impress a local king. His ship Victoria completed the circumnavigation without him.",
-    "imageUrl": "/characters/ferdinand-magellan.png",
+    "imageUrl": "/characters/ferdinand-magellan.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -82500,7 +82500,7 @@
     "specialAbility": "Crossed the Atlantic with three ships in 1492 using dead reckoning into completely unknown water, refusing to turn back even when his crew demanded it.",
     "weaknesses": "Navigation was wrong — miscalculated Earth's size and died insisting he'd reached Asia.",
     "description": "Columbus calculated the Earth was about a third of its actual size and sailed west looking for Asia. He was wrong. He found something he'd never predicted. He made the crossing four times. History's most consequential wrong answer.",
-    "imageUrl": "/characters/christopher-columbus.png",
+    "imageUrl": "/characters/christopher-columbus.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -82578,7 +82578,7 @@
     "specialAbility": "Conquered the Maurya Empire to its maximum extent at the Battle of Kalinga — 100,000 dead — then, seeing the aftermath, converted to Buddhism and spent the remaining decades building hospitals, planting shade trees, and establishing religious freedom.",
     "weaknesses": "Renounced military conquest; empire weakened in subsequent generations.",
     "description": "Ashoka won the biggest battle in Indian history and then decided fighting was wrong. He spent the rest of his reign building roads, hospitals, and wells, and sending Buddhist missionaries across Asia. The only emperor who won the war and chose peace — and meant it.",
-    "imageUrl": "/characters/ashoka-the-great.png",
+    "imageUrl": "/characters/ashoka-the-great.jpg",
     "behaviorTags": [
       "aggressive",
       "warrior",
@@ -82658,7 +82658,7 @@
     "specialAbility": "Founded the Mughal Empire by winning the First Battle of Panipat with 12,000 men against 100,000 — deploying artillery for the first time in Indian warfare; lost his kingdom three times and won it back each time.",
     "weaknesses": "Founded an empire that outlived his personal vision.",
     "description": "Babur lost Fergana, Samarkand (twice), and Kabul before 30. Then he aimed south. At Panipat he deployed artillery and muskets against the Delhi Sultanate's war elephants — innovation vs. tradition — and founded the Mughal Empire. He also wrote excellent poetry and memoirs.",
-    "imageUrl": "/characters/babur.png",
+    "imageUrl": "/characters/babur.jpg",
     "behaviorTags": [
       "aggressive",
       "tactical",
@@ -82739,7 +82739,7 @@
     "specialAbility": "The only female emperor in Chinese history — seized the throne, expanded the empire, reformed the civil service to promote talent regardless of birth, and ran the largest court in human history for 50 years.",
     "weaknesses": "Methods of seizing power included executions of rivals; contested by traditional historians.",
     "description": "Wu Zetian started as a concubine, became Empress Dowager, then Regent, then Emperor — the only woman to take the title in 5,000 years of Chinese imperial history. She reformed the civil service exam. She expanded Tang territory. She was 67 when she finally became Emperor in her own right.",
-    "imageUrl": "/characters/wu-zetian.png",
+    "imageUrl": "/characters/wu-zetian.jpg",
     "behaviorTags": [
       "prep",
       "tactical",
@@ -82816,7 +82816,7 @@
     "specialAbility": "Built Machu Picchu, reorganized the Inca state into the largest pre-Columbian American empire, and personally led the campaigns that expanded Tawantinsuyu from Bolivia to Ecuador.",
     "weaknesses": "Empire was entirely dependent on the road system — disrupting logistics collapsed it.",
     "description": "Pachacuti became Sapa Inca after his father fled a Chanka attack — he stayed, won, and turned it into 40 years of expansion. He built Machu Picchu. He built 40,000 km of roads. He is the person most responsible for the Inca Empire that Pizarro encountered.",
-    "imageUrl": "/characters/pachacuti.png",
+    "imageUrl": "/characters/pachacuti.jpg",
     "behaviorTags": [
       "tactical",
       "aggressive",
@@ -82894,7 +82894,7 @@
     "specialAbility": "Proved the Earth moves through a telescope he improved himself while the entire established order of civilization said it was impossible — the single person most responsible for the scientific method.",
     "weaknesses": "Recanted under Inquisition threat; spent last 10 years under house arrest for empirical truth.",
     "description": "The Church had the entire weight of civilization behind its cosmology and Galileo said: that is wrong and here is the data. He spent a decade under house arrest for it. On his deathbed, supposedly, he said the Earth still moves. The planet agreed.",
-    "imageUrl": "/characters/galileo-galilei.png",
+    "imageUrl": "/characters/galileo-galilei.jpg",
     "behaviorTags": [
       "prep",
       "defensive",
@@ -82970,7 +82970,7 @@
     "specialAbility": "Developed the theory of natural selection through 20 years of meticulous observation — replaced centuries of assumption with evidence; On the Origin of Species changed what it meant to be a living thing.",
     "weaknesses": "Delayed publishing for 20 years due to anxiety; chronic illness throughout his life.",
     "description": "Darwin sailed on the Beagle for five years, collected everything, and then spent 20 years thinking about what it meant. He knew what he was about to do to conventional belief and he was right about the reception. He never raised his voice about it. He just showed the evidence.",
-    "imageUrl": "/characters/charles-darwin.png",
+    "imageUrl": "/characters/charles-darwin.jpg",
     "behaviorTags": [
       "prep",
       "defensive",
@@ -83046,7 +83046,7 @@
     "specialAbility": "Reduced British military hospital mortality from 42% to 2% by implementing sanitation — invented the modern hospital, the polar area diagram, and evidence-based healthcare.",
     "weaknesses": "Contracted Crimean fever and directed the nursing reform movement from her sickbed for decades.",
     "description": "Nightingale arrived at Scutari and found soldiers dying of preventable infections at 42% mortality. She implemented sanitation, organized supply chains, trained nurses, and dropped mortality to 2%. She also invented the polar area chart to visualize health data for government officials. She did most of this from a sickbed. Modern hospitals run on her protocols.",
-    "imageUrl": "/characters/florence-nightingale.png",
+    "imageUrl": "/characters/florence-nightingale.jpg",
     "behaviorTags": [
       "prep",
       "defensive",
@@ -83123,7 +83123,7 @@
     "specialAbility": "The ninth tlatoani of Tenochtitlan ruled the Aztec Empire at its zenith — a city of 200,000 in a lake, armies that had never lost on their home soil, and a divine authority that could field 200,000 warriors.",
     "weaknesses": "Paralyzed by the belief that Cortés might be the god Quetzalcoatl returning — diplomatic caution where military force was needed.",
     "description": "Montezuma II ruled the most powerful state in the Americas — Tenochtitlan had better sanitation than any city in Europe and a population to match. He personally led campaigns across Mesoamerica. His mistake was hosting a guest who had no intention of leaving, and dying for it.",
-    "imageUrl": "/characters/montezuma-ii.png",
+    "imageUrl": "/characters/montezuma-ii.jpg",
     "behaviorTags": [
       "tactical",
       "warrior",
