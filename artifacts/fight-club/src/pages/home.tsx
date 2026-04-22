@@ -692,87 +692,104 @@ export function Home() {
                 : `▸ Team ${activeTeam} — pick a fighter ◂`}
             </div>
 
+            {/* ── PICK A FIGHTER header ─────────────────────────────────── */}
+            <div
+              className="flex items-center justify-center gap-2 py-1.5"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}
+            >
+              <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(255,0,85,0.35))" }} />
+              <span
+                className="font-display text-[10px] uppercase tracking-[0.3em] flex-shrink-0"
+                style={{ color: "rgba(255,0,85,0.7)", letterSpacing: "0.3em" }}
+              >
+                ✦ Pick a Fighter ✦
+              </span>
+              <div className="h-px flex-1" style={{ background: "linear-gradient(to left, transparent, rgba(255,0,85,0.35))" }} />
+            </div>
+
             {/* Search + filter */}
             <div
               className="px-3 pt-1.5 pb-1.5 space-y-1"
-              style={{ background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
+              style={{ background: "rgba(0,0,0,0.3)" }}
             >
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "rgba(255,255,255,0.25)" }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search fighters..."
-                  className="w-full text-xs pl-7 pr-7 py-1.5 focus:outline-none transition-colors"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: searchQuery ? "1px solid rgba(255,0,85,0.4)" : "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.9)",
-                    fontSize: 11,
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* FAVES + RECENT quick filters (pinned row — never scrolls away) */}
-              <div className="flex gap-1 mb-0.5">
+              {/* Search + FAVES on same row */}
+              <div className="flex gap-1.5 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "rgba(255,255,255,0.25)" }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search fighters..."
+                    className="w-full text-xs pl-7 pr-7 py-1.5 focus:outline-none transition-colors"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: searchQuery ? "1px solid rgba(255,0,85,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.9)",
+                      fontSize: 11,
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                      style={{ color: "rgba(255,255,255,0.4)" }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                {/* FAVES button — same row as search */}
                 <button
                   onClick={() => setActiveFilter(f => f === "__faves__" ? null : "__faves__")}
                   className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
                   style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                    padding: "3px 8px",
-                    background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "transparent",
-                    border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.10)"}`,
-                    color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.35)",
+                    padding: "5px 8px",
+                    background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.12)"}`,
+                    color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.4)",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.6 }}> {favorites.size}</span>}
+                  ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.65 }}> {favorites.size}</span>}
                 </button>
-                {recentPicks.length > 0 && (
-                  <>
-                    <button
-                      onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
-                      className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
-                      style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                        padding: "3px 8px",
-                        background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
-                        border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
-                        color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
-                      }}
-                    >
-                      ⏱ RECENT
-                    </button>
-                    <button
-                      onClick={clearRecentPicks}
-                      title="Clear history"
-                      className="flex-shrink-0 flex items-center justify-center transition-all duration-150 hover:bg-white/10"
-                      style={{
-                        fontSize: 11, fontWeight: 700,
-                        width: 16, height: 16,
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        color: "rgba(255,255,255,0.35)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </>
-                )}
               </div>
+
+              {/* RECENT quick filter (only visible when there are recent picks) */}
+              {recentPicks.length > 0 && (
+                <div className="flex gap-1 items-center">
+                  <button
+                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
+                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
+                    style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                      padding: "3px 8px",
+                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
+                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
+                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
+                    }}
+                  >
+                    ⏱ RECENT
+                  </button>
+                  <button
+                    onClick={clearRecentPicks}
+                    title="Clear history"
+                    className="flex-shrink-0 flex items-center justify-center transition-all duration-150 hover:bg-white/10"
+                    style={{
+                      fontSize: 11, fontWeight: 700,
+                      width: 16, height: 16,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      color: "rgba(255,255,255,0.35)",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
 
               {/* Category pills (consolidated from 100+ universes) */}
               <div
@@ -861,27 +878,28 @@ export function Home() {
           </div>
         ) : (
           <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
-            {/* Filter status bar */}
-            {(activeFilter || searchQuery || tierFilter !== "all") && (
-              <div
-                className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
-                style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
-              >
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  {filteredCharacters.length} fighter{filteredCharacters.length !== 1 ? "s" : ""}
-                  {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recently Used" : activeFilter ? ` — ${activeFilter}` : ""}
-                  {tierFilter !== "all" ? ` — ${tierFilter}` : ""}
-                  {searchQuery ? ` matching "${searchQuery}"` : ""}
-                </span>
+            {/* Filter status bar — always shown */}
+            <div
+              className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
+              style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>{filteredCharacters.length}</span>
+                {" "}fighter{filteredCharacters.length !== 1 ? "s" : ""} found
+                {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recent" : activeFilter ? ` — ${activeFilter}` : ""}
+                {tierFilter !== "all" ? ` · ${tierFilter}` : ""}
+                {searchQuery ? ` · "${searchQuery}"` : ""}
+              </span>
+              {(activeFilter || searchQuery || tierFilter !== "all") && (
                 <button
                   onClick={() => { setSearchQuery(""); setActiveFilter(null); setTierFilter("all"); }}
                   className="text-[10px] font-bold uppercase tracking-widest transition-colors"
                   style={{ color: "#ff0055" }}
                 >
-                  Clear
+                  Clear filters
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
