@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, jsonb, uniqueIndex, boolean } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 // ── Fight verdict cache ───────────────────────────────────────────────────────
@@ -44,3 +44,19 @@ export const fightsTable = pgTable("fights", {
 });
 
 export type Fight = typeof fightsTable.$inferSelect;
+
+// ── PvP Challenges ────────────────────────────────────────────────────────────
+// Stores shareable challenge links for both Challenge Link and Blind Pick modes.
+export const challengesTable = pgTable("challenges", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull(),
+  team1Ids: jsonb("team1_ids").notNull().$type<number[]>(),
+  team2Ids: jsonb("team2_ids").$type<number[]>(),
+  mode: text("mode").notNull().default("cinematic"),
+  blind: boolean("blind").notNull().default(false),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);
+
+export type Challenge = typeof challengesTable.$inferSelect;

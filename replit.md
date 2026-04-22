@@ -31,6 +31,8 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 - Debate Room has a "Developer Legends" tab featuring Chris Henry & Troy Wilson with the Betrayal Protocol matchup
 - Developer Legends: Chris Henry and Troy Wilson are seeded at max stats (99999 all stats). When on opposing teams, the AI override makes them refuse to fight each other and brutally betray their partners to win together
 - View fight history; add/delete characters; universe breakdown stats; character leaderboard
+- **PvP Challenge Links**: CHALLENGE button on home page (next to FIGHT/RANDOM) creates a shareable 6-char code. Creator sees a share box + waiting screen (`/challenge/<code>?creator=1`). Opponent opens the plain URL, picks their team, and clicks ACCEPT & FIGHT
+- **Blind Pick**: same flow but challenger's team is hidden (shown as ??? silhouettes) until opponent locks in — then both teams reveal and the fight auto-starts after a 1.6s reveal flash
 
 ## Key Commands
 
