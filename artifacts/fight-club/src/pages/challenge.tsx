@@ -6,7 +6,7 @@ import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link } from "lucide-react";
+import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2 } from "lucide-react";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 
@@ -75,35 +75,174 @@ function MiniPortrait({ char, team }: { char: Character | undefined; team: 1 | 2
   );
 }
 
-function ShareBox({ code, blind }: { code: string; blind: boolean }) {
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14 }}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14 }}>
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14 }}>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
+function TelegramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14 }}>
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+    </svg>
+  );
+}
+
+function ShareBox({ code, blind, team1Names }: { code: string; blind: boolean; team1Names: string[] }) {
   const [copied, setCopied] = useState(false);
   const url = `${window.location.origin}${import.meta.env.BASE_URL}challenge/${code}`;
+
+  const shareText = blind
+    ? `⚔ I issued a BLIND PICK challenge on A.v.A — you can't see my team until you lock in yours. Think you can win? Pick your fighters!`
+    : `⚔ ${team1Names.length > 0 ? `I picked ${team1Names.slice(0, 2).join(" & ")}${team1Names.length > 2 ? ` +${team1Names.length - 2} more` : ""}` : "I've picked my team"} — can YOUR squad beat mine? Accept my A.v.A challenge!`;
+
+  const encodedText = encodeURIComponent(shareText);
+  const encodedUrl = encodeURIComponent(url);
+
   const copy = () => {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2500);
     });
   };
+
+  const nativeShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: "A.v.A Challenge", text: shareText, url });
+    }
+  };
+
+  const socials: { label: string; color: string; bg: string; href: string; icon: React.ReactNode }[] = [
+    {
+      label: "X",
+      color: "#fff",
+      bg: "#111",
+      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+      icon: <XIcon />,
+    },
+    {
+      label: "Facebook",
+      color: "#fff",
+      bg: "#1877F2",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
+      icon: <FacebookIcon />,
+    },
+    {
+      label: "WhatsApp",
+      color: "#fff",
+      bg: "#25D366",
+      href: `https://wa.me/?text=${encodeURIComponent(shareText + " " + url)}`,
+      icon: <WhatsAppIcon />,
+    },
+    {
+      label: "Telegram",
+      color: "#fff",
+      bg: "#229ED9",
+      href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+      icon: <TelegramIcon />,
+    },
+  ];
+
+  const hasNativeShare = typeof navigator !== "undefined" && !!navigator.share;
+
   return (
-    <div style={{ background: "rgba(0,240,255,0.04)", border: "1px solid rgba(0,240,255,0.2)", padding: "10px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-        <Link style={{ width: 10, height: 10, color: "#00f0ff" }} />
-        <span style={{ fontSize: 8, letterSpacing: "0.2em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>
-          {blind ? "Blind Pick" : "Challenge"} · {code}
-        </span>
-      </div>
-      <div style={{ display: "flex", gap: 5 }}>
-        <div style={{ flex: 1, padding: "5px 7px", fontSize: 9, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {url}
+    <div style={{ background: "linear-gradient(135deg, rgba(0,240,255,0.05) 0%, rgba(0,0,0,0) 100%)", border: "1px solid rgba(0,240,255,0.18)", overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{ padding: "10px 12px 8px", borderBottom: "1px solid rgba(0,240,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Share2 style={{ width: 11, height: 11, color: "#00f0ff" }} />
+          <span style={{ fontSize: 9, letterSpacing: "0.22em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>
+            Share {blind ? "Blind Pick" : "Challenge"}
+          </span>
         </div>
-        <button onClick={copy} style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 10px", fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", background: copied ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)", border: `1px solid ${copied ? "#00f0ff" : "rgba(0,240,255,0.25)"}`, color: "#00f0ff", cursor: "pointer", flexShrink: 0 }}>
-          {copied ? <CheckCheck style={{ width: 9, height: 9 }} /> : <Copy style={{ width: 9, height: 9 }} />}
-          {copied ? "COPIED" : "COPY"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0,240,255,0.08)", border: "1px solid rgba(0,240,255,0.2)", padding: "2px 7px" }}>
+          <span style={{ fontSize: 11, letterSpacing: "0.18em", color: "#00f0ff", fontWeight: 800, fontFamily: "monospace" }}>{code}</span>
+        </div>
       </div>
-      <p style={{ fontSize: 7.5, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.4 }}>
-        {blind ? "Opponent won't see your team until they lock in their picks." : "Opponent picks their team then the fight starts."} Expires in 7 days.
-      </p>
+
+      {/* Social buttons */}
+      <div style={{ padding: "10px 12px 8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 10 }}>
+          {socials.map(s => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Share on ${s.label}`}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                padding: "8px 4px", background: s.bg, color: s.color,
+                textDecoration: "none", cursor: "pointer",
+                transition: "opacity 0.15s", opacity: 1,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            >
+              {s.icon}
+              <span style={{ fontSize: 7, letterSpacing: "0.05em", fontWeight: 700 }}>{s.label}</span>
+            </a>
+          ))}
+        </div>
+
+        {/* Copy link row */}
+        <div style={{ display: "flex", gap: 5 }}>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <Link style={{ width: 9, height: 9, color: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
+          </div>
+          <button
+            onClick={copy}
+            style={{
+              display: "flex", alignItems: "center", gap: 4, padding: "6px 11px", flexShrink: 0,
+              fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "inherit",
+              background: copied ? "rgba(0,240,255,0.18)" : "rgba(0,240,255,0.08)",
+              border: `1px solid ${copied ? "#00f0ff" : "rgba(0,240,255,0.3)"}`,
+              color: "#00f0ff", cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {copied ? <CheckCheck style={{ width: 10, height: 10 }} /> : <Copy style={{ width: 10, height: 10 }} />}
+            {copied ? "COPIED!" : "COPY"}
+          </button>
+          {hasNativeShare && (
+            <button
+              onClick={nativeShare}
+              title="Share via…"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", flexShrink: 0,
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.5)", cursor: "pointer",
+              }}
+            >
+              <Share2 style={{ width: 10, height: 10 }} />
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 7.5, color: "rgba(255,255,255,0.2)", marginTop: 7, lineHeight: 1.5 }}>
+          {blind ? "Your team stays hidden until the opponent locks in." : "Opponent picks their team, then the fight starts."} Link expires in 7 days.
+        </p>
+      </div>
     </div>
   );
 }
@@ -328,7 +467,7 @@ export function Challenge() {
           {/* Share box for creator */}
           {isCreatorView && (
             <div style={{ marginBottom: 10 }}>
-              <ShareBox code={challenge.code} blind={challenge.blind} />
+              <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
             </div>
           )}
 
