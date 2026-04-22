@@ -5058,6 +5058,66 @@ uri = "file://artifacts/fight-club/public/characters/montezuma-ii.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "6WdSNf-fhnVmOGwjuwFcr"
+uri = "file://attached_assets/portrait_samples/wasabi.png"
+type = "image"
+title = "wasabi big hero 6 photorealistic"
+
+[[generated]]
+id = "Xo7eocjY8dliliocpaeuP"
+uri = "file://attached_assets/portrait_samples/jake-the-dog.png"
+type = "image"
+title = "jake dog adventure time realistic"
+
+[[generated]]
+id = "heeJed8k-60_RYu7GQV-d"
+uri = "file://attached_assets/portrait_samples/sirius-black.png"
+type = "image"
+title = "sirius black harry potter photorealistic"
+
+[[generated]]
+id = "YtLJEGc1_yPDBaRJT3rWW"
+uri = "file://attached_assets/portrait_samples/lelouch-vi-britannia.png"
+type = "image"
+title = "lelouch code geass photorealistic"
+
+[[generated]]
+id = "eZfvrXHrD0f2JZS6cbNKN"
+uri = "file://attached_assets/portrait_samples/napoleon-bonaparte.png"
+type = "image"
+title = "napoleon bonaparte photorealistic portrait"
+
+[[generated]]
+id = "SZQ9rTYqfncuJjqUIgnCM"
+uri = "file://attached_assets/portrait_samples/dr-manhattan.png"
+type = "image"
+title = "dr manhattan blue glow photorealistic"
+
+[[generated]]
+id = "PQZ_Wt1FWl6k2zLXQ-csB"
+uri = "file://attached_assets/portrait_samples/diablo.png"
+type = "image"
+title = "diablo demon lord photorealistic"
+
+[[generated]]
+id = "U3xysfExgai8PbIShHAHn"
+uri = "file://attached_assets/portrait_samples/she-hulk.png"
+type = "image"
+title = "green female superhero photorealistic"
+
+[[generated]]
+id = "3remoVWwgIKkoT0F407nE"
+uri = "file://attached_assets/portrait_samples/kylo-ren.png"
+type = "image"
+title = "dark helmet sci-fi warrior photorealistic"
+
+[[generated]]
+id = "BdrBFAabwxJo8yMSesCGq"
+uri = "file://attached_assets/portrait_samples/the-mandalorian.png"
+type = "image"
+title = "armored bounty hunter photorealistic"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
@@ -5081,3 +5141,63 @@ id = "R4KhyPEO8QH_zSoeGvnHW"
 uri = "file://ava-backup.zip"
 type = "unspecified"
 title = "ava-backup.zip"
+
+[[outputs]]
+id = "lnvNUAbsCi4qlaQjCDzhD"
+uri = "file://attached_assets/portrait_samples/wasabi.png"
+type = "image"
+title = "Wasabi (Disney)"
+
+[[outputs]]
+id = "oHX3S9RGsRWC9kKVQ2yjY"
+uri = "file://attached_assets/portrait_samples/jake-the-dog.png"
+type = "image"
+title = "Jake the Dog (Adventure Time)"
+
+[[outputs]]
+id = "TECkK1AUQP899eZwrUxhy"
+uri = "file://attached_assets/portrait_samples/sirius-black.png"
+type = "image"
+title = "Sirius Black (Harry Potter)"
+
+[[outputs]]
+id = "4_U4KOdhkWY_XejRIsFZb"
+uri = "file://attached_assets/portrait_samples/lelouch-vi-britannia.png"
+type = "image"
+title = "Lelouch vi Britannia (Code Geass)"
+
+[[outputs]]
+id = "nNEHU7t-BCl4-AmOyThvB"
+uri = "file://attached_assets/portrait_samples/napoleon-bonaparte.png"
+type = "image"
+title = "Napoleon Bonaparte (Historical)"
+
+[[outputs]]
+id = "JZ-YcGjthpX3MQPqp2sFO"
+uri = "file://attached_assets/portrait_samples/dr-manhattan.png"
+type = "image"
+title = "Dr. Manhattan (DC Comics)"
+
+[[outputs]]
+id = "8IxAVMYZMrjOpaVqlAiQ4"
+uri = "file://attached_assets/portrait_samples/she-hulk.png"
+type = "image"
+title = "She-Hulk (Marvel)"
+
+[[outputs]]
+id = "EBC--R1yUy165qPKdPJXO"
+uri = "file://attached_assets/portrait_samples/diablo.png"
+type = "image"
+title = "Diablo (Diablo)"
+
+[[outputs]]
+id = "njMzxItQMF9PzrBtX0iZy"
+uri = "file://attached_assets/portrait_samples/kylo-ren.png"
+type = "image"
+title = "Kylo Ren (Star Wars)"
+
+[[outputs]]
+id = "56-iu8A0NVZ2awe_hH8fE"
+uri = "file://attached_assets/portrait_samples/the-mandalorian.png"
+type = "image"
+title = "The Mandalorian (Star Wars)"
