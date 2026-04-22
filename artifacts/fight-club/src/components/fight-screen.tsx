@@ -3,6 +3,35 @@ import { FightResult, FightRound } from "@workspace/api-client-react/src/generat
 import { ChevronLeft, Swords, Zap, Trophy } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 
+function renderMarkdown(text: string): React.ReactNode[] {
+  return text.split("\n").map((line, lineIdx) => {
+    const isBullet = /^[\-\*]\s+/.test(line);
+    const content = isBullet ? line.replace(/^[\-\*]\s+/, "") : line;
+
+    const parts: React.ReactNode[] = [];
+    const boldRegex = /\*\*(.+?)\*\*/g;
+    let last = 0, match;
+    while ((match = boldRegex.exec(content)) !== null) {
+      if (match.index > last) parts.push(content.slice(last, match.index));
+      parts.push(<strong key={`b${match.index}`} style={{ color: "rgba(255,255,255,0.95)", fontWeight: 700 }}>{match[1]}</strong>);
+      last = match.index + match[0].length;
+    }
+    if (last < content.length) parts.push(content.slice(last));
+
+    if (isBullet) {
+      return (
+        <div key={lineIdx} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
+          <span style={{ color: "rgba(255,0,85,0.7)", flexShrink: 0, marginTop: "0.1rem" }}>—</span>
+          <span>{parts}</span>
+        </div>
+      );
+    }
+    return parts.length > 0
+      ? <span key={lineIdx}>{parts}{lineIdx < text.split("\n").length - 1 ? "\n" : ""}</span>
+      : <span key={lineIdx}>{"\n"}</span>;
+  });
+}
+
 // ─── Cinematic loading sequence ───────────────────────────────────────────────
 const FIGHT_PHASES = [
   { label: "The arena comes alive…", sub: "Calculating terrain and hazards" },
@@ -389,9 +418,9 @@ function RoundBlock({ round, index }: { round: FightRound; index: number }) {
         className={`border-l-2 pl-4 transition-all duration-400 ${textVisible ? "opacity-100" : "opacity-0"}`}
         style={{ borderColor: `${accentColor}40` }}
       >
-        <p className="text-sm leading-loose text-foreground/90 whitespace-pre-line">
-          {round.narrative}
-        </p>
+        <div className="text-sm leading-loose text-foreground/90 whitespace-pre-line">
+          {renderMarkdown(round.narrative)}
+        </div>
       </div>
     </div>
   );
@@ -589,9 +618,9 @@ export function FightScreen({
                     <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/50 mb-2">
                       ── Setting ──
                     </p>
-                    <p className="text-sm leading-relaxed text-foreground/75 italic">
-                      {result.arenaIntro}
-                    </p>
+                    <div className="text-sm leading-relaxed text-foreground/75 italic whitespace-pre-line">
+                      {renderMarkdown(result.arenaIntro)}
+                    </div>
                     <div className="mt-4 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                   </div>
                 )}
@@ -602,9 +631,9 @@ export function FightScreen({
                     <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/50 mb-2">
                       ── Combatants Enter ──
                     </p>
-                    <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">
-                      {result.intro}
-                    </p>
+                    <div className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">
+                      {renderMarkdown(result.intro)}
+                    </div>
                     <div className="mt-4 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                   </div>
                 )}

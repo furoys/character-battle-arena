@@ -2607,7 +2607,7 @@ async function generateAINarrative(
   };
 
   const buildRoundSection = (i: number) =>
-    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`;
+    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 4 to 6 rich paragraphs. Give each beat room to breathe — action, reaction, consequence, pain, psychology. Include at least one line of dialogue or internal thought per key fighter. Weave the physical and mental state of every fighter naturally into the prose — do NOT add a separate "State of Fighters" section or damage summary block.`;
   const roundSections = Array.from({ length: roundCount }, (_, i) => buildRoundSection(i)).join("\n\n");
 
   // Section builders — used to create either a single full prompt or two
@@ -2745,6 +2745,8 @@ ARENA: ${arena.name}
 ${arena.flavor.join(" ")}
 
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
+CRITICAL — THE WINNER IS NON-NEGOTIABLE: ${winnerNames} WINS. ${loserNames} LOSES AND GOES DOWN.
+Every round must trend toward this outcome. The final round MUST end with ${loserNames} going down / out / eliminated — NOT ${winnerNames}. Never write a sentence where ${winnerNames} is "going down," "falling," "eliminated," or "losing." If you accidentally write that, you have failed the prompt. The loser is ${loserNames}. Say it to yourself before writing the finale: ${loserNames} loses.
 ${specialNotes ? `SPECIAL EVENTS: ${specialNotes}` : ""}
 ${verdictBlock}
 ${rematchCount > 0 ? `
@@ -2775,12 +2777,13 @@ __OUTPUT_FORMAT_BLOCK__
 FORMAT RULES:
 - SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
 - ENTRANCE = 2 to 3 sentences per fighter. Distinct, specific, in character.
-- Each ROUND/PHASE = 2 to 4 tight paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter. Stay vivid and specific — cut filler, keep impact.
+- Each ROUND/PHASE = 4 to 6 rich paragraphs. Action, reaction, consequence, psychology, damage. At least one line of dialogue or internal thought per fighter. Every round should feel like a full scene.
 - Blowouts = short and dominant, but still vivid and specific — never just "X won easily."
 - RESULT = clean and final. No flowery wrap-up.
 - WHY THEY WON = exactly 5 numbered sentences. Each of the 5 must cover a DIFFERENT point — never repeat the same factor across two numbered items.
 
 CRITICAL OUTPUT DISCIPLINE:
+- NEVER add a "State of Fighters" block, damage summary, HP report, or any structured status section at the end of a round. Fighter conditions must be woven into the prose itself.
 - NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)". The output is the final reader-facing text. Stay in the scene.
 - NEVER abbreviate or truncate a section because you're worried about length. Either write it fully or skip it cleanly — there is no third option.
 - NEVER restate the previous sentence with different words. If a beat is described, the next beat advances; it does not echo.${allianceTrigger ? `
@@ -2793,7 +2796,7 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
 
   // Per-section token estimates (gpt-4o):
   //   SETTING + ENTRANCE ≈ 800 tokens
-  //   each ROUND          ≈ 900 tokens
+  //   each ROUND          ≈ 1200 tokens  (4-6 full paragraphs)
   //   RESULT + WHY THEY WON ≈ 1200 tokens
   // For fights with 3+ rounds we split the work across two AI calls that run
   // in parallel, halving the wall-clock time. Quality is unchanged because
@@ -2812,8 +2815,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const promptB = promptWithOutputBlock(
       buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
     );
-    const tokensA = Math.min(12000, 800 + firstHalf.length * 900);
-    const tokensB = Math.min(12000, 1200 + secondHalf.length * 900);
+    const tokensA = Math.min(12000, 800 + firstHalf.length * 1200);
+    const tokensB = Math.min(12000, 1200 + secondHalf.length * 1200);
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
@@ -2832,7 +2835,7 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const fullPrompt = promptWithOutputBlock(
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
-    const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
+    const narrativeTokens = Math.min(12000, 2500 + roundCount * 1200);
     const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
     raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000, streamer?.onDelta);
     streamer?.onEnd(raw);
