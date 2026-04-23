@@ -1,14 +1,13 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Trophy, Lightbulb, LogIn } from "lucide-react";
+import { Swords, Lightbulb, LogIn } from "lucide-react";
 import { Show, useUser } from "@clerk/react";
 import { AvaLogo } from "@/components/ava-logo";
 import { CharacterAvatar } from "@/components/character-avatar";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
-  { href: "/fights", label: "History", icon: Trophy },
-  { href: "/suggest", label: "Suggest", icon: Lightbulb },
+  { href: "/suggest", label: "Debate Room", icon: Lightbulb },
 ];
 
 // Hide chrome (header + bottom nav) on full-screen flow pages where the
@@ -39,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-3">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-2">
         {navItems.map((item) => {
           const active = location === item.href;
           return (
