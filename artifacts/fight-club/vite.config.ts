@@ -106,7 +106,7 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      deny: ["**/.env*", "**/.git/**", "**/.gitignore", "**/.DS_Store"],
     },
   },
   preview: {
