@@ -70,7 +70,19 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 - Round reveal pacing: `scheduleNarrativePause` was tightened from 400/1400/1900/1400ms to 250/900/550ms (turning point still gets the extra beat), so the auto-reveal stagger doesn't feel baggy when text is already in the buffer. The reveal loop also got a defensive watchdog: it always polls 150ms for the round's narrative to be present, but if the stream has been complete for >2.5s and a round is still empty, it reveals anyway so the UI cannot strand on an empty box.
 - Manual round progression: the auto-reveal loop was replaced with a user-controlled flow. After SETTING + COMBATANTS ENTER finish streaming, a "Begin Match →" button appears. Clicking it reveals Round 1; once that round's narrative is fully complete, a "Next Round →" button appears below it; repeat for each round. After the last round's narrative is complete (and `whyWon`/summary have arrived), the winner reveal banner becomes available. The hook tracks `completedSections: Set<string>` (UPPERCASE section names that have received their canonical `section` event, plus all of them on `complete` for cache-hit safety), and FightScreen uses that set to decide when each gating button is allowed to render — buttons never appear mid-stream. "Skip" stays in the bottom bar throughout the fight and jumps straight to the winner banner; it's hidden once the banner is showing (nothing left to skip).
 
+## Auth (Clerk, optional)
+
+- Provisioned via `setupClerkWhitelabelAuth`. Env: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`. Proxy middleware (prod-only) at `artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts`.
+- API: `clerkMiddleware()` mounted in `app.ts`. Helpers in `src/lib/auth.ts` — `getOptionalUserId(req)` for guest-permissive routes, `requireAuth(req,res)` for protected routes.
+- Schema: `fightsTable.userId` (text, nullable) and `challengesTable.creatorUserId` (text, nullable). Guests still write — `userId` stays null. Migration `0001_add_user_attribution.sql` (uses `IF NOT EXISTS` so it's idempotent against db:push'd dev DBs).
+- Tagging: `POST /fights` and `POST /fights/stream` capture `userId` via `getOptionalUserId`; challenge create captures `creatorUserId`.
+- Personal endpoints (signed-in only, return 401 for guests): `GET /api/me/fights` (last 100 fights) and `GET /api/me/stats` (totals + win split + per-character used/wins). Called directly via `fetch(..., { credentials: "include" })` — not in `openapi.yaml` (could be added later for typed coverage).
+- Frontend: `App.tsx` wraps in `ClerkProvider` with `dark` theme + `clerkAppearance` (magenta/red brand, Bebas Neue/Rajdhani fonts). Routes: `/sign-in/*?`, `/sign-up/*?`, `/profile`. `Layout` has a 44px top header with `AvaLogo` + sign-in button (signed-out) / avatar→profile button (signed-in). Sign-in/up routes hide all chrome.
+- `/profile` page: signed-out shows a sign-in CTA; signed-in shows name/avatar, sign-out button, three stat tiles (fights / T1 / T2 wins), win-split bar, top-6 favorite fighters with medals + win%, recent 10 matches.
+- Vite needs `tailwindcss({ optimize: false })` and `@layer theme, base, clerk, components, utilities;` declared in `index.css` before tailwind import so Clerk's stylesheet wins inside our shell.
+
 ## Notes
 
 - `lib/api-spec/orval.config.ts` — removed the `schemas` option to avoid TypeScript duplicate export conflicts
 - `lib/api-spec/package.json` codegen script patches `lib/api-zod/src/index.ts` after orval runs to fix the export conflict
+- `lib/db/drizzle.config.ts` uses relative paths (not `path.join(__dirname, ...)`) so `drizzle-kit generate` resolves the snapshot file correctly

@@ -48,6 +48,10 @@ export const fightsTable = pgTable("fights", {
   // (where the second player loads a saved fight by id) show the same final
   // panel as the first player saw.
   whyWon: jsonb("why_won").$type<string[]>(),
+  // Clerk userId of the player who started this fight (nullable so guests
+  // can still play without signing in). Used to filter "My Fights" history
+  // and compute personal stats on the profile page.
+  userId: text("user_id"),
   simulatedAt: timestamp("simulated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -72,6 +76,9 @@ export const challengesTable = pgTable("challenges", {
   // poll for fightId to appear instead of starting their own generation.
   // If older than 120s without fightId being set, treated as stale.
   generatingAt: timestamp("generating_at", { withTimezone: true }),
+  // Clerk userId of the challenge creator (nullable; guests can create
+  // challenges without signing in).
+  creatorUserId: text("creator_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);
