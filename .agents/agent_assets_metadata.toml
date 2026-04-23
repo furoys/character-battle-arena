@@ -5201,3 +5201,9 @@ id = "56-iu8A0NVZ2awe_hH8fE"
 uri = "file://attached_assets/portrait_samples/the-mandalorian.png"
 type = "image"
 title = "The Mandalorian (Star Wars)"
+
+[[outputs]]
+id = "8NplZbyarggzawDw944Gm"
+uri = "file://artifacts/fight-club/public/feature-graphic.jpg"
+type = "image"
+title = "A.v.A — Play Store Feature Graphic (1024×500)"
