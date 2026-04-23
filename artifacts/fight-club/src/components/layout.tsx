@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Trophy, Lightbulb, LogIn, User as UserIcon } from "lucide-react";
+import { Swords, Trophy, Lightbulb, LogIn } from "lucide-react";
 import { Show, useUser } from "@clerk/react";
 import { AvaLogo } from "@/components/ava-logo";
+import { CharacterAvatar } from "@/components/character-avatar";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
@@ -125,24 +126,7 @@ function ProfileButton() {
         >
           {name}
         </span>
-        <span
-          className="h-7 w-7 rounded-full flex items-center justify-center font-display text-sm flex-shrink-0"
-          style={{
-            background: "rgba(255,0,85,0.15)",
-            border: "1.5px solid rgba(255,0,85,0.5)",
-            color: "#ff0055",
-          }}
-        >
-          {user?.imageUrl ? (
-            <img
-              src={user.imageUrl}
-              alt={name}
-              className="h-full w-full rounded-full object-cover"
-            />
-          ) : (
-            initial || <UserIcon className="h-3.5 w-3.5" />
-          )}
-        </span>
+        <CharacterAvatar size={28} fallbackInitial={initial} />
       </button>
     </Link>
   );
