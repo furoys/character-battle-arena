@@ -60,8 +60,11 @@ router.post("/challenges/:code/accept", async (req, res): Promise<void> => {
   if (challenge.status !== "open") { res.status(409).json({ error: "Challenge already accepted" }); return; }
 
   const { team2Ids } = req.body;
-  if (!Array.isArray(team2Ids) || team2Ids.length === 0 || team2Ids.length > 5) {
-    res.status(400).json({ error: "team2Ids must be 1–5 character IDs" });
+  const required = challenge.team1Ids?.length ?? 0;
+  if (!Array.isArray(team2Ids) || team2Ids.length !== required) {
+    res.status(400).json({
+      error: `Pick exactly ${required} fighter${required === 1 ? "" : "s"} to match the challenger's team`,
+    });
     return;
   }
   await db.update(challengesTable)
