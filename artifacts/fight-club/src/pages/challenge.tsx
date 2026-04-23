@@ -339,11 +339,20 @@ export function Challenge() {
     return () => observer.disconnect();
   }, [filteredChars.length]);
 
+  const requiredTeamSize = challenge?.team1Ids?.length ?? 0;
+
   const handleCharClick = (char: Character) => {
     if (!challenge) return;
     setTeam2(prev => {
       if (prev.some(c => c.id === char.id)) return prev.filter(c => c.id !== char.id);
-      if (prev.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return prev; }
+      if (requiredTeamSize > 0 && prev.length >= requiredTeamSize) {
+        toast({
+          title: "Team Full",
+          description: `Challenger picked ${requiredTeamSize} — you must match exactly`,
+          variant: "destructive",
+        });
+        return prev;
+      }
       return [...prev, char];
     });
   };
@@ -409,7 +418,7 @@ export function Challenge() {
   const challengeAlreadyAccepted = !!challenge?.team2Ids && !showFight && !isCreatorParam && !revealed && !accepting;
   // Determine if viewer is the "creator" — explicit param set when creating the challenge
   const isCreatorView = isCreatorParam;
-  const canLockIn = team2.length > 0 && !accepting;
+  const canLockIn = team2.length === requiredTeamSize && requiredTeamSize > 0 && !accepting;
   const blindHideTeam1 = challenge?.blind && !revealed && !challenge?.team2Ids;
 
   if (loading || charsLoading) {
@@ -521,7 +530,7 @@ export function Challenge() {
             {/* Your team */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 7, letterSpacing: "0.22em", color: "rgba(255,59,48,0.6)", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
-                Your Team ({team2.length}/5)
+                Your Team ({team2.length}/{requiredTeamSize})
               </div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", minHeight: 60 }}>
                 {team2.map(c => (
@@ -536,7 +545,7 @@ export function Challenge() {
                     </div>
                   </div>
                 ))}
-                {Array.from({ length: Math.max(0, 1 - team2.length) }).map((_, i) => (
+                {Array.from({ length: Math.max(0, requiredTeamSize - team2.length) }).map((_, i) => (
                   <div key={`empty-${i}`} style={{
                     width: 44, height: 58,
                     border: "1.5px dashed rgba(255,59,48,0.25)",
@@ -551,9 +560,11 @@ export function Challenge() {
           </div>
 
           {/* Instruction */}
-          {team2.length === 0 && (
+          {team2.length < requiredTeamSize && (
             <p style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: "0.12em", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
-              Pick up to 5 fighters below — then lock in
+              {requiredTeamSize === 1
+                ? "1v1 — pick your fighter, then lock in"
+                : `${requiredTeamSize}v${requiredTeamSize} — pick exactly ${requiredTeamSize} fighters (${requiredTeamSize - team2.length} to go)`}
             </p>
           )}
 
@@ -633,7 +644,7 @@ export function Challenge() {
                 character={char}
                 selectedTeam={team2.some(c => c.id === char.id) ? 2 : null}
                 onClick={() => handleCharClick(char)}
-                disabled={team2.length >= 5 && !team2.some(c => c.id === char.id)}
+                disabled={team2.length >= requiredTeamSize && !team2.some(c => c.id === char.id)}
               />
             ))}
           </div>
