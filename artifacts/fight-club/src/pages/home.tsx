@@ -755,11 +755,29 @@ export function Home() {
               )}
             </div>
 
-            {/* Search + filter */}
-            <div
-              className="px-3 pt-1.5 pb-1.5 space-y-1"
-              style={{ background: "rgba(0,0,0,0.3)" }}
-            >
+          </div>
+        </div>
+
+        {/* ── CHARACTER GRID ─────────────────────────────────────────────── */}
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ background: "#ff0055", animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+            <p className="font-display text-lg uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Loading Roster...
+            </p>
+          </div>
+        ) : (
+          <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
+            {/* Search + filter — scrolls naturally with character grid */}
+            <div className="px-3 pt-1.5 pb-1.5 space-y-1">
               {/* Search + FAVES on same row */}
               <div className="flex gap-1.5 items-center">
                 <div className="relative flex-1">
@@ -905,27 +923,7 @@ export function Home() {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* ── CHARACTER GRID ─────────────────────────────────────────────── */}
-        {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4">
-            <div className="flex gap-1.5">
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full animate-bounce"
-                  style={{ background: "#ff0055", animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
-            <p className="font-display text-lg uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
-              Loading Roster...
-            </p>
-          </div>
-        ) : (
-          <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
             {/* Filter status bar — only shown when a filter/search is active */}
             {(activeFilter || searchQuery || tierFilter !== "all") && (
               <div
