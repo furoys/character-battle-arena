@@ -2210,7 +2210,7 @@ async function aiTextWithTimeout(
     (async () => {
       try {
         const stream = await openai.chat.completions.create(
-          { model: "gpt-4o", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
+          { model: "gpt-4o-mini", max_completion_tokens: maxTokens, messages: [{ role: "user", content: prompt }], stream: true },
           { signal: ac.signal },
         );
         for await (const chunk of stream) {
@@ -2815,8 +2815,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const promptB = promptWithOutputBlock(
       buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
     );
-    const tokensA = Math.min(12000, 800 + firstHalf.length * 1200);
-    const tokensB = Math.min(12000, 1200 + secondHalf.length * 1200);
+    const tokensA = Math.min(6000, 800 + firstHalf.length * 900);
+    const tokensB = Math.min(6000, 1200 + secondHalf.length * 900);
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
@@ -2824,8 +2824,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const streamerB = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
 
     const [rawA, rawB] = await Promise.all([
-      aiTextWithTimeout(promptA, tokensA, 75_000, streamerA?.onDelta),
-      aiTextWithTimeout(promptB, tokensB, 75_000, streamerB?.onDelta),
+      aiTextWithTimeout(promptA, tokensA, 45_000, streamerA?.onDelta),
+      aiTextWithTimeout(promptB, tokensB, 45_000, streamerB?.onDelta),
     ]);
     streamerA?.onEnd(rawA);
     streamerB?.onEnd(rawB);
@@ -2835,9 +2835,9 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const fullPrompt = promptWithOutputBlock(
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
-    const narrativeTokens = Math.min(12000, 2500 + roundCount * 1200);
+    const narrativeTokens = Math.min(7000, 2000 + roundCount * 900);
     const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
-    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000, streamer?.onDelta);
+    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 60_000, streamer?.onDelta);
     streamer?.onEnd(raw);
   }
 
