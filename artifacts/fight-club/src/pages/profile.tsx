@@ -100,6 +100,7 @@ function SignedInProfile() {
   }, []);
 
   const displayName =
+    (user?.unsafeMetadata?.username as string) ||
     user?.username ||
     user?.firstName ||
     user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
@@ -134,7 +135,7 @@ function SignedInProfile() {
               Fighter
             </p>
             <h1 className="font-display text-xl uppercase tracking-widest text-primary truncate">
-              {user?.username ? `@${user.username}` : displayName}
+              {(user?.unsafeMetadata?.username as string) ? `@${user?.unsafeMetadata?.username as string}` : displayName}
             </h1>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <button
@@ -142,7 +143,7 @@ function SignedInProfile() {
                 className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
               >
                 <Pencil className="h-2.5 w-2.5" />
-                {user?.username ? "Change tag" : "Set tag"}
+                {(user?.unsafeMetadata?.username as string) ? "Change tag" : "Set tag"}
               </button>
               <button
                 onClick={() => setPickerOpen(true)}
