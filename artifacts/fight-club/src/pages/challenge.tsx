@@ -555,62 +555,62 @@ export function Challenge() {
           )}
         </div>
 
-        {/* ── Search + filter bar ──────────────────────── */}
-        <div style={{ flexShrink: 0, padding: "8px 12px 0", background: "#030308" }}>
-          {/* Search row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", padding: "6px 10px", marginBottom: 6 }}>
-            <Search style={{ width: 11, height: 11, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search fighters…"
-              style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 11 }}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "rgba(255,255,255,0.3)" }}>
-                <X style={{ width: 10, height: 10 }} />
-              </button>
-            )}
-          </div>
-          {/* Category pills */}
-          <div className="flex gap-1 overflow-x-auto pb-1.5" style={{ scrollbarWidth: "none" }}>
-            <button
-              onClick={() => setActiveFilter(null)}
-              className="flex-shrink-0 transition-all duration-150"
-              style={{
-                fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 8px",
-                border: activeFilter === null ? "1px solid rgba(255,0,85,0.7)" : "1px solid rgba(255,255,255,0.1)",
-                background: activeFilter === null ? "rgba(255,0,85,0.15)" : "rgba(255,255,255,0.03)",
-                color: activeFilter === null ? "#ff0055" : "rgba(255,255,255,0.4)",
-              }}
-            >
-              ALL
-            </button>
-            {categoryCounts.map(({ category, count }) => {
-              const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
-              const active = activeFilter === category;
-              return (
-                <button
-                  key={category}
-                  onClick={() => setActiveFilter(prev => prev === category ? null : category)}
-                  className="flex-shrink-0 transition-all duration-150 whitespace-nowrap"
-                  style={{
-                    fontSize: 8, fontWeight: 800, letterSpacing: "0.1em", padding: "3px 7px",
-                    color: active ? "#000" : color,
-                    background: active ? color : "transparent",
-                    border: `1px solid ${active ? color : color + "60"}`,
-                    opacity: activeFilter && !active ? 0.45 : 1,
-                  }}
-                >
-                  {category} {count}
+        {/* ── Character grid + scrollable search/filter ─── */}
+        <div ref={gridScrollRef} style={{ flex: 1, overflowY: "auto", padding: "0 12px 80px" }}>
+          {/* Search + filter — scrolls with content, disappears as you go deeper */}
+          <div style={{ padding: "8px 0 6px" }}>
+            {/* Search row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", padding: "6px 10px", marginBottom: 6 }}>
+              <Search style={{ width: 11, height: 11, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search fighters…"
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 11 }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "rgba(255,255,255,0.3)" }}>
+                  <X style={{ width: 10, height: 10 }} />
                 </button>
-              );
-            })}
+              )}
+            </div>
+            {/* Category pills */}
+            <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              <button
+                onClick={() => setActiveFilter(null)}
+                className="flex-shrink-0 transition-all duration-150"
+                style={{
+                  fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 8px",
+                  border: activeFilter === null ? "1px solid rgba(255,0,85,0.7)" : "1px solid rgba(255,255,255,0.1)",
+                  background: activeFilter === null ? "rgba(255,0,85,0.15)" : "rgba(255,255,255,0.03)",
+                  color: activeFilter === null ? "#ff0055" : "rgba(255,255,255,0.4)",
+                }}
+              >
+                ALL
+              </button>
+              {categoryCounts.map(({ category, count }) => {
+                const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
+                const active = activeFilter === category;
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setActiveFilter(prev => prev === category ? null : category)}
+                    className="flex-shrink-0 transition-all duration-150 whitespace-nowrap"
+                    style={{
+                      fontSize: 8, fontWeight: 800, letterSpacing: "0.1em", padding: "3px 7px",
+                      color: active ? "#000" : color,
+                      background: active ? color : "transparent",
+                      border: `1px solid ${active ? color : color + "60"}`,
+                      opacity: activeFilter && !active ? 0.45 : 1,
+                    }}
+                  >
+                    {category} {count}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* ── Character grid ───────────────────────────── */}
-        <div ref={gridScrollRef} style={{ flex: 1, overflowY: "auto", padding: "6px 12px 80px" }}>
           {filteredChars.length === 0 && !charsLoading && (
             <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.2)", fontSize: 10, letterSpacing: "0.15em" }}>
               NO FIGHTERS FOUND
