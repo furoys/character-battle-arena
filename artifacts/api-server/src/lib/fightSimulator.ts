@@ -2815,8 +2815,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const promptB = promptWithOutputBlock(
       buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
     );
-    const tokensA = Math.min(6000, 800 + firstHalf.length * 900);
-    const tokensB = Math.min(6000, 1200 + secondHalf.length * 900);
+    const tokensA = Math.min(10000, 800 + firstHalf.length * 1200);
+    const tokensB = Math.min(10000, 1200 + secondHalf.length * 1200);
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
@@ -2835,7 +2835,7 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const fullPrompt = promptWithOutputBlock(
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
-    const narrativeTokens = Math.min(7000, 2000 + roundCount * 900);
+    const narrativeTokens = Math.min(10000, 2500 + roundCount * 1200);
     const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
     raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 60_000, streamer?.onDelta);
     streamer?.onEnd(raw);
