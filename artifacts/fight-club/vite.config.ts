@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { VitePWA } from "vite-plugin-pwa";
 
 const rawPort = process.env.PORT;
 
@@ -32,6 +33,47 @@ export default defineConfig({
     react(),
     tailwindcss({ optimize: false }),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["app-icon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
+      manifest: {
+        name: "A.v.A — Anyone vs Anyone",
+        short_name: "A.v.A",
+        description: "AI-powered character fight simulator. 950+ fighters from Marvel, DC, anime, video games, mythology and more. Who wins?",
+        start_url: basePath,
+        scope: basePath,
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#030308",
+        theme_color: "#ff0055",
+        categories: ["games", "entertainment"],
+        icons: [
+          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+        screenshots: [
+          { src: "opengraph.jpg", sizes: "1200x630", type: "image/jpeg", label: "A.v.A Arena" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,woff2}"],
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: { cacheName: "google-fonts-cache", expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: { cacheName: "gstatic-fonts-cache", expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+        ],
+      },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
