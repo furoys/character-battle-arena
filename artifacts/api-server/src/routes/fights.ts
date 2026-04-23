@@ -142,53 +142,17 @@ router.post("/fights", async (req, res): Promise<void> => {
     }
   }
 
-  // ── FAST PATH: cached narrative — skip AI generation entirely ─────────────
-  // If we have a previously generated narrative for this exact matchup, reuse
-  // it. Avoids the 25-45s AI roundtrip on rematches. Upset Mode bypasses cache.
-  let result: Awaited<ReturnType<typeof simulateFight>>;
-  if (cachedEntry?.narrative) {
-    const cachedNarrative = cachedEntry.narrative as Awaited<ReturnType<typeof simulateFight>>;
-    // The cached narrative was stored from teamA's perspective. If the caller's
-    // team1 is actually canonical teamB, we need to flip team-numbered fields.
-    if (teamAIsTeam1) {
-      result = cachedNarrative;
-    } else {
-      const flip = (n: number) => (n === 1 ? 2 : 1);
-      result = {
-        ...cachedNarrative,
-        winner: flip(cachedNarrative.winner),
-        rounds: cachedNarrative.rounds.map((r) => ({
-          ...r,
-          team1Hp: r.team2Hp,
-          team2Hp: r.team1Hp,
-        })),
-      };
-    }
-  } else {
-    // ── Run fight simulation (Stage 2 only if cache hit, full if miss) ────
-    result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount);
-  }
+  // ── Always run a fresh AI simulation so each fight feels unique ──────────
+  // Verdict is still cached (so the winner stays consistent across rematches),
+  // but the narrative is regenerated every time for variety.
+  const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount);
 
-  // ── Store verdict + narrative in cache if this was a fresh simulation ────
+  // ── Store verdict in cache if this was a fresh simulation ────────────────
   if (!upset && !cachedEntry && result.resolution) {
     const r = result.resolution;
     const winnerTeamCanonical = teamAIsTeam1
       ? result.winner
       : result.winner === 1 ? 2 : 1;
-
-    // Canonicalize the narrative to teamA's perspective before storing so
-    // future lookups can flip it back symmetrically regardless of input order.
-    const canonicalNarrative = teamAIsTeam1
-      ? result
-      : {
-          ...result,
-          winner: winnerTeamCanonical,
-          rounds: result.rounds.map((rd) => ({
-            ...rd,
-            team1Hp: rd.team2Hp,
-            team2Hp: rd.team1Hp,
-          })),
-        };
 
     try {
       await db.insert(fightCacheTable).values({
@@ -204,31 +168,11 @@ router.post("/fights", async (req, res): Promise<void> => {
         loserShowcase: r.loserShowcase,
         winnerProof: r.winnerProof,
         rematchCount: 0,
-        narrative: canonicalNarrative,
       });
       winRate = difficultyToWinRate(r.difficulty);
     } catch {
       // Unique constraint race — another request beat us, ignore
     }
-  }
-
-  // ── Backfill narrative onto pre-existing cache rows that lack one ────────
-  if (cachedEntry && !cachedEntry.narrative && result.resolution) {
-    const canonicalNarrative = teamAIsTeam1
-      ? result
-      : {
-          ...result,
-          winner: result.winner === 1 ? 2 : 1,
-          rounds: result.rounds.map((rd) => ({
-            ...rd,
-            team1Hp: rd.team2Hp,
-            team2Hp: rd.team1Hp,
-          })),
-        };
-    await db
-      .update(fightCacheTable)
-      .set({ narrative: canonicalNarrative })
-      .where(eq(fightCacheTable.id, cachedEntry.id));
   }
 
   // ── Increment rematch counter in cache ────────────────────────────────────
@@ -364,80 +308,35 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       }
     }
 
-    // ── FAST PATH: cached narrative — emit init + complete instantly ─────────
-    let result: Awaited<ReturnType<typeof simulateFight>>;
-    if (cachedEntry?.narrative) {
-      const cachedNarrative = cachedEntry.narrative as Awaited<ReturnType<typeof simulateFight>>;
-      // Flip canonical (teamA-first) narrative back to caller's perspective
-      result = teamAIsTeam1
-        ? cachedNarrative
-        : {
-            ...cachedNarrative,
-            winner: cachedNarrative.winner === 1 ? 2 : 1,
-            rounds: cachedNarrative.rounds.map((r) => ({
-              ...r,
-              team1Hp: r.team2Hp,
-              team2Hp: r.team1Hp,
-            })),
-          };
-      // Emit init so the UI can paint arena/HP background, then bail to the
-      // common path below which sends the `complete` event with full data.
-      send("init", {
-        team1: team1.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
-        team2: team2.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
-        winner: result.winner,
-        arena: { name: "", description: "" },
-        rounds: result.rounds.map((r, i) => ({
-          round: i + 1,
-          attacker: 1 as 1 | 2,
-          narrative: r.narrative,
-          team1Hp: r.team1Hp,
-          team2Hp: r.team2Hp,
-        })),
-        settled,
-        rematchCount,
-      });
-    } else {
-      // ── Fresh simulation: stream sections as they're generated ─────────────
-      const progress: SimulateFightProgress = {
-        onInit: (info) => {
-          send("init", {
-            team1: team1.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
-            team2: team2.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
-            ...info,
-            settled,
-            rematchCount,
-          });
-        },
-        onSection: (name, content) => {
-          send("section", { name, content });
-        },
-        onSectionDelta: (name, append) => {
-          send("delta", { name, append });
-        },
-      };
+    // ── Always run a fresh AI simulation so each fight feels unique ──────────
+    // Verdict is cached for consistent winner; narrative is regenerated every
+    // time so rematches read like new stories.
+    const progress: SimulateFightProgress = {
+      onInit: (info) => {
+        send("init", {
+          team1: team1.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
+          team2: team2.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
+          ...info,
+          settled,
+          rematchCount,
+        });
+      },
+      onSection: (name, content) => {
+        send("section", { name, content });
+      },
+      onSectionDelta: (name, append) => {
+        send("delta", { name, append });
+      },
+    };
 
-      result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, progress);
-    }
+    const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, progress);
 
-    // ── Cache write (same as POST /fights) ────────────────────────────────────
+    // ── Cache write (verdict only — narrative stays fresh every fight) ──────
     if (!upset && !cachedEntry && result.resolution) {
       const r = result.resolution;
       const winnerTeamCanonical = teamAIsTeam1
         ? result.winner
         : result.winner === 1 ? 2 : 1;
-
-      const canonicalNarrative = teamAIsTeam1
-        ? result
-        : {
-            ...result,
-            winner: winnerTeamCanonical,
-            rounds: result.rounds.map((rd) => ({
-              ...rd,
-              team1Hp: rd.team2Hp,
-              team2Hp: rd.team1Hp,
-            })),
-          };
 
       try {
         await db.insert(fightCacheTable).values({
@@ -453,29 +352,9 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
           loserShowcase: r.loserShowcase,
           winnerProof: r.winnerProof,
           rematchCount: 0,
-          narrative: canonicalNarrative,
         });
         winRate = difficultyToWinRate(r.difficulty);
       } catch { /* unique constraint race — ignore */ }
-    }
-
-    // Backfill narrative for pre-existing cache rows that lack one
-    if (cachedEntry && !cachedEntry.narrative && result.resolution) {
-      const canonicalNarrative = teamAIsTeam1
-        ? result
-        : {
-            ...result,
-            winner: result.winner === 1 ? 2 : 1,
-            rounds: result.rounds.map((rd) => ({
-              ...rd,
-              team1Hp: rd.team2Hp,
-              team2Hp: rd.team1Hp,
-            })),
-          };
-      await db
-        .update(fightCacheTable)
-        .set({ narrative: canonicalNarrative })
-        .where(eq(fightCacheTable.id, cachedEntry.id));
     }
 
     if (cachedEntry) {
