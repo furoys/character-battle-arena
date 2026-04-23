@@ -24,6 +24,10 @@ export const fightCacheTable = pgTable("fight_cache", {
   winnerProof:   jsonb("winner_proof").notNull().$type<string[]>(),
   // How many times this matchup has been run (for rematch narrative variation)
   rematchCount:  integer("rematch_count").notNull().default(0),
+  // Cached narrative payload (full FightResult). Populated on first generation
+  // so subsequent identical matchups return instantly without re-streaming
+  // from the AI. Null until the first cinematic narrative is produced.
+  narrative:     jsonb("narrative").$type<unknown>(),
   createdAt:     timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("fight_cache_key_idx").on(t.cacheKey)]);
 
