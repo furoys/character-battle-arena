@@ -108,6 +108,7 @@ function Header() {
 function ProfileButton() {
   const { user } = useUser();
   const name =
+    (user?.unsafeMetadata?.username as string) ||
     user?.username ||
     user?.firstName ||
     user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||

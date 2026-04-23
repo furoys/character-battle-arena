@@ -15,12 +15,14 @@ export function UsernameEditor({ open, onClose }: UsernameEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const currentTag = (user?.unsafeMetadata?.username as string) ?? "";
+
   useEffect(() => {
     if (open) {
-      setValue(user?.username ?? "");
+      setValue(currentTag);
       setError(null);
     }
-  }, [open, user?.username]);
+  }, [open, currentTag]);
 
   const localValid = USERNAME_RE.test(value);
 
@@ -33,16 +35,14 @@ export function UsernameEditor({ open, onClose }: UsernameEditorProps) {
     try {
       setSaving(true);
       setError(null);
-      await user.update({ username: value });
+      await user.update({
+        unsafeMetadata: { ...user.unsafeMetadata, username: value },
+      });
       onClose();
     } catch (err: unknown) {
-      const e = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> };
+      const e = err as { errors?: Array<{ message?: string; longMessage?: string }> };
       const first = e?.errors?.[0];
-      if (first?.code === "form_identifier_exists") {
-        setError("That username is already taken — try another");
-      } else {
-        setError(first?.longMessage ?? first?.message ?? "Couldn't save — try again");
-      }
+      setError(first?.longMessage ?? first?.message ?? "Couldn't save — try again");
     } finally {
       setSaving(false);
     }
@@ -89,7 +89,7 @@ export function UsernameEditor({ open, onClose }: UsernameEditorProps) {
                 type="text"
                 value={value}
                 onChange={(e) => {
-                  setValue(e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_]/g, ""));
+                  setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
                   setError(null);
                 }}
                 onKeyDown={(e) => {
@@ -102,7 +102,7 @@ export function UsernameEditor({ open, onClose }: UsernameEditorProps) {
               />
             </div>
             <p className="text-[10px] text-muted-foreground/60 mt-1.5">
-              3–20 letters, numbers, or underscores. Must be unique.
+              3–20 lowercase letters, numbers, or underscores.
             </p>
             {error && (
               <p className="text-[11px] text-red-400 mt-2 font-bold">{error}</p>
