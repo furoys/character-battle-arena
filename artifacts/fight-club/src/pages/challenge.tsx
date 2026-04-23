@@ -6,9 +6,10 @@ import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2 } from "lucide-react";
+import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2, X } from "lucide-react";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
+import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 
 interface ChallengeData {
   code: string;
@@ -275,6 +276,7 @@ export function Challenge() {
 
   const [team2, setTeam2] = useState<Character[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [showFight, setShowFight] = useState(false);
@@ -304,15 +306,27 @@ export function Challenge() {
     if (!allCharacters) return [];
     const q = searchQuery.trim().toLowerCase();
     const t1Ids = new Set(challenge?.team1Ids ?? []);
-    return (q
-      ? allCharacters.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q))
-      : allCharacters
-    ).filter(c => !t1Ids.has(c.id));
-  }, [allCharacters, searchQuery, challenge?.team1Ids]);
+    return allCharacters
+      .filter(c => !t1Ids.has(c.id))
+      .filter(c => !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q))
+      .filter(c => !activeFilter || getUniverseCategory(c.universe) === activeFilter);
+  }, [allCharacters, searchQuery, challenge?.team1Ids, activeFilter]);
+
+  const categoryCounts = useMemo(() => {
+    if (!allCharacters) return [];
+    const t1Ids = new Set(challenge?.team1Ids ?? []);
+    const counts: Record<string, number> = {};
+    for (const c of allCharacters) {
+      if (t1Ids.has(c.id)) continue;
+      const cat = getUniverseCategory(c.universe);
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return CATEGORY_ORDER.filter(cat => counts[cat] > 0).map(cat => ({ category: cat, count: counts[cat] }));
+  }, [allCharacters, challenge?.team1Ids]);
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [searchQuery]);
+  }, [searchQuery, activeFilter]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -430,9 +444,246 @@ export function Challenge() {
     );
   }
 
+  /* ── OPPONENT VIEW ──────────────────────────────────────────────── */
+  if (!isCreatorView && !showFight) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#030308", position: "relative" }}>
+        {/* ── Cinematic header ─────────────────────────── */}
+        <div style={{
+          flexShrink: 0,
+          background: "linear-gradient(180deg, #000 0%, #06060f 100%)",
+          borderBottom: "1px solid rgba(255,0,85,0.25)",
+          padding: "10px 14px 12px",
+        }}>
+          {/* Top nav row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <button onClick={() => navigate("/")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", cursor: "pointer", padding: 0, fontSize: 9, letterSpacing: "0.15em" }}>
+              ← ARENA
+            </button>
+            <span style={{
+              fontSize: 7, letterSpacing: "0.3em", fontWeight: 800,
+              color: challenge.blind ? "rgba(0,240,255,0.5)" : "rgba(255,0,85,0.5)",
+              textTransform: "uppercase", background: challenge.blind ? "rgba(0,240,255,0.06)" : "rgba(255,0,85,0.06)",
+              border: `1px solid ${challenge.blind ? "rgba(0,240,255,0.2)" : "rgba(255,0,85,0.2)"}`,
+              padding: "2px 7px",
+            }}>
+              {challenge.blind ? "⚔ BLIND PICK" : "⚔ CHALLENGE"} · {challenge.code}
+            </span>
+          </div>
+
+          {/* "YOU'VE BEEN CHALLENGED" title */}
+          <div style={{ textAlign: "center", marginBottom: 12 }}>
+            <div style={{
+              fontSize: 16, fontWeight: 900, letterSpacing: "0.12em",
+              color: "#fff", textTransform: "uppercase",
+              textShadow: "0 0 30px rgba(255,0,85,0.6), 0 0 60px rgba(255,0,85,0.2)",
+              lineHeight: 1.1,
+            }}>
+              You've Been<br />
+              <span style={{ color: "#ff0055" }}>Challenged</span>
+            </div>
+          </div>
+
+          {/* Teams row */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            {/* Challenger's team */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 7, letterSpacing: "0.22em", color: "rgba(0,240,255,0.6)", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+                {blindHideTeam1 ? "Challenger" : "Their Team"}
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {blindHideTeam1
+                  ? Array.from({ length: 3 }).map((_, i) => <MiniPortrait key={i} char={undefined} team={1} />)
+                  : team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)
+                }
+              </div>
+            </div>
+
+            {/* VS */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 18, flexShrink: 0 }}>
+              <span style={{
+                fontSize: 18, fontWeight: 900, letterSpacing: "0.06em",
+                color: "#ff0055", textShadow: "0 0 16px rgba(255,0,85,0.7)",
+                lineHeight: 1,
+              }}>VS</span>
+            </div>
+
+            {/* Your team */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 7, letterSpacing: "0.22em", color: "rgba(255,59,48,0.6)", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+                Your Team ({team2.length}/5)
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", minHeight: 60 }}>
+                {team2.map(c => (
+                  <div key={c.id} onClick={() => setTeam2(prev => prev.filter(x => x.id !== c.id))} style={{ cursor: "pointer", position: "relative" }} title={`Remove ${c.name}`}>
+                    <MiniPortrait char={c} team={2} />
+                    <div style={{
+                      position: "absolute", top: -3, right: -3, width: 13, height: 13,
+                      background: "rgba(255,0,85,0.9)", borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <X style={{ width: 7, height: 7, color: "#fff" }} />
+                    </div>
+                  </div>
+                ))}
+                {Array.from({ length: Math.max(0, 1 - team2.length) }).map((_, i) => (
+                  <div key={`empty-${i}`} style={{
+                    width: 44, height: 58,
+                    border: "1.5px dashed rgba(255,59,48,0.25)",
+                    background: "rgba(255,59,48,0.03)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{ fontSize: 18, color: "rgba(255,59,48,0.2)", lineHeight: 1 }}>+</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Instruction */}
+          {team2.length === 0 && (
+            <p style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: "0.12em", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
+              Pick up to 5 fighters below — then lock in
+            </p>
+          )}
+
+          {/* Blind reveal flash */}
+          {revealed && (
+            <div style={{ textAlign: "center", padding: "8px 0 0", fontSize: 11, letterSpacing: "0.2em", color: "#00f0ff", textShadow: "0 0 16px rgba(0,240,255,0.8)" }}>
+              ✦ TEAMS REVEALED — FIGHT STARTING… ✦
+            </div>
+          )}
+        </div>
+
+        {/* ── Search + filter bar ──────────────────────── */}
+        <div style={{ flexShrink: 0, padding: "8px 12px 0", background: "#030308" }}>
+          {/* Search row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", padding: "6px 10px", marginBottom: 6 }}>
+            <Search style={{ width: 11, height: 11, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search fighters…"
+              style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 11 }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "rgba(255,255,255,0.3)" }}>
+                <X style={{ width: 10, height: 10 }} />
+              </button>
+            )}
+          </div>
+          {/* Category pills */}
+          <div className="flex gap-1 overflow-x-auto pb-1.5" style={{ scrollbarWidth: "none" }}>
+            <button
+              onClick={() => setActiveFilter(null)}
+              className="flex-shrink-0 transition-all duration-150"
+              style={{
+                fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 8px",
+                border: activeFilter === null ? "1px solid rgba(255,0,85,0.7)" : "1px solid rgba(255,255,255,0.1)",
+                background: activeFilter === null ? "rgba(255,0,85,0.15)" : "rgba(255,255,255,0.03)",
+                color: activeFilter === null ? "#ff0055" : "rgba(255,255,255,0.4)",
+              }}
+            >
+              ALL
+            </button>
+            {categoryCounts.map(({ category, count }) => {
+              const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
+              const active = activeFilter === category;
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveFilter(prev => prev === category ? null : category)}
+                  className="flex-shrink-0 transition-all duration-150 whitespace-nowrap"
+                  style={{
+                    fontSize: 8, fontWeight: 800, letterSpacing: "0.1em", padding: "3px 7px",
+                    color: active ? "#000" : color,
+                    background: active ? color : "transparent",
+                    border: `1px solid ${active ? color : color + "60"}`,
+                    opacity: activeFilter && !active ? 0.45 : 1,
+                  }}
+                >
+                  {category} {count}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Character grid ───────────────────────────── */}
+        <div ref={gridScrollRef} style={{ flex: 1, overflowY: "auto", padding: "6px 12px 80px" }}>
+          {filteredChars.length === 0 && !charsLoading && (
+            <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.2)", fontSize: 10, letterSpacing: "0.15em" }}>
+              NO FIGHTERS FOUND
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+            {filteredChars.slice(0, visibleCount).map(char => (
+              <CharacterCard
+                key={char.id}
+                character={char}
+                selectedTeam={team2.some(c => c.id === char.id) ? 2 : null}
+                onClick={() => handleCharClick(char)}
+                disabled={team2.length >= 5 && !team2.some(c => c.id === char.id)}
+              />
+            ))}
+          </div>
+          <div ref={sentinelRef} style={{ height: 1 }} />
+        </div>
+
+        {/* ── Sticky lock-in bar ───────────────────────── */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "10px 14px 14px",
+          background: "linear-gradient(to top, #030308 70%, transparent)",
+          pointerEvents: "none",
+        }}>
+          <button
+            onClick={handleAccept}
+            disabled={!canLockIn}
+            style={{
+              width: "100%", height: 44,
+              background: canLockIn ? "linear-gradient(135deg, rgba(255,0,85,0.18) 0%, rgba(255,0,85,0.08) 100%)" : "rgba(255,255,255,0.02)",
+              border: `1.5px solid ${canLockIn ? "rgba(255,0,85,0.65)" : "rgba(255,255,255,0.07)"}`,
+              color: canLockIn ? "#ff0055" : "rgba(255,255,255,0.15)",
+              fontSize: 11, letterSpacing: "0.25em", fontWeight: 800,
+              cursor: canLockIn ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              animation: canLockIn ? "fightPulse 2s ease-in-out infinite" : "none",
+              boxShadow: canLockIn ? "0 0 24px rgba(255,0,85,0.2)" : "none",
+              pointerEvents: "all",
+              fontFamily: "inherit",
+              transition: "all 0.2s",
+            }}
+          >
+            <Swords style={{ width: 14, height: 14 }} />
+            {accepting ? "STARTING FIGHT…" : challenge.blind ? "LOCK IN & REVEAL" : "ACCEPT & FIGHT"}
+            {!canLockIn && !accepting && (
+              <span style={{ fontSize: 8, opacity: 0.6, marginLeft: 4 }}>— pick a fighter first</span>
+            )}
+          </button>
+        </div>
+
+        {/* Fight overlay */}
+        <FightScreen
+          open={showFight}
+          onClose={() => { simulateFight.reset(); setShowFight(false); }}
+          onRematch={() => startFight(fightTeam1, fightTeam2, challenge.mode)}
+          result={censoredResult}
+          isSimulating={simulateFight.isPending && !simulateFight.streaming}
+          team1Names={fightTeam1Chars.map(c => c.name)}
+          team2Names={fightTeam2Chars.map(c => c.name)}
+          team1Images={fightTeam1Chars.map(c => c.imageUrl)}
+          team2Images={fightTeam2Chars.map(c => c.imageUrl)}
+          completedSections={simulateFight.completedSections}
+        />
+      </div>
+    );
+  }
+
+  /* ── CREATOR / DEFAULT VIEW ─────────────────────────────────────── */
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#030308" }}>
-      {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* Header */}
       <div style={{ flexShrink: 0, background: "linear-gradient(180deg, #000 0%, #080810 100%)", borderBottom: "1px solid rgba(255,0,85,0.2)" }}>
         <div style={{ padding: "8px 12px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -445,42 +696,23 @@ export function Challenge() {
             </span>
           </div>
 
-          {/* Teams side by side */}
+          {/* Teams */}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-            {/* Team 1 */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", marginBottom: 5 }}>
-                {blindHideTeam1 ? "CHALLENGER" : "CHALLENGER'S TEAM"}
-              </div>
+              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", marginBottom: 5 }}>YOUR TEAM</div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {blindHideTeam1
-                  ? Array.from({ length: 3 }).map((_, i) => <MiniPortrait key={i} char={undefined} team={1} />)
-                  : team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)
-                }
+                {team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)}
               </div>
             </div>
-
-            {/* VS */}
             <div style={{ display: "flex", alignItems: "center", paddingTop: 16 }}>
               <span style={{ fontSize: 13, letterSpacing: "0.1em", color: "#ff0055", textShadow: "0 0 10px rgba(255,0,85,0.5)" }}>VS</span>
             </div>
-
-            {/* Team 2 */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(255,59,48,0.5)", marginBottom: 5 }}>
-                {isCreatorView ? "OPPONENT" : `YOUR TEAM (${team2.length}/5)`}
-              </div>
+              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(255,59,48,0.5)", marginBottom: 5 }}>OPPONENT</div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {team2.map(c => (
-                  <div key={c.id} onClick={() => !showFight && setTeam2(prev => prev.filter(x => x.id !== c.id))} style={{ cursor: "pointer" }}>
-                    <MiniPortrait char={c} team={2} />
-                  </div>
-                ))}
-                {team2.length === 0 && isCreatorView && (
-                  <div style={{ width: 44, height: 58, border: "1.5px dashed rgba(255,59,48,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 14, color: "rgba(255,59,48,0.2)", fontWeight: 300 }}>?</span>
-                  </div>
-                )}
+                <div style={{ width: 44, height: 58, border: "1.5px dashed rgba(255,59,48,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 18, color: "rgba(255,59,48,0.15)", fontWeight: 300 }}>?</span>
+                </div>
               </div>
             </div>
           </div>
@@ -492,71 +724,15 @@ export function Challenge() {
             </div>
           )}
 
-          {/* Share box for creator */}
-          {isCreatorView && (
-            <div style={{ marginBottom: 10 }}>
-              <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
-            </div>
-          )}
-
-          {/* Lock-in button for opponent */}
-          {!isCreatorView && !showFight && (
-            <div style={{ padding: "0 0 10px" }}>
-              <button
-                onClick={handleAccept}
-                disabled={!canLockIn}
-                style={{
-                  width: "100%", height: 38,
-                  background: canLockIn ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.02)",
-                  border: `1.5px solid ${canLockIn ? "rgba(255,0,85,0.55)" : "rgba(255,255,255,0.08)"}`,
-                  color: canLockIn ? "#ff0055" : "rgba(255,255,255,0.18)",
-                  fontSize: 10, letterSpacing: "0.25em", fontWeight: 700,
-                  cursor: canLockIn ? "pointer" : "not-allowed",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  animation: canLockIn ? "fightPulse 2s ease-in-out infinite" : "none",
-                }}
-              >
-                <Swords style={{ width: 13, height: 13 }} />
-                {accepting ? "STARTING FIGHT…" : challenge.blind ? "LOCK IN & REVEAL" : "ACCEPT & FIGHT"}
-              </button>
-            </div>
-          )}
+          {/* Share box */}
+          <div style={{ marginBottom: 10 }}>
+            <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
+          </div>
         </div>
       </div>
 
-      {/* ── Character picker (opponent only) ─────────────────────── */}
-      {!isCreatorView && !showFight && (
-        <>
-          <div style={{ flexShrink: 0, padding: "6px 10px 4px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", padding: "6px 10px" }}>
-              <Search style={{ width: 11, height: 11, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search fighters…"
-                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 11 }}
-              />
-            </div>
-          </div>
-          <div ref={gridScrollRef} style={{ flex: 1, overflowY: "auto", padding: "4px 10px 16px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-              {filteredChars.slice(0, visibleCount).map(char => (
-                <CharacterCard
-                  key={char.id}
-                  character={char}
-                  selectedTeam={team2.some(c => c.id === char.id) ? 2 : null}
-                  onClick={() => handleCharClick(char)}
-                  disabled={team2.length >= 5 && !team2.some(c => c.id === char.id)}
-                />
-              ))}
-            </div>
-            <div ref={sentinelRef} style={{ height: 1 }} />
-          </div>
-        </>
-      )}
-
-      {/* Creator waiting state */}
-      {isCreatorView && !showFight && (
+      {/* Waiting state */}
+      {!showFight && (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, color: "rgba(255,255,255,0.15)" }}>
           <Eye style={{ width: 24, height: 24 }} />
           <span style={{ fontSize: 8, letterSpacing: "0.3em" }}>WAITING FOR OPPONENT</span>
