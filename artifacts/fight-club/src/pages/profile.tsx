@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Trophy, Swords, Star, LogOut, User as UserIcon, Pencil } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { CharacterPicker } from "@/components/character-picker";
+import { UsernameEditor } from "@/components/username-editor";
 
 type StatsResponse = {
   totalFights: number;
@@ -71,6 +72,7 @@ function SignedInProfile() {
   const [fights, setFights] = useState<FightSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [usernameOpen, setUsernameOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,15 +134,24 @@ function SignedInProfile() {
               Fighter
             </p>
             <h1 className="font-display text-xl uppercase tracking-widest text-primary truncate">
-              {displayName}
+              {user?.username ? `@${user.username}` : displayName}
             </h1>
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="flex items-center gap-1 mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
-            >
-              <Pencil className="h-2.5 w-2.5" />
-              Choose your fighter
-            </button>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <button
+                onClick={() => setUsernameOpen(true)}
+                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+              >
+                <Pencil className="h-2.5 w-2.5" />
+                {user?.username ? "Change tag" : "Set tag"}
+              </button>
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+              >
+                <Pencil className="h-2.5 w-2.5" />
+                Pick fighter
+              </button>
+            </div>
           </div>
           <button
             onClick={() => signOut()}
@@ -157,6 +168,7 @@ function SignedInProfile() {
       </div>
 
       <CharacterPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
+      <UsernameEditor open={usernameOpen} onClose={() => setUsernameOpen(false)} />
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (
