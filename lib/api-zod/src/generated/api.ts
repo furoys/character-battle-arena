@@ -168,6 +168,7 @@ export const simulateFightBodyTeam1Max = 5;
 export const simulateFightBodyTeam2Max = 5;
 
 export const simulateFightBodyModeDefault = `realistic`;
+export const simulateFightBodyUpsetDefault = false;
 
 export const SimulateFightBody = zod.object({
   team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
@@ -180,8 +181,16 @@ export const SimulateFightBody = zod.object({
     ),
   upset: zod
     .boolean()
+    .default(simulateFightBodyUpsetDefault)
+    .describe(
+      "Override the cached verdict and let the underdog win. Bypasses verdict cache.",
+    ),
+  challengeCode: zod
+    .string()
     .optional()
-    .describe("If true, bypasses the verdict cache and runs a full fresh simulation. Result is not stored."),
+    .describe(
+      "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text.",
+    ),
 });
 
 export const SimulateFightResponse = zod.object({
@@ -245,21 +254,12 @@ export const SimulateFightResponse = zod.object({
     .array(zod.string())
     .optional()
     .describe("AI-generated array of reasons why the winner won (5 sentences)"),
-  settled: zod
-    .boolean()
-    .optional()
-    .describe("True if the verdict came from the cache (same winner guaranteed on rematch)."),
-  winRate: zod
-    .number()
-    .optional()
-    .describe("Winner's estimated win rate 50-100. Only shown when ≤65 (genuinely close matchup)."),
-  rematchCount: zod
-    .number()
-    .optional()
-    .describe("How many times this matchup has been run before."),
   simulatedAt: zod.coerce.date(),
 });
 
+/**
+ * @summary Get a single fight by id
+ */
 export const GetFightParams = zod.object({
   id: zod.coerce.number(),
 });

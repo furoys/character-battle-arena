@@ -100,8 +100,10 @@ export interface SimulateFightBody {
   team2: number[];
   /** Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.) */
   mode?: SimulateFightBodyMode;
-  /** If true, bypasses the verdict cache and runs a full fresh simulation. Result is not stored. */
+  /** Override the cached verdict and let the underdog win. Bypasses verdict cache. */
   upset?: boolean;
+  /** When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text. */
+  challengeCode?: string;
 }
 
 export interface FightRound {
@@ -128,12 +130,6 @@ export interface FightResult {
   intro?: string;
   /** AI-generated array of reasons why the winner won (5 sentences) */
   whyWon?: string[];
-  /** True if the verdict came from the cache — same winner guaranteed on rematch */
-  settled?: boolean;
-  /** Winner's estimated win rate 50–100. Only shown for close matchups (≤65). */
-  winRate?: number;
-  /** How many times this matchup has been run before */
-  rematchCount?: number;
   simulatedAt: string;
 }
 

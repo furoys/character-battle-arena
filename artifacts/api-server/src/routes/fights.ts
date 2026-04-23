@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { inArray, desc, eq } from "drizzle-orm";
-import { db, charactersTable, fightsTable, fightCacheTable } from "@workspace/db";
+import { inArray, desc, eq, and, or, isNull, lt } from "drizzle-orm";
+import { db, charactersTable, fightsTable, fightCacheTable, challengesTable } from "@workspace/db";
 import {
   SimulateFightBody,
   ListFightsResponse,
@@ -8,6 +8,27 @@ import {
   GetFightResponse,
 } from "@workspace/api-zod";
 import { simulateFight, type SimulateFightProgress } from "../lib/fightSimulator";
+
+// Helper for the challenge wait branch — poll the DB for the OTHER player's
+// fightId to appear, then return it. Returns null on timeout or close.
+async function waitForChallengeFightId(
+  code: string,
+  timeoutMs: number,
+  isClosed: () => boolean,
+): Promise<number | null> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (isClosed()) return null;
+    await new Promise((r) => setTimeout(r, 1500));
+    const [c] = await db
+      .select({ fightId: challengesTable.fightId })
+      .from(challengesTable)
+      .where(eq(challengesTable.code, code))
+      .limit(1);
+    if (c?.fightId) return c.fightId;
+  }
+  return null;
+}
 
 const router: IRouter = Router();
 
@@ -73,6 +94,7 @@ router.get("/fights/:id", async (req, res): Promise<void> => {
       summary: fight.summary,
       arenaIntro: fight.arenaIntro ?? "",
       intro: fight.intro ?? "",
+      whyWon: fight.whyWon ?? [],
       simulatedAt: fight.simulatedAt,
     }),
   );
@@ -196,6 +218,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       summary: result.summary,
       arenaIntro: result.arenaIntro ?? null,
       intro: result.intro ?? null,
+      whyWon: result.whyWon ?? [],
     })
     .returning();
 
@@ -230,7 +253,8 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode } = parsed.data;
+  const normalizedChallengeCode = challengeCode ? challengeCode.toUpperCase() : null;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
@@ -270,7 +294,107 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     if (!closed) res.write(`: ping\n\n`);
   }, 15_000);
 
+  // Replay a previously-saved fight as init + complete events. Used when this
+  // request is the SECOND player in a PvP challenge: the first player already
+  // generated the fight, we just hand the same saved row back so both players
+  // see identical narrative text. Mirrors the client-side hook's expectation
+  // that `complete` carries a full FightResult-shaped payload.
+  const replaySavedFight = async (fightId: number): Promise<void> => {
+    const [fight] = await db.select().from(fightsTable).where(eq(fightsTable.id, fightId)).limit(1);
+    if (!fight) {
+      send("error", { message: "Saved fight not found" });
+      return;
+    }
+    const rounds = fight.rounds as Array<{ round: number; attacker: string; narrative: string; team1Hp: number; team2Hp: number }>;
+    send("init", {
+      team1: team1.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
+      team2: team2.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl })),
+      winner: fight.winner,
+      arena: { name: "", description: "" },
+      rounds: rounds.map((r, i) => ({
+        round: i + 1,
+        attacker: 1 as 1 | 2,
+        narrative: r.narrative,
+        team1Hp: r.team1Hp,
+        team2Hp: r.team2Hp,
+      })),
+      settled: true,
+      rematchCount: 0,
+    });
+    send("complete", SimulateFightResponse.parse({
+      id: fight.id,
+      team1,
+      team2,
+      winner: fight.winner,
+      rounds,
+      summary: fight.summary,
+      arenaIntro: fight.arenaIntro ?? "",
+      intro: fight.intro ?? "",
+      whyWon: fight.whyWon ?? [],
+      settled: true,
+      rematchCount: 0,
+      simulatedAt: fight.simulatedAt,
+    }));
+  };
+
   try {
+    // ── PvP challenge sync ────────────────────────────────────────────────────
+    // If this fight is part of a challenge, the first player to start
+    // generates the narrative and writes its fight id back to the challenge.
+    // The other player polls for that fight id to appear, then replays the
+    // SAME saved fight — so both see identical text instead of independently
+    // generated different stories.
+    let claimedChallenge = false;
+    if (normalizedChallengeCode) {
+      const [challenge] = await db
+        .select()
+        .from(challengesTable)
+        .where(eq(challengesTable.code, normalizedChallengeCode))
+        .limit(1);
+      if (!challenge) {
+        send("error", { message: "Challenge not found" });
+        return;
+      }
+      // Already played → instant replay from saved fight
+      if (challenge.fightId) {
+        await replaySavedFight(challenge.fightId);
+        return;
+      }
+      // Try to atomically claim the generation slot. The WHERE clause means
+      // only one concurrent caller wins; staler-than-120s locks are reclaimable
+      // so a crashed/aborted generation doesn't deadlock the challenge.
+      const STALE_MS = 120_000;
+      const staleCutoff = new Date(Date.now() - STALE_MS);
+      const claimed = await db
+        .update(challengesTable)
+        .set({ generatingAt: new Date() })
+        .where(
+          and(
+            eq(challengesTable.code, normalizedChallengeCode),
+            isNull(challengesTable.fightId),
+            or(
+              isNull(challengesTable.generatingAt),
+              lt(challengesTable.generatingAt, staleCutoff),
+            ),
+          ),
+        )
+        .returning({ id: challengesTable.id });
+
+      if (claimed.length === 0) {
+        // Other player owns generation — wait for fightId, then replay it
+        const fightId = await waitForChallengeFightId(normalizedChallengeCode, STALE_MS, () => closed);
+        if (fightId === null) {
+          send("error", { message: "Other player's fight is taking too long. Try again." });
+          return;
+        }
+        await replaySavedFight(fightId);
+        return;
+      }
+      // We claimed it — fall through to fresh generation, will save fightId
+      // back to the challenge once the fight is persisted below.
+      claimedChallenge = true;
+    }
+
     // ── Cache lookup (same logic as POST /fights) ────────────────────────────
     const { cacheKey, teamAIsTeam1 } = getCacheKey(team1Ids, team2Ids);
     let cachedResolution = null;
@@ -377,8 +501,19 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         summary: result.summary,
         arenaIntro: result.arenaIntro ?? null,
         intro: result.intro ?? null,
+        whyWon: result.whyWon ?? [],
       })
       .returning();
+
+    // If we generated this on behalf of a challenge, attach the fight id so
+    // the other player's pending stream can pick it up and replay the same
+    // narrative instead of generating its own.
+    if (claimedChallenge && normalizedChallengeCode) {
+      await db
+        .update(challengesTable)
+        .set({ fightId: saved.id, status: "completed" })
+        .where(eq(challengesTable.code, normalizedChallengeCode));
+    }
 
     const fullPayload = SimulateFightResponse.parse({
       id: saved.id,
