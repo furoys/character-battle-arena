@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "app.replit.anyonevsanyone.twa",
-    "sha256_cert_fingerprints": ["A3:D4:19:E2:A7:93:03:87:B5:5B:B6:B1:4E:EE:D0:7C:E8:D9:16:92:09:7D:AC:5F:CA:64:E3:2B:E2:78:62:E4"]
+    "sha256_cert_fingerprints": ["6C:E7:03:AF:35:EA:4C:55:1E:C4:26:E8:EA:89:C6:8A:74:31:16:5A:86:D9:1A:9D:61:9A:DF:BD:0C:6F:AD:1C"]
   }
 }]
