@@ -155,15 +155,6 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
             }}
           />
 
-          {/* Tier-colored breathing glow rising from the base */}
-          <div
-            className="ava-tier-glow"
-            style={{
-              background: `radial-gradient(ellipse at center, ${tier.color} 0%, ${tier.color}66 35%, transparent 70%)`,
-              animationDelay: breatheDelay,
-            }}
-          />
-
           {/* Slow diagonal shimmer sweep (desynced per card) */}
           <div
             className="ava-shimmer-pass"
