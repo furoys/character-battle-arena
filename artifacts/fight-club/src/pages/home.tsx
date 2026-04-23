@@ -243,8 +243,13 @@ export function Home() {
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset visible count whenever the filter/search changes
-  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [searchQuery, activeFilter, tierFilter]);
+  // Reset visible count whenever the filter/search changes.
+  // When a specific universe is selected, show all its characters immediately.
+  // Only cap to INITIAL_VISIBLE when browsing "All" (955 chars) or special filters.
+  useEffect(() => {
+    const isSpecificUniverse = activeFilter !== null && activeFilter !== "__recent__" && activeFilter !== "__faves__";
+    setVisibleCount(isSpecificUniverse ? 9999 : INITIAL_VISIBLE);
+  }, [searchQuery, activeFilter, tierFilter]);
 
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
   useEffect(() => {
