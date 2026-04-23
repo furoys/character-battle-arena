@@ -73,9 +73,7 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
   const tier = powerTier(avg);
 
   // Negative animation-delay desyncs each card's drift so the grid feels alive
-  const motionDelay   = `${-((character.id ?? 0) * 0.73 % 14).toFixed(2)}s`;
-  const breatheDelay  = `${-((character.id ?? 0) * 0.41 % 7 ).toFixed(2)}s`;
-  const shimmerDelay  = `${ ((character.id ?? 0) * 1.31 % 11).toFixed(2)}s`;
+  const motionDelay = `${-((character.id ?? 0) * 0.73 % 14).toFixed(2)}s`;
 
   const initials = character.name
     .split(" ")
@@ -153,21 +151,6 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
             style={{
               background: "linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.75) 35%, rgba(0,0,0,0.25) 60%, transparent 100%)",
             }}
-          />
-
-          {/* Tier-colored breathing glow rising from the base */}
-          <div
-            className="ava-tier-glow"
-            style={{
-              background: `radial-gradient(ellipse at center, ${tier.color} 0%, ${tier.color}66 35%, transparent 70%)`,
-              animationDelay: breatheDelay,
-            }}
-          />
-
-          {/* Slow diagonal shimmer sweep (desynced per card) */}
-          <div
-            className="ava-shimmer-pass"
-            style={{ animationDelay: shimmerDelay }}
           />
 
           {/* Team color tint overlay when selected */}
