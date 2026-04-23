@@ -21,6 +21,7 @@ import type {
   CharacterStatsSummary,
   CreateCharacterBody,
   ErrorResponse,
+  FightDetail,
   FightRecord,
   FightResult,
   HealthStatus,
@@ -595,68 +596,6 @@ export function useListFights<
 }
 
 /**
- * @summary Get a single fight by id
- */
-export const getGetFightUrl = (id: number) => {
-  return `/api/fights/${id}`;
-};
-
-export const getFight = async (
-  id: number,
-  options?: RequestInit,
-): Promise<FightDetail> => {
-  return customFetch<FightDetail>(getGetFightUrl(id), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetFightQueryKey = (id: number) => {
-  return [`/api/fights/${id}`] as const;
-};
-
-export const getGetFightQueryOptions = <
-  TData = Awaited<ReturnType<typeof getFight>>,
-  TError = ErrorType<unknown>,
->(
-  id: number,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getFight>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetFightQueryKey(id);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFight>>> = ({ signal }) =>
-    getFight(id, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getFight>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetFightQueryResult = NonNullable<Awaited<ReturnType<typeof getFight>>>;
-export type GetFightQueryError = ErrorType<unknown>;
-
-export function useGetFight<
-  TData = Awaited<ReturnType<typeof getFight>>,
-  TError = ErrorType<unknown>,
->(
-  id: number,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getFight>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetFightQueryOptions(id, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
  * @summary Simulate a fight between two teams
  */
 export const getSimulateFightUrl = () => {
@@ -822,6 +761,91 @@ export const useClearFightHistory = <
 > => {
   return useMutation(getClearFightHistoryMutationOptions(options));
 };
+
+/**
+ * @summary Get a single fight by id
+ */
+export const getGetFightUrl = (id: number) => {
+  return `/api/fights/${id}`;
+};
+
+export const getFight = async (
+  id: number,
+  options?: RequestInit,
+): Promise<FightDetail> => {
+  return customFetch<FightDetail>(getGetFightUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFightQueryKey = (id: number) => {
+  return [`/api/fights/${id}`] as const;
+};
+
+export const getGetFightQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFight>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFight>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetFightQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFight>>> = ({
+    signal,
+  }) => getFight(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getFight>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetFightQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFight>>
+>;
+export type GetFightQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a single fight by id
+ */
+
+export function useGetFight<
+  TData = Awaited<ReturnType<typeof getFight>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFight>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFightQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Delete a single fight record by id

@@ -369,6 +369,13 @@ components:
             - debate
           default: realistic
           description: "Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.)"
+        upset:
+          type: boolean
+          default: false
+          description: "Override the cached verdict and let the underdog win. Bypasses verdict cache."
+        challengeCode:
+          type: string
+          description: "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text."
       required:
         - team1
         - team2

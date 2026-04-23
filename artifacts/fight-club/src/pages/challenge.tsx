@@ -352,7 +352,17 @@ export function Challenge() {
     setFightTeam1(t1Ids);
     setFightTeam2(t2Ids);
     setShowFight(true);
-    simulateFight.mutate({ data: { team1: t1Ids, team2: t2Ids, mode: mode as "cinematic" } });
+    // Pass the challenge code so both players see the SAME generated narrative
+    // — first one through generates, the other waits for the saved fight id
+    // and replays it instead of running its own AI roundtrip.
+    simulateFight.mutate({
+      data: {
+        team1: t1Ids,
+        team2: t2Ids,
+        mode: mode as "cinematic",
+        challengeCode: challenge?.code,
+      },
+    });
   };
 
   // Creator: auto-launch fight when opponent locks in (detected via polling)

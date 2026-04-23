@@ -44,6 +44,10 @@ export const fightsTable = pgTable("fights", {
   summary: text("summary").notNull(),
   arenaIntro: text("arena_intro"),
   intro: text("intro"),
+  // Bullet list of reasons the winner won — needed so PvP challenge replays
+  // (where the second player loads a saved fight by id) show the same final
+  // panel as the first player saw.
+  whyWon: jsonb("why_won").$type<string[]>(),
   simulatedAt: timestamp("simulated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -59,6 +63,15 @@ export const challengesTable = pgTable("challenges", {
   mode: text("mode").notNull().default("cinematic"),
   blind: boolean("blind").notNull().default(false),
   status: text("status").notNull().default("open"),
+  // Once a fight is generated for this challenge, store its fights.id here so
+  // both players replay the SAME saved narrative (rather than each generating
+  // their own different one). Whoever clicks first generates; the other waits.
+  fightId: integer("fight_id"),
+  // Soft lock for "fight is currently being generated" — set by the first
+  // player to start, cleared implicitly when fightId is filled. Other clients
+  // poll for fightId to appear instead of starting their own generation.
+  // If older than 120s without fightId being set, treated as stale.
+  generatingAt: timestamp("generating_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);
