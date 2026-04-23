@@ -72,6 +72,9 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
   const avg = powerAvg(character);
   const tier = powerTier(avg);
 
+  // Negative animation-delay desyncs each card's drift so the grid feels alive
+  const motionDelay = `${-((character.id ?? 0) * 0.73 % 14).toFixed(2)}s`;
+
   const initials = character.name
     .split(" ")
     .map((w) => w[0])
@@ -116,17 +119,18 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
             filter: disabled && !isSelected ? "grayscale(0.6)" : "none",
           }}
         >
-          {/* Background portrait */}
+          {/* Background portrait — Ken Burns drift gives every card subtle life */}
           {character.imageUrl && !imgError ? (
             <img
               src={character.imageUrl}
               alt={character.name}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 w-full h-full object-cover object-top"
+              className={`ava-portrait-motion absolute inset-0 w-full h-full object-cover object-top ${hovered && isClickable && !flipped ? "is-hover" : ""}`}
               style={{
-                transform: hovered && isClickable && !flipped ? "scale(1.06)" : "scale(1)",
-                transition: "transform 0.4s ease",
+                animationDelay: motionDelay,
+                filter: hovered && isClickable ? "brightness(1.08) contrast(1.05)" : "brightness(0.96)",
+                transition: "filter 0.3s ease",
               }}
               onError={() => setImgError(true)}
             />
@@ -192,42 +196,63 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
           )}
 
           {/* Bottom info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 px-2 pt-6 pb-2">
-            <div className="flex items-end justify-between gap-1">
-              {/* Left: name + tier */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-2 pt-6 pb-1.5">
+            {/* Hairline rule above info — adds editorial polish */}
+            <div
+              className="h-px w-full mb-1"
+              style={{
+                background: tc
+                  ? `linear-gradient(90deg, transparent 0%, ${tc.border}80 30%, ${tc.border}80 70%, transparent 100%)`
+                  : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)",
+              }}
+            />
+            <div className="flex items-end justify-between gap-1.5">
+              {/* Left: name + tier chip */}
               <div className="flex-1 min-w-0">
                 <h3
-                  className="font-display text-sm font-bold leading-tight uppercase truncate"
-                  style={{ color: tc ? tc.border : "#ffffff", textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}
+                  className="font-display text-[13px] font-bold leading-none uppercase truncate"
+                  style={{
+                    color: tc ? tc.border : "#ffffff",
+                    letterSpacing: "0.04em",
+                    textShadow: "0 1px 6px rgba(0,0,0,0.95)",
+                  }}
                 >
                   {character.name}
                 </h3>
-                <div className="flex items-center gap-0.5 mt-0.5">
+                <div className="flex items-center gap-1 mt-1">
+                  {/* Solid tier chip — crisp, no glow */}
                   <span
-                    className="text-[9px] font-bold tracking-wider uppercase"
-                    style={{ color: tier.color, textShadow: `0 0 8px ${tier.color}60` }}
+                    className="inline-flex items-center gap-0.5 text-[8px] font-bold leading-none uppercase px-1 py-[2px]"
+                    style={{
+                      background: `${tier.color}1a`,
+                      color: tier.color,
+                      border: `1px solid ${tier.color}55`,
+                      letterSpacing: "0.12em",
+                    }}
                   >
-                    {TIER_ICONS[tier.label]} {tier.label}
+                    <span style={{ fontSize: 9, lineHeight: 1 }}>{TIER_ICONS[tier.label]}</span>
+                    {tier.label}
                   </span>
                 </div>
               </div>
 
-              {/* Right: OVR number */}
-              <div className="flex-shrink-0 flex items-end gap-0.5 pb-0.5">
+              {/* Right: OVR number — tabular, confident */}
+              <div className="flex-shrink-0 flex items-baseline gap-0.5">
                 <span
-                  className="font-display font-bold leading-none"
+                  className="font-display font-bold tabular-nums"
                   style={{
-                    fontSize: 26,
+                    fontSize: 28,
                     color: tc ? tc.border : "#ffffff",
-                    textShadow: tc ? `0 0 12px ${tc.border}80` : "0 1px 4px rgba(0,0,0,0.9)",
-                    lineHeight: 1,
+                    textShadow: tc ? `0 0 14px ${tc.border}70` : "0 1px 6px rgba(0,0,0,0.95)",
+                    lineHeight: 0.85,
+                    letterSpacing: "-0.02em",
                   }}
                 >
                   {ovr}
                 </span>
                 <span
-                  className="font-bold mb-0.5"
-                  style={{ fontSize: 8, color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em" }}
+                  className="font-bold"
+                  style={{ fontSize: 7, color: "rgba(255,255,255,0.45)", letterSpacing: "0.14em" }}
                 >
                   OVR
                 </span>
