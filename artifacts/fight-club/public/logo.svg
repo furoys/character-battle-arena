@@ -1,0 +1,33 @@
+<svg viewBox="0 0 382 110" xmlns="http://www.w3.org/2000/svg" aria-label="A.v.A">
+  <defs>
+    <linearGradient id="lg-a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0ffff"/>
+      <stop offset="10%" stop-color="#00f0ff"/>
+      <stop offset="52%" stop-color="#0088cc"/>
+      <stop offset="100%" stop-color="#001e33"/>
+    </linearGradient>
+    <linearGradient id="lg-v" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff0aa"/>
+      <stop offset="18%" stop-color="#ff7722"/>
+      <stop offset="65%" stop-color="#cc1100"/>
+      <stop offset="100%" stop-color="#550008"/>
+    </linearGradient>
+    <linearGradient id="lg-line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0"/>
+      <stop offset="22%" stop-color="#00f0ff"/>
+      <stop offset="78%" stop-color="#ff3b30"/>
+      <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="91" cy="58" rx="42" ry="12" fill="#00f0ff" opacity="0.06"/>
+  <ellipse cx="291" cy="58" rx="42" ry="12" fill="#00f0ff" opacity="0.06"/>
+  <ellipse cx="191" cy="54" rx="38" ry="10" fill="#ff5500" opacity="0.06"/>
+  <text x="91" y="73" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="78" font-weight="900" fill="none" stroke="#000" stroke-width="15" stroke-linejoin="round">A</text>
+  <text x="191" y="68" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="54" font-weight="900" fill="none" stroke="#000" stroke-width="12" stroke-linejoin="round">·v·</text>
+  <text x="291" y="73" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="78" font-weight="900" fill="none" stroke="#000" stroke-width="15" stroke-linejoin="round">A</text>
+  <text x="91" y="73" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="78" font-weight="900" fill="url(#lg-a)">A</text>
+  <text x="191" y="68" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="54" font-weight="900" fill="url(#lg-v)">·v·</text>
+  <text x="291" y="73" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="78" font-weight="900" fill="url(#lg-a)">A</text>
+  <rect x="55" y="83" width="272" height="1.5" fill="url(#lg-line)" rx="1"/>
+  <text x="191" y="99" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="9.5" font-weight="900" fill="#999999" letter-spacing="5">ANYONE VS ANYONE</text>
+</svg>

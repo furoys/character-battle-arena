@@ -8,6 +8,7 @@ import {
   GetFightResponse,
 } from "@workspace/api-zod";
 import { simulateFight, type SimulateFightProgress } from "../lib/fightSimulator";
+import { getOptionalUserId, requireAuth } from "../lib/auth";
 
 // Helper for the challenge wait branch — poll the DB for the OTHER player's
 // fightId to appear, then return it. Returns null on timeout or close.
@@ -98,6 +99,75 @@ router.get("/fights/:id", async (req, res): Promise<void> => {
       simulatedAt: fight.simulatedAt,
     }),
   );
+});
+
+// ── Authenticated user's own fights & stats ──────────────────────────────────
+// "Show me only the fights I started" — used by the Profile page. Guests get
+// 401 since this only makes sense for a signed-in user. Stats are computed
+// from the same row set so they match what's displayed.
+router.get("/me/fights", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const fights = await db
+    .select()
+    .from(fightsTable)
+    .where(eq(fightsTable.userId, userId))
+    .orderBy(desc(fightsTable.simulatedAt))
+    .limit(100);
+
+  res.json(
+    ListFightsResponse.parse(
+      fights.map((f) => ({
+        id: f.id,
+        team1Names: f.team1Names,
+        team2Names: f.team2Names,
+        winner: f.winner,
+        summary: f.summary,
+        simulatedAt: f.simulatedAt,
+      })),
+    ),
+  );
+});
+
+router.get("/me/stats", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const fights = await db
+    .select({
+      winner: fightsTable.winner,
+      team1Names: fightsTable.team1Names,
+      team2Names: fightsTable.team2Names,
+    })
+    .from(fightsTable)
+    .where(eq(fightsTable.userId, userId));
+
+  // Count appearances and wins per character across all of this user's fights.
+  // "Used" is total appearances (either team), "wins" is appearances on the
+  // winning team. Top fighters are sorted by usage, top winners by win count.
+  const usage: Record<string, { used: number; wins: number }> = {};
+  let team1Wins = 0;
+  let team2Wins = 0;
+  for (const f of fights) {
+    if (f.winner === 1) team1Wins++;
+    else team2Wins++;
+    const winnerNames = f.winner === 1 ? f.team1Names : f.team2Names;
+    const winnerSet = new Set(winnerNames);
+    for (const n of [...f.team1Names, ...f.team2Names]) {
+      const entry = usage[n] ?? { used: 0, wins: 0 };
+      entry.used++;
+      if (winnerSet.has(n)) entry.wins++;
+      usage[n] = entry;
+    }
+  }
+
+  const characters = Object.entries(usage)
+    .map(([name, s]) => ({ name, used: s.used, wins: s.wins }))
+    .sort((a, b) => b.used - a.used || b.wins - a.wins);
+
+  res.json({
+    totalFights: fights.length,
+    team1Wins,
+    team2Wins,
+    characters,
+  });
 });
 
 router.post("/fights", async (req, res): Promise<void> => {
@@ -219,6 +289,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       arenaIntro: result.arenaIntro ?? null,
       intro: result.intro ?? null,
       whyWon: result.whyWon ?? [],
+      userId: getOptionalUserId(req),
     })
     .returning();
 
@@ -502,6 +573,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         arenaIntro: result.arenaIntro ?? null,
         intro: result.intro ?? null,
         whyWon: result.whyWon ?? [],
+        userId: getOptionalUserId(req),
       })
       .returning();
 

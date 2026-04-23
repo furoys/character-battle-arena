@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, challengesTable } from "@workspace/db";
+import { getOptionalUserId } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -27,7 +28,10 @@ router.post("/challenges", async (req, res): Promise<void> => {
     attempts++;
   }
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await db.insert(challengesTable).values({ code, team1Ids, mode, blind, expiresAt });
+  await db.insert(challengesTable).values({
+    code, team1Ids, mode, blind, expiresAt,
+    creatorUserId: getOptionalUserId(req),
+  });
   res.json({ code, blind, mode });
 });
 
