@@ -20,25 +20,42 @@ interface ChallengeData {
   team1Hidden: boolean;
 }
 
-function useChallenge(code: string) {
+function useChallenge(code: string, pollWhileOpen = false) {
   const [data, setData] = useState<ChallengeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchChallenge = async (isInitial = false): Promise<ChallengeData | undefined> => {
+    if (!code) return undefined;
+    if (isInitial) setLoading(true);
+    try {
+      const r = await fetch(`/api/challenges/${code.toUpperCase()}`);
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error((j as { error?: string }).error ?? "Challenge not found");
+      }
+      const d = await r.json() as ChallengeData;
+      setData(d);
+      if (isInitial) setLoading(false);
+      return d;
+    } catch (e) {
+      if (isInitial) { setError((e as Error).message); setLoading(false); }
+      return undefined;
+    }
+  };
+
   useEffect(() => {
-    if (!code) return;
-    setLoading(true);
-    fetch(`/api/challenges/${code.toUpperCase()}`)
-      .then(async (r) => {
-        if (!r.ok) {
-          const j = await r.json().catch(() => ({}));
-          throw new Error((j as { error?: string }).error ?? "Challenge not found");
-        }
-        return r.json() as Promise<ChallengeData>;
-      })
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((e) => { setError((e as Error).message); setLoading(false); });
+    fetchChallenge(true);
   }, [code]);
+
+  useEffect(() => {
+    if (!pollWhileOpen || !code) return;
+    const interval = setInterval(async () => {
+      const d = await fetchChallenge(false);
+      if (d?.team2Ids) clearInterval(interval);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [code, pollWhileOpen]);
 
   return { data, error, loading, setData };
 }
@@ -253,7 +270,7 @@ export function Challenge() {
   const search = useSearch();
   const isCreatorParam = new URLSearchParams(search).get("creator") === "1";
   const { toast } = useToast();
-  const { data: challenge, error: challengeError, loading, setData: setChallenge } = useChallenge(code ?? "");
+  const { data: challenge, error: challengeError, loading, setData: setChallenge } = useChallenge(code ?? "", isCreatorParam);
   const { data: allCharacters, isLoading: charsLoading } = useListCharacters();
 
   const [team2, setTeam2] = useState<Character[]>([]);
@@ -323,6 +340,17 @@ export function Challenge() {
     setShowFight(true);
     simulateFight.mutate({ data: { team1: t1Ids, team2: t2Ids, mode: mode as "cinematic" } });
   };
+
+  // Creator: auto-launch fight when opponent locks in (detected via polling)
+  useEffect(() => {
+    if (!isCreatorParam || !challenge?.team2Ids || !challenge?.team1Ids || showFight) return;
+    if (challenge.blind) {
+      setRevealed(true);
+      setTimeout(() => startFight(challenge.team1Ids!, challenge.team2Ids!, challenge.mode), 1600);
+    } else {
+      startFight(challenge.team1Ids, challenge.team2Ids, challenge.mode);
+    }
+  }, [challenge?.team2Ids, isCreatorParam]);
 
   const handleAccept = async () => {
     if (!challenge || team2.length === 0) return;
@@ -528,10 +556,13 @@ export function Challenge() {
       )}
 
       {/* Creator waiting state */}
-      {isCreatorView && (
+      {isCreatorView && !showFight && (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, color: "rgba(255,255,255,0.15)" }}>
           <Eye style={{ width: 24, height: 24 }} />
           <span style={{ fontSize: 8, letterSpacing: "0.3em" }}>WAITING FOR OPPONENT</span>
+          <span style={{ fontSize: 7, letterSpacing: "0.15em", color: "rgba(255,255,255,0.08)", marginTop: 2 }}>
+            Fight will start automatically when they lock in
+          </span>
         </div>
       )}
 
