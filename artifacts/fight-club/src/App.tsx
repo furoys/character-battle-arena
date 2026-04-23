@@ -19,6 +19,7 @@ import { Challenge } from "@/pages/challenge";
 import { Profile } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
 import { SignUpPage } from "@/pages/sign-up";
+import { Privacy } from "@/pages/privacy";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );
