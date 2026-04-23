@@ -238,6 +238,29 @@
   }
 }
 
+/* ── Character portrait motion (Ken Burns drift) ── */
+@keyframes ava-ken-burns {
+  0%   { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  50%  { transform: scale(1.10) translate3d( 1.5%,  1%, 0); }
+  100% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+}
+.ava-portrait-motion {
+  animation: ava-ken-burns 14s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center 30%;
+}
+.ava-portrait-motion.is-hover {
+  animation-duration: 6s;
+}
+
+@keyframes ava-card-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ava-card-rise {
+  animation: ava-card-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ── Arena character card flip ── */
 .ava-card-scene {
   perspective: 900px;
