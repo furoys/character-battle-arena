@@ -569,7 +569,7 @@ export function Home() {
           <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
             {/* Search + filter — scrolls naturally with character grid */}
             <div className="px-3 pt-1.5 pb-1.5 space-y-1">
-              {/* Search + FAVES on same row */}
+              {/* Row 1: Search + tier icons + FAVES */}
               <div className="flex gap-1.5 items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "rgba(255,255,255,0.25)" }} />
@@ -596,59 +596,56 @@ export function Home() {
                     </button>
                   )}
                 </div>
-                {/* FAVES button — same row as search */}
+
+                {/* Tier filter — compact icon-only row */}
+                <div className="flex gap-0.5 flex-shrink-0">
+                  {[
+                    { key: "cosmic",   icon: "★", color: "#ff0055", label: "Cosmic"   },
+                    { key: "elite",    icon: "◆", color: "#c084fc", label: "Elite"    },
+                    { key: "standard", icon: "●", color: "#00f0ff", label: "Standard" },
+                    { key: "street",   icon: "○", color: "#94a3b8", label: "Street"   },
+                  ].map(t => {
+                    const active = tierFilter === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        onClick={() => setTierFilter(active ? "all" : t.key)}
+                        className="flex items-center justify-center transition-all duration-150"
+                        style={{
+                          width: 22, height: 26,
+                          fontSize: 12, fontWeight: 700, lineHeight: 1,
+                          background: active ? t.color : "transparent",
+                          border: `1px solid ${active ? t.color : t.color + "40"}`,
+                          color: active ? "#000" : t.color,
+                          opacity: tierFilter !== "all" && !active ? 0.35 : 1,
+                        }}
+                        title={`${t.label} tier`}
+                      >
+                        {t.icon}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* FAVES button */}
                 <button
                   onClick={() => setActiveFilter(f => f === "__faves__" ? null : "__faves__")}
                   className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
                   style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                    padding: "5px 8px",
+                    padding: "5px 7px",
                     background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "rgba(255,255,255,0.04)",
                     border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.12)"}`,
                     color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.4)",
                     whiteSpace: "nowrap",
                   }}
+                  title="Favorites"
                 >
-                  ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.65 }}> {favorites.size}</span>}
+                  ★{favorites.size > 0 && <span style={{ opacity: 0.65 }}>{favorites.size}</span>}
                 </button>
               </div>
 
-              {/* RECENT quick filter (only visible when there are recent picks) */}
-              {recentPicks.length > 0 && (
-                <div className="flex gap-1 items-center">
-                  <button
-                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
-                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
-                    style={{
-                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                      padding: "3px 8px",
-                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
-                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
-                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
-                    }}
-                  >
-                    ⏱ RECENT
-                  </button>
-                  <button
-                    onClick={clearRecentPicks}
-                    title="Clear history"
-                    className="flex-shrink-0 flex items-center justify-center transition-all duration-150 hover:bg-white/10"
-                    style={{
-                      fontSize: 11, fontWeight: 700,
-                      width: 16, height: 16,
-                      borderRadius: "50%",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      color: "rgba(255,255,255,0.35)",
-                      lineHeight: 1,
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              {/* Category pills (consolidated from 100+ universes) */}
+              {/* Row 2: Universe pills (with RECENT inlined) */}
               <div
                 ref={pillsRef}
                 className="flex gap-1 overflow-x-auto pb-0.5"
@@ -659,6 +656,22 @@ export function Home() {
                   active={activeFilter === null}
                   onClick={() => setActiveFilter(null)}
                 />
+                {recentPicks.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
+                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150 whitespace-nowrap"
+                    style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                      padding: "3px 7px",
+                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
+                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(160,80,255,0.4)"}`,
+                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(160,80,255,0.7)",
+                    }}
+                    title="Recent picks"
+                  >
+                    ⏱ RECENT
+                  </button>
+                )}
                 {categoryCounts.map(({ category, count }) => {
                   const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
                   const active = activeFilter === category;
@@ -683,35 +696,6 @@ export function Home() {
                     </button>
                   );
                 })}
-              </div>
-
-              {/* Tier filter pills */}
-              <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-                {[
-                  { key: "all",      label: "All",     color: "rgba(255,255,255,0.35)" },
-                  { key: "cosmic",   label: "★ Cosmic",   color: "#ff0055" },
-                  { key: "elite",    label: "◆ Elite",    color: "#c084fc" },
-                  { key: "standard", label: "● Standard", color: "#00f0ff" },
-                  { key: "street",   label: "○ Street",   color: "#94a3b8" },
-                ].map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTierFilter(t.key === tierFilter ? "all" : t.key)}
-                    className="flex-shrink-0 transition-all duration-150"
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 800,
-                      letterSpacing: "0.12em",
-                      padding: "3px 7px",
-                      color: tierFilter === t.key ? "#000" : t.color,
-                      background: tierFilter === t.key ? t.color : "transparent",
-                      border: `1px solid ${tierFilter === t.key ? t.color : t.color + "50"}`,
-                      opacity: tierFilter !== "all" && tierFilter !== t.key ? 0.4 : 1,
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -774,6 +758,216 @@ export function Home() {
             </div>
           </div>
         )}
+
+        {/* ── BOTTOM DOCK — team builder + actions + sticky FIGHT bar ─ */}
+        <div
+          className="flex-shrink-0 relative"
+          style={{
+            background: "linear-gradient(0deg, #000000 0%, #080810 100%)",
+            borderTop: "1px solid rgba(255,0,85,0.25)",
+            boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
+          }}
+        >
+          {/* Glowing FIGHT bar — only when both teams have fighters */}
+          {canFight && (
+            <button
+              onClick={handleFight}
+              disabled={simulateFight.isPending}
+              className="w-full flex items-center justify-center gap-3 font-display uppercase active:scale-[0.99] transition-transform"
+              style={{
+                height: 44,
+                borderTop: "1.5px solid #ff0055",
+                borderBottom: "1.5px solid rgba(255,0,85,0.3)",
+                background: "linear-gradient(180deg, rgba(255,0,85,0.18) 0%, rgba(255,0,85,0.32) 100%)",
+                color: "#fff",
+                fontSize: 15,
+                letterSpacing: "0.4em",
+                cursor: "pointer",
+                animation: "fightPulse 1.4s ease-in-out infinite",
+                textShadow: "0 0 16px rgba(255,0,85,0.95)",
+              }}
+            >
+              <Swords className="h-5 w-5" style={{ color: "#ff0055" }} />
+              <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
+              <Swords className="h-5 w-5 -scale-x-100" style={{ color: "#ff0055" }} />
+            </button>
+          )}
+
+          {/* Team slots — compact horizontal */}
+          <div className="flex items-stretch gap-2 px-2 pt-1.5">
+            <TeamSlot
+              team={1}
+              members={team1}
+              active={activeTeam === 1}
+              onActivate={() => setActiveTeam(1)}
+              onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
+            />
+            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 24 }}>
+              <div
+                className="font-display text-xs uppercase tracking-[0.3em] leading-none"
+                style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
+              >
+                vs
+              </div>
+            </div>
+            <TeamSlot
+              team={2}
+              members={team2}
+              active={activeTeam === 2}
+              onActivate={() => setActiveTeam(2)}
+              onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
+            />
+          </div>
+
+          {/* Power comparison bar */}
+          <PowerComparison team1={team1} team2={team2} />
+
+          {/* Synergy strip */}
+          {synergyPills.length > 0 && (
+            <div
+              className="flex gap-1 overflow-x-auto px-2 pb-1"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {synergyPills.map((p, i) => {
+                const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
+                const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
+                return (
+                  <div
+                    key={i}
+                    className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5"
+                    style={{
+                      background: p.positive ? `${color}12` : "rgba(249,115,22,0.1)",
+                      border: `1px solid ${color}40`,
+                      fontSize: 7.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <span style={{ color: teamColor, opacity: 0.7 }}>T{p.team}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>·</span>
+                    <span style={{ color }}>{p.label}</span>
+                    <span style={{ color, opacity: 0.8, marginLeft: 2 }}>
+                      {p.bonus > 0 ? "+" : ""}{Math.round(p.bonus * 100)}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Secondary action row: RANDOM | CHALLENGE | UPSET */}
+          <div className="px-2 pb-2 pt-1 flex gap-1.5 items-center">
+            {/* RANDOM */}
+            <button
+              className="flex items-center justify-center gap-1.5 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.97] flex-1"
+              style={{
+                height: 30,
+                fontSize: 9,
+                letterSpacing: "0.18em",
+                border: "1.5px solid rgba(255,200,0,0.35)",
+                background: "rgba(255,200,0,0.07)",
+                color: "rgba(255,200,0,0.8)",
+                cursor: simulateFight.isPending ? "not-allowed" : "pointer",
+              }}
+              onClick={handleRandomFight}
+              disabled={simulateFight.isPending || !characters?.length}
+              title="Random fight — fully randomized teams"
+            >
+              <Shuffle className="h-3 w-3" />
+              <span>RANDOM</span>
+            </button>
+
+            {/* CHALLENGE */}
+            <div style={{ position: "relative", flex: 1 }}>
+              <button
+                onClick={() => setShowChallengeMenu(m => !m)}
+                disabled={creatingChallenge}
+                title="Send a PvP challenge link to a friend"
+                className="w-full"
+                style={{
+                  height: 30,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                  fontSize: 9, letterSpacing: "0.18em", fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase",
+                  border: "1.5px solid rgba(0,240,255,0.35)",
+                  background: showChallengeMenu ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
+                  color: "rgba(0,240,255,0.85)",
+                  cursor: creatingChallenge ? "not-allowed" : "pointer",
+                }}
+              >
+                <Link style={{ width: 11, height: 11 }} />
+                <span>{creatingChallenge ? "…" : "CHALLENGE"}</span>
+              </button>
+
+              {showChallengeMenu && !creatingChallenge && (
+                <>
+                  <div onClick={() => setShowChallengeMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 59 }} />
+                  <div style={{
+                    position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 60,
+                    background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
+                    width: 180, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                  }}>
+                    <div style={{ padding: "6px 10px 4px", fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      PvP MODE
+                    </div>
+                    <button onClick={() => handleCreateChallenge(false)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
+                      onMouseLeave={e => (e.currentTarget.style.background = "none") }
+                    >
+                      <Link style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
+                      <div>
+                        <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Challenge Link</div>
+                        <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Opponent sees your team, picks theirs</div>
+                      </div>
+                    </button>
+                    <button onClick={() => handleCreateChallenge(true)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left", borderTop: "1px solid rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
+                      onMouseLeave={e => (e.currentTarget.style.background = "none") }
+                    >
+                      <EyeOff style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
+                      <div>
+                        <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Blind Pick</div>
+                        <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Teams hidden until both sides lock in</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* UPSET MODE toggle — compact */}
+            <button
+              onClick={() => setUpsetMode(m => !m)}
+              className="flex items-center gap-1 transition-all duration-200 active:scale-[0.97] flex-shrink-0"
+              style={{
+                height: 30,
+                padding: "0 8px",
+                background: upsetMode ? "rgba(255,160,0,0.12)" : "transparent",
+                border: `1.5px solid ${upsetMode ? "rgba(255,160,0,0.6)" : "rgba(255,255,255,0.1)"}`,
+                cursor: "pointer",
+              }}
+              title={upsetMode ? "Upset Mode ON — bypasses cached verdict" : "Upset Mode OFF — uses cached verdict"}
+            >
+              <Zap
+                className="h-3 w-3"
+                style={{ color: upsetMode ? "#ffa000" : "rgba(255,255,255,0.3)" }}
+                fill={upsetMode ? "#ffa000" : "none"}
+              />
+              <span
+                style={{
+                  fontSize: 8,
+                  fontFamily: "var(--font-display, monospace)",
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  color: upsetMode ? "rgba(255,160,0,0.95)" : "rgba(255,255,255,0.3)",
+                }}
+              >
+                Upset
+              </span>
+            </button>
+          </div>
+        </div>
 
         <FightScreen
           open={showModal}
