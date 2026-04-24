@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Lightbulb, LogIn } from "lucide-react";
-import { Show, useUser } from "@clerk/react";
-import { AvaLogo } from "@/components/ava-logo";
-import { CharacterAvatar } from "@/components/character-avatar";
+import { Swords, Lightbulb } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
@@ -33,7 +30,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-background text-foreground overflow-hidden">
-      <Header />
       <main className="flex-1 overflow-y-auto overflow-x-hidden pb-[72px]">
         {children}
       </main>
@@ -68,66 +64,3 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Top header — small (44px) so it doesn't crowd the existing pages, but
-// always shows the brand mark and a sign-in / profile button. Tapping the
-// avatar when signed-in goes to /profile.
-function Header() {
-  return (
-    <header
-      className="flex-shrink-0 flex items-center justify-between px-3 h-11 border-b border-primary/15"
-      style={{ background: "rgba(0,0,0,0.5)" }}
-    >
-      <Link href="/">
-        <div className="flex items-center cursor-pointer h-full">
-          <AvaLogo className="h-7 w-auto" />
-        </div>
-      </Link>
-      <div className="flex items-center gap-2">
-        <Show when="signed-out">
-          <Link href="/sign-in">
-            <button
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border transition-all hover:border-primary/60 hover:text-primary"
-              style={{
-                color: "rgba(255,255,255,0.55)",
-                borderColor: "rgba(255,255,255,0.15)",
-              }}
-            >
-              <LogIn className="h-3 w-3" />
-              Sign in
-            </button>
-          </Link>
-        </Show>
-        <Show when="signed-in">
-          <ProfileButton />
-        </Show>
-      </div>
-    </header>
-  );
-}
-
-function ProfileButton() {
-  const { user } = useUser();
-  const name =
-    (user?.unsafeMetadata?.username as string) ||
-    user?.username ||
-    user?.firstName ||
-    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
-    "You";
-  const initial = name.charAt(0).toUpperCase();
-  return (
-    <Link href="/profile">
-      <button
-        className="flex items-center gap-2 px-1.5 py-0.5 transition-all hover:bg-primary/10 rounded"
-        title={`Signed in as ${name}`}
-      >
-        <span
-          className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest"
-          style={{ color: "rgba(255,255,255,0.7)" }}
-        >
-          {name}
-        </span>
-        <CharacterAvatar size={28} fallbackInitial={initial} />
-      </button>
-    </Link>
-  );
-}
