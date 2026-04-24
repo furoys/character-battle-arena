@@ -30,6 +30,10 @@ export const ListCharactersResponseItem = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod
+    .array(zod.string())
+    .nullish()
+    .describe("Tags describing the character's combat behavior \/ archetype"),
   createdAt: zod.coerce.date(),
 });
 export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
@@ -76,6 +80,10 @@ export const GetCharacterResponse = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod
+    .array(zod.string())
+    .nullish()
+    .describe("Tags describing the character's combat behavior \/ archetype"),
   createdAt: zod.coerce.date(),
 });
 
@@ -104,6 +112,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -120,6 +134,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -136,6 +156,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -208,6 +234,12 @@ export const SimulateFightResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -224,6 +256,12 @@ export const SimulateFightResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -254,6 +292,22 @@ export const SimulateFightResponse = zod.object({
     .array(zod.string())
     .optional()
     .describe("AI-generated array of reasons why the winner won (5 sentences)"),
+  settled: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase)",
+    ),
+  winRate: zod
+    .number()
+    .optional()
+    .describe(
+      "Estimated win rate (50-100) of the winning team in this matchup",
+    ),
+  rematchCount: zod
+    .number()
+    .optional()
+    .describe("How many times this exact matchup has been simulated"),
   simulatedAt: zod.coerce.date(),
 });
 

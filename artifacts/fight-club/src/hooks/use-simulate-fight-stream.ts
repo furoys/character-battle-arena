@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { FightResult, FightRound, SimulateFightBody } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { FightResult, FightRound, SimulateFightBody } from "@workspace/api-client-react";
 
 // Mirror the API client's base URL resolution. The api-client-react package
 // uses applyBaseUrl() under the hood; we read the same config so the streaming

@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from "react";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 import { PowerAura } from "./power-aura";
 import { Zap, Shield, Brain, Swords } from "lucide-react";
 import { powerAvg, powerTier } from "./roster-flip-card";

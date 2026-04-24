@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/react";
 import { useListCharacters } from "@workspace/api-client-react";
-import type { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Character } from "@workspace/api-client-react";
 import { X, Search, Check } from "lucide-react";
 import { getAvatarCharacterId } from "./character-avatar";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { X, Zap, Shield, Brain, Swords } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";

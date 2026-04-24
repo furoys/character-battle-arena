@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useListCharacters } from "@workspace/api-client-react";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Flame, Swords, MessageSquare, Zap, LogIn } from "lucide-react";
 import { Show, useUser } from "@clerk/react";
