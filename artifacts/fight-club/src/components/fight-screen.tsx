@@ -566,7 +566,7 @@ export function FightScreen({
         @keyframes shimmer { 0% { transform: translateX(-200%); } 100% { transform: translateX(500%); } }
       `}</style>
 
-      <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-300">
         {/* Fight Banner */}
         <div className="flex-shrink-0 border-b border-border/30">
           <FightBanner
