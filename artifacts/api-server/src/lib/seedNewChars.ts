@@ -32,6 +32,16 @@ const newChars = [
     weaknesses: "Money has no leverage over the architects. Chris Henry and Troy Wilson built the system that prints his cash — they own him by default. Anyone else? They lose.",
     description: "The third Developer Legend. Tim doesn't fight — he transacts. His weapon is the unlimited bankroll, his style is total economic dominance. Every other fighter on the roster has a price tag, and Tim already paid it. The only two people he answers to are the ones who wrote the rules: Chris and Troy.",
   },
+  // ── Full Bleed Studios ──────────────────────────────────────────────────────
+  {
+    name: "Pitt",
+    universe: "Full Bleed Studios",
+    imageUrl: null,
+    strength: 9600, speed: 7400, intelligence: 6200, durability: 9400,
+    specialAbility: "Half-human, half-Creed war-beast physiology — possesses superhuman strength surpassing most cosmic-tier fighters; regenerative healing factor that knits catastrophic wounds within seconds; retractable adamantium-dense alien claws that shred reinforced steel; rage escalation that multiplies output the more damage he sustains; symbiotic protective bond with Timmy that removes all mental limiters when the child is in danger",
+    weaknesses: "Berserker rage state impairs tactical thinking and makes him susceptible to environmental traps; the bond with Timmy can be exploited as an emotional lever; certain high-frequency energy attacks interfere with his alien physiology; his Creed half surfaces under extreme stress, reducing self-control",
+    description: "Created as the ultimate biological weapon by the alien Creed race, Pitt escaped his makers and crashed to Earth — a seven-foot-tall wall of grey muscle, claws, and barely-contained fury. Beneath the monster is the echo of a human soul, expressed almost entirely through his fierce, wordless protection of a young boy named Timmy. Pitt doesn't fight to win. He fights until nothing is standing.",
+  },
   // ── existing entries (kept for idempotency) ─────────────────────────────────
   {
     name: "Yennefer of Vengerberg",
