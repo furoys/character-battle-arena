@@ -18,7 +18,7 @@ import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/univ
 import { setCreatorToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge } from "@/lib/push-subscribe";
 import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
-import { ModifierPicker, useStoredModifier } from "@/components/modifier-picker";
+import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 import { PendingChallengesBar } from "@/components/pending-challenges-bar";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
@@ -443,9 +443,7 @@ export function Home() {
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
-    // Arena (single-player) fights are intentionally chaos-modifier-free —
-    // modifiers belong to PvP challenge mode where the spice is shared.
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: null } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
   };
 
   const handleRandomFight = () => {
@@ -864,6 +862,14 @@ export function Home() {
             boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
           }}
         >
+          {/* Chaos modifier strip — sits directly above the FIGHT bar so the
+              modifier in play is visible at the moment of commitment. The same
+              picker is also reachable from the CHALLENGE dropdown so the
+              modifier choice is shared between arena and PvP. */}
+          {canFight && (
+            <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+          )}
+
           {/* Glowing FIGHT bar — only when both teams have fighters */}
           {canFight && (
             <button
@@ -1080,7 +1086,7 @@ export function Home() {
           open={showModal}
           onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: null } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
           }}
           result={censoredResult}
           isSimulating={simulateFight.isPending && !simulateFight.streaming}
