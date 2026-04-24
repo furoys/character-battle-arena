@@ -522,286 +522,30 @@ export function Home() {
       `}</style>
 
       <div className="flex flex-col h-full min-h-0">
-        {/* ── ARENA HUD ─────────────────────────────────────────────────── */}
+        {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
         <div
-          className="flex-shrink-0 sticky top-0 z-30"
+          className="flex-shrink-0 sticky top-0 z-30 flex items-center justify-between px-3 py-2"
           style={{
             background: "linear-gradient(180deg, #000000 0%, #080810 100%)",
             borderBottom: "1px solid rgba(255,0,85,0.2)",
           }}
         >
-          {/* Scanline overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
-              zIndex: 1,
-            }}
-          />
-
-          {/* Content above scanlines */}
-          <div className="relative z-10">
-            {/* Unified top bar — logo left, profile right, no duplicate */}
-            <div
-              className="flex items-center justify-between px-3 py-2"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              <div className="flex items-center gap-2">
-                <AvaLogo className="h-7 w-auto" />
-                <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", paddingTop: 2 }}>
-                  ANYONE VS ANYONE
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Show when="signed-out">
-                  <NavLink href="/sign-in">
-                    <button
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border transition-all hover:border-primary/60 hover:text-primary"
-                      style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.12)" }}
-                    >
-                      <LogIn className="h-3 w-3" />
-                      Sign in
-                    </button>
-                  </NavLink>
-                </Show>
-                <Show when="signed-in">
-                  <HomeProfileButton />
-                </Show>
-              </div>
-            </div>
-
-            {/* Team builder */}
-            <div className="flex items-stretch gap-2 p-2">
-              <TeamSlot
-                team={1}
-                members={team1}
-                active={activeTeam === 1}
-                onActivate={() => setActiveTeam(1)}
-                onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
-              />
-
-              {/* CENTER: VS only — slim divider */}
-              <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 28 }}>
-                <div
-                  className="font-display text-xs uppercase tracking-[0.3em] leading-none"
-                  style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
-                >
-                  vs
-                </div>
-              </div>
-
-              <TeamSlot
-                team={2}
-                members={team2}
-                active={activeTeam === 2}
-                onActivate={() => setActiveTeam(2)}
-                onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
-              />
-            </div>
-
-            {/* Power comparison bar */}
-            <PowerComparison team1={team1} team2={team2} />
-
-            {/* Synergy strip — scrollable single row, only when there are synergies */}
-            {synergyPills.length > 0 && (
-              <div
-                className="flex gap-1 overflow-x-auto px-2 pb-1"
-                style={{ scrollbarWidth: "none" }}
-              >
-                {synergyPills.map((p, i) => {
-                  const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
-                  const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
-                  return (
-                    <div
-                      key={i}
-                      className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5"
-                      style={{
-                        background: p.positive ? `${color}12` : "rgba(249,115,22,0.1)",
-                        border: `1px solid ${color}40`,
-                        fontSize: 7.5,
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      <span style={{ color: teamColor, opacity: 0.7 }}>T{p.team}</span>
-                      <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>·</span>
-                      <span style={{ color }}>{p.label}</span>
-                      <span style={{ color, opacity: 0.8, marginLeft: 2 }}>
-                        {p.bonus > 0 ? "+" : ""}{Math.round(p.bonus * 100)}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* FIGHT + RANDOM buttons */}
-            <div className="px-2 pb-2 flex gap-1.5">
-              <button
-                className="flex-1 flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
-                style={{
-                  height: 34,
-                  border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
-                  background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
-                  color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
-                  fontSize: 11,
-                  letterSpacing: "0.25em",
-                  cursor: canFight ? "pointer" : "not-allowed",
-                  animation: canFight ? "fightPulse 2s ease-in-out infinite" : "none",
-                }}
-                onClick={handleFight}
-                disabled={!canFight || simulateFight.isPending}
-              >
-                <Swords className="h-4 w-4" />
-                <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
-                <div className="flex gap-0.5 ml-1">
-                  {[0,1,2,3,4].map(i => (
-                    <div
-                      key={i}
-                      className="w-1 h-1 rounded-full"
-                      style={{
-                        background: i < Math.max(team1.length, team2.length)
-                          ? "#ff005560"
-                          : "rgba(255,255,255,0.1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </button>
-
-              {/* RANDOM fight button */}
-              <button
-                className="flex items-center justify-center gap-1.5 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  height: 34,
-                  width: 90,
-                  fontSize: 8,
-                  letterSpacing: "0.18em",
-                  border: "1.5px solid rgba(255,200,0,0.35)",
-                  background: "rgba(255,200,0,0.07)",
-                  color: "rgba(255,200,0,0.7)",
-                  cursor: simulateFight.isPending ? "not-allowed" : "pointer",
-                  flexShrink: 0,
-                }}
-                onClick={handleRandomFight}
-                disabled={simulateFight.isPending || !characters?.length}
-                title="Random fight — fully randomized teams"
-              >
-                <Shuffle className="h-3 w-3" />
-                <span>RANDOM</span>
-              </button>
-
-              {/* CHALLENGE button + dropdown */}
-              <div style={{ position: "relative", flexShrink: 0 }}>
+          <AvaLogo className="h-7 w-auto" />
+          <div className="flex items-center gap-2">
+            <Show when="signed-out">
+              <NavLink href="/sign-in">
                 <button
-                  onClick={() => setShowChallengeMenu(m => !m)}
-                  disabled={creatingChallenge}
-                  title="Send a PvP challenge link to a friend"
-                  style={{
-                    height: 34, width: 90,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                    fontSize: 8, letterSpacing: "0.18em", fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase",
-                    border: "1.5px solid rgba(0,240,255,0.35)",
-                    background: showChallengeMenu ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
-                    color: "rgba(0,240,255,0.8)",
-                    cursor: creatingChallenge ? "not-allowed" : "pointer",
-                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border transition-all hover:border-primary/60 hover:text-primary"
+                  style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.12)" }}
                 >
-                  <Link style={{ width: 10, height: 10 }} />
-                  <span>{creatingChallenge ? "…" : "CHALLENGE"}</span>
+                  <LogIn className="h-3 w-3" />
+                  Sign in
                 </button>
-
-                {showChallengeMenu && !creatingChallenge && (
-                  <>
-                    <div onClick={() => setShowChallengeMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
-                    <div style={{
-                      position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 50,
-                      background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
-                      width: 160, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
-                    }}>
-                      <div style={{ padding: "6px 10px 4px", fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        PvP MODE
-                      </div>
-                      <button onClick={() => handleCreateChallenge(false)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
-                        onMouseLeave={e => (e.currentTarget.style.background = "none") }
-                      >
-                        <Link style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
-                        <div>
-                          <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Challenge Link</div>
-                          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Opponent sees your team, picks theirs</div>
-                        </div>
-                      </button>
-                      <button onClick={() => handleCreateChallenge(true)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left", borderTop: "1px solid rgba(255,255,255,0.04)" }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
-                        onMouseLeave={e => (e.currentTarget.style.background = "none") }
-                      >
-                        <EyeOff style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
-                        <div>
-                          <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Blind Pick</div>
-                          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Teams hidden until both sides lock in</div>
-                        </div>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Upset Mode toggle */}
-            <div className="px-2 pb-1.5 flex items-center justify-between">
-              <button
-                onClick={() => setUpsetMode(m => !m)}
-                className="flex items-center gap-1.5 transition-all duration-200 active:scale-[0.97]"
-                style={{ cursor: "pointer", background: "none", border: "none", padding: 0 }}
-                title={upsetMode ? "Upset Mode ON — bypasses cached verdict, runs a fresh sim" : "Upset Mode OFF — cached verdict used for consistency"}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 14,
-                    borderRadius: 7,
-                    background: upsetMode ? "rgba(255,160,0,0.8)" : "rgba(255,255,255,0.1)",
-                    border: upsetMode ? "1px solid rgba(255,160,0,0.9)" : "1px solid rgba(255,255,255,0.15)",
-                    position: "relative",
-                    transition: "background 0.2s, border 0.2s",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      background: upsetMode ? "#fff" : "rgba(255,255,255,0.35)",
-                      position: "absolute",
-                      top: 1,
-                      left: upsetMode ? 15 : 2,
-                      transition: "left 0.2s, background 0.2s",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontFamily: "var(--font-display, monospace)",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: upsetMode ? "rgba(255,160,0,0.9)" : "rgba(255,255,255,0.3)",
-                    transition: "color 0.2s",
-                  }}
-                >
-                  UPSET MODE
-                </span>
-              </button>
-              {upsetMode && (
-                <span style={{ fontSize: 8, color: "rgba(255,160,0,0.6)", letterSpacing: "0.1em", fontFamily: "var(--font-display, monospace)" }}>
-                  BYPASSES VERDICT CACHE
-                </span>
-              )}
-            </div>
-
+              </NavLink>
+            </Show>
+            <Show when="signed-in">
+              <HomeProfileButton />
+            </Show>
           </div>
         </div>
 
