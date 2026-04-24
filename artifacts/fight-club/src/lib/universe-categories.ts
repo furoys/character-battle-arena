@@ -1,7 +1,7 @@
 export type UniverseCategory =
   | "Multiverse"
   | "Legacy"
-  | "Disney"
+  | "Kingdom"
   | "Anime"
   | "Games"
   | "Movies & TV"
@@ -14,7 +14,7 @@ export type UniverseCategory =
 export const CATEGORY_ORDER: UniverseCategory[] = [
   "Multiverse",
   "Legacy",
-  "Disney",
+  "Kingdom",
   "Anime",
   "Games",
   "Movies & TV",
@@ -28,7 +28,7 @@ export const CATEGORY_ORDER: UniverseCategory[] = [
 export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
   "Multiverse":      "#ed1d24",
   "Legacy":          "#0476f2",
-  "Disney":          "#bf5af2",
+  "Kingdom":          "#bf5af2",
   "Anime":           "#ff6b9d",
   "Games":           "#30d158",
   "Movies & TV":     "#ff9f0a",
@@ -44,8 +44,8 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Multiverse Comics": "Multiverse",
   // Legacy
   "Legacy Comics": "Legacy",
-  // Disney
-  "Disney": "Disney",
+  // Kingdom
+  "Kingdom": "Kingdom",
   // Anime / Manga
   "Naruto": "Anime",
   "Dragon Ball": "Anime",

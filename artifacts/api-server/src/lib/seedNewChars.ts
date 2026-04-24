@@ -1762,10 +1762,10 @@ export async function seedNewChars(): Promise<void> {
     console.log(`[seed] Synced ${dumpInserted} character(s) from full roster dump`);
   }
 
-  // One-off rename: "Marvel Comics" → "Multiverse Comics", "DC Comics" → "Legacy Comics"
-  // Safe to run repeatedly — no-ops once renamed.
+  // One-off renames — safe to run repeatedly, no-ops once done.
   await db.execute(sql`UPDATE characters SET universe = 'Multiverse Comics' WHERE universe = 'Marvel Comics'`);
   await db.execute(sql`UPDATE characters SET universe = 'Legacy Comics' WHERE universe = 'DC Comics'`);
+  await db.execute(sql`UPDATE characters SET universe = 'Kingdom' WHERE universe = 'Disney'`);
 
   // One-off cleanup: remove the legacy "Dr. Manhattan" duplicate (the
   // canonical entry is "Doctor Manhattan"). Safe to run repeatedly — no-op
