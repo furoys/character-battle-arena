@@ -5118,6 +5118,12 @@ uri = "file://attached_assets/portrait_samples/the-mandalorian.png"
 type = "image"
 title = "armored bounty hunter photorealistic"
 
+[[generated]]
+id = "Jm5bCZA-_X6FFN_Fds6fh"
+uri = "file://attached_assets/generated_images/pitt_portrait.png"
+type = "image"
+title = "Pitt alien warrior portrait"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
@@ -5255,3 +5261,9 @@ id = "zD6xUxRLxLpwmRJKp4FHf"
 uri = "file://attached_assets/image_search/pitt_portrait_4.jpg"
 type = "image"
 title = "Pitt portrait 4"
+
+[[outputs]]
+id = "XC1jZ0xVPrqyTzn45AW1N"
+uri = "file://attached_assets/generated_images/pitt_portrait.png"
+type = "image"
+title = "Pitt — AI Generated Portrait"

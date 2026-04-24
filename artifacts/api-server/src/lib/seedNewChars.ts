@@ -36,7 +36,7 @@ const newChars = [
   {
     name: "Pitt",
     universe: "Full Bleed Studios",
-    imageUrl: null,
+    imageUrl: "/characters/pitt.jpg",
     strength: 9600, speed: 7400, intelligence: 6200, durability: 9400,
     specialAbility: "Half-human, half-Creed war-beast physiology — possesses superhuman strength surpassing most cosmic-tier fighters; regenerative healing factor that knits catastrophic wounds within seconds; retractable adamantium-dense alien claws that shred reinforced steel; rage escalation that multiplies output the more damage he sustains; symbiotic protective bond with Timmy that removes all mental limiters when the child is in danger",
     weaknesses: "Berserker rage state impairs tactical thinking and makes him susceptible to environmental traps; the bond with Timmy can be exploited as an emotional lever; certain high-frequency energy attacks interfere with his alien physiology; his Creed half surfaces under extreme stress, reducing self-control",
