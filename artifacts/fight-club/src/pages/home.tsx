@@ -515,6 +515,22 @@ export function Home() {
           0%, 100% { box-shadow: 0 0 20px rgba(255,0,85,0.4), 0 0 40px rgba(255,0,85,0.15); }
           50% { box-shadow: 0 0 30px rgba(255,0,85,0.7), 0 0 60px rgba(255,0,85,0.3); }
         }
+        @keyframes vsPulse {
+          0%, 100% {
+            transform: scale(1) skewX(-4deg);
+            text-shadow: 0 0 14px rgba(255,0,85,0.95), 0 0 28px rgba(255,0,85,0.55), 0 0 50px rgba(255,0,85,0.25);
+          }
+          50% {
+            transform: scale(1.12) skewX(-4deg);
+            text-shadow: 0 0 22px rgba(255,0,85,1), 0 0 44px rgba(255,0,85,0.8), 0 0 80px rgba(255,0,85,0.4);
+          }
+        }
+        @keyframes vsHalo {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.3); }
+        }
+        .ava-vs-pulse { animation: vsPulse 1.4s ease-in-out infinite; transform-origin: center; display: inline-block; }
+        .ava-vs-halo  { animation: vsHalo 1.4s ease-in-out infinite; }
         @keyframes fingerBounce {
           0%, 100% { transform: translateY(0) rotate(-5deg) scale(1); }
           20% { transform: translateY(-18px) rotate(5deg) scale(1.15); }
@@ -620,8 +636,15 @@ export function Home() {
           </div>
         ) : (
           <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
-            {/* Search + filter — scrolls naturally with character grid */}
-            <div className="px-3 pt-1.5 pb-1.5 space-y-1">
+            {/* Search + filter — sticky so users can refilter without scrolling back up */}
+            <div
+              className="px-3 pt-1.5 pb-1.5 space-y-1 sticky top-0 z-20"
+              style={{
+                background: "rgba(3,3,8,0.92)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>
               {/* Row 1: Search + tier icons + FAVES */}
               <div className="flex gap-1.5 items-center">
                 <div className="relative flex-1">
@@ -755,7 +778,7 @@ export function Home() {
             {/* Filter status bar — only shown when a filter/search is active */}
             {(activeFilter || searchQuery || tierFilter !== "all") && (
               <div
-                className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
+                className="flex items-center justify-between px-3 py-1.5"
                 style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
@@ -856,12 +879,30 @@ export function Home() {
               onActivate={() => setActiveTeam(1)}
               onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
             />
-            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 24 }}>
+            <div
+              className="flex-shrink-0 flex items-center justify-center relative"
+              style={{ width: 46 }}
+            >
+              {/* Soft halo behind the VS */}
               <div
-                className="font-display text-xs uppercase tracking-[0.3em] leading-none"
-                style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
+                className="absolute inset-0 ava-vs-halo"
+                style={{
+                  background: "radial-gradient(circle at center, rgba(255,0,85,0.35) 0%, transparent 65%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                className="ava-vs-pulse font-display font-black uppercase relative"
+                style={{
+                  fontSize: 30,
+                  color: "#fff",
+                  WebkitTextStroke: "1px #ff0055",
+                  textShadow: "0 0 14px rgba(255,0,85,0.95), 0 0 28px rgba(255,0,85,0.55), 0 0 50px rgba(255,0,85,0.25)",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1,
+                }}
               >
-                vs
+                VS
               </div>
             </div>
             <TeamSlot
