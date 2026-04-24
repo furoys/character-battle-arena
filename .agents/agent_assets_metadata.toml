@@ -5160,6 +5160,24 @@ uri = "file://attached_assets/generated_images/pitt_head_c.png"
 type = "image"
 title = "Pitt three-quarter concept art"
 
+[[generated]]
+id = "iqVeOQBCZy6rkV1HePm-j"
+uri = "file://attached_assets/generated_images/pitt_hair_a.png"
+type = "image"
+title = "Pitt wild dark hair warrior"
+
+[[generated]]
+id = "82YVKXCyaTrpL20_GOcMr"
+uri = "file://attached_assets/generated_images/pitt_hair_b.png"
+type = "image"
+title = "Pitt matted dark hair combat"
+
+[[generated]]
+id = "SRFImIwhMEbkRvYBg_1S2"
+uri = "file://attached_assets/generated_images/pitt_hair_c.png"
+type = "image"
+title = "Pitt long dark hair concept"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
@@ -5339,3 +5357,21 @@ id = "LRMrUcNvE6sHZcOYDv3Vd"
 uri = "file://attached_assets/generated_images/pitt_head_c.png"
 type = "image"
 title = "Option C — Three-quarter standing pose, concept art"
+
+[[outputs]]
+id = "YT208CwSEGsgcFGjdNg9Y"
+uri = "file://attached_assets/generated_images/pitt_hair_a.png"
+type = "image"
+title = "Option A — Wild flowing hair, rain, red atmosphere"
+
+[[outputs]]
+id = "Kyh2vz6zMCFnA1C88JGKM"
+uri = "file://attached_assets/generated_images/pitt_hair_b.png"
+type = "image"
+title = "Option B — Matted battle hair, combat stance, stormy sky"
+
+[[outputs]]
+id = "jert0SBo98SmECgBNy4Lw"
+uri = "file://attached_assets/generated_images/pitt_hair_c.png"
+type = "image"
+title = "Option C — Long tangled hair, three-quarter view, red/black palette"
