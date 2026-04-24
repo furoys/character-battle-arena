@@ -5207,3 +5207,51 @@ id = "8NplZbyarggzawDw944Gm"
 uri = "file://artifacts/fight-club/public/feature-graphic.jpg"
 type = "image"
 title = "A.v.A — Play Store Feature Graphic (1024×500)"
+
+[[outputs]]
+id = "0Bs9MlKahAWG_u9e09vLC"
+uri = "file://attached_assets/image_search/pitt_1.jpg"
+type = "image"
+title = "Pitt option 1"
+
+[[outputs]]
+id = "SPTWJDD8clPwwdrjflXxc"
+uri = "file://attached_assets/image_search/pitt_2.jpg"
+type = "image"
+title = "Pitt option 2"
+
+[[outputs]]
+id = "6E_oIruckNTEMmCo2TLtK"
+uri = "file://attached_assets/image_search/pitt_3.jpg"
+type = "image"
+title = "Pitt option 3"
+
+[[outputs]]
+id = "h5HQg6jpDF0VhcyWv_J9I"
+uri = "file://attached_assets/image_search/pitt_4.jpg"
+type = "image"
+title = "Pitt option 4"
+
+[[outputs]]
+id = "3TQjeGP-2P1XhMPjUPW5u"
+uri = "file://attached_assets/image_search/pitt_portrait_1.jpg"
+type = "image"
+title = "Pitt portrait 1"
+
+[[outputs]]
+id = "k4y1WKEBuOQsbAv_aFTSj"
+uri = "file://attached_assets/image_search/pitt_portrait_2.jpg"
+type = "image"
+title = "Pitt portrait 2"
+
+[[outputs]]
+id = "iOJnHCNAiBjuW6VXTizbc"
+uri = "file://attached_assets/image_search/pitt_portrait_3.jpg"
+type = "image"
+title = "Pitt portrait 3"
+
+[[outputs]]
+id = "zD6xUxRLxLpwmRJKp4FHf"
+uri = "file://attached_assets/image_search/pitt_portrait_4.jpg"
+type = "image"
+title = "Pitt portrait 4"
