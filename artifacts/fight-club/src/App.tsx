@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { AgeGate } from "@/components/age-gate";
+import { RotatePrompt } from "@/components/rotate-prompt";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
 // Pages
@@ -113,6 +114,7 @@ function ClerkProviderWithRoutes() {
             <Router />
           </Layout>
           <AgeGate />
+          <RotatePrompt />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
