@@ -5124,6 +5124,24 @@ uri = "file://attached_assets/generated_images/pitt_portrait.png"
 type = "image"
 title = "Pitt alien warrior portrait"
 
+[[generated]]
+id = "7Azf9EYbF6vP1odGgJkze"
+uri = "file://attached_assets/generated_images/pitt_v2.png"
+type = "image"
+title = "Pitt hyperrealistic dark fantasy"
+
+[[generated]]
+id = "LhAV3ZaHrCuAim5sUTdAG"
+uri = "file://attached_assets/generated_images/pitt_v3.png"
+type = "image"
+title = "Pitt dark comic noir"
+
+[[generated]]
+id = "ko3DnKbcmhBbd-hoeNMOG"
+uri = "file://attached_assets/generated_images/pitt_v4.png"
+type = "image"
+title = "Pitt cinematic character art"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
@@ -5267,3 +5285,21 @@ id = "XC1jZ0xVPrqyTzn45AW1N"
 uri = "file://attached_assets/generated_images/pitt_portrait.png"
 type = "image"
 title = "Pitt — AI Generated Portrait"
+
+[[outputs]]
+id = "l7UIijuGSWboVhtCIWCvp"
+uri = "file://attached_assets/generated_images/pitt_v2.png"
+type = "image"
+title = "Option A — Hyperrealistic dark fantasy (rain + rim light)"
+
+[[outputs]]
+id = "2M4ZK76Ue8cdLv279wKYO"
+uri = "file://attached_assets/generated_images/pitt_v3.png"
+type = "image"
+title = "Option B — Dark comic noir (ink wash, blood moon)"
+
+[[outputs]]
+id = "o2s4HKuVofCQx40Xl0Aa1"
+uri = "file://attached_assets/generated_images/pitt_v4.png"
+type = "image"
+title = "Option C — Cinematic digital painting (arena glow)"
