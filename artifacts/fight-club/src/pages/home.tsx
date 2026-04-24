@@ -76,16 +76,18 @@ function TeamPortrait({ character, team, onRemove }: { character: Character; tea
 }
 
 // ─── Team slot ───────────────────────────────────────────────────────────────
-function TeamSlot({ team, members, active, onActivate, onRemove }: {
+function TeamSlot({ team, members, active, flash, onActivate, onRemove }: {
   team: 1 | 2;
   members: Character[];
   active: boolean;
+  flash: boolean;
   onActivate: () => void;
   onRemove: (id: number) => void;
 }) {
   const color = team === 1 ? "#00f0ff" : "#ff3b30";
   const dimColor = team === 1 ? "rgba(0,240,255,0.08)" : "rgba(255,59,48,0.08)";
   const glowColor = team === 1 ? "rgba(0,240,255,0.25)" : "rgba(255,59,48,0.25)";
+  const flashGlow = team === 1 ? "rgba(0,240,255,0.85)" : "rgba(255,59,48,0.85)";
   const totalPower = members.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
 
   return (
@@ -94,9 +96,12 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
       style={{
         background: active ? dimColor : "rgba(255,255,255,0.02)",
         border: `1px solid ${active ? color + "60" : "rgba(255,255,255,0.08)"}`,
-        boxShadow: active ? `0 0 24px ${glowColor}` : "none",
+        boxShadow: flash
+          ? `0 0 0 2px ${flashGlow}, 0 0 32px ${flashGlow}`
+          : active ? `0 0 24px ${glowColor}` : "none",
         padding: "6px 8px 4px",
         minWidth: 0,
+        animation: flash ? "slotPop 360ms ease-out" : undefined,
       }}
       onClick={onActivate}
     >
@@ -257,6 +262,14 @@ export function Home() {
   const [team1, setTeam1] = useState<Character[]>([]);
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
+  const [flashTeam, setFlashTeam] = useState<1 | 2 | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerFlash = (team: 1 | 2) => {
+    setFlashTeam(null);
+    requestAnimationFrame(() => setFlashTeam(team));
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashTeam(null), 380);
+  };
   const [showModal, setShowModal] = useState(false);
   const [showRefusal, setShowRefusal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -396,9 +409,11 @@ export function Home() {
     if (activeTeam === 1) {
       if (team1.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam1(t => [...t, character]);
+      triggerFlash(1);
     } else {
       if (team2.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam2(t => [...t, character]);
+      triggerFlash(2);
     }
   };
 
@@ -519,6 +534,11 @@ export function Home() {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.7; }
         }
+        @keyframes slotPop {
+          0% { transform: scale(1); }
+          35% { transform: scale(1.04); }
+          100% { transform: scale(1); }
+        }
       `}</style>
 
       <div className="flex flex-col h-full min-h-0">
@@ -532,6 +552,39 @@ export function Home() {
         >
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
+            {/* UPSET MODE — promoted to the top bar so the primary action row
+                stays focused on starting matches. Tap to toggle cached vs
+                fresh verdict generation. */}
+            <button
+              onClick={() => setUpsetMode(m => !m)}
+              className="flex items-center gap-1 transition-all duration-200 active:scale-[0.97]"
+              style={{
+                height: 24,
+                padding: "0 7px",
+                background: upsetMode ? "rgba(255,160,0,0.14)" : "transparent",
+                border: `1px solid ${upsetMode ? "rgba(255,160,0,0.6)" : "rgba(255,255,255,0.12)"}`,
+                cursor: "pointer",
+              }}
+              title={upsetMode ? "Upset Mode ON — bypasses cached verdict" : "Upset Mode OFF — uses cached verdict"}
+            >
+              <Zap
+                className="h-3 w-3"
+                style={{ color: upsetMode ? "#ffa000" : "rgba(255,255,255,0.4)" }}
+                fill={upsetMode ? "#ffa000" : "none"}
+              />
+              <span
+                style={{
+                  fontSize: 8,
+                  fontFamily: "var(--font-display, monospace)",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  color: upsetMode ? "rgba(255,160,0,0.95)" : "rgba(255,255,255,0.45)",
+                }}
+              >
+                Upset
+              </span>
+            </button>
             <Show when="signed-out">
               <NavLink href="/sign-in">
                 <button
@@ -799,6 +852,7 @@ export function Home() {
               team={1}
               members={team1}
               active={activeTeam === 1}
+              flash={flashTeam === 1}
               onActivate={() => setActiveTeam(1)}
               onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
             />
@@ -814,6 +868,7 @@ export function Home() {
               team={2}
               members={team2}
               active={activeTeam === 2}
+              flash={flashTeam === 2}
               onActivate={() => setActiveTeam(2)}
               onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
             />
@@ -822,13 +877,13 @@ export function Home() {
           {/* Power comparison bar */}
           <PowerComparison team1={team1} team2={team2} />
 
-          {/* Synergy strip */}
-          {synergyPills.length > 0 && (
-            <div
-              className="flex gap-1 overflow-x-auto px-2 pb-1"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {synergyPills.map((p, i) => {
+          {/* Synergy strip — container always rendered to keep dock height
+              stable so the character grid above doesn't reflow as teams change. */}
+          <div
+            className="flex gap-1 overflow-x-auto px-2 pb-1"
+            style={{ scrollbarWidth: "none", minHeight: 18 }}
+          >
+            {synergyPills.length > 0 && synergyPills.map((p, i) => {
                 const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
                 const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
                 return (
@@ -853,10 +908,9 @@ export function Home() {
                   </div>
                 );
               })}
-            </div>
-          )}
+          </div>
 
-          {/* Secondary action row: RANDOM | CHALLENGE | UPSET */}
+          {/* Secondary action row: RANDOM | CHALLENGE */}
           <div className="px-2 pb-2 pt-1 flex gap-1.5 items-center">
             {/* RANDOM */}
             <button
@@ -935,37 +989,6 @@ export function Home() {
               )}
             </div>
 
-            {/* UPSET MODE toggle — compact */}
-            <button
-              onClick={() => setUpsetMode(m => !m)}
-              className="flex items-center gap-1 transition-all duration-200 active:scale-[0.97] flex-shrink-0"
-              style={{
-                height: 30,
-                padding: "0 8px",
-                background: upsetMode ? "rgba(255,160,0,0.12)" : "transparent",
-                border: `1.5px solid ${upsetMode ? "rgba(255,160,0,0.6)" : "rgba(255,255,255,0.1)"}`,
-                cursor: "pointer",
-              }}
-              title={upsetMode ? "Upset Mode ON — bypasses cached verdict" : "Upset Mode OFF — uses cached verdict"}
-            >
-              <Zap
-                className="h-3 w-3"
-                style={{ color: upsetMode ? "#ffa000" : "rgba(255,255,255,0.3)" }}
-                fill={upsetMode ? "#ffa000" : "none"}
-              />
-              <span
-                style={{
-                  fontSize: 8,
-                  fontFamily: "var(--font-display, monospace)",
-                  letterSpacing: "0.15em",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                  color: upsetMode ? "rgba(255,160,0,0.95)" : "rgba(255,255,255,0.3)",
-                }}
-              >
-                Upset
-              </span>
-            </button>
           </div>
         </div>
 
