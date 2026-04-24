@@ -34,7 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/40 bg-background/95 backdrop-blur h-[72px] grid grid-cols-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030308] h-[72px] grid grid-cols-2">
         {navItems.map((item) => {
           const active = location === item.href;
           return (
