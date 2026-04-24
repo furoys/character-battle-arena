@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Character, FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character, FightResult, FightRound } from "@workspace/api-client-react";
 import { Swords, RotateCcw, Copy, Check, Share2 } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";
 

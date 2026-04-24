@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 
 export type PowerType = "FIRE" | "LIGHTNING" | "PSYCHIC" | "IRON" | "COSMIC";
 

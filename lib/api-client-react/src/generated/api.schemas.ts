@@ -29,6 +29,8 @@ export interface Character {
   weaknesses: string;
   description: string;
   imageUrl?: string | null;
+  /** Tags describing the character's combat behavior / archetype */
+  behaviorTags?: string[] | null;
   createdAt: string;
 }
 
@@ -130,6 +132,12 @@ export interface FightResult {
   intro?: string;
   /** AI-generated array of reasons why the winner won (5 sentences) */
   whyWon?: string[];
+  /** True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase) */
+  settled?: boolean;
+  /** Estimated win rate (50-100) of the winning team in this matchup */
+  winRate?: number;
+  /** How many times this exact matchup has been simulated */
+  rematchCount?: number;
   simulatedAt: string;
 }
 

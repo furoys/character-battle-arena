@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/react";
 import { useListCharacters } from "@workspace/api-client-react";
-import type { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Character } from "@workspace/api-client-react";
 
 export function getAvatarCharacterId(user: ReturnType<typeof useUser>["user"]): number | null {
   const meta = user?.unsafeMetadata as { avatarCharacterId?: number } | undefined;

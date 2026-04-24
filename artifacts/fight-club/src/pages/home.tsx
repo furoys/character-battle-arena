@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useListCharacters } from "@workspace/api-client-react";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";

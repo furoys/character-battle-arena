@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
+import { FightResult, FightRound } from "@workspace/api-client-react";
 import { ChevronLeft, Swords, Zap, Trophy, FastForward } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 
@@ -322,6 +322,7 @@ function FightBanner({
       const t = setTimeout(() => setClashFlash(false), 500);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [attackingTeam]);
 
   return (
@@ -532,6 +533,7 @@ export function FightScreen({
       return () => cancelAnimationFrame(raf);
     }
     prevVisibleCount.current = visibleCount;
+    return undefined;
   }, [visibleCount]);
 
   useEffect(() => {

@@ -261,6 +261,12 @@ components:
         imageUrl:
           type: string
           nullable: true
+        behaviorTags:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: "Tags describing the character's combat behavior / archetype"
         createdAt:
           type: string
           format: date-time
@@ -439,6 +445,15 @@ components:
           items:
             type: string
           description: "AI-generated array of reasons why the winner won (5 sentences)"
+        settled:
+          type: boolean
+          description: "True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase)"
+        winRate:
+          type: integer
+          description: "Estimated win rate (50-100) of the winning team in this matchup"
+        rematchCount:
+          type: integer
+          description: "How many times this exact matchup has been simulated"
         simulatedAt:
           type: string
           format: date-time

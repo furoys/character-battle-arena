@@ -164,7 +164,7 @@ export function Fights() {
 
   const handleDeleteOne = async (id: number) => {
     try {
-      await deleteFight.mutateAsync(id);
+      await deleteFight.mutateAsync({ id });
       queryClient.invalidateQueries({ queryKey: getListFightsQueryKey() });
       if (expandedId === id) setExpandedId(null);
     } catch {

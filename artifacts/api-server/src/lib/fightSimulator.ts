@@ -3119,7 +3119,11 @@ async function aiAssessMatchup(
       ),
     ]);
 
-    const json = JSON.parse((raw as Awaited<ReturnType<typeof openai.chat.completions.create>>).choices[0]?.message?.content ?? "{}");
+    // We never pass stream:true to this call, so the SDK returns a
+    // ChatCompletion (not a Stream). Cast through the structural shape we
+    // need to defeat the SDK's union return type.
+    const completion = raw as { choices: Array<{ message?: { content?: string | null } }> };
+    const json = JSON.parse(completion.choices[0]?.message?.content ?? "{}");
     const verdict  = json.verdict ?? {};
     const rawWinner: string = verdict.winner ?? "";
     const aiWinner: 1 | 2 = rawWinner.toLowerCase().includes("team 2") ? 2 : 1;
