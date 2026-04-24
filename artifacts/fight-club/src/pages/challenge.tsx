@@ -327,6 +327,9 @@ export function Challenge() {
   const [showFight, setShowFight] = useState(false);
   const [fightTeam1, setFightTeam1] = useState<number[]>([]);
   const [fightTeam2, setFightTeam2] = useState<number[]>([]);
+  // Hooks MUST live above the early-return guards below; testingPush is used
+  // by the optional "TEST PING" button further down the render.
+  const [testingPush, setTestingPush] = useState(false);
 
   const { isMinor } = useAgeMode();
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -527,6 +530,19 @@ export function Challenge() {
   const ownToken = isCreatorView ? creatorToken : joinerToken;
   const ownReady = ownSide === 1 ? !!challenge?.team1Ready : ownSide === 2 ? !!challenge?.team2Ready : false;
   const opponentReady = ownSide === 1 ? !!challenge?.team2Ready : ownSide === 2 ? !!challenge?.team1Ready : false;
+
+  // Re-attach a push subscription whenever a player revisits a challenge
+  // they already own a token for. Handles PWA reinstall, browser storage
+  // wipe, or SW unregister since the original create/accept. prompt:false
+  // keeps it silent — if permission isn't granted, the in-page button asks.
+  // Without this, the only push subscription we ever stored is from the
+  // moment of create/accept, and any later device change leaves the player
+  // unreachable.
+  useEffect(() => {
+    if (!challenge || !ownToken) return;
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    void subscribeForChallenge({ code: challenge.code, token: ownToken, prompt: false });
+  }, [challenge?.code, ownToken]);
 
   // Stranger arrived after someone else accepted the link — there's nothing
   // for them to do, so show the "already accepted" page.
@@ -850,6 +866,40 @@ export function Challenge() {
     }
   };
 
+  // Round-trip a push from server → SW → OS notification so the user can
+  // confirm end-to-end delivery actually works on their device. If 0 are
+  // sent, their subscription is gone (or was never registered) — we
+  // re-subscribe and ask them to try once more.
+  const sendTestPush = async () => {
+    if (!challenge || !ownToken || testingPush) return;
+    setTestingPush(true);
+    try {
+      const r = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: challenge.code, token: ownToken }),
+      });
+      const j = await r.json().catch(() => ({})) as { sent?: number; failed?: number; error?: string };
+      if (!r.ok) {
+        toast({ title: "Test failed", description: j.error ?? "Server rejected the request.", variant: "destructive" });
+      } else if ((j.sent ?? 0) === 0) {
+        // Subscription is gone — try registering a fresh one and tell them.
+        await subscribeForChallenge({ code: challenge.code, token: ownToken, prompt: false });
+        toast({
+          title: "No subscription on file",
+          description: "Re-registered just now. Tap test again — you should see a notification.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Test push sent", description: "Should appear in your tray within a few seconds." });
+      }
+    } catch (e) {
+      toast({ title: "Test failed", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setTestingPush(false);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#030308" }}>
       {/* Header */}
@@ -992,26 +1042,46 @@ export function Challenge() {
             </div>
           )}
 
-          {/* Push status pill */}
+          {/* Push status pill + test button */}
           {ownToken && (
-            <button
-              onClick={enableNotifications}
-              style={{
-                margin: "0 auto", padding: "6px 12px",
-                fontSize: 8, letterSpacing: "0.18em", fontWeight: 700,
-                background: pushOn ? "rgba(0,240,255,0.06)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${pushOn ? "rgba(0,240,255,0.3)" : "rgba(255,255,255,0.1)"}`,
-                color: pushOn ? "rgba(0,240,255,0.85)" : "rgba(255,255,255,0.4)",
-                cursor: pushOn ? "default" : "pointer",
-                display: "inline-flex", alignItems: "center", gap: 6,
-                fontFamily: "inherit",
-              }}
-              disabled={pushOn}
-            >
-              {pushOn
-                ? <>🔔 NOTIFICATIONS ON</>
-                : <><BellOff style={{ width: 10, height: 10 }} /> ENABLE NOTIFICATIONS</>}
-            </button>
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                onClick={enableNotifications}
+                style={{
+                  padding: "6px 12px",
+                  fontSize: 8, letterSpacing: "0.18em", fontWeight: 700,
+                  background: pushOn ? "rgba(0,240,255,0.06)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${pushOn ? "rgba(0,240,255,0.3)" : "rgba(255,255,255,0.1)"}`,
+                  color: pushOn ? "rgba(0,240,255,0.85)" : "rgba(255,255,255,0.4)",
+                  cursor: pushOn ? "default" : "pointer",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontFamily: "inherit",
+                }}
+                disabled={pushOn}
+              >
+                {pushOn
+                  ? <>🔔 NOTIFICATIONS ON</>
+                  : <><BellOff style={{ width: 10, height: 10 }} /> ENABLE NOTIFICATIONS</>}
+              </button>
+              {pushOn && (
+                <button
+                  onClick={sendTestPush}
+                  disabled={testingPush}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: 8, letterSpacing: "0.18em", fontWeight: 700,
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: testingPush ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.6)",
+                    cursor: testingPush ? "default" : "pointer",
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {testingPush ? "…" : "TEST PING"}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -1068,7 +1138,10 @@ export function Challenge() {
       {/* ── Fight overlay ─────────────────────────────────────────── */}
       <FightScreen
         open={showFight}
-        onClose={() => { simulateFight.reset(); setShowFight(false); }}
+        // Closing a challenge fight should never trap the players in the
+        // (now-stale) lobby — both sides are already READY, so the lobby has
+        // no useful action left. Take them straight back to home.
+        onClose={() => { simulateFight.reset(); setShowFight(false); navigate("/"); }}
         onRematch={() => startFight(fightTeam1, fightTeam2, challenge.mode)}
         result={censoredResult}
         isSimulating={simulateFight.isPending && !simulateFight.streaming}

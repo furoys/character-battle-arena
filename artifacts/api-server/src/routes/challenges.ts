@@ -79,6 +79,37 @@ router.post("/push/subscribe", async (req, res): Promise<void> => {
   res.json({ ok: true, role });
 });
 
+// ── Web Push: send a test ping to oneself ───────────────────────────────────
+// Lets the player verify their device + browser actually receives a push from
+// our server end-to-end, before they go waste time creating a real challenge.
+// Token-gated so randoms can't spam someone else's device.
+router.post("/push/test", async (req, res): Promise<void> => {
+  const { code, token } = req.body as { code?: string; token?: string };
+  if (!code || !token) { res.status(400).json({ error: "Missing code or token" }); return; }
+
+  const [challenge] = await db.select().from(challengesTable)
+    .where(eq(challengesTable.code, code.toUpperCase())).limit(1);
+  if (!challenge) { res.status(404).json({ error: "Challenge not found" }); return; }
+  // Don't let the test endpoint be a free push channel for stale or done
+  // challenges — once expired or completed there's no UX reason to ping
+  // anyone, and we don't want it abused to spam still-valid endpoints.
+  if (new Date() > challenge.expiresAt) { res.status(410).json({ error: "Challenge expired" }); return; }
+  if (challenge.status === "completed") { res.status(409).json({ error: "Challenge already completed" }); return; }
+
+  let role: "creator" | "joiner" | null = null;
+  if (challenge.creatorToken && challenge.creatorToken === token) role = "creator";
+  else if (challenge.joinerToken && challenge.joinerToken === token) role = "joiner";
+  if (!role) { res.status(403).json({ error: "Invalid token for this challenge" }); return; }
+
+  const result = await sendPushToChallengeRole(challenge.code, role, {
+    title: "A.v.A test ping",
+    body: "If you can read this, push notifications are working.",
+    url: `challenge/${challenge.code}${role === "creator" ? "?creator=1" : ""}`,
+    tag: `test-${challenge.code}`,
+  });
+  res.json({ ...result, role });
+});
+
 // ── Create challenge ─────────────────────────────────────────────────────────
 router.post("/challenges", async (req, res): Promise<void> => {
   const { team1Ids, mode = "cinematic", blind = false } = req.body;

@@ -74,5 +74,8 @@ export async function sendPushToChallengeRole(
     }
   }));
 
+  // Always log the outcome so we can diagnose silent push failures by reading
+  // the deployment logs after the fact.
+  logger.info({ challengeCode, role, total: subs.length, sent, failed }, "push send complete");
   return { sent, failed };
 }

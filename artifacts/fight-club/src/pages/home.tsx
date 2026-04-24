@@ -17,8 +17,9 @@ import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setCreatorToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge } from "@/lib/push-subscribe";
-import { LS_LAST_MODIFIER } from "@/lib/modifiers";
-import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
+import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
+import { ModifierPicker, useStoredModifier } from "@/components/modifier-picker";
+import { PendingChallengesBar } from "@/components/pending-challenges-bar";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -442,7 +443,9 @@ export function Home() {
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
+    // Arena (single-player) fights are intentionally chaos-modifier-free —
+    // modifiers belong to PvP challenge mode where the spice is shared.
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: null } });
   };
 
   const handleRandomFight = () => {
@@ -574,6 +577,7 @@ export function Home() {
       `}</style>
 
       <div className="flex flex-col h-full min-h-0">
+        <PendingChallengesBar />
         {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
         <div
           className="flex-shrink-0 sticky top-0 z-30 flex items-center justify-between px-3 py-2"
@@ -860,13 +864,6 @@ export function Home() {
             boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
           }}
         >
-          {/* Chaos modifier strip — sits directly above the FIGHT bar so the
-              modifier in play is visible at the moment of commitment. Always
-              visible; tapping opens a bottom-sheet picker. */}
-          {canFight && (
-            <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
-          )}
-
           {/* Glowing FIGHT bar — only when both teams have fighters */}
           {canFight && (
             <button
@@ -1023,11 +1020,34 @@ export function Home() {
                   <div style={{
                     position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 60,
                     background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
-                    width: 180, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                    width: 220, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
                   }}>
                     <div style={{ padding: "6px 10px 4px", fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                       PvP MODE
                     </div>
+                    {/* Chaos modifier — challenge-only setting. Shown inline so
+                        the creator commits to it before generating the link
+                        (the chosen modifier is locked into the challenge row
+                        and applies once both sides ready up). */}
+                    {(() => {
+                      const meta = getModifier(modifierId);
+                      return (
+                        <button
+                          onClick={() => { setShowChallengeMenu(false); setModifierPickerOpen(true); }}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.02)", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                        >
+                          <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{meta?.emoji ?? "⚙"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.55)", fontWeight: 700 }}>CHAOS MODIFIER</div>
+                            <div style={{ fontSize: 9, color: meta ? (meta.color ?? "#00f0ff") : "rgba(255,255,255,0.5)", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {meta?.label ?? "None — tap to choose"}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })()}
                     <button onClick={() => handleCreateChallenge(false)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
                       onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
                       onMouseLeave={e => (e.currentTarget.style.background = "none") }
@@ -1060,7 +1080,7 @@ export function Home() {
           open={showModal}
           onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: null } });
           }}
           result={censoredResult}
           isSimulating={simulateFight.isPending && !simulateFight.streaming}
