@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { db, challengesTable, pushSubscriptionsTable } from "@workspace/db";
 import { getOptionalUserId } from "../lib/auth";
 import { getVapidPublicKey, sendPushToChallengeRole } from "../lib/push";
+import { normalizeModifierId } from "../lib/modifiers";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -85,6 +86,9 @@ router.post("/challenges", async (req, res): Promise<void> => {
     res.status(400).json({ error: "team1Ids must be 1–5 character IDs" });
     return;
   }
+  // Optional chaos modifier picked at create time. Validated against the
+  // server registry so junk strings can't reach the prompt builder.
+  const modifierId = normalizeModifierId(req.body?.modifierId);
   let code = "";
   let attempts = 0;
   while (attempts < 10) {
@@ -100,8 +104,9 @@ router.post("/challenges", async (req, res): Promise<void> => {
     code, team1Ids, mode, blind, expiresAt,
     creatorUserId: getOptionalUserId(req),
     creatorToken,
+    modifierId,
   });
-  res.json({ code, blind, mode, creatorToken });
+  res.json({ code, blind, mode, creatorToken, modifierId });
 });
 
 // ── Get challenge state (polled by both sides) ───────────────────────────────
@@ -124,6 +129,7 @@ router.get("/challenges/:code", async (req, res): Promise<void> => {
     team1Ready: challenge.team1Ready,
     team2Ready: challenge.team2Ready,
     fightId: challenge.fightId,
+    modifierId: challenge.modifierId,
   });
 });
 

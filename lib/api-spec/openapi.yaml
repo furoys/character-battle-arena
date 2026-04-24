@@ -499,6 +499,10 @@ components:
           type: string
         intro:
           type: string
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any"
         simulatedAt:
           type: string
           format: date-time
@@ -528,6 +532,10 @@ components:
           type: integer
         summary:
           type: string
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any"
         simulatedAt:
           type: string
           format: date-time

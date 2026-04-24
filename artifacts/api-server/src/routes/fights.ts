@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { inArray, desc, eq, and, or, isNull, lt } from "drizzle-orm";
 import { db, charactersTable, fightsTable, fightCacheTable, challengesTable } from "@workspace/db";
+import { normalizeModifierId, getModifier } from "../lib/modifiers";
 import {
   SimulateFightBody,
   ListFightsResponse,
@@ -68,6 +69,7 @@ router.get("/fights", async (req, res): Promise<void> => {
         team2Names: f.team2Names,
         winner: f.winner,
         summary: f.summary,
+        modifierId: f.modifierId ?? null,
         simulatedAt: f.simulatedAt,
       })),
     ),
@@ -96,6 +98,7 @@ router.get("/fights/:id", async (req, res): Promise<void> => {
       arenaIntro: fight.arenaIntro ?? "",
       intro: fight.intro ?? "",
       whyWon: fight.whyWon ?? [],
+      modifierId: fight.modifierId ?? null,
       simulatedAt: fight.simulatedAt,
     }),
   );
@@ -177,7 +180,24 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode } = parsed.data;
+  // Server-truth: when this fight is bound to a challenge, the challenge row's
+  // modifier wins over anything the body claims. Mirrors /fights/stream so
+  // tampered body rules can never override the agreed-upon chaos rules.
+  let modifierId = normalizeModifierId(parsed.data.modifierId);
+  if (challengeCode) {
+    const code = challengeCode.toUpperCase();
+    const [ch] = await db
+      .select({ modifierId: challengesTable.modifierId })
+      .from(challengesTable)
+      .where(eq(challengesTable.code, code))
+      .limit(1);
+    if (ch) modifierId = normalizeModifierId(ch.modifierId);
+  }
+  // Modifiers that flip the verdict (Underdog) must bypass the verdict cache
+  // entirely — the cache key is composition-only, so a flipped winner would
+  // poison subsequent normal fights of the same matchup.
+  const skipCache = upset || getModifier(modifierId)?.flipUnderdog === true;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
@@ -204,7 +224,7 @@ router.post("/fights", async (req, res): Promise<void> => {
   let settled = false;
   let winRate: number | undefined;
 
-  if (!upset) {
+  if (!skipCache) {
     const [existing] = await db
       .select()
       .from(fightCacheTable)
@@ -237,10 +257,10 @@ router.post("/fights", async (req, res): Promise<void> => {
   // ── Always run a fresh AI simulation so each fight feels unique ──────────
   // Verdict is still cached (so the winner stays consistent across rematches),
   // but the narrative is regenerated every time for variety.
-  const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount);
+  const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, undefined, modifierId);
 
   // ── Store verdict in cache if this was a fresh simulation ────────────────
-  if (!upset && !cachedEntry && result.resolution) {
+  if (!skipCache && !cachedEntry && result.resolution) {
     const r = result.resolution;
     const winnerTeamCanonical = teamAIsTeam1
       ? result.winner
@@ -290,6 +310,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       intro: result.intro ?? null,
       whyWon: result.whyWon ?? [],
       userId: getOptionalUserId(req),
+      modifierId: modifierId ?? null,
     })
     .returning();
 
@@ -307,6 +328,7 @@ router.post("/fights", async (req, res): Promise<void> => {
       settled,
       winRate: winRate !== undefined && winRate <= 65 ? winRate : undefined,
       rematchCount,
+      modifierId: modifierId ?? null,
       simulatedAt: saved.simulatedAt,
     }),
   );
@@ -325,6 +347,10 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
   }
 
   const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode } = parsed.data;
+  // Modifier id can come from either the request body or — for challenge
+  // fights — the challenge row itself. Server-truth (challenge row) wins so a
+  // tampered client can't change the agreed-upon rules mid-match.
+  let modifierId = normalizeModifierId(parsed.data.modifierId);
   const normalizedChallengeCode = challengeCode ? challengeCode.toUpperCase() : null;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
@@ -404,6 +430,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       whyWon: fight.whyWon ?? [],
       settled: true,
       rematchCount: 0,
+      modifierId: fight.modifierId ?? null,
       simulatedAt: fight.simulatedAt,
     }));
   };
@@ -426,6 +453,8 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         send("error", { message: "Challenge not found" });
         return;
       }
+      // Authoritative modifier id always comes from the challenge row.
+      modifierId = normalizeModifierId(challenge.modifierId);
       // Already played → instant replay from saved fight
       if (challenge.fightId) {
         await replaySavedFight(challenge.fightId);
@@ -474,6 +503,10 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     }
 
     // ── Cache lookup (same logic as POST /fights) ────────────────────────────
+    // Same skip rule as POST /fights — verdict-flipping modifiers (Underdog)
+    // must never read or write the composition-keyed verdict cache, or they
+    // will poison subsequent normal fights for the same matchup.
+    const skipCache = upset || getModifier(modifierId)?.flipUnderdog === true;
     const { cacheKey, teamAIsTeam1 } = getCacheKey(team1Ids, team2Ids);
     let cachedResolution = null;
     let cachedEntry = null;
@@ -481,7 +514,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     let settled = false;
     let winRate: number | undefined;
 
-    if (!upset) {
+    if (!skipCache) {
       const [existing] = await db
         .select()
         .from(fightCacheTable)
@@ -531,10 +564,10 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       },
     };
 
-    const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, progress);
+    const result = await simulateFight(team1, team2, mode ?? "cinematic", cachedResolution, rematchCount, progress, modifierId);
 
     // ── Cache write (verdict only — narrative stays fresh every fight) ──────
-    if (!upset && !cachedEntry && result.resolution) {
+    if (!skipCache && !cachedEntry && result.resolution) {
       const r = result.resolution;
       const winnerTeamCanonical = teamAIsTeam1
         ? result.winner
@@ -581,6 +614,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         intro: result.intro ?? null,
         whyWon: result.whyWon ?? [],
         userId: getOptionalUserId(req),
+        modifierId: modifierId ?? null,
       })
       .returning();
 
@@ -607,6 +641,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       settled,
       winRate: winRate !== undefined && winRate <= 65 ? winRate : undefined,
       rematchCount,
+      modifierId: modifierId ?? null,
       simulatedAt: saved.simulatedAt,
     });
 

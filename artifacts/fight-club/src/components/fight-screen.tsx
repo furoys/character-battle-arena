@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react";
 import { ChevronLeft, Swords, Zap, Trophy, FastForward } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
+import { ModifierBadge } from "@/components/modifier-badge";
 
 function renderMarkdown(text: string): React.ReactNode[] {
   return text.split("\n").map((line, lineIdx) => {
@@ -154,6 +155,10 @@ interface FightScreenProps {
   // show "BEGIN MATCH" or "NEXT ROUND →" once the AI has finished writing
   // the section the user is currently reading.
   completedSections?: Set<string>;
+  // Active chaos modifier id (or null). Surfaced as a small badge in the HUD
+  // so the player always knows what rules are bending the fight. Server is
+  // the source of truth — the result payload also carries it as a fallback.
+  modifierId?: string | null;
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -432,7 +437,12 @@ export function FightScreen({
   team1Names, team2Names,
   team1Images = [], team2Images = [],
   completedSections,
+  modifierId,
 }: FightScreenProps) {
+  // Server-authoritative modifier (carried on the result payload) wins over
+  // the prop, which is just an optimistic value passed in before the stream
+  // resolves. Falls back to the prop while result is still loading.
+  const activeModifierId = (result?.modifierId as string | null | undefined) ?? modifierId ?? null;
   // Manual progression: the user controls the pace via "BEGIN MATCH" then
   // "NEXT ROUND →" buttons. visibleCount counts how many round narratives
   // are revealed (rounds beyond visibleCount stay hidden until clicked).
@@ -582,6 +592,15 @@ export function FightScreen({
             isSimulating={isSimulating}
             winner={canShowResults ? result?.winner : undefined}
           />
+
+          {/* Chaos modifier strip — small, unobtrusive, sits between portraits
+              and HP bars so the player always knows what rules are bending
+              the fight. Hidden when no modifier is active. */}
+          {activeModifierId && (
+            <div className="flex justify-center bg-card/90 py-1.5 border-t border-white/5">
+              <ModifierBadge modifierId={activeModifierId} />
+            </div>
+          )}
 
           {/* HP Bars */}
           <div className="grid grid-cols-2 bg-card/90">
