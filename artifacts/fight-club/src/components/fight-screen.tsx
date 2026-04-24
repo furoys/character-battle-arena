@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react/src/generated/api.schemas";
-import { ChevronLeft, Swords, Zap, Trophy } from "lucide-react";
+import { ChevronLeft, Swords, Zap, Trophy, FastForward } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -740,15 +740,26 @@ export function FightScreen({
           </button>
 
           {/* Right side — context-sensitive */}
-          {result && !isSimulating && (
+          {result && (
             <div className="flex items-center gap-3">
-              {/* Skip — jumps to the end for users who don't want to click through */}
-              {!canShowResults && (
+              {/* Skip — jumps to the end of the fight, available as soon as
+                  at least one round has been generated. */}
+              {!canShowResults && result.rounds.length > 0 && (
                 <button
                   onClick={handleSkip}
-                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="flex items-center gap-1.5 font-display uppercase transition-all active:scale-[0.97]"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    padding: "6px 10px",
+                    border: "1.5px solid rgba(255,255,255,0.18)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.65)",
+                  }}
+                  title="Skip the cinematic narration and jump to the verdict"
                 >
-                  Skip
+                  <FastForward className="h-3 w-3" />
+                  <span>Skip</span>
                 </button>
               )}
 
