@@ -73,6 +73,8 @@
     "vaul": "^1.1.2",
     "vite": "catalog:",
     "vite-plugin-pwa": "^1.2.0",
+    "workbox-core": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
     "wouter": "^3.3.5",
     "zod": "catalog:"
   },

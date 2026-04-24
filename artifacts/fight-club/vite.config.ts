@@ -35,8 +35,16 @@ export default defineConfig({
     runtimeErrorOverlay(),
     VitePWA({
       registerType: "autoUpdate",
+      // Use injectManifest so we can ship our own service worker (src/sw.ts)
+      // with web-push event handlers — generateSW doesn't expose those.
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       manifestFilename: "manifest.json",
       includeAssets: ["app-icon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,woff2}"],
+      },
       manifest: {
         name: "A.v.A — Anyone vs Anyone",
         short_name: "A.v.A",

@@ -6,10 +6,12 @@ import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2, X } from "lucide-react";
+import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2, X, BellOff, Check } from "lucide-react";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
+import { setJoinerToken, getCreatorToken, getJoinerToken } from "@/lib/challenge-tokens";
+import { subscribeForChallenge, pushSupported } from "@/lib/push-subscribe";
 
 interface ChallengeData {
   code: string;
@@ -19,9 +21,17 @@ interface ChallengeData {
   blind: boolean;
   status: string;
   team1Hidden: boolean;
+  team1Ready: boolean;
+  team2Ready: boolean;
+  fightId: number | null;
 }
 
-function useChallenge(code: string, pollWhileOpen = false) {
+// Polls until the challenge is "settled" — i.e. both sides ready or fight
+// completed. The poll covers two cases:
+//   - creator waiting for opponent to accept (team2Ids appears)
+//   - either side waiting for the other to hit READY in the lobby
+// We always poll while there's a chance the state can change.
+function useChallenge(code: string, polling = true) {
   const [data, setData] = useState<ChallengeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,15 +60,42 @@ function useChallenge(code: string, pollWhileOpen = false) {
   }, [code]);
 
   useEffect(() => {
-    if (!pollWhileOpen || !code) return;
+    if (!polling || !code) return;
     const interval = setInterval(async () => {
       const d = await fetchChallenge(false);
-      if (d?.team2Ids) clearInterval(interval);
+      // Once both sides are ready or the fight is on disk, no point polling.
+      if (d && (d.fightId !== null || (d.team1Ready && d.team2Ready))) {
+        clearInterval(interval);
+      }
     }, 3000);
     return () => clearInterval(interval);
-  }, [code, pollWhileOpen]);
+  }, [code, polling]);
 
   return { data, error, loading, setData };
+}
+
+function ReadyChip({ label, ready, isYou, color }: { label: string; ready: boolean; isYou: boolean; color: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "6px 11px",
+      background: ready ? `${color}15` : "rgba(255,255,255,0.03)",
+      border: `1px solid ${ready ? `${color}80` : "rgba(255,255,255,0.08)"}`,
+      color: ready ? color : "rgba(255,255,255,0.35)",
+      fontWeight: 700,
+      letterSpacing: "0.18em",
+      fontSize: 9,
+      textTransform: "uppercase",
+    }}>
+      <span style={{
+        width: 7, height: 7, borderRadius: 999,
+        background: ready ? color : "rgba(255,255,255,0.18)",
+        boxShadow: ready ? `0 0 8px ${color}` : "none",
+      }} />
+      <span>{label}{isYou ? " · YOU" : ""}</span>
+      <span style={{ opacity: 0.7 }}>{ready ? "READY" : "WAITING"}</span>
+    </div>
+  );
 }
 
 function MiniPortrait({ char, team }: { char: Character | undefined; team: 1 | 2; hidden?: boolean }) {
@@ -271,7 +308,10 @@ export function Challenge() {
   const search = useSearch();
   const isCreatorParam = new URLSearchParams(search).get("creator") === "1";
   const { toast } = useToast();
-  const { data: challenge, error: challengeError, loading, setData: setChallenge } = useChallenge(code ?? "", isCreatorParam);
+  // Always poll — both creator and joiner need to see opponent state changes
+  // (acceptance, ready toggles). The hook stops polling on its own once the
+  // fight is on disk or both sides are ready.
+  const { data: challenge, error: challengeError, loading, setData: setChallenge } = useChallenge(code ?? "", true);
   const { data: allCharacters, isLoading: charsLoading } = useListCharacters();
 
   const [team2, setTeam2] = useState<Character[]>([]);
@@ -374,16 +414,25 @@ export function Challenge() {
     });
   };
 
-  // Creator: auto-launch fight when opponent locks in (detected via polling)
+  // Reveal animation when blind challenge transitions from "no team2" to "team2".
+  // Used to be tied to auto-fight; now it just plays the reveal then drops the
+  // viewer into the lobby (where they hit READY).
   useEffect(() => {
-    if (!isCreatorParam || !challenge?.team2Ids || !challenge?.team1Ids || showFight) return;
-    if (challenge.blind) {
-      setRevealed(true);
-      setTimeout(() => startFight(challenge.team1Ids!, challenge.team2Ids!, challenge.mode), 1600);
-    } else {
+    if (!challenge?.team2Ids || !challenge.blind || revealed) return;
+    setRevealed(true);
+  }, [challenge?.team2Ids, challenge?.blind, revealed]);
+
+  // Both-ready trigger — once the server flips status to "ready" (both sides
+  // hit the READY button) we kick off the fight stream. Race-safe: server is
+  // also gated on team1Ready && team2Ready, and the existing claim-the-slot
+  // logic ensures only one client actually generates the narrative.
+  useEffect(() => {
+    if (!challenge || showFight) return;
+    if (!challenge.team1Ids || !challenge.team2Ids) return;
+    if (challenge.team1Ready && challenge.team2Ready) {
       startFight(challenge.team1Ids, challenge.team2Ids, challenge.mode);
     }
-  }, [challenge?.team2Ids, isCreatorParam]);
+  }, [challenge?.team1Ready, challenge?.team2Ready, challenge?.team1Ids, challenge?.team2Ids, showFight]);
 
   const handleAccept = async () => {
     if (!challenge || team2.length === 0) return;
@@ -398,15 +447,29 @@ export function Challenge() {
         const j = await r.json().catch(() => ({}));
         throw new Error((j as { error?: string }).error ?? "Failed to accept");
       }
-      const updated = await r.json() as { team1Ids: number[]; team2Ids: number[]; mode: string };
+      const updated = await r.json() as {
+        team1Ids: number[]; team2Ids: number[]; mode: string;
+        joinerToken?: string;
+      };
 
-      if (challenge.blind) {
-        setChallenge(prev => prev ? { ...prev, team1Ids: updated.team1Ids, team2Ids: updated.team2Ids, status: "accepted", team1Hidden: false } : prev);
-        setRevealed(true);
-        setTimeout(() => startFight(updated.team1Ids, updated.team2Ids, updated.mode), 1600);
-      } else {
-        startFight(updated.team1Ids, updated.team2Ids, updated.mode);
+      // Persist joiner identity so /ready and /push/subscribe can prove who we
+      // are. Then ask for notification permission so we can be notified when
+      // the creator hits READY in the lobby.
+      if (updated.joinerToken) {
+        setJoinerToken(challenge.code, updated.joinerToken);
+        void subscribeForChallenge({ code: challenge.code, token: updated.joinerToken, prompt: true });
       }
+
+      // Drop into the lobby — the existing render path picks LOBBY when
+      // team2Ids is set and !showFight. Blind reveal animation runs via the
+      // useEffect above.
+      setChallenge(prev => prev ? {
+        ...prev,
+        team1Ids: updated.team1Ids,
+        team2Ids: updated.team2Ids,
+        status: "accepted",
+        team1Hidden: false,
+      } : prev);
     } catch (e) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -414,10 +477,51 @@ export function Challenge() {
     }
   };
 
-  // Already used by someone else: team2 set on server, and we didn't just accept it here
-  const challengeAlreadyAccepted = !!challenge?.team2Ids && !showFight && !isCreatorParam && !revealed && !accepting;
-  // Determine if viewer is the "creator" — explicit param set when creating the challenge
-  const isCreatorView = isCreatorParam;
+  // ── Lobby: READY button handler ─────────────────────────────────────────────
+  const [readyPending, setReadyPending] = useState(false);
+  const handleReady = async () => {
+    if (!challenge || !ownToken || readyPending || ownReady) return;
+    setReadyPending(true);
+    try {
+      const r = await fetch(`/api/challenges/${challenge.code}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: ownToken, ready: true }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error((j as { error?: string }).error ?? "Failed to mark ready");
+      }
+      const upd = await r.json() as { team1Ready: boolean; team2Ready: boolean; status: string };
+      setChallenge(prev => prev ? {
+        ...prev,
+        team1Ready: upd.team1Ready,
+        team2Ready: upd.team2Ready,
+        status: upd.status,
+      } : prev);
+    } catch (e) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setReadyPending(false);
+    }
+  };
+
+  // Identify the local viewer via tokens stored in localStorage. Creator wins
+  // ties (testing both sides in one browser stays sane), and a returning
+  // creator who clicked the push notification will still be recognised even
+  // if the URL lost the ?creator=1 param.
+  const creatorToken = challenge ? getCreatorToken(challenge.code) : null;
+  const joinerToken = challenge ? getJoinerToken(challenge.code) : null;
+  const isCreatorView = isCreatorParam || !!creatorToken;
+  const isJoinerView = !isCreatorView && !!joinerToken;
+  const ownSide: 1 | 2 | null = isCreatorView ? 1 : isJoinerView ? 2 : null;
+  const ownToken = isCreatorView ? creatorToken : joinerToken;
+  const ownReady = ownSide === 1 ? !!challenge?.team1Ready : ownSide === 2 ? !!challenge?.team2Ready : false;
+  const opponentReady = ownSide === 1 ? !!challenge?.team2Ready : ownSide === 2 ? !!challenge?.team1Ready : false;
+
+  // Stranger arrived after someone else accepted the link — there's nothing
+  // for them to do, so show the "already accepted" page.
+  const challengeAlreadyAccepted = !!challenge?.team2Ids && !isCreatorView && !isJoinerView && !accepting;
   const canLockIn = team2.length === requiredTeamSize && requiredTeamSize > 0 && !accepting;
   const blindHideTeam1 = challenge?.blind && !revealed && !challenge?.team2Ids;
 
@@ -463,8 +567,11 @@ export function Challenge() {
     );
   }
 
-  /* ── OPPONENT VIEW ──────────────────────────────────────────────── */
-  if (!isCreatorView && !showFight) {
+  /* ── OPPONENT PICKER VIEW ───────────────────────────────────────── */
+  // Only shown to a fresh visitor (no token) before they've locked in a
+  // team. Once team2Ids is set on the server, both sides fall through to
+  // the lobby render block below.
+  if (!isCreatorView && !showFight && !challenge.team2Ids) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#030308", position: "relative" }}>
         {/* ── Cinematic header ─────────────────────────── */}
@@ -701,7 +808,38 @@ export function Challenge() {
     );
   }
 
-  /* ── CREATOR / DEFAULT VIEW ─────────────────────────────────────── */
+  /* ── CREATOR / LOBBY VIEW ───────────────────────────────────────── */
+  // Two states share this render path:
+  //   1. team2Ids NOT set → creator's "waiting for opponent" screen (with
+  //      share box + leave-and-wait button + push permission status).
+  //   2. team2Ids set → both players see the LOBBY with READY buttons, both
+  //      teams revealed (modulo blind reveal animation).
+  const inLobby = !!challenge.team2Ids;
+  const team2Characters: Character[] = (inLobby && allCharacters && challenge.team2Ids)
+    ? challenge.team2Ids.map(id => allCharacters.find(c => c.id === id)!).filter(Boolean)
+    : [];
+
+  // Show whether push is wired up. We don't *gate* anything on it — polling
+  // works as a fallback — but it's reassuring to confirm it's set.
+  const notifPermission = (typeof Notification !== "undefined") ? Notification.permission : "denied";
+  const pushOn = pushSupported() && notifPermission === "granted";
+
+  const enableNotifications = async () => {
+    if (!challenge || !ownToken) return;
+    const ok = await subscribeForChallenge({ code: challenge.code, token: ownToken, prompt: true });
+    if (!ok) {
+      toast({
+        title: "Notifications unavailable",
+        description: notifPermission === "denied"
+          ? "Permission was previously denied. Enable it in your browser settings."
+          : "We couldn't enable push on this device. Polling will still update the page.",
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Notifications enabled", description: "We'll ping you when something happens." });
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#030308" }}>
       {/* Header */}
@@ -720,7 +858,9 @@ export function Challenge() {
           {/* Teams */}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", marginBottom: 5 }}>YOUR TEAM</div>
+              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", marginBottom: 5 }}>
+                {ownSide === 1 ? "YOUR TEAM" : "CHALLENGER"}
+              </div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)}
               </div>
@@ -729,11 +869,18 @@ export function Challenge() {
               <span style={{ fontSize: 13, letterSpacing: "0.1em", color: "#ff0055", textShadow: "0 0 10px rgba(255,0,85,0.5)" }}>VS</span>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(255,59,48,0.5)", marginBottom: 5 }}>OPPONENT</div>
+              <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(255,59,48,0.5)", marginBottom: 5 }}>
+                {ownSide === 2 ? "YOUR TEAM" : "OPPONENT"}
+              </div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                <div style={{ width: 44, height: 58, border: "1.5px dashed rgba(255,59,48,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 18, color: "rgba(255,59,48,0.15)", fontWeight: 300 }}>?</span>
-                </div>
+                {inLobby
+                  ? team2Characters.map(c => <MiniPortrait key={c.id} char={c} team={2} />)
+                  : (
+                    <div style={{ width: 44, height: 58, border: "1.5px dashed rgba(255,59,48,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 18, color: "rgba(255,59,48,0.15)", fontWeight: 300 }}>?</span>
+                    </div>
+                  )
+                }
               </div>
             </div>
           </div>
@@ -741,25 +888,162 @@ export function Challenge() {
           {/* Blind reveal flash */}
           {revealed && !showFight && (
             <div style={{ textAlign: "center", padding: "6px 0 8px", fontSize: 11, letterSpacing: "0.2em", color: "#00f0ff", textShadow: "0 0 16px rgba(0,240,255,0.8)" }}>
-              ✦ TEAMS REVEALED — FIGHT STARTING… ✦
+              ✦ TEAMS REVEALED ✦
             </div>
           )}
 
-          {/* Share box */}
-          <div style={{ marginBottom: 10 }}>
-            <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
-          </div>
+          {/* Share box — only useful while waiting for an opponent */}
+          {!inLobby && (
+            <div style={{ marginBottom: 10 }}>
+              <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Waiting state */}
-      {!showFight && (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, color: "rgba(255,255,255,0.15)" }}>
-          <Eye style={{ width: 24, height: 24 }} />
-          <span style={{ fontSize: 8, letterSpacing: "0.3em" }}>WAITING FOR OPPONENT</span>
-          <span style={{ fontSize: 7, letterSpacing: "0.15em", color: "rgba(255,255,255,0.08)", marginTop: 2 }}>
-            Fight will start automatically when they lock in
+      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      {!showFight && inLobby && (
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column",
+          alignItems: "stretch", justifyContent: "center",
+          padding: "16px 18px 20px", gap: 14,
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 14, letterSpacing: "0.18em", color: "#fff", fontWeight: 800, marginBottom: 6 }}>
+              LOBBY
+            </div>
+            <div style={{ fontSize: 9, letterSpacing: "0.18em", color: "rgba(255,255,255,0.45)" }}>
+              Both players must hit <span style={{ color: "#00f0ff" }}>READY</span> to start the fight.
+            </div>
+          </div>
+
+          {/* Ready status row */}
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", fontSize: 9, letterSpacing: "0.18em" }}>
+            <ReadyChip
+              label="Challenger"
+              ready={!!challenge.team1Ready}
+              isYou={ownSide === 1}
+              color="#00f0ff"
+            />
+            <ReadyChip
+              label="Opponent"
+              ready={!!challenge.team2Ready}
+              isYou={ownSide === 2}
+              color="#ff3b30"
+            />
+          </div>
+
+          {/* Local READY button */}
+          <button
+            onClick={handleReady}
+            disabled={!ownToken || ownReady || readyPending}
+            style={{
+              width: "100%", height: 52,
+              background: ownReady
+                ? "rgba(0,240,255,0.1)"
+                : ownToken
+                  ? "linear-gradient(135deg, rgba(0,240,255,0.22) 0%, rgba(0,240,255,0.06) 100%)"
+                  : "rgba(255,255,255,0.03)",
+              border: `1.5px solid ${ownReady ? "rgba(0,240,255,0.55)" : ownToken ? "rgba(0,240,255,0.7)" : "rgba(255,255,255,0.07)"}`,
+              color: ownReady ? "rgba(0,240,255,0.85)" : ownToken ? "#00f0ff" : "rgba(255,255,255,0.2)",
+              fontSize: 12, letterSpacing: "0.28em", fontWeight: 800,
+              cursor: ownToken && !ownReady && !readyPending ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: "inherit",
+              transition: "all 0.2s",
+              boxShadow: ownToken && !ownReady ? "0 0 26px rgba(0,240,255,0.18)" : "none",
+            }}
+          >
+            {ownReady
+              ? <><Check style={{ width: 14, height: 14 }} /> READY — WAITING…</>
+              : readyPending
+                ? "MARKING READY…"
+                : ownToken
+                  ? <><Swords style={{ width: 14, height: 14 }} /> READY</>
+                  : "VIEWER ONLY"}
+          </button>
+
+          {!ownReady && opponentReady && (
+            <div style={{ textAlign: "center", fontSize: 9, letterSpacing: "0.2em", color: "#ff0055" }}>
+              Your opponent is waiting on YOU.
+            </div>
+          )}
+          {ownReady && !opponentReady && (
+            <div style={{ textAlign: "center", fontSize: 9, letterSpacing: "0.2em", color: "rgba(255,255,255,0.3)" }}>
+              Waiting for {ownSide === 1 ? "opponent" : "challenger"}…
+            </div>
+          )}
+
+          {/* Push status pill */}
+          {ownToken && (
+            <button
+              onClick={enableNotifications}
+              style={{
+                margin: "0 auto", padding: "6px 12px",
+                fontSize: 8, letterSpacing: "0.18em", fontWeight: 700,
+                background: pushOn ? "rgba(0,240,255,0.06)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${pushOn ? "rgba(0,240,255,0.3)" : "rgba(255,255,255,0.1)"}`,
+                color: pushOn ? "rgba(0,240,255,0.85)" : "rgba(255,255,255,0.4)",
+                cursor: pushOn ? "default" : "pointer",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontFamily: "inherit",
+              }}
+              disabled={pushOn}
+            >
+              {pushOn
+                ? <>🔔 NOTIFICATIONS ON</>
+                : <><BellOff style={{ width: 10, height: 10 }} /> ENABLE NOTIFICATIONS</>}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Creator-waiting state — opponent hasn't accepted yet */}
+      {!showFight && !inLobby && (
+        <div style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          flexDirection: "column", gap: 14, color: "rgba(255,255,255,0.4)",
+          padding: "16px 18px 18px",
+        }}>
+          <Eye style={{ width: 26, height: 26, opacity: 0.4 }} />
+          <span style={{ fontSize: 9, letterSpacing: "0.3em" }}>WAITING FOR OPPONENT</span>
+          <span style={{ fontSize: 8, letterSpacing: "0.15em", color: "rgba(255,255,255,0.25)", textAlign: "center", lineHeight: 1.5, maxWidth: 280 }}>
+            {pushOn
+              ? "You can leave this screen — we'll buzz your phone the moment they accept."
+              : "Enable notifications to be pinged when they accept, or stay on this screen."}
           </span>
+          {!pushOn && ownToken && (
+            <button
+              onClick={enableNotifications}
+              style={{
+                padding: "8px 14px",
+                fontSize: 9, letterSpacing: "0.22em", fontWeight: 700,
+                background: "rgba(0,240,255,0.08)",
+                border: "1px solid rgba(0,240,255,0.4)",
+                color: "#00f0ff",
+                cursor: "pointer",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontFamily: "inherit",
+              }}
+            >
+              🔔 ENABLE NOTIFICATIONS
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              padding: "9px 18px",
+              fontSize: 10, letterSpacing: "0.25em", fontWeight: 800,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "rgba(255,255,255,0.6)",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              marginTop: 4,
+            }}
+          >
+            ← LEAVE & WAIT
+          </button>
         </div>
       )}
 

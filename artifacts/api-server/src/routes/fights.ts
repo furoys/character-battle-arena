@@ -431,6 +431,13 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         await replaySavedFight(challenge.fightId);
         return;
       }
+      // Lobby gate — both sides must hit READY before generation is allowed.
+      // The client-side lobby UI is the primary gate; this is defence-in-depth
+      // so a stale tab or a manually-crafted request can't bypass the lobby.
+      if (!challenge.team1Ready || !challenge.team2Ready) {
+        send("error", { message: "Both players must be ready before the fight can start." });
+        return;
+      }
       // Try to atomically claim the generation slot. The WHERE clause means
       // only one concurrent caller wins; staler-than-120s locks are reclaimable
       // so a crashed/aborted generation doesn't deadlock the challenge.

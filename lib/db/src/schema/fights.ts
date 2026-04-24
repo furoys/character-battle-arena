@@ -66,6 +66,8 @@ export const challengesTable = pgTable("challenges", {
   team2Ids: jsonb("team2_ids").$type<number[]>(),
   mode: text("mode").notNull().default("cinematic"),
   blind: boolean("blind").notNull().default(false),
+  // status lifecycle: open → accepted (joiner picked team) → ready (both
+  // sides hit READY in the lobby) → generating/done implied by fightId.
   status: text("status").notNull().default("open"),
   // Once a fight is generated for this challenge, store its fights.id here so
   // both players replay the SAME saved narrative (rather than each generating
@@ -79,8 +81,34 @@ export const challengesTable = pgTable("challenges", {
   // Clerk userId of the challenge creator (nullable; guests can create
   // challenges without signing in).
   creatorUserId: text("creator_user_id"),
+  // Anonymous tokens that identify the creator and joiner across sessions
+  // without requiring sign-in. Stored client-side in localStorage keyed by
+  // challenge code; sent on /ready and /push/subscribe so the server can tell
+  // which side a request belongs to.
+  creatorToken: text("creator_token"),
+  joinerToken: text("joiner_token"),
+  // Lobby READY flags. Both must be true before the fight stream is allowed
+  // to start for this challenge.
+  team1Ready: boolean("team1_ready").notNull().default(false),
+  team2Ready: boolean("team2_ready").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);
 
 export type Challenge = typeof challengesTable.$inferSelect;
+
+// ── Web Push Subscriptions ────────────────────────────────────────────────────
+// Stored per-challenge so we can notify the creator when their challenge is
+// accepted (and the joiner if needed). Endpoint is unique — a single browser
+// can only have one subscription per VAPID key, so we upsert by endpoint.
+export const pushSubscriptionsTable = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  challengeCode: text("challenge_code").notNull(),
+  role: text("role").notNull(), // 'creator' | 'joiner'
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("push_subscriptions_endpoint_idx").on(t.endpoint)]);
+
+export type PushSubscription = typeof pushSubscriptionsTable.$inferSelect;

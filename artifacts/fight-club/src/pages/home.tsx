@@ -15,6 +15,8 @@ import { CharacterAvatar } from "@/components/character-avatar";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
+import { setCreatorToken } from "@/lib/challenge-tokens";
+import { subscribeForChallenge } from "@/lib/push-subscribe";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -482,7 +484,15 @@ export function Home() {
         body: JSON.stringify({ team1Ids: team1.map(c => c.id), mode: "cinematic", blind }),
       });
       if (!r.ok) throw new Error("Failed to create challenge");
-      const { code } = await r.json() as { code: string };
+      const { code, creatorToken } = await r.json() as { code: string; creatorToken?: string };
+      if (creatorToken) {
+        setCreatorToken(code, creatorToken);
+        // Fire-and-forget: ask for notification permission and register a push
+        // subscription so the creator can leave the screen and still be told
+        // when their friend accepts. Silent on failure / denial — UI also
+        // polls as a fallback.
+        void subscribeForChallenge({ code, token: creatorToken, prompt: true });
+      }
       navigate(`/challenge/${code}?creator=1`);
     } catch (e) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
