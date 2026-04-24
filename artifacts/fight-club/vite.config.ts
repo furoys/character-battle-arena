@@ -35,6 +35,7 @@ export default defineConfig({
     runtimeErrorOverlay(),
     VitePWA({
       registerType: "autoUpdate",
+      manifestFilename: "manifest.json",
       includeAssets: ["app-icon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
       manifest: {
         name: "A.v.A — Anyone vs Anyone",
