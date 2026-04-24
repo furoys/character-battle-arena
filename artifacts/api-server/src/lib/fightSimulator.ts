@@ -2,6 +2,7 @@ import type { Character } from "@workspace/db";
 import { computeSynergy } from "./synergies";
 import { applyFightModifiers } from "./fightModifiers";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { getModifier, type ModifierId } from "./modifiers";
 
 export interface FightRound {
   round: number;
@@ -2457,6 +2458,7 @@ async function generateAINarrative(
   rematchCount = 0,
   onSection?: (name: string, content: string) => void,
   onSectionDelta?: (name: string, append: string) => void,
+  modifierId?: ModifierId | null,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2743,7 +2745,12 @@ ${team2Info}
 
 ARENA: ${arena.name}
 ${arena.flavor.join(" ")}
-
+${(() => {
+  const mod = getModifier(modifierId);
+  return mod
+    ? `\n==================================================\nCHAOS MODIFIER ACTIVE — ${mod.label.toUpperCase()}\n==================================================\n${mod.promptBlock}\nWeave this rule into EVERY round. The modifier is the texture of the fight, not a one-line mention.\n`
+    : "";
+})()}
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
 CRITICAL — THE WINNER IS NON-NEGOTIABLE: ${winnerNames} WINS. ${loserNames} LOSES AND GOES DOWN.
 Every round must trend toward this outcome. The final round MUST end with ${loserNames} going down / out / eliminated — NOT ${winnerNames}. Never write a sentence where ${winnerNames} is "going down," "falling," "eliminated," or "losing." If you accidentally write that, you have failed the prompt. The loser is ${loserNames}. Say it to yourself before writing the finale: ${loserNames} loses.
@@ -3320,7 +3327,9 @@ export async function simulateFight(
   cachedResolution?: FightResolution | null,
   rematchCount = 0,
   progress?: SimulateFightProgress,
+  modifierId?: ModifierId | null,
 ): Promise<FightResult> {
+  const modifier = getModifier(modifierId);
   // ── Pre-fight modifiers: synergy bonuses + weakness penalties ─────────────
   // Applies temporary stat adjustments based on v3Profile archetype/combatStyle
   // pairings and matchup-aware weakness detection. Originals are never mutated.
@@ -3592,9 +3601,22 @@ export async function simulateFight(
   //   Tim outranks every mortal → his team always wins.
   // Cached rematches still respect their stored winner.
   const devOverride = cachedResolution ? null : devLegendWinner(team1, team2);
-  const winner: 1 | 2 = cachedResolution
+  let winner: 1 | 2 = cachedResolution
     ? (cachedResolution.winner === "Team 1" ? 1 : 2)
     : (devOverride ?? assessment.verdict);
+
+  // ── Chaos modifier: underdog flip ───────────────────────────────────────
+  // The "Underdog Buff" modifier inverts the verdict so the team the math
+  // predicted to lose walks away victorious. Done here — before HP curves
+  // and narrative are built — so the entire downstream pipeline (HP arc,
+  // resolution, narrative writer) is built around the new winner. The
+  // resolution we hand to the narrative writer must be cleared, otherwise
+  // its winnerProof / loserShowcase still describe the original favorite.
+  if (modifier?.flipUnderdog) {
+    winner = winner === 1 ? 2 : 1;
+    cachedResolution = null;
+  }
+
   const overrode = hpWinner !== winner;
 
   if (assessment.forceDominant) {
@@ -3813,7 +3835,12 @@ export async function simulateFight(
 
   // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
   // rematchCount > 0 triggers "write a fresh different story arc" instruction.
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount, progress?.onSection, progress?.onSectionDelta);
+  // When an underdog flip happened, suppress assessment + resolution so the
+  // narrative prompt isn't whispering "Team A is favored" while we tell it
+  // "Team B wins." The chaos modifier prompt block carries the rationale.
+  const narrativeAssessment = modifier?.flipUnderdog ? undefined : assessment;
+  const narrativeResolution = modifier?.flipUnderdog ? undefined : fightResolution;
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, narrativeAssessment, allianceTrigger, narrativeResolution, rematchCount, progress?.onSection, progress?.onSectionDelta, modifier?.id ?? null);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({

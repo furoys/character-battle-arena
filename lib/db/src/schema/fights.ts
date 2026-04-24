@@ -52,6 +52,10 @@ export const fightsTable = pgTable("fights", {
   // can still play without signing in). Used to filter "My Fights" history
   // and compute personal stats on the profile page.
   userId: text("user_id"),
+  // Chaos modifier active for this fight (null = standard rules). Stored so
+  // history / replay UIs can show the badge ("Lava Floor", "Underdog Buff"
+  // etc.). Validated against the registry in api-server/lib/modifiers.ts.
+  modifierId: text("modifier_id"),
   simulatedAt: timestamp("simulated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -91,6 +95,10 @@ export const challengesTable = pgTable("challenges", {
   // to start for this challenge.
   team1Ready: boolean("team1_ready").notNull().default(false),
   team2Ready: boolean("team2_ready").notNull().default(false),
+  // Chaos modifier the creator picked at challenge-create time. The joiner
+  // sees it in the lobby; the fight stream uses it to flavor the prompt.
+  // Null = standard rules.
+  modifierId: text("modifier_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);

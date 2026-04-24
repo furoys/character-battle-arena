@@ -106,6 +106,8 @@ export interface SimulateFightBody {
   upset?: boolean;
   /** When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text. */
   challengeCode?: string;
+  /** Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins. */
+  modifierId?: string | null;
 }
 
 export interface FightRound {
@@ -138,6 +140,8 @@ export interface FightResult {
   winRate?: number;
   /** How many times this exact matchup has been simulated */
   rematchCount?: number;
+  /** Chaos modifier active for this fight, if any (e.g. 'lava_floor') */
+  modifierId?: string | null;
   simulatedAt: string;
 }
 
