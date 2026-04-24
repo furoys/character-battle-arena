@@ -5142,6 +5142,24 @@ uri = "file://attached_assets/generated_images/pitt_v4.png"
 type = "image"
 title = "Pitt cinematic character art"
 
+[[generated]]
+id = "lwoVWLAr8sI5dzbMESEDe"
+uri = "file://attached_assets/generated_images/pitt_head_a.png"
+type = "image"
+title = "Pitt skull head alien warrior"
+
+[[generated]]
+id = "IGqVh2-LTEvu2lpfnuiW4"
+uri = "file://attached_assets/generated_images/pitt_head_b.png"
+type = "image"
+title = "Pitt alien skull low angle"
+
+[[generated]]
+id = "Ekd2v2iP3l2twKv3c_02g"
+uri = "file://attached_assets/generated_images/pitt_head_c.png"
+type = "image"
+title = "Pitt three-quarter concept art"
+
 [[outputs]]
 id = "VwcGPrKjPtpxfJx3bR_sP"
 uri = "file://ava-export.tar.gz"
@@ -5303,3 +5321,21 @@ id = "o2s4HKuVofCQx40Xl0Aa1"
 uri = "file://attached_assets/generated_images/pitt_v4.png"
 type = "image"
 title = "Option C — Cinematic digital painting (arena glow)"
+
+[[outputs]]
+id = "JLGqUbsvtT4apBgay5D1q"
+uri = "file://attached_assets/generated_images/pitt_head_a.png"
+type = "image"
+title = "Option A — Small skull head, side-lit, red glow"
+
+[[outputs]]
+id = "Xuq1iGgp9B7Ba8H4uDMXx"
+uri = "file://attached_assets/generated_images/pitt_head_b.png"
+type = "image"
+title = "Option B — Hunched alien skull, low-angle red glow"
+
+[[outputs]]
+id = "LRMrUcNvE6sHZcOYDv3Vd"
+uri = "file://attached_assets/generated_images/pitt_head_c.png"
+type = "image"
+title = "Option C — Three-quarter standing pose, concept art"
