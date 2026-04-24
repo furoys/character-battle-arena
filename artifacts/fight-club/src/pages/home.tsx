@@ -8,8 +8,10 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff } from "lucide-react";
-import { useLocation } from "wouter";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn } from "lucide-react";
+import { Link as NavLink, useLocation } from "wouter";
+import { Show, useUser } from "@clerk/react";
+import { CharacterAvatar } from "@/components/character-avatar";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
@@ -217,6 +219,33 @@ function UniversePill({ label, count, active, onClick }: { label: string; count?
         <span style={{ color: active ? "rgba(255,0,85,0.7)" : "rgba(255,255,255,0.2)", fontSize: 8 }}>{count}</span>
       )}
     </button>
+  );
+}
+
+// ─── Profile button used in the unified top bar ──────────────────────────────
+function HomeProfileButton() {
+  const { user } = useUser();
+  const name =
+    (user?.unsafeMetadata?.username as string) ||
+    user?.firstName ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "You";
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <NavLink href="/profile">
+      <button
+        className="flex items-center gap-2 px-1.5 py-0.5 transition-all hover:bg-primary/10 rounded"
+        title={`Signed in as ${name}`}
+      >
+        <span
+          className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          {name}
+        </span>
+        <CharacterAvatar size={28} fallbackInitial={initial} />
+      </button>
+    </NavLink>
   );
 }
 
@@ -512,19 +541,32 @@ export function Home() {
 
           {/* Content above scanlines */}
           <div className="relative z-10">
-            {/* Logo strip */}
+            {/* Unified top bar — logo left, profile right, no duplicate */}
             <div
-              className="flex items-center justify-center py-1 relative"
+              className="flex items-center justify-between px-3 py-2"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
             >
-              <div className="absolute left-3 flex items-center gap-1.5">
-                <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, rgba(0,240,255,0.5))" }} />
-                <div className="h-1 w-1 rotate-45" style={{ background: "#00f0ff60" }} />
+              <div className="flex items-center gap-2">
+                <AvaLogo className="h-7 w-auto" />
+                <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", paddingTop: 2 }}>
+                  ANYONE VS ANYONE
+                </span>
               </div>
-              <AvaLogo className="h-7 w-auto" />
-              <div className="absolute right-3 flex items-center gap-1.5">
-                <div className="h-1 w-1 rotate-45" style={{ background: "#ff3b3060" }} />
-                <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, rgba(255,59,48,0.5))" }} />
+              <div className="flex items-center gap-2">
+                <Show when="signed-out">
+                  <NavLink href="/sign-in">
+                    <button
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border transition-all hover:border-primary/60 hover:text-primary"
+                      style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.12)" }}
+                    >
+                      <LogIn className="h-3 w-3" />
+                      Sign in
+                    </button>
+                  </NavLink>
+                </Show>
+                <Show when="signed-in">
+                  <HomeProfileButton />
+                </Show>
               </div>
             </div>
 

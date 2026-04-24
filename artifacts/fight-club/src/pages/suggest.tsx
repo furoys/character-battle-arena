@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
 import { useListCharacters } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
-import { useLocation } from "wouter";
-import { Flame, Swords, MessageSquare, Zap } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Flame, Swords, MessageSquare, Zap, LogIn } from "lucide-react";
+import { Show, useUser } from "@clerk/react";
+import { CharacterAvatar } from "@/components/character-avatar";
 
 // ─── Matchup database ─────────────────────────────────────────────────────────
 // Each matchup uses real character IDs from the database
@@ -870,6 +872,23 @@ function DevLegendsCard({
   );
 }
 
+function DebateProfileButton() {
+  const { user } = useUser();
+  const name =
+    (user?.unsafeMetadata?.username as string) ||
+    user?.firstName ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "You";
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <Link href="/profile">
+      <button className="flex items-center gap-1.5 px-1 py-0.5 transition-all hover:bg-primary/10 rounded" title={`Profile: ${name}`}>
+        <CharacterAvatar size={26} fallbackInitial={initial} />
+      </button>
+    </Link>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function Suggest() {
   const { data: characters } = useListCharacters();
@@ -931,9 +950,22 @@ export function Suggest() {
               CURATED MATCHUPS · ONLINE THEORIES · INSTANT LOAD
             </p>
           </div>
-          <div className="flex items-center gap-1.5" style={{ fontSize: 10, color: "#ff6b35" }}>
-            <Flame className="w-4 h-4" />
-            <span className="font-bold">{hotCount} HOT</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5" style={{ fontSize: 10, color: "#ff6b35" }}>
+              <Flame className="w-4 h-4" />
+              <span className="font-bold">{hotCount} HOT</span>
+            </div>
+            <Show when="signed-out">
+              <Link href="/sign-in">
+                <button className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold uppercase tracking-widest border" style={{ color: "rgba(255,255,255,0.4)", borderColor: "rgba(255,255,255,0.1)" }}>
+                  <LogIn className="h-3 w-3" />
+                  Sign in
+                </button>
+              </Link>
+            </Show>
+            <Show when="signed-in">
+              <DebateProfileButton />
+            </Show>
           </div>
         </div>
 
