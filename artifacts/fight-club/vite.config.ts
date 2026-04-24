@@ -45,7 +45,7 @@ export default defineConfig({
         display: "standalone",
         orientation: "portrait",
         background_color: "#030308",
-        theme_color: "#ff0055",
+        theme_color: "#030308",
         categories: ["games", "entertainment"],
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
