@@ -3,6 +3,7 @@ import { Character } from "@workspace/api-client-react/src/generated/api.schemas
 import { PowerAura } from "./power-aura";
 import { Zap, Shield, Brain, Swords } from "lucide-react";
 import { powerAvg, powerTier } from "./roster-flip-card";
+import { getUniverseCategory, CATEGORY_COLORS } from "@/lib/universe-categories";
 
 interface CharacterCardProps {
   character: Character;
@@ -72,6 +73,9 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
   const avg = powerAvg(character);
   const tier = powerTier(avg);
 
+  // Universe-tinted ambient glow on the resting card (overridden by team color when selected)
+  const universeColor = CATEGORY_COLORS[getUniverseCategory(character.universe)] ?? "#ffffff";
+
   // Negative animation-delay desyncs each card's drift so the grid feels alive
   const motionDelay   = `${-((character.id ?? 0) * 0.73 % 14).toFixed(2)}s`;
   const breatheDelay  = `${-((character.id ?? 0) * 0.41 % 7 ).toFixed(2)}s`;
@@ -114,8 +118,15 @@ function CharacterCardInner({ character, selectedTeam, onClick, disabled, isFavo
               ? `2px solid ${tc.border}`
               : isSelected
               ? "2px solid rgba(255,255,255,0.3)"
-              : "1px solid rgba(255,255,255,0.1)",
-            boxShadow: isSelected && tc ? tc.glow : hovered ? "0 4px 20px rgba(0,0,0,0.5)" : "none",
+              : `1px solid ${universeColor}55`,
+            // At rest the border alone carries the universe identity (cheap to paint).
+            // The expensive glow is reserved for hover/selection so scroll perf
+            // stays smooth across hundreds of cards.
+            boxShadow: isSelected && tc
+              ? tc.glow
+              : hovered
+                ? `0 4px 20px rgba(0,0,0,0.5), 0 0 22px ${universeColor}80, inset 0 0 14px ${universeColor}22`
+                : "none",
             cursor: isClickable ? "pointer" : "not-allowed",
             opacity: disabled && !isSelected ? 0.45 : 1,
             filter: disabled && !isSelected ? "grayscale(0.6)" : "none",
