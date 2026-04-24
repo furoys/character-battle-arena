@@ -217,6 +217,12 @@ export const SimulateFightBody = zod.object({
     .describe(
       "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text.",
     ),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins.",
+    ),
 });
 
 export const SimulateFightResponse = zod.object({
@@ -308,6 +314,12 @@ export const SimulateFightResponse = zod.object({
     .number()
     .optional()
     .describe("How many times this exact matchup has been simulated"),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe(
+      "Chaos modifier active for this fight, if any (e.g. 'lava_floor')",
+    ),
   simulatedAt: zod.coerce.date(),
 });
 

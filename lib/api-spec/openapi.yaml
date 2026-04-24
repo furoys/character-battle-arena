@@ -382,6 +382,10 @@ components:
         challengeCode:
           type: string
           description: "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text."
+        modifierId:
+          type: string
+          nullable: true
+          description: "Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins."
       required:
         - team1
         - team2
@@ -454,6 +458,10 @@ components:
         rematchCount:
           type: integer
           description: "How many times this exact matchup has been simulated"
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any (e.g. 'lava_floor')"
         simulatedAt:
           type: string
           format: date-time
