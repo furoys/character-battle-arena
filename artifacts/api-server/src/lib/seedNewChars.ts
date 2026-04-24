@@ -1762,4 +1762,15 @@ export async function seedNewChars(): Promise<void> {
     console.log(`[seed] Synced ${dumpInserted} character(s) from full roster dump`);
   }
 
+  // One-off cleanup: remove the legacy "Dr. Manhattan" duplicate (the
+  // canonical entry is "Doctor Manhattan"). Safe to run repeatedly — no-op
+  // once the row is gone.
+  const removed = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "Dr. Manhattan"))
+    .returning({ id: charactersTable.id });
+  if (removed.length > 0) {
+    console.log(`[seed] Removed ${removed.length} duplicate "Dr. Manhattan" row(s)`);
+  }
+
 }
