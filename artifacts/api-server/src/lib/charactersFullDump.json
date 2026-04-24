@@ -12829,7 +12829,7 @@
   },
   {
     "name": "Mulan",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 9104,
     "speed": 33707,
     "intelligence": 86600,
@@ -12912,7 +12912,7 @@
   },
   {
     "name": "Maleficent",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 29307,
     "speed": 38160,
     "intelligence": 194600,
@@ -13000,7 +13000,7 @@
   },
   {
     "name": "Hades",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 42667,
     "speed": 20667,
     "intelligence": 140000,
@@ -13090,7 +13090,7 @@
   },
   {
     "name": "Elsa",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 20667,
     "speed": 29307,
     "intelligence": 38160,
@@ -13176,7 +13176,7 @@
   },
   {
     "name": "Maui",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 468200,
     "speed": 12240,
     "intelligence": 9104,
@@ -13266,7 +13266,7 @@
   },
   {
     "name": "Shan Yu",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 194600,
     "speed": 20667,
     "intelligence": 29307,
@@ -13352,7 +13352,7 @@
   },
   {
     "name": "Simba",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 47227,
     "speed": 38160,
     "intelligence": 7904,
@@ -13434,7 +13434,7 @@
   },
   {
     "name": "Jack Sparrow",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 4496,
     "speed": 6736,
     "intelligence": 1488800,
@@ -32488,7 +32488,7 @@
   },
   {
     "name": "Moana",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 7904,
     "speed": 33707,
     "intelligence": 86600,
@@ -32574,7 +32574,7 @@
   },
   {
     "name": "Aladdin",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 9104,
     "speed": 86600,
     "intelligence": 140000,
@@ -32659,7 +32659,7 @@
   },
   {
     "name": "Jafar",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 86600,
     "speed": 29307,
     "intelligence": 6816000,
@@ -32754,7 +32754,7 @@
   },
   {
     "name": "Ursula",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 86600,
     "speed": 7904,
     "intelligence": 1836200,
@@ -32847,7 +32847,7 @@
   },
   {
     "name": "Gaston",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 114500,
     "speed": 86600,
     "intelligence": 1755,
@@ -32935,7 +32935,7 @@
   },
   {
     "name": "Scar",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 33707,
     "speed": 42667,
     "intelligence": 3664000,
@@ -33021,7 +33021,7 @@
   },
   {
     "name": "Stitch",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 468200,
     "speed": 140000,
     "intelligence": 1145000,
@@ -33109,7 +33109,7 @@
   },
   {
     "name": "Genie",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 6816000,
     "speed": 6816000,
     "intelligence": 6816000,
@@ -33199,7 +33199,7 @@
   },
   {
     "name": "Chernabog",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 3664000,
     "speed": 20667,
     "intelligence": 86600,
@@ -33286,7 +33286,7 @@
   },
   {
     "name": "The Beast",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 1145000,
     "speed": 38160,
     "intelligence": 29307,
@@ -33368,7 +33368,7 @@
   },
   {
     "name": "Wreck-It Ralph",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 6816000,
     "speed": 5600,
     "intelligence": 9104,
@@ -33450,7 +33450,7 @@
   },
   {
     "name": "Syndrome",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 6736,
     "speed": 140000,
     "intelligence": 6816000,
@@ -33540,7 +33540,7 @@
   },
   {
     "name": "Mr. Incredible",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 3616000,
     "speed": 33707,
     "intelligence": 42667,
@@ -33620,7 +33620,7 @@
   },
   {
     "name": "Buzz Lightyear",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 29307,
     "speed": 86600,
     "intelligence": 86600,
@@ -33706,7 +33706,7 @@
   },
   {
     "name": "Dr. Facilier",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 4496,
     "speed": 38160,
     "intelligence": 1836200,
@@ -33793,7 +33793,7 @@
   },
   {
     "name": "Raya",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 38160,
     "speed": 468200,
     "intelligence": 468200,
@@ -33881,7 +33881,7 @@
   },
   {
     "name": "Merida",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 29307,
     "speed": 140000,
     "intelligence": 86600,
@@ -33966,7 +33966,7 @@
   },
   {
     "name": "Tarzan",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 468200,
     "speed": 1145000,
     "intelligence": 38160,
@@ -34051,7 +34051,7 @@
   },
   {
     "name": "The Horned King",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 86600,
     "speed": 9104,
     "intelligence": 1145000,
@@ -34135,7 +34135,7 @@
   },
   {
     "name": "Rapunzel",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 7904,
     "speed": 42667,
     "intelligence": 468200,
@@ -34222,7 +34222,7 @@
   },
   {
     "name": "Yzma",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 1755,
     "speed": 2900,
     "intelligence": 6816000,
@@ -34309,7 +34309,7 @@
   },
   {
     "name": "Captain Hook",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 20667,
     "speed": 29307,
     "intelligence": 140000,
@@ -34396,7 +34396,7 @@
   },
   {
     "name": "Kronk",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 1145000,
     "speed": 20667,
     "intelligence": 4496,
@@ -68175,7 +68175,7 @@
   },
   {
     "name": "Jack Skellington",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 25000,
     "speed": 80000,
     "intelligence": 820000,
@@ -68269,7 +68269,7 @@
   },
   {
     "name": "Baymax",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 80000,
     "speed": 50000,
     "intelligence": 850000,
@@ -68363,7 +68363,7 @@
   },
   {
     "name": "Frozone",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 40000,
     "speed": 250000,
     "intelligence": 700000,
@@ -68436,7 +68436,7 @@
   },
   {
     "name": "Violet Parr",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 30000,
     "speed": 60000,
     "intelligence": 620000,
@@ -68506,7 +68506,7 @@
   },
   {
     "name": "Dash Parr",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 40000,
     "speed": 900000,
     "intelligence": 450000,
@@ -68578,7 +68578,7 @@
   },
   {
     "name": "Captain Barbossa",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 16000,
     "speed": 15000,
     "intelligence": 750000,
@@ -68649,7 +68649,7 @@
   },
   {
     "name": "Davy Jones",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 60000,
     "speed": 40000,
     "intelligence": 720000,
@@ -68725,7 +68725,7 @@
   },
   {
     "name": "Kida",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 80000,
     "speed": 100000,
     "intelligence": 750000,
@@ -68822,7 +68822,7 @@
   },
   {
     "name": "Long John Silver",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 30000,
     "speed": 25000,
     "intelligence": 800000,
@@ -68918,7 +68918,7 @@
   },
   {
     "name": "Anna",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 10000,
     "speed": 12000,
     "intelligence": 600000,
@@ -69011,7 +69011,7 @@
   },
   {
     "name": "Hans",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 16000,
     "speed": 18000,
     "intelligence": 780000,
@@ -69103,7 +69103,7 @@
   },
   {
     "name": "EVE",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 200000,
     "speed": 400000,
     "intelligence": 800000,
@@ -69201,7 +69201,7 @@
   },
   {
     "name": "Judy Hopps",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 8000,
     "speed": 15000,
     "intelligence": 800000,
@@ -69295,7 +69295,7 @@
   },
   {
     "name": "Luisa Madrigal",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 500000,
     "speed": 80000,
     "intelligence": 500000,
@@ -69387,7 +69387,7 @@
   },
   {
     "name": "Mother Gothel",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 10000,
     "speed": 12000,
     "intelligence": 850000,
@@ -69485,7 +69485,7 @@
   },
   {
     "name": "Tamatoa",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 250000,
     "speed": 100000,
     "intelligence": 500000,
@@ -69579,7 +69579,7 @@
   },
   {
     "name": "Ratigan",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 12000,
     "speed": 14000,
     "intelligence": 880000,
@@ -69674,7 +69674,7 @@
   },
   {
     "name": "Te Kā",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 2000000,
     "speed": 300000,
     "intelligence": 200000,
@@ -69763,7 +69763,7 @@
   },
   {
     "name": "Flynn Rider",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 15000,
     "speed": 16000,
     "intelligence": 720000,
@@ -69853,7 +69853,7 @@
   },
   {
     "name": "Megara",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 8000,
     "speed": 12000,
     "intelligence": 780000,
@@ -69940,7 +69940,7 @@
   },
   {
     "name": "Yokai",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 80000,
     "speed": 150000,
     "intelligence": 900000,
@@ -70031,7 +70031,7 @@
   },
   {
     "name": "Mor'du",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 400000,
     "speed": 200000,
     "intelligence": 150000,
@@ -70124,7 +70124,7 @@
   },
   {
     "name": "Queen of Hearts",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 15000,
     "speed": 10000,
     "intelligence": 600000,
@@ -70217,7 +70217,7 @@
   },
   {
     "name": "Jack-Jack Parr",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 100000,
     "speed": 200000,
     "intelligence": 300000,
@@ -71921,7 +71921,7 @@
   },
   {
     "name": "Hercules",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 9500000,
     "speed": 850000,
     "intelligence": 280000,
@@ -72008,7 +72008,7 @@
   },
   {
     "name": "Mufasa",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 680000,
     "speed": 520000,
     "intelligence": 420000,
@@ -72092,7 +72092,7 @@
   },
   {
     "name": "Shere Khan",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 580000,
     "speed": 620000,
     "intelligence": 520000,
@@ -72175,7 +72175,7 @@
   },
   {
     "name": "Shego",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 420000,
     "speed": 580000,
     "intelligence": 380000,
@@ -72261,7 +72261,7 @@
   },
   {
     "name": "Kim Possible",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 85000,
     "speed": 95000,
     "intelligence": 88000,
@@ -72354,7 +72354,7 @@
   },
   {
     "name": "Perry the Platypus",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 68000,
     "speed": 80000,
     "intelligence": 95000,
@@ -72447,7 +72447,7 @@
   },
   {
     "name": "Bill Cipher",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 12000000,
     "speed": 15000000,
     "intelligence": 20000000,
@@ -72540,7 +72540,7 @@
   },
   {
     "name": "Shang",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 78000,
     "speed": 82000,
     "intelligence": 72000,
@@ -72628,7 +72628,7 @@
   },
   {
     "name": "Mushu",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 45000,
     "speed": 68000,
     "intelligence": 62000,
@@ -72716,7 +72716,7 @@
   },
   {
     "name": "Baloo",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 380000,
     "speed": 180000,
     "intelligence": 240000,
@@ -72797,7 +72797,7 @@
   },
   {
     "name": "King Louie",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 450000,
     "speed": 220000,
     "intelligence": 180000,
@@ -72882,7 +72882,7 @@
   },
   {
     "name": "Robin Hood",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 62000,
     "speed": 78000,
     "intelligence": 75000,
@@ -72971,7 +72971,7 @@
   },
   {
     "name": "Merlin",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 120000,
     "speed": 380000,
     "intelligence": 4500000,
@@ -73061,7 +73061,7 @@
   },
   {
     "name": "Madam Mim",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 280000,
     "speed": 350000,
     "intelligence": 680000,
@@ -73147,7 +73147,7 @@
   },
   {
     "name": "GoGo Tomago",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 185000,
     "speed": 420000,
     "intelligence": 320000,
@@ -73235,7 +73235,7 @@
   },
   {
     "name": "Wasabi",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 145000,
     "speed": 120000,
     "intelligence": 350000,
@@ -73320,7 +73320,7 @@
   },
   {
     "name": "Hiro Hamada",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 52000,
     "speed": 65000,
     "intelligence": 1800000,
@@ -73410,7 +73410,7 @@
   },
   {
     "name": "Vanellope von Schweetz",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 35000,
     "speed": 750000,
     "intelligence": 180000,
@@ -73498,7 +73498,7 @@
   },
   {
     "name": "King Candy",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 180000,
     "speed": 280000,
     "intelligence": 620000,
@@ -73587,7 +73587,7 @@
   },
   {
     "name": "Sergeant Calhoun",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 185000,
     "speed": 175000,
     "intelligence": 280000,
@@ -73678,7 +73678,7 @@
   },
   {
     "name": "Jumba Jookiba",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 280000,
     "speed": 95000,
     "intelligence": 3200000,
@@ -73768,7 +73768,7 @@
   },
   {
     "name": "Captain Gantu",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 850000,
     "speed": 280000,
     "intelligence": 320000,
@@ -73858,7 +73858,7 @@
   },
   {
     "name": "Nick Wilde",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 52000,
     "speed": 62000,
     "intelligence": 92000,
@@ -73946,7 +73946,7 @@
   },
   {
     "name": "Commander Rourke",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 380000,
     "speed": 185000,
     "intelligence": 380000,
@@ -74039,7 +74039,7 @@
   },
   {
     "name": "Captain Amelia",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 95000,
     "speed": 120000,
     "intelligence": 320000,
@@ -74129,7 +74129,7 @@
   },
   {
     "name": "Jim Hawkins",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 55000,
     "speed": 72000,
     "intelligence": 180000,
@@ -74217,7 +74217,7 @@
   },
   {
     "name": "Milo Thatch",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 42000,
     "speed": 55000,
     "intelligence": 1200000,
@@ -74305,7 +74305,7 @@
   },
   {
     "name": "Nala",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 380000,
     "speed": 450000,
     "intelligence": 320000,
@@ -74387,7 +74387,7 @@
   },
   {
     "name": "Zira",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 420000,
     "speed": 390000,
     "intelligence": 380000,
@@ -74471,7 +74471,7 @@
   },
   {
     "name": "Kovu",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 520000,
     "speed": 480000,
     "intelligence": 380000,
@@ -74553,7 +74553,7 @@
   },
   {
     "name": "Pocahontas",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 62000,
     "speed": 78000,
     "intelligence": 85000,
@@ -74637,7 +74637,7 @@
   },
   {
     "name": "Ariel",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 85000,
     "speed": 320000,
     "intelligence": 220000,
@@ -74722,7 +74722,7 @@
   },
   {
     "name": "Cruella De Vil",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 38000,
     "speed": 52000,
     "intelligence": 180000,
@@ -74808,7 +74808,7 @@
   },
   {
     "name": "Pete",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 580000,
     "speed": 185000,
     "intelligence": 220000,
@@ -74896,7 +74896,7 @@
   },
   {
     "name": "Darkwing Duck",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 55000,
     "speed": 68000,
     "intelligence": 85000,
@@ -74987,7 +74987,7 @@
   },
   {
     "name": "Gizmoduck",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 1200000,
     "speed": 580000,
     "intelligence": 420000,
@@ -75078,7 +75078,7 @@
   },
   {
     "name": "Magica De Spell",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 180000,
     "speed": 350000,
     "intelligence": 820000,
@@ -75169,7 +75169,7 @@
   },
   {
     "name": "Scrooge McDuck",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 72000,
     "speed": 68000,
     "intelligence": 980000,
@@ -75257,7 +75257,7 @@
   },
   {
     "name": "Pain and Panic",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 85000,
     "speed": 120000,
     "intelligence": 95000,
@@ -75342,7 +75342,7 @@
   },
   {
     "name": "Philoctetes",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 68000,
     "speed": 55000,
     "intelligence": 420000,
@@ -75427,7 +75427,7 @@
   },
   {
     "name": "Bellwether",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 28000,
     "speed": 35000,
     "intelligence": 680000,
@@ -75516,7 +75516,7 @@
   },
   {
     "name": "Dr. Doofenshmirtz",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 48000,
     "speed": 45000,
     "intelligence": 820000,
@@ -75608,7 +75608,7 @@
   },
   {
     "name": "Moana's Te Fiti",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 18000000,
     "speed": 2500000,
     "intelligence": 8000000,
@@ -75693,7 +75693,7 @@
   },
   {
     "name": "Lilo Pelekai",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 22000,
     "speed": 28000,
     "intelligence": 145000,
@@ -75775,7 +75775,7 @@
   },
   {
     "name": "The Evil Queen",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 95000,
     "speed": 180000,
     "intelligence": 580000,
@@ -75869,7 +75869,7 @@
   },
   {
     "name": "Fix-It Felix Jr.",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 88000,
     "speed": 75000,
     "intelligence": 180000,
@@ -75955,7 +75955,7 @@
   },
   {
     "name": "Little John",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 180000,
     "speed": 95000,
     "intelligence": 120000,
@@ -76039,7 +76039,7 @@
   },
   {
     "name": "Mowgli",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 55000,
     "speed": 72000,
     "intelligence": 68000,
@@ -76125,7 +76125,7 @@
   },
   {
     "name": "Mother Gothel",
-    "universe": "Disney",
+    "universe": "Kingdom",
     "strength": 42000,
     "speed": 55000,
     "intelligence": 620000,
