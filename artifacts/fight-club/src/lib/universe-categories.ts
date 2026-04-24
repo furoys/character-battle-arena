@@ -1,6 +1,6 @@
 export type UniverseCategory =
-  | "Marvel"
-  | "DC"
+  | "Multiverse"
+  | "Legacy"
   | "Disney"
   | "Anime"
   | "Games"
@@ -12,8 +12,8 @@ export type UniverseCategory =
   | "Other";
 
 export const CATEGORY_ORDER: UniverseCategory[] = [
-  "Marvel",
-  "DC",
+  "Multiverse",
+  "Legacy",
   "Disney",
   "Anime",
   "Games",
@@ -26,8 +26,8 @@ export const CATEGORY_ORDER: UniverseCategory[] = [
 ];
 
 export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
-  "Marvel":          "#ed1d24",
-  "DC":              "#0476f2",
+  "Multiverse":      "#ed1d24",
+  "Legacy":          "#0476f2",
   "Disney":          "#bf5af2",
   "Anime":           "#ff6b9d",
   "Games":           "#30d158",
@@ -40,10 +40,10 @@ export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
 };
 
 const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
-  // Marvel
-  "Marvel Comics": "Marvel",
-  // DC
-  "DC Comics": "DC",
+  // Multiverse
+  "Multiverse Comics": "Multiverse",
+  // Legacy
+  "Legacy Comics": "Legacy",
   // Disney
   "Disney": "Disney",
   // Anime / Manga

@@ -1,7 +1,7 @@
 [
   {
     "name": "Superman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 8000000,
     "speed": 5000000,
     "intelligence": 300000,
@@ -217,7 +217,7 @@
   },
   {
     "name": "Spider-Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 140000,
     "intelligence": 1145000,
@@ -323,7 +323,7 @@
   },
   {
     "name": "Wonder Woman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3000000,
     "speed": 2000000,
     "intelligence": 500000,
@@ -436,7 +436,7 @@
   },
   {
     "name": "Iron Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 600000,
     "speed": 120000,
     "intelligence": 6816000,
@@ -659,7 +659,7 @@
   },
   {
     "name": "Thor",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1145000,
     "speed": 2000000,
     "intelligence": 100000,
@@ -1214,7 +1214,7 @@
   },
   {
     "name": "Batman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 12240,
     "speed": 8500,
     "intelligence": 6816000,
@@ -1310,7 +1310,7 @@
   },
   {
     "name": "The Flash",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 200000,
     "speed": 10000000,
     "intelligence": 20667,
@@ -1401,7 +1401,7 @@
   },
   {
     "name": "Aquaman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 194600,
     "speed": 20667,
     "intelligence": 8500,
@@ -1490,7 +1490,7 @@
   },
   {
     "name": "Green Lantern",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20667,
     "speed": 42667,
     "intelligence": 29307,
@@ -1580,7 +1580,7 @@
   },
   {
     "name": "Shazam",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1145000,
     "speed": 194600,
     "intelligence": 5600,
@@ -1670,7 +1670,7 @@
   },
   {
     "name": "Black Adam",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1836200,
     "speed": 140000,
     "intelligence": 12240,
@@ -1760,7 +1760,7 @@
   },
   {
     "name": "Deathstroke",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 42667,
     "speed": 33707,
     "intelligence": 804800,
@@ -1858,7 +1858,7 @@
   },
   {
     "name": "Lex Luthor",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1755,
     "speed": 1402,
     "intelligence": 10000000,
@@ -1948,7 +1948,7 @@
   },
   {
     "name": "Zatanna",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1081,
     "speed": 2900,
     "intelligence": 140000,
@@ -2042,7 +2042,7 @@
   },
   {
     "name": "Martian Manhunter",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 804800,
     "speed": 86600,
     "intelligence": 1145000,
@@ -2138,7 +2138,7 @@
   },
   {
     "name": "Hulk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 60000,
     "intelligence": 5000,
@@ -2228,7 +2228,7 @@
   },
   {
     "name": "Captain America",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 16427,
     "intelligence": 42667,
@@ -2312,7 +2312,7 @@
   },
   {
     "name": "Doctor Strange",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1402,
     "speed": 6736,
     "intelligence": 3664000,
@@ -2408,7 +2408,7 @@
   },
   {
     "name": "Wolverine",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 80000,
     "intelligence": 40000,
@@ -2503,7 +2503,7 @@
   },
   {
     "name": "Magneto",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 30000,
     "speed": 1500000,
     "intelligence": 3000000,
@@ -2592,7 +2592,7 @@
   },
   {
     "name": "Deadpool",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 50000,
     "speed": 40000,
     "intelligence": 20000,
@@ -2688,7 +2688,7 @@
   },
   {
     "name": "Thanos",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6816000,
     "speed": 6736,
     "intelligence": 1836200,
@@ -2784,7 +2784,7 @@
   },
   {
     "name": "Captain Marvel",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 468200,
     "speed": 1488800,
     "intelligence": 20667,
@@ -2874,7 +2874,7 @@
   },
   {
     "name": "Scarlet Witch",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3500000,
     "speed": 900000,
     "intelligence": 2500000,
@@ -2977,7 +2977,7 @@
   },
   {
     "name": "Silver Surfer",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8000000,
     "speed": 10000000,
     "intelligence": 1000000,
@@ -3083,7 +3083,7 @@
   },
   {
     "name": "Ghost Rider",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 20667,
     "intelligence": 4496,
@@ -3188,7 +3188,7 @@
   },
   {
     "name": "Daredevil",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6736,
     "speed": 20667,
     "intelligence": 29307,
@@ -7882,7 +7882,7 @@
   },
   {
     "name": "Storm",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 15000,
     "speed": 2000000,
     "intelligence": 400000,
@@ -7970,7 +7970,7 @@
   },
   {
     "name": "Darkseid",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 1000000,
     "intelligence": 2000000,
@@ -9284,7 +9284,7 @@
   },
   {
     "name": "T'Challa / Black Panther",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 38160,
     "speed": 120000,
     "intelligence": 167150,
@@ -9808,7 +9808,7 @@
   },
   {
     "name": "The Punisher",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 12240,
     "speed": 6736,
     "intelligence": 29307,
@@ -10897,7 +10897,7 @@
   },
   {
     "name": "The Joker",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2900,
     "speed": 2900,
     "intelligence": 194600,
@@ -10978,7 +10978,7 @@
   },
   {
     "name": "Bane",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 804800,
     "speed": 6736,
     "intelligence": 86600,
@@ -14503,7 +14503,7 @@
   },
   {
     "name": "Blade",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 140000,
     "intelligence": 38160,
@@ -15861,7 +15861,7 @@
   },
   {
     "name": "Venom",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 804800,
     "speed": 750000,
     "intelligence": 20667,
@@ -15952,7 +15952,7 @@
   },
   {
     "name": "Carnage",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1488800,
     "speed": 86600,
     "intelligence": 7904,
@@ -16045,7 +16045,7 @@
   },
   {
     "name": "Doctor Doom",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 8500,
     "intelligence": 10000000,
@@ -16140,7 +16140,7 @@
   },
   {
     "name": "Galactus",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 8000000,
     "intelligence": 10000000,
@@ -16235,7 +16235,7 @@
   },
   {
     "name": "Juggernaut",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6816000,
     "speed": 6736,
     "intelligence": 4496,
@@ -16324,7 +16324,7 @@
   },
   {
     "name": "Green Goblin",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 47227,
     "speed": 38160,
     "intelligence": 804800,
@@ -16418,7 +16418,7 @@
   },
   {
     "name": "Sinestro",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 60350,
     "intelligence": 194600,
@@ -16515,7 +16515,7 @@
   },
   {
     "name": "Reverse Flash",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 6816000,
     "intelligence": 140000,
@@ -16611,7 +16611,7 @@
   },
   {
     "name": "Vision",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 140000,
     "speed": 42667,
     "intelligence": 1488800,
@@ -16706,7 +16706,7 @@
   },
   {
     "name": "Namor",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1488800,
     "speed": 86600,
     "intelligence": 38160,
@@ -16803,7 +16803,7 @@
   },
   {
     "name": "Loki",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 47227,
     "speed": 29307,
     "intelligence": 1836200,
@@ -16897,7 +16897,7 @@
   },
   {
     "name": "Black Widow",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 42667,
     "intelligence": 194600,
@@ -16994,7 +16994,7 @@
   },
   {
     "name": "Uncle Ben",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1206,
     "speed": 961,
     "intelligence": 6736,
@@ -17063,7 +17063,7 @@
   },
   {
     "name": "Squirrel Girl",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6736,
     "speed": 29307,
     "intelligence": 86600,
@@ -17149,7 +17149,7 @@
   },
   {
     "name": "Forbush Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 529,
     "speed": 735,
     "intelligence": 1402,
@@ -17225,7 +17225,7 @@
   },
   {
     "name": "Spider-Ham",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6736,
     "speed": 20667,
     "intelligence": 20667,
@@ -17312,7 +17312,7 @@
   },
   {
     "name": "Slapstick",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 140000,
     "intelligence": 1904,
@@ -17403,7 +17403,7 @@
   },
   {
     "name": "Maggott",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 1470,
     "intelligence": 4496,
@@ -17486,7 +17486,7 @@
   },
   {
     "name": "Stilt-Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6736,
     "speed": 3424,
     "intelligence": 9104,
@@ -17570,7 +17570,7 @@
   },
   {
     "name": "Throg",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 7904,
     "intelligence": 2900,
@@ -17651,7 +17651,7 @@
   },
   {
     "name": "Gwenpool",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6736,
     "speed": 20667,
     "intelligence": 804800,
@@ -17736,7 +17736,7 @@
   },
   {
     "name": "Frog-Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1904,
     "speed": 2900,
     "intelligence": 1755,
@@ -17816,7 +17816,7 @@
   },
   {
     "name": "Condiment Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 735,
     "speed": 1336,
     "intelligence": 1904,
@@ -17892,7 +17892,7 @@
   },
   {
     "name": "Arm-Fall-Off-Boy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 4496,
     "speed": 1402,
     "intelligence": 1610,
@@ -17970,7 +17970,7 @@
   },
   {
     "name": "Matter-Eater Lad",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 5600,
     "speed": 6736,
     "intelligence": 7904,
@@ -18050,7 +18050,7 @@
   },
   {
     "name": "Kite Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1904,
     "speed": 9104,
     "intelligence": 4496,
@@ -18129,7 +18129,7 @@
   },
   {
     "name": "Polka-Dot Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 5600,
     "speed": 4496,
     "intelligence": 6736,
@@ -18214,7 +18214,7 @@
   },
   {
     "name": "Calendar Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2900,
     "speed": 1904,
     "intelligence": 140000,
@@ -18297,7 +18297,7 @@
   },
   {
     "name": "Dogwelder",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9104,
     "speed": 2900,
     "intelligence": 1402,
@@ -18382,7 +18382,7 @@
   },
   {
     "name": "Crazy Quilt",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1904,
     "speed": 1610,
     "intelligence": 7904,
@@ -20003,7 +20003,7 @@
   },
   {
     "name": "Booster Gold",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 8500,
     "speed": 38160,
     "intelligence": 29307,
@@ -20091,7 +20091,7 @@
   },
   {
     "name": "Blue Beetle (Ted Kord)",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6736,
     "speed": 20667,
     "intelligence": 1488800,
@@ -20179,7 +20179,7 @@
   },
   {
     "name": "The Question",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 7904,
     "speed": 6736,
     "intelligence": 3664000,
@@ -20263,7 +20263,7 @@
   },
   {
     "name": "Harley Quinn",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20667,
     "speed": 29307,
     "intelligence": 86600,
@@ -27557,7 +27557,7 @@
   },
   {
     "name": "Ant-Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 42667,
     "speed": 29307,
     "intelligence": 468200,
@@ -27647,7 +27647,7 @@
   },
   {
     "name": "Hawkeye",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 7904,
     "speed": 33707,
     "intelligence": 86600,
@@ -27735,7 +27735,7 @@
   },
   {
     "name": "Cyclops",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 20667,
     "intelligence": 140000,
@@ -27821,7 +27821,7 @@
   },
   {
     "name": "Jean Grey",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 600000,
     "speed": 1500000,
     "intelligence": 3000000,
@@ -27917,7 +27917,7 @@
   },
   {
     "name": "Rogue",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 468200,
     "speed": 140000,
     "intelligence": 33707,
@@ -28005,7 +28005,7 @@
   },
   {
     "name": "Gambit",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 9104,
     "speed": 42667,
     "intelligence": 42667,
@@ -28093,7 +28093,7 @@
   },
   {
     "name": "Colossus",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3664000,
     "speed": 6736,
     "intelligence": 9104,
@@ -28175,7 +28175,7 @@
   },
   {
     "name": "Nightcrawler",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3956,
     "speed": 1145000,
     "intelligence": 33707,
@@ -28264,7 +28264,7 @@
   },
   {
     "name": "Beast",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 60350,
     "intelligence": 6816000,
@@ -28349,7 +28349,7 @@
   },
   {
     "name": "War Machine",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 86600,
     "speed": 86600,
     "intelligence": 60350,
@@ -28445,7 +28445,7 @@
   },
   {
     "name": "Falcon",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 468200,
     "intelligence": 42667,
@@ -28532,7 +28532,7 @@
   },
   {
     "name": "Winter Soldier",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 42667,
     "speed": 42667,
     "intelligence": 86600,
@@ -28626,7 +28626,7 @@
   },
   {
     "name": "Adam Warlock",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1145000,
     "speed": 1145000,
     "intelligence": 1836200,
@@ -28720,7 +28720,7 @@
   },
   {
     "name": "Moon Knight",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 42667,
     "speed": 33707,
     "intelligence": 86600,
@@ -28811,7 +28811,7 @@
   },
   {
     "name": "Elektra",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20667,
     "speed": 468200,
     "intelligence": 86600,
@@ -28906,7 +28906,7 @@
   },
   {
     "name": "Luke Cage",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1145000,
     "speed": 7904,
     "intelligence": 20667,
@@ -28990,7 +28990,7 @@
   },
   {
     "name": "Iron Fist",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 140000,
     "speed": 140000,
     "intelligence": 42667,
@@ -29079,7 +29079,7 @@
   },
   {
     "name": "Rocket Raccoon",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2900,
     "speed": 33707,
     "intelligence": 1836200,
@@ -29171,7 +29171,7 @@
   },
   {
     "name": "Groot",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1836200,
     "speed": 1755,
     "intelligence": 9104,
@@ -29258,7 +29258,7 @@
   },
   {
     "name": "Star-Lord",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 9104,
     "speed": 38160,
     "intelligence": 42667,
@@ -29345,7 +29345,7 @@
   },
   {
     "name": "Nightwing",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 42667,
     "speed": 468200,
     "intelligence": 468200,
@@ -29430,7 +29430,7 @@
   },
   {
     "name": "Batgirl",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20667,
     "speed": 140000,
     "intelligence": 6816000,
@@ -29516,7 +29516,7 @@
   },
   {
     "name": "Red Hood",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 86600,
     "intelligence": 140000,
@@ -29605,7 +29605,7 @@
   },
   {
     "name": "Robin",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9104,
     "speed": 42667,
     "intelligence": 1145000,
@@ -29692,7 +29692,7 @@
   },
   {
     "name": "Catwoman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 12240,
     "speed": 140000,
     "intelligence": 468200,
@@ -29783,7 +29783,7 @@
   },
   {
     "name": "Poison Ivy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 29307,
     "speed": 9104,
     "intelligence": 3664000,
@@ -29869,7 +29869,7 @@
   },
   {
     "name": "Two-Face",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9104,
     "speed": 7904,
     "intelligence": 140000,
@@ -29956,7 +29956,7 @@
   },
   {
     "name": "Penguin",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3956,
     "speed": 2900,
     "intelligence": 804800,
@@ -30042,7 +30042,7 @@
   },
   {
     "name": "Mr. Freeze",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 42667,
     "speed": 4496,
     "intelligence": 6816000,
@@ -30131,7 +30131,7 @@
   },
   {
     "name": "Ra's al Ghul",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 140000,
     "speed": 86600,
     "intelligence": 10000000,
@@ -30227,7 +30227,7 @@
   },
   {
     "name": "Scarecrow",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2900,
     "speed": 6736,
     "intelligence": 1836200,
@@ -30316,7 +30316,7 @@
   },
   {
     "name": "Riddler",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 4496,
     "speed": 6736,
     "intelligence": 6816000,
@@ -30404,7 +30404,7 @@
   },
   {
     "name": "Cyborg",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1145000,
     "speed": 86600,
     "intelligence": 1145000,
@@ -30500,7 +30500,7 @@
   },
   {
     "name": "Raven",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 38160,
     "speed": 140000,
     "intelligence": 1145000,
@@ -30593,7 +30593,7 @@
   },
   {
     "name": "Starfire",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1836200,
     "speed": 6816000,
     "intelligence": 38160,
@@ -30684,7 +30684,7 @@
   },
   {
     "name": "Beast Boy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 140000,
     "intelligence": 9104,
@@ -30773,7 +30773,7 @@
   },
   {
     "name": "Green Arrow",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20667,
     "speed": 42667,
     "intelligence": 140000,
@@ -30856,7 +30856,7 @@
   },
   {
     "name": "Black Canary",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 29307,
     "speed": 140000,
     "intelligence": 86600,
@@ -30942,7 +30942,7 @@
   },
   {
     "name": "Hawkman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 468200,
     "speed": 86600,
     "intelligence": 33707,
@@ -31033,7 +31033,7 @@
   },
   {
     "name": "Firestorm",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 468200,
     "intelligence": 468200,
@@ -31122,7 +31122,7 @@
   },
   {
     "name": "Captain Atom",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3616000,
     "speed": 1836200,
     "intelligence": 140000,
@@ -31217,7 +31217,7 @@
   },
   {
     "name": "Power Girl",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 1836200,
     "intelligence": 140000,
@@ -31310,7 +31310,7 @@
   },
   {
     "name": "Supergirl",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 6816000,
     "intelligence": 140000,
@@ -31402,7 +31402,7 @@
   },
   {
     "name": "Steel",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 140000,
     "speed": 20667,
     "intelligence": 1836200,
@@ -31492,7 +31492,7 @@
   },
   {
     "name": "Lobo",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 1145000,
     "intelligence": 20667,
@@ -31589,7 +31589,7 @@
   },
   {
     "name": "Constantine",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1402,
     "speed": 6736,
     "intelligence": 6816000,
@@ -31683,7 +31683,7 @@
   },
   {
     "name": "Swamp Thing",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1836200,
     "speed": 1610,
     "intelligence": 468200,
@@ -31775,7 +31775,7 @@
   },
   {
     "name": "Blue Beetle",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 468200,
     "intelligence": 86600,
@@ -31870,7 +31870,7 @@
   },
   {
     "name": "Solomon Grundy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 3956,
     "intelligence": 682,
@@ -31959,7 +31959,7 @@
   },
   {
     "name": "Killer Croc",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1145000,
     "speed": 20667,
     "intelligence": 1336,
@@ -32046,7 +32046,7 @@
   },
   {
     "name": "Red Tornado",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 140000,
     "speed": 1836200,
     "intelligence": 86600,
@@ -32133,7 +32133,7 @@
   },
   {
     "name": "Killer Frost",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 12240,
     "speed": 20667,
     "intelligence": 140000,
@@ -32219,7 +32219,7 @@
   },
   {
     "name": "Black Lightning",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 33707,
     "speed": 86600,
     "intelligence": 86600,
@@ -32307,7 +32307,7 @@
   },
   {
     "name": "Metamorpho",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 86600,
     "speed": 38160,
     "intelligence": 42667,
@@ -32394,7 +32394,7 @@
   },
   {
     "name": "Martian Manhunter's Nemesis (Despero)",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 10000000,
     "speed": 86600,
     "intelligence": 468200,
@@ -37083,7 +37083,7 @@
   },
   {
     "name": "Doctor Fate",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 50000,
     "speed": 155000,
     "intelligence": 1460000,
@@ -37273,7 +37273,7 @@
   },
   {
     "name": "Sentry",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6816000,
     "speed": 6816000,
     "intelligence": 86600,
@@ -37365,7 +37365,7 @@
   },
   {
     "name": "Dormammu",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1836200,
     "speed": 1145000,
     "intelligence": 6816000,
@@ -37460,7 +37460,7 @@
   },
   {
     "name": "Odin",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6816000,
     "speed": 140000,
     "intelligence": 1836200,
@@ -37554,7 +37554,7 @@
   },
   {
     "name": "Mephisto",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 804800,
     "speed": 140000,
     "intelligence": 6816000,
@@ -37647,7 +37647,7 @@
   },
   {
     "name": "Blue Marvel",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3664000,
     "speed": 1145000,
     "intelligence": 1488800,
@@ -37738,7 +37738,7 @@
   },
   {
     "name": "Hyperion",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3616000,
     "speed": 3616000,
     "intelligence": 42667,
@@ -37828,7 +37828,7 @@
   },
   {
     "name": "Gladiator",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6816000,
     "speed": 3616000,
     "intelligence": 20667,
@@ -37919,7 +37919,7 @@
   },
   {
     "name": "Beta Ray Bill",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 804800,
     "speed": 140000,
     "intelligence": 86600,
@@ -38012,7 +38012,7 @@
   },
   {
     "name": "Nova",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 468200,
     "speed": 3616000,
     "intelligence": 86600,
@@ -38103,7 +38103,7 @@
   },
   {
     "name": "Vulcan",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1488800,
     "speed": 804800,
     "intelligence": 86600,
@@ -38193,7 +38193,7 @@
   },
   {
     "name": "Anti-Monitor",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 10000000,
     "speed": 1500000,
     "intelligence": 5000000,
@@ -38289,7 +38289,7 @@
   },
   {
     "name": "Superboy-Prime",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 6816000,
     "intelligence": 42667,
@@ -38381,7 +38381,7 @@
   },
   {
     "name": "Doomsday",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 10000000,
     "speed": 800000,
     "intelligence": 30000,
@@ -38474,7 +38474,7 @@
   },
   {
     "name": "Trigon",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6816000,
     "speed": 140000,
     "intelligence": 3616000,
@@ -38569,7 +38569,7 @@
   },
   {
     "name": "The Spectre",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9000000,
     "speed": 3000000,
     "intelligence": 9500000,
@@ -38672,7 +38672,7 @@
   },
   {
     "name": "Brainiac",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 140000,
     "speed": 86600,
     "intelligence": 10000000,
@@ -38770,7 +38770,7 @@
   },
   {
     "name": "Ares",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1836200,
     "speed": 86600,
     "intelligence": 140000,
@@ -38869,7 +38869,7 @@
   },
   {
     "name": "Amazo",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1145000,
     "speed": 1145000,
     "intelligence": 1145000,
@@ -38964,7 +38964,7 @@
   },
   {
     "name": "Nekron",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3616000,
     "speed": 140000,
     "intelligence": 3616000,
@@ -39061,7 +39061,7 @@
   },
   {
     "name": "Mongul",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1836200,
     "speed": 140000,
     "intelligence": 86600,
@@ -50153,7 +50153,7 @@
   },
   {
     "name": "The One Above All",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 10000000,
     "intelligence": 10000000,
@@ -50238,7 +50238,7 @@
   },
   {
     "name": "The One Below All",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 9000000,
     "intelligence": 9000000,
@@ -50327,7 +50327,7 @@
   },
   {
     "name": "The Presence",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 10000000,
     "speed": 10000000,
     "intelligence": 10000000,
@@ -50409,7 +50409,7 @@
   },
   {
     "name": "Elaine Belloc",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9500000,
     "speed": 9500000,
     "intelligence": 10000000,
@@ -50510,7 +50510,7 @@
   },
   {
     "name": "Lucifer Morningstar",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9800000,
     "speed": 9800000,
     "intelligence": 9900000,
@@ -50610,7 +50610,7 @@
   },
   {
     "name": "The Darkest Knight",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 8500000,
     "speed": 8000000,
     "intelligence": 9500000,
@@ -50709,7 +50709,7 @@
   },
   {
     "name": "General Zod",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 4500000,
     "speed": 4200000,
     "intelligence": 1800000,
@@ -50800,7 +50800,7 @@
   },
   {
     "name": "Gorilla Grodd",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 900000,
     "speed": 450000,
     "intelligence": 950000,
@@ -50893,7 +50893,7 @@
   },
   {
     "name": "Cheetah",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 750000,
     "speed": 900000,
     "intelligence": 700000,
@@ -50988,7 +50988,7 @@
   },
   {
     "name": "Black Manta",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 85000,
     "speed": 80000,
     "intelligence": 950000,
@@ -51084,7 +51084,7 @@
   },
   {
     "name": "Circe",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 650000,
     "speed": 550000,
     "intelligence": 9500000,
@@ -51178,7 +51178,7 @@
   },
   {
     "name": "Wally West",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2000000,
     "speed": 9800000,
     "intelligence": 800000,
@@ -51271,7 +51271,7 @@
   },
   {
     "name": "Big Barda",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2800000,
     "speed": 1500000,
     "intelligence": 800000,
@@ -51366,7 +51366,7 @@
   },
   {
     "name": "Orion",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 4000000,
     "speed": 3000000,
     "intelligence": 850000,
@@ -51459,7 +51459,7 @@
   },
   {
     "name": "Etrigan the Demon",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2200000,
     "speed": 1800000,
     "intelligence": 900000,
@@ -51553,7 +51553,7 @@
   },
   {
     "name": "Plastic Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 600000,
     "speed": 800000,
     "intelligence": 700000,
@@ -51645,7 +51645,7 @@
   },
   {
     "name": "Lady Shiva",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9000,
     "speed": 9800,
     "intelligence": 9500,
@@ -51736,7 +51736,7 @@
   },
   {
     "name": "The Beyonder",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 10000000,
     "intelligence": 10000000,
@@ -51838,7 +51838,7 @@
   },
   {
     "name": "Franklin Richards",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8000000,
     "speed": 7500000,
     "intelligence": 8500000,
@@ -51937,7 +51937,7 @@
   },
   {
     "name": "Knull",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 9500000,
     "speed": 8000000,
     "intelligence": 8500000,
@@ -52036,7 +52036,7 @@
   },
   {
     "name": "Proteus",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6000000,
     "speed": 7000000,
     "intelligence": 8500000,
@@ -52130,7 +52130,7 @@
   },
   {
     "name": "Mr. Immortal",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 5500,
     "speed": 5000,
     "intelligence": 6000,
@@ -52214,7 +52214,7 @@
   },
   {
     "name": "Professor X",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2500,
     "speed": 2000,
     "intelligence": 9700000,
@@ -52308,7 +52308,7 @@
   },
   {
     "name": "Apocalypse",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4500000,
     "speed": 2000000,
     "intelligence": 9000000,
@@ -52399,7 +52399,7 @@
   },
   {
     "name": "Red Skull",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 7000,
     "speed": 6000,
     "intelligence": 9700000,
@@ -52493,7 +52493,7 @@
   },
   {
     "name": "Ultron",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2800000,
     "speed": 2000000,
     "intelligence": 9800000,
@@ -52590,7 +52590,7 @@
   },
   {
     "name": "Kang the Conqueror",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 18000,
     "speed": 15000,
     "intelligence": 9900000,
@@ -52688,7 +52688,7 @@
   },
   {
     "name": "Hela",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 5000000,
     "speed": 2500000,
     "intelligence": 900000,
@@ -52782,7 +52782,7 @@
   },
   {
     "name": "Miles Morales",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 700000,
     "speed": 800000,
     "intelligence": 850000,
@@ -52872,7 +52872,7 @@
   },
   {
     "name": "She-Hulk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3800000,
     "speed": 900000,
     "intelligence": 800000,
@@ -52956,7 +52956,7 @@
   },
   {
     "name": "Invisible Woman",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2500000,
     "speed": 700000,
     "intelligence": 850000,
@@ -53041,7 +53041,7 @@
   },
   {
     "name": "Human Torch",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1500000,
     "speed": 3000000,
     "intelligence": 700000,
@@ -53126,7 +53126,7 @@
   },
   {
     "name": "The Thing",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4500000,
     "speed": 400000,
     "intelligence": 700000,
@@ -53212,7 +53212,7 @@
   },
   {
     "name": "Black Bolt",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 5500000,
     "speed": 4000000,
     "intelligence": 900000,
@@ -53300,7 +53300,7 @@
   },
   {
     "name": "X-23",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 900000,
     "speed": 1000000,
     "intelligence": 800000,
@@ -53392,7 +53392,7 @@
   },
   {
     "name": "Kingpin",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 55000,
     "speed": 22000,
     "intelligence": 9500000,
@@ -54144,7 +54144,7 @@
   },
   {
     "name": "Molecule Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8500000,
     "speed": 7000000,
     "intelligence": 8000000,
@@ -54229,7 +54229,7 @@
   },
   {
     "name": "Onslaught",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 7500000,
     "speed": 6000000,
     "intelligence": 7000000,
@@ -54317,7 +54317,7 @@
   },
   {
     "name": "Skaar",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 5000000,
     "speed": 3500000,
     "intelligence": 1500000,
@@ -54405,7 +54405,7 @@
   },
   {
     "name": "Red Hulk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4500000,
     "speed": 4000000,
     "intelligence": 3000000,
@@ -54493,7 +54493,7 @@
   },
   {
     "name": "Blue Hulk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4500000,
     "speed": 4000000,
     "intelligence": 3500000,
@@ -54582,7 +54582,7 @@
   },
   {
     "name": "Amadeus Cho Hulk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4200000,
     "speed": 3800000,
     "intelligence": 8500000,
@@ -54669,7 +54669,7 @@
   },
   {
     "name": "Hyperstorm",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8000000,
     "speed": 7500000,
     "intelligence": 7000000,
@@ -54760,7 +54760,7 @@
   },
   {
     "name": "Blackheart",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3500000,
     "speed": 3000000,
     "intelligence": 5000000,
@@ -54851,7 +54851,7 @@
   },
   {
     "name": "Shuma-Gorath",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8500000,
     "speed": 7000000,
     "intelligence": 8000000,
@@ -54953,7 +54953,7 @@
   },
   {
     "name": "Annihilus",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 5500000,
     "speed": 5000000,
     "intelligence": 6000000,
@@ -55051,7 +55051,7 @@
   },
   {
     "name": "Nova Prime",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3000000,
     "speed": 5000000,
     "intelligence": 4000000,
@@ -55143,7 +55143,7 @@
   },
   {
     "name": "Namorita",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1500000,
     "speed": 2000000,
     "intelligence": 2000000,
@@ -55235,7 +55235,7 @@
   },
   {
     "name": "Sentry Void",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 8000000,
     "speed": 8000000,
     "intelligence": 5000000,
@@ -55334,7 +55334,7 @@
   },
   {
     "name": "Iron Lad",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 500000,
     "speed": 800000,
     "intelligence": 8500000,
@@ -55424,7 +55424,7 @@
   },
   {
     "name": "Klaw",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 1000000,
     "speed": 1200000,
     "intelligence": 2500000,
@@ -55513,7 +55513,7 @@
   },
   {
     "name": "Omega Red",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2500000,
     "speed": 2000000,
     "intelligence": 1500000,
@@ -55601,7 +55601,7 @@
   },
   {
     "name": "Sabretooth",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2200000,
     "speed": 2500000,
     "intelligence": 1800000,
@@ -55689,7 +55689,7 @@
   },
   {
     "name": "Quicksilver",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 300000,
     "speed": 9000000,
     "intelligence": 3000000,
@@ -55776,7 +55776,7 @@
   },
   {
     "name": "Magik",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 600000,
     "speed": 700000,
     "intelligence": 5000000,
@@ -55869,7 +55869,7 @@
   },
   {
     "name": "Kraven the Hunter",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 800000,
     "speed": 700000,
     "intelligence": 3000000,
@@ -55962,7 +55962,7 @@
   },
   {
     "name": "Hercules (Marvel)",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 6000000,
     "speed": 3000000,
     "intelligence": 2000000,
@@ -56050,7 +56050,7 @@
   },
   {
     "name": "Perpetua",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9800000,
     "speed": 9500000,
     "intelligence": 9500000,
@@ -56137,7 +56137,7 @@
   },
   {
     "name": "Michael Demiurgos",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9900000,
     "speed": 9900000,
     "intelligence": 9500000,
@@ -56224,7 +56224,7 @@
   },
   {
     "name": "Dream (The Endless)",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 7000000,
     "speed": 8000000,
     "intelligence": 9000000,
@@ -56323,7 +56323,7 @@
   },
   {
     "name": "Parallax",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 8000000,
     "speed": 8000000,
     "intelligence": 7000000,
@@ -56420,7 +56420,7 @@
   },
   {
     "name": "Black Racer",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 5000000,
     "speed": 9500000,
     "intelligence": 5000000,
@@ -56514,7 +56514,7 @@
   },
   {
     "name": "Larfleeze",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3000000,
     "speed": 3000000,
     "intelligence": 2500000,
@@ -56607,7 +56607,7 @@
   },
   {
     "name": "Atrocitus",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3000000,
     "speed": 2500000,
     "intelligence": 4000000,
@@ -56699,7 +56699,7 @@
   },
   {
     "name": "Saint Walker",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1500000,
     "speed": 3000000,
     "intelligence": 3000000,
@@ -56788,7 +56788,7 @@
   },
   {
     "name": "Jessica Cruz",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2000000,
     "speed": 3000000,
     "intelligence": 3000000,
@@ -56879,7 +56879,7 @@
   },
   {
     "name": "Kyle Rayner",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 2500000,
     "speed": 4000000,
     "intelligence": 5000000,
@@ -56968,7 +56968,7 @@
   },
   {
     "name": "Damage",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 4500000,
     "speed": 3500000,
     "intelligence": 1000000,
@@ -57056,7 +57056,7 @@
   },
   {
     "name": "Captain Cold",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 100000,
     "speed": 80000,
     "intelligence": 4000000,
@@ -57146,7 +57146,7 @@
   },
   {
     "name": "Heat Wave",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 100000,
     "speed": 80000,
     "intelligence": 3000000,
@@ -57233,7 +57233,7 @@
   },
   {
     "name": "Eclipso",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 6000000,
     "speed": 5000000,
     "intelligence": 6000000,
@@ -57323,7 +57323,7 @@
   },
   {
     "name": "Vandal Savage",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 800000,
     "speed": 700000,
     "intelligence": 9000000,
@@ -57409,7 +57409,7 @@
   },
   {
     "name": "Hawk",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1500000,
     "speed": 1000000,
     "intelligence": 1000000,
@@ -57495,7 +57495,7 @@
   },
   {
     "name": "Dove",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 800000,
     "speed": 900000,
     "intelligence": 2000000,
@@ -57582,7 +57582,7 @@
   },
   {
     "name": "Azrael",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1200000,
     "speed": 1000000,
     "intelligence": 2500000,
@@ -57671,7 +57671,7 @@
   },
   {
     "name": "Huntress",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 300000,
     "speed": 400000,
     "intelligence": 4000000,
@@ -61361,7 +61361,7 @@
   },
   {
     "name": "Warpath",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 170000,
     "speed": 170000,
     "intelligence": 140000,
@@ -61448,7 +61448,7 @@
   },
   {
     "name": "Wasp",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 16800,
     "speed": 16800,
     "intelligence": 16800,
@@ -61537,7 +61537,7 @@
   },
   {
     "name": "White Tiger",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3840,
     "speed": 3840,
     "intelligence": 5760,
@@ -61625,7 +61625,7 @@
   },
   {
     "name": "Wildcat",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3840,
     "speed": 3840,
     "intelligence": 5760,
@@ -61785,7 +61785,7 @@
   },
   {
     "name": "Wonder Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 4200000,
     "speed": 4100000,
     "intelligence": 2500000,
@@ -62297,7 +62297,7 @@
   },
   {
     "name": "Zebediah Killgrave",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3840,
     "speed": 3840,
     "intelligence": 4320,
@@ -62588,7 +62588,7 @@
   },
   {
     "name": "Black Panther",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 400000,
     "speed": 200000,
     "intelligence": 800000,
@@ -62672,7 +62672,7 @@
   },
   {
     "name": "Punisher",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 3500,
     "speed": 3200,
     "intelligence": 7200,
@@ -62760,7 +62760,7 @@
   },
   {
     "name": "Iceman",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 600000,
     "speed": 900000,
     "intelligence": 350000,
@@ -62837,7 +62837,7 @@
   },
   {
     "name": "Emma Frost",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 400000,
     "speed": 180000,
     "intelligence": 3000000,
@@ -62912,7 +62912,7 @@
   },
   {
     "name": "Mystique",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 18000,
     "speed": 22000,
     "intelligence": 200000,
@@ -62988,7 +62988,7 @@
   },
   {
     "name": "Mr Fantastic",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 500000,
     "speed": 300000,
     "intelligence": 3500000,
@@ -63069,7 +63069,7 @@
   },
   {
     "name": "Thing",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 2000000,
     "speed": 120000,
     "intelligence": 150000,
@@ -63143,7 +63143,7 @@
   },
   {
     "name": "Flash",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 1000000,
     "speed": 30000000,
     "intelligence": 600000,
@@ -63224,7 +63224,7 @@
   },
   {
     "name": "Joker",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 3500,
     "speed": 3800,
     "intelligence": 9200,
@@ -63311,7 +63311,7 @@
   },
   {
     "name": "Hawkgirl",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 650000,
     "speed": 500000,
     "intelligence": 350000,
@@ -63390,7 +63390,7 @@
   },
   {
     "name": "Living Tribunal",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 10000000,
     "speed": 10000000,
     "intelligence": 10000000,
@@ -63484,7 +63484,7 @@
   },
   {
     "name": "Doctor Manhattan",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9500000,
     "speed": 9800000,
     "intelligence": 9700000,
@@ -63578,7 +63578,7 @@
   },
   {
     "name": "Mr. Mxyzptlk",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 9000000,
     "speed": 9500000,
     "intelligence": 9000000,
@@ -63672,7 +63672,7 @@
   },
   {
     "name": "Cable",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 600000,
     "speed": 400000,
     "intelligence": 850000,
@@ -63773,7 +63773,7 @@
   },
   {
     "name": "Bishop",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 300000,
     "speed": 350000,
     "intelligence": 500000,
@@ -63868,7 +63868,7 @@
   },
   {
     "name": "Psylocke",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 80000,
     "speed": 120000,
     "intelligence": 700000,
@@ -63970,7 +63970,7 @@
   },
   {
     "name": "Polaris",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 350000,
     "speed": 300000,
     "intelligence": 600000,
@@ -64071,7 +64071,7 @@
   },
   {
     "name": "Havok",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 80000,
     "speed": 90000,
     "intelligence": 600000,
@@ -64167,7 +64167,7 @@
   },
   {
     "name": "Ms. Marvel",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 180000,
     "speed": 150000,
     "intelligence": 580000,
@@ -64265,7 +64265,7 @@
   },
   {
     "name": "America Chavez",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 800000,
     "speed": 500000,
     "intelligence": 550000,
@@ -64364,7 +64364,7 @@
   },
   {
     "name": "Kate Bishop",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 18000,
     "speed": 22000,
     "intelligence": 750000,
@@ -64460,7 +64460,7 @@
   },
   {
     "name": "Shuri",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 50000,
     "speed": 80000,
     "intelligence": 950000,
@@ -64564,7 +64564,7 @@
   },
   {
     "name": "Silk",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 250000,
     "intelligence": 600000,
@@ -64663,7 +64663,7 @@
   },
   {
     "name": "Spider-Woman",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 180000,
     "speed": 200000,
     "intelligence": 650000,
@@ -64762,7 +64762,7 @@
   },
   {
     "name": "Nick Fury",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 20000,
     "speed": 18000,
     "intelligence": 920000,
@@ -64866,7 +64866,7 @@
   },
   {
     "name": "Valkyrie",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 700000,
     "speed": 600000,
     "intelligence": 550000,
@@ -64938,7 +64938,7 @@
   },
   {
     "name": "Echo",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 30000,
     "speed": 35000,
     "intelligence": 800000,
@@ -65008,7 +65008,7 @@
   },
   {
     "name": "Songbird",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 90000,
     "speed": 180000,
     "intelligence": 550000,
@@ -65078,7 +65078,7 @@
   },
   {
     "name": "Tigra",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 120000,
     "speed": 180000,
     "intelligence": 500000,
@@ -65150,7 +65150,7 @@
   },
   {
     "name": "Elsa Bloodstone",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 25000,
     "speed": 28000,
     "intelligence": 750000,
@@ -65225,7 +65225,7 @@
   },
   {
     "name": "Machine Man",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 250000,
     "speed": 300000,
     "intelligence": 750000,
@@ -65328,7 +65328,7 @@
   },
   {
     "name": "Quasar",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 500000,
     "speed": 800000,
     "intelligence": 700000,
@@ -65428,7 +65428,7 @@
   },
   {
     "name": "US Agent",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 60000,
     "speed": 55000,
     "intelligence": 500000,
@@ -65520,7 +65520,7 @@
   },
   {
     "name": "Stature",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 120000,
     "intelligence": 500000,
@@ -65616,7 +65616,7 @@
   },
   {
     "name": "Monica Rambeau",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 400000,
     "speed": 900000,
     "intelligence": 650000,
@@ -65714,7 +65714,7 @@
   },
   {
     "name": "Ghost-Spider",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 220000,
     "intelligence": 620000,
@@ -65813,7 +65813,7 @@
   },
   {
     "name": "Namora",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 750000,
     "speed": 500000,
     "intelligence": 550000,
@@ -65909,7 +65909,7 @@
   },
   {
     "name": "Moondragon",
-    "universe": "Marvel Comics",
+    "universe": "Multiverse Comics",
     "strength": 200000,
     "speed": 300000,
     "intelligence": 900000,
@@ -66007,7 +66007,7 @@
   },
   {
     "name": "Donna Troy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 800000,
     "speed": 700000,
     "intelligence": 600000,
@@ -66104,7 +66104,7 @@
   },
   {
     "name": "Arsenal",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 25000,
     "speed": 30000,
     "intelligence": 700000,
@@ -66199,7 +66199,7 @@
   },
   {
     "name": "Aqualad",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 80000,
     "speed": 120000,
     "intelligence": 600000,
@@ -66297,7 +66297,7 @@
   },
   {
     "name": "Batwoman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 18000,
     "speed": 20000,
     "intelligence": 800000,
@@ -66395,7 +66395,7 @@
   },
   {
     "name": "Cassandra Cain",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20000,
     "speed": 28000,
     "intelligence": 700000,
@@ -66488,7 +66488,7 @@
   },
   {
     "name": "Talia al Ghul",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20000,
     "speed": 24000,
     "intelligence": 820000,
@@ -66588,7 +66588,7 @@
   },
   {
     "name": "Mr. Terrific",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 20000,
     "speed": 22000,
     "intelligence": 980000,
@@ -66687,7 +66687,7 @@
   },
   {
     "name": "The Atom",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 80000,
     "speed": 200000,
     "intelligence": 900000,
@@ -66761,7 +66761,7 @@
   },
   {
     "name": "Mister Miracle",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 90000,
     "speed": 150000,
     "intelligence": 850000,
@@ -66837,7 +66837,7 @@
   },
   {
     "name": "Zoom",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 400000,
     "speed": 3000000,
     "intelligence": 700000,
@@ -66908,7 +66908,7 @@
   },
   {
     "name": "Deadman",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 5000,
     "speed": 50000,
     "intelligence": 750000,
@@ -66980,7 +66980,7 @@
   },
   {
     "name": "Animal Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 200000,
     "speed": 250000,
     "intelligence": 600000,
@@ -67051,7 +67051,7 @@
   },
   {
     "name": "Bronze Tiger",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 22000,
     "speed": 25000,
     "intelligence": 750000,
@@ -67143,7 +67143,7 @@
   },
   {
     "name": "Fire",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 80000,
     "speed": 150000,
     "intelligence": 550000,
@@ -67238,7 +67238,7 @@
   },
   {
     "name": "Ice",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 120000,
     "speed": 100000,
     "intelligence": 550000,
@@ -67333,7 +67333,7 @@
   },
   {
     "name": "Guy Gardner",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 500000,
     "speed": 600000,
     "intelligence": 550000,
@@ -67431,7 +67431,7 @@
   },
   {
     "name": "John Stewart",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 600000,
     "speed": 700000,
     "intelligence": 800000,
@@ -67528,7 +67528,7 @@
   },
   {
     "name": "Mera",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 700000,
     "speed": 600000,
     "intelligence": 700000,
@@ -67599,7 +67599,7 @@
   },
   {
     "name": "Steppenwolf",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 900000,
     "speed": 700000,
     "intelligence": 650000,
@@ -67673,7 +67673,7 @@
   },
   {
     "name": "Granny Goodness",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 100000,
     "speed": 80000,
     "intelligence": 900000,
@@ -67747,7 +67747,7 @@
   },
   {
     "name": "Black Hand",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 50000,
     "speed": 80000,
     "intelligence": 700000,
@@ -67820,7 +67820,7 @@
   },
   {
     "name": "Elongated Man",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 80000,
     "speed": 100000,
     "intelligence": 800000,
@@ -67890,7 +67890,7 @@
   },
   {
     "name": "Zatara",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 15000,
     "speed": 20000,
     "intelligence": 900000,
@@ -67987,7 +67987,7 @@
   },
   {
     "name": "Jade",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 300000,
     "speed": 400000,
     "intelligence": 600000,
@@ -68081,7 +68081,7 @@
   },
   {
     "name": "Superboy",
-    "universe": "DC Comics",
+    "universe": "Legacy Comics",
     "strength": 900000,
     "speed": 800000,
     "intelligence": 600000,

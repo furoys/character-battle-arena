@@ -40,7 +40,7 @@ export default defineConfig({
       manifest: {
         name: "A.v.A — Anyone vs Anyone",
         short_name: "A.v.A",
-        description: "AI-powered character fight simulator. 950+ fighters from Marvel, DC, anime, video games, mythology and more. Who wins?",
+        description: "AI-powered character fight simulator. 950+ fighters from Multiverse, Legacy, anime, video games, mythology and more. Who wins?",
         start_url: basePath,
         scope: basePath,
         display: "standalone",

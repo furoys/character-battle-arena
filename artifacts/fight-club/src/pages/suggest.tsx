@@ -28,7 +28,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [1],
     team2Ids: [7],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
     hot: true,
   },
   {
@@ -38,7 +38,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [29],
     team2Ids: [89],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
     hot: true,
   },
   {
@@ -48,7 +48,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [1, 13, 4, 14, 15],
     team2Ids: [5, 7, 23, 24, 3],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
     hot: true,
   },
   {
@@ -58,7 +58,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [13],
     team2Ids: [112],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
     hot: true,
   },
   {
@@ -68,7 +68,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [1],
     team2Ids: [338],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
   {
     id: "flash-vs-quicksilver",
@@ -77,7 +77,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [648, 14],
     team2Ids: [32, 191],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
   {
     id: "scarlet-witch-vs-wonder-woman",
@@ -86,16 +86,16 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [31],
     team2Ids: [4],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
   {
     id: "green-lantern-vs-silver-surfer",
     title: "Willpower vs Power Cosmic",
-    theory: "Hal Jordan's ring constructs are limited only by imagination and willpower. Silver Surfer's Power Cosmic makes him one of Marvel's fastest and strongest. Fan theory: Surfer's raw power wins short-term, but Jordan's will is literally infinite.",
+    theory: "Hal Jordan's ring constructs are limited only by imagination and willpower. Silver Surfer's Power Cosmic makes him one of Multiverse's fastest and strongest. Fan theory: Surfer's raw power wins short-term, but Jordan's will is literally infinite.",
     team1Ids: [16],
     team2Ids: [32],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
   {
     id: "doom-vs-lex",
@@ -104,7 +104,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [186],
     team2Ids: [20],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
   {
     id: "x-men-vs-jsa",
@@ -113,7 +113,7 @@ const MATCHUPS: Matchup[] = [
     team1Ids: [27, 329, 88, 26, 328],
     team2Ids: [4, 14, 16, 17, 25],
     mode: "debate",
-    category: "DC vs Marvel",
+    category: "Legacy vs Multiverse",
   },
 
   // ── Anime Debates ─────────────────────────────────────────────────────────────
@@ -371,8 +371,8 @@ const MATCHUPS: Matchup[] = [
   // ── Gods & Myths ──────────────────────────────────────────────────────────────
   {
     id: "kratos-vs-thor",
-    title: "The God of War vs Marvel's Thor",
-    theory: "Kratos has killed Ares, Zeus, Kronos, Odin, and Thor (Norse). Marvel's Thor has fought Galactus and Celestials. The debate: is GoW's power scaling comparable to Marvel cosmic? Most agree in-lore Kratos scales higher than people think.",
+    title: "The God of War vs Multiverse's Thor",
+    theory: "Kratos has killed Ares, Zeus, Kronos, Odin, and Thor (Norse). Multiverse's Thor has fought Galactus and Celestials. The debate: is GoW's power scaling comparable to Multiverse cosmic? Most agree in-lore Kratos scales higher than people think.",
     team1Ids: [69],
     team2Ids: [7],
     mode: "debate",
@@ -382,7 +382,7 @@ const MATCHUPS: Matchup[] = [
   {
     id: "zeus-vs-thor",
     title: "King of Olympus vs Asgardian Thunder",
-    theory: "Greek pantheon vs Norse pantheon — the original mythology war. Zeus rules all gods and can throw lightning that leveled Typhon. Thor is mighty but not the king of his pantheon. Most mythology scholars give it to Zeus, but Marvel Thor fans disagree.",
+    theory: "Greek pantheon vs Norse pantheon — the original mythology war. Zeus rules all gods and can throw lightning that leveled Typhon. Thor is mighty but not the king of his pantheon. Most mythology scholars give it to Zeus, but Multiverse Thor fans disagree.",
     team1Ids: [78],
     team2Ids: [7],
     mode: "debate",
@@ -411,7 +411,7 @@ const MATCHUPS: Matchup[] = [
   {
     id: "galactus-vs-anos",
     title: "World Eater vs Demon King",
-    theory: "Galactus eats planets as snacks. Anos Voldigoad can destroy all of reality — he ended a thousand-year war by dying and resurrecting to do it again. Community debate: Anos is one of few anime characters who could genuinely fight a Marvel Cosmic.",
+    theory: "Galactus eats planets as snacks. Anos Voldigoad can destroy all of reality — he ended a thousand-year war by dying and resurrecting to do it again. Community debate: Anos is one of few anime characters who could genuinely fight a Multiverse Cosmic.",
     team1Ids: [187],
     team2Ids: [182],
     mode: "debate",
@@ -421,7 +421,7 @@ const MATCHUPS: Matchup[] = [
   {
     id: "anti-monitor-vs-thanos",
     title: "Anti-Monitor vs Thanos — Universe Enders",
-    theory: "Anti-Monitor destroyed the entire DC multiverse. Thanos with the Gauntlet deleted half of all life in the universe with a snap. The debate: does the Gauntlet's reality stone beat a being literally made of antimatter? Most think Anti-Monitor at full power makes the Gauntlet irrelevant.",
+    theory: "Anti-Monitor destroyed the entire Legacy multiverse. Thanos with the Gauntlet deleted half of all life in the universe with a snap. The debate: does the Gauntlet's reality stone beat a being literally made of antimatter? Most think Anti-Monitor at full power makes the Gauntlet irrelevant.",
     team1Ids: [482],
     team2Ids: [29],
     mode: "debate",
@@ -440,7 +440,7 @@ const MATCHUPS: Matchup[] = [
   {
     id: "beerus-vs-darkseid",
     title: "God of Destruction vs Lord of Apokolips",
-    theory: "Beerus destroyed half a planet with a finger flick and can erase things from existence with Hakai. Darkseid has the Omega Beams that can erase time. Most Dragon Ball fans say Beerus ends Darkseid instantly. DC fans argue Omega Force is reality-level. This is the cross-IP cosmic debate.",
+    theory: "Beerus destroyed half a planet with a finger flick and can erase things from existence with Hakai. Darkseid has the Omega Beams that can erase time. Most Dragon Ball fans say Beerus ends Darkseid instantly. Legacy fans argue Omega Force is reality-level. This is the cross-IP cosmic debate.",
     team1Ids: [40],
     team2Ids: [89],
     mode: "debate",
@@ -594,7 +594,7 @@ const MATCHUPS: Matchup[] = [
   },
 ];
 
-const CATEGORIES = ["All", "Developer Legends", "DC vs Marvel", "Anime Debates", "Street Level", "Video Game Legends", "Sci-Fi Clash", "Cosmic Tier", "Gods & Myths", "Horror Showdown", "Fantasy Clash"];
+const CATEGORIES = ["All", "Developer Legends", "Legacy vs Multiverse", "Anime Debates", "Street Level", "Video Game Legends", "Sci-Fi Clash", "Cosmic Tier", "Gods & Myths", "Horror Showdown", "Fantasy Clash"];
 
 // ─── Matchup card ─────────────────────────────────────────────────────────────
 function FighterMini({ character, side }: { character: Character | undefined; side: "left" | "right" }) {
