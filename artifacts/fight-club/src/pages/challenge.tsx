@@ -12,6 +12,7 @@ import { censorFightResult } from "@/lib/profanity-filter";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setJoinerToken, getCreatorToken, getJoinerToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge, pushSupported } from "@/lib/push-subscribe";
+import { ModifierBadge } from "@/components/modifier-badge";
 
 interface ChallengeData {
   code: string;
@@ -24,6 +25,10 @@ interface ChallengeData {
   team1Ready: boolean;
   team2Ready: boolean;
   fightId: number | null;
+  // Chaos modifier id (e.g. "lava_floor") or null for standard rules. Locked
+  // at challenge-create time and shown in the lobby + fight HUD so both
+  // players know the rules before they hit READY.
+  modifierId: string | null;
 }
 
 // Polls until the challenge is "settled" — i.e. both sides ready or fight
@@ -410,6 +415,10 @@ export function Challenge() {
         team2: t2Ids,
         mode: mode as "cinematic",
         challengeCode: challenge?.code,
+        // Pass through for clarity / non-challenge fallback. The server
+        // re-reads the modifier from the challenge row regardless, so this
+        // can't be tampered with by the client.
+        modifierId: challenge?.modifierId ?? null,
       },
     });
   };
@@ -803,6 +812,7 @@ export function Challenge() {
           team1Images={fightTeam1Chars.map(c => c.imageUrl)}
           team2Images={fightTeam2Chars.map(c => c.imageUrl)}
           completedSections={simulateFight.completedSections}
+          modifierId={challenge.modifierId}
         />
       </div>
     );
@@ -915,6 +925,14 @@ export function Challenge() {
             <div style={{ fontSize: 9, letterSpacing: "0.18em", color: "rgba(255,255,255,0.45)" }}>
               Both players must hit <span style={{ color: "#00f0ff" }}>READY</span> to start the fight.
             </div>
+            {/* Chaos modifier badge — picked by the creator at challenge-create
+                time, locked once shared. Both players see it here so the rules
+                are agreed upon before READY. */}
+            {challenge.modifierId && (
+              <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
+                <ModifierBadge modifierId={challenge.modifierId} />
+              </div>
+            )}
           </div>
 
           {/* Ready status row */}
@@ -1059,6 +1077,7 @@ export function Challenge() {
         team1Images={fightTeam1Chars.map(c => c.imageUrl)}
         team2Images={fightTeam2Chars.map(c => c.imageUrl)}
         completedSections={simulateFight.completedSections}
+        modifierId={challenge.modifierId}
       />
     </div>
   );

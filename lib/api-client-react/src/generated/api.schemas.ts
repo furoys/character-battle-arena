@@ -154,6 +154,8 @@ export interface FightDetail {
   summary: string;
   arenaIntro?: string;
   intro?: string;
+  /** Chaos modifier active for this fight, if any */
+  modifierId?: string | null;
   simulatedAt: string;
 }
 
@@ -163,5 +165,7 @@ export interface FightRecord {
   team2Names: string[];
   winner: number;
   summary: string;
+  /** Chaos modifier active for this fight, if any */
+  modifierId?: string | null;
   simulatedAt: string;
 }

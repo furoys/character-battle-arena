@@ -17,6 +17,8 @@ import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setCreatorToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge } from "@/lib/push-subscribe";
+import { LS_LAST_MODIFIER } from "@/lib/modifiers";
+import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -311,6 +313,10 @@ export function Home() {
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
   const [upsetMode, setUpsetMode] = useState(false);
+  // Chaos modifier — persisted so a player's last pick survives reloads but
+  // is NOT sticky across new sessions (cleared via the picker's "None" tile).
+  const [modifierId, setModifierId] = useStoredModifier(LS_LAST_MODIFIER);
+  const [modifierPickerOpen, setModifierPickerOpen] = useState(false);
   const toggleFavorite = (id: number) => {
     setFavorites(prev => {
       const next = new Set(prev);
@@ -436,7 +442,7 @@ export function Home() {
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
   };
 
   const handleRandomFight = () => {
@@ -481,7 +487,7 @@ export function Home() {
       const r = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team1Ids: team1.map(c => c.id), mode: "cinematic", blind }),
+        body: JSON.stringify({ team1Ids: team1.map(c => c.id), mode: "cinematic", blind, modifierId: modifierId ?? null }),
       });
       if (!r.ok) throw new Error("Failed to create challenge");
       const { code, creatorToken } = await r.json() as { code: string; creatorToken?: string };
@@ -854,6 +860,13 @@ export function Home() {
             boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
           }}
         >
+          {/* Chaos modifier strip — sits directly above the FIGHT bar so the
+              modifier in play is visible at the moment of commitment. Always
+              visible; tapping opens a bottom-sheet picker. */}
+          {canFight && (
+            <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+          )}
+
           {/* Glowing FIGHT bar — only when both teams have fighters */}
           {canFight && (
             <button
@@ -1047,7 +1060,7 @@ export function Home() {
           open={showModal}
           onClose={() => { setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
           }}
           result={censoredResult}
           isSimulating={simulateFight.isPending && !simulateFight.streaming}
@@ -1153,6 +1166,15 @@ export function Home() {
           </div>
         </div>
       )}
+
+      {/* Chaos modifier picker — bottom sheet, mounted at root so it overlays
+          the FIGHT modal too if reopened mid-stream. */}
+      <ModifierPicker
+        open={modifierPickerOpen}
+        current={modifierId}
+        onClose={() => setModifierPickerOpen(false)}
+        onChange={setModifierId}
+      />
     </>
   );
 }

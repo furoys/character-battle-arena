@@ -182,6 +182,10 @@ export const ListFightsResponseItem = zod.object({
   team2Names: zod.array(zod.string()),
   winner: zod.number(),
   summary: zod.string(),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe("Chaos modifier active for this fight, if any"),
   simulatedAt: zod.coerce.date(),
 });
 export const ListFightsResponse = zod.array(ListFightsResponseItem);
@@ -349,6 +353,10 @@ export const GetFightResponse = zod.object({
   summary: zod.string(),
   arenaIntro: zod.string().optional(),
   intro: zod.string().optional(),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe("Chaos modifier active for this fight, if any"),
   simulatedAt: zod.coerce.date(),
 });
 
