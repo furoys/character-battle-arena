@@ -57,3 +57,34 @@ export function getOwnedTokenForChallenge(code: string): { token: string; side: 
   if (t.joiner) return { token: t.joiner, side: "joiner" };
   return null;
 }
+
+// Lists every challenge code this browser has ever owned a side of, with the
+// side it owns. Used by the home-screen pending-challenges inbox to poll the
+// status of fights the player started but walked away from.
+export interface StoredChallengeEntry {
+  code: string;
+  side: "creator" | "joiner";
+  token: string;
+}
+export function getAllStoredChallenges(): StoredChallengeEntry[] {
+  if (typeof window === "undefined") return [];
+  const out: StoredChallengeEntry[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(KEY_PREFIX)) continue;
+      const code = k.slice(KEY_PREFIX.length);
+      if (!code) continue;
+      const t = read(code);
+      if (t.creator) out.push({ code, side: "creator", token: t.creator });
+      else if (t.joiner) out.push({ code, side: "joiner", token: t.joiner });
+    }
+  } catch { /* private mode / storage disabled */ }
+  return out;
+}
+
+// Drops a stored challenge (used when it expires / completes / 404s on poll
+// so the inbox stays tidy).
+export function forgetChallenge(code: string): void {
+  try { localStorage.removeItem(KEY_PREFIX + code.toUpperCase()); } catch {}
+}
