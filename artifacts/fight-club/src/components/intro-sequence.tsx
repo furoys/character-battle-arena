@@ -19,21 +19,23 @@ const CAST = [
   { name: "PITT",          sub: "Full Bleed Studios",  img: "pitt.jpg",          color: "#00f0ff" },
 ];
 
-// ── Per-character durations — starts slow, accelerates, ends fast ─────────────
-//    i:  0    1    2    3    4    5    6    7    8    9   10   11   12   13   14
-const CHAR_DURATIONS = [1200, 1090, 990, 905, 820, 750, 680, 620, 565, 515, 465, 425, 385, 450, 420];
-const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // ≈ 9080ms
+// ── Per-character durations — scaled to fit the 24.984s intro speech audio ────
+// Proportional scale: 24,980ms total / 18,700ms original = ×1.336
+// Starts slower, accelerates, ends fast — same ramp shape, longer window.
+//    i:  0     1     2     3     4     5    6    7    8    9   10   11   12   13   14
+const CHAR_DURATIONS = [1605, 1455, 1320, 1210, 1095, 1000, 910, 830, 755, 690, 620, 570, 515, 600, 560];
+const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // 13,735ms
 
-// ── Stage durations (ms) ──────────────────────────────────────────────────────
+// ── Stage durations (ms) — total = 24,980ms ≈ intro-speech.mp3 (24.984s) ─────
 const STAGE_DURATIONS = [
-  800,               // 0 — black awakening
-  120,               // 1 — opening crackle-flash
-  1800,              // 2 — icon slams in
-  TOTAL_SHOWCASE_MS, // 3 — character showcase
-  200,               // 4 — impact flash
-  2200,              // 5 — ANYONE VS ANYONE
-  2600,              // 6 — logo assembled
-  700,               // 7 — iris-out
+  1070,              // 0 — black awakening        (×1.336 from 800ms)
+  160,               // 1 — opening crackle-flash  (×1.336 from 120ms)
+  2400,              // 2 — icon slams in          (×1.336 from 1800ms)
+  TOTAL_SHOWCASE_MS, // 3 — character showcase     13,735ms
+  265,               // 4 — impact flash           (×1.336 from 200ms)
+  2940,              // 5 — ANYONE VS ANYONE       (×1.336 from 2200ms)
+  3475,              // 6 — logo assembled         (×1.336 from 2600ms)
+  935,               // 7 — iris-out               (×1.336 from 700ms)
 ];
 
 const NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`;
@@ -210,7 +212,7 @@ function CharCard({ char, idx, duration }: { char: typeof CAST[0]; idx: number; 
   const fromRight = idx % 2 === 1;
   // Rotate through 3 layout moods: standard | centered | corner
   const mood = idx % 3;
-  const isFast = duration < 400;
+  const isFast = duration < 540;
   const textDelay = isFast ? 0 : 0.15;
   const textDur   = isFast ? 0.2 : 0.4;
   const textAnim  = isFast ? "text-slam" : fromRight ? "slide-up-text" : "slide-right-text";
