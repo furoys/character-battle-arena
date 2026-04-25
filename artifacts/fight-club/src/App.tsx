@@ -94,16 +94,16 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+// Module-level flag — true on every fresh JS runtime load (= every real app launch).
+// Avoids sessionStorage, which can persist across TWA / Play Store app launches.
+let _introPlayed = false;
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
-  // Show the intro once per session (sessionStorage clears when the tab/PWA closes).
-  const [showIntro, setShowIntro] = useState(() => {
-    try { return !sessionStorage.getItem("ava-intro-seen"); }
-    catch { return false; }
-  });
+  const [showIntro, setShowIntro] = useState(!_introPlayed);
 
   const handleIntroDone = () => {
-    try { sessionStorage.setItem("ava-intro-seen", "1"); } catch { /* noop */ }
+    _introPlayed = true;
     setShowIntro(false);
   };
 
