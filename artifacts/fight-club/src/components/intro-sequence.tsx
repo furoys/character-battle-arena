@@ -509,9 +509,11 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     let   ctx: AudioContext | null = null;
 
     // ── Visual stage onsets (seconds from component mount) ────────────────
-    // Stage 2 — A·v·A logo crash  : 1070 + 160 = 1230ms
-    // Stage 5 — ANYONE VS ANYONE  : stages 0-4 sum = 17 630ms
+    // Stage 2 — A·v·A logo crash  : 1070 + 160          = 1 230ms
+    // Stage 3 — Darth Vader (1st char card): +2400       = 3 630ms
+    // Stage 5 — ANYONE VS ANYONE  : stages 0-4 sum      = 17 630ms
     const STAGE2_T = (STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;               // 1.23 s
+    const STAGE3_T = STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0) / 1000;  // 3.63 s
     const STAGE5_T = STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0) / 1000;  // 17.63 s
 
     // Sidechain duck profile — voice dips when hit fires, then recovers
@@ -539,8 +541,11 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         // Hit times are adjusted so they fire at the correct wall-clock
         // instant matching the visual stage onsets.
         const decodeLatencySec = (performance.now() - mountTime) / 1000;
-        const hit1Rel = Math.max(0.02, STAGE2_T - decodeLatencySec);  // rel to audio start
-        const hit2Rel = Math.max(0.02, STAGE5_T - decodeLatencySec);
+        const hit1Rel        = Math.max(0.02, STAGE2_T - decodeLatencySec);  // rel to audio start
+        const hit2Rel        = Math.max(0.02, STAGE5_T - decodeLatencySec);
+        // Speech waits until Darth Vader hits the screen (stage 3 onset).
+        // If decode took longer than 3.63s (very slow network) we start immediately.
+        const speechStartRel = Math.max(0,    STAGE3_T - decodeLatencySec);
 
         // ── Master gain — drives overall fade-out in finish() ─────────────
         const master = ctx.createGain();
