@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react";
-import { ChevronLeft, Swords, Zap, Trophy, FastForward } from "lucide-react";
+import { ChevronLeft, Swords, Zap, Trophy, FastForward, Volume2, VolumeX } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 import { ModifierBadge } from "@/components/modifier-badge";
+import { useMusic } from "@/contexts/music-context";
 
 function renderMarkdown(text: string): React.ReactNode[] {
   return text.split("\n").map((line, lineIdx) => {
@@ -452,6 +453,65 @@ export function FightScreen({
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // ── Music wiring ──────────────────────────────────────────────────────────
+  const { setTrack } = useMusic();
+
+  useEffect(() => {
+    if (open) {
+      setTrack("battle");
+    } else {
+      setTrack("lobby");
+      window.speechSynthesis?.cancel();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (showVictory) setTrack("victory");
+  }, [showVictory]);
+
+  // ── TTS narration ─────────────────────────────────────────────────────────
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
+  });
+  const spokenRound = useRef(0);
+
+  const toggleTts = useCallback(() => {
+    setTtsEnabled(prev => {
+      const next = !prev;
+      try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
+      if (!next) window.speechSynthesis?.cancel();
+      return next;
+    });
+  }, []);
+
+  // Speak the most recently revealed round once it finishes streaming
+  useEffect(() => {
+    if (!ttsEnabled || !result || visibleCount === 0) return;
+    const round = result.rounds[visibleCount - 1];
+    if (!round || visibleCount <= spokenRound.current) return;
+    const roundKey = `ROUND ${round.round}`;
+    if (!completedSections?.has(roundKey)) return;
+    spokenRound.current = visibleCount;
+    const clean = round.narrative.replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.rate = 0.88;
+    utter.pitch = 0.82;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  }, [visibleCount, ttsEnabled, result, completedSections]);
+
+  // Reset spokenRound when a new fight begins
+  useEffect(() => {
+    if (isSimulating) spokenRound.current = 0;
+  }, [isSimulating]);
+
+  // ── Round flash VFX ───────────────────────────────────────────────────────
+  const [roundFlash, setRoundFlash] = useState(false);
+  const triggerRoundFlash = useCallback(() => {
+    setRoundFlash(true);
+    setTimeout(() => setRoundFlash(false), 450);
+  }, []);
+
   // Reset on open/close
   useEffect(() => {
     if (!open) {
@@ -459,6 +519,7 @@ export function FightScreen({
       setMatchBegun(false);
       setShowVictory(false);
       setAttackingTeam(0);
+      spokenRound.current = 0;
     }
   }, [open]);
 
@@ -497,14 +558,15 @@ export function FightScreen({
     setMatchBegun(true);
     setVisibleCount(1);
     setAttackingTeam(1);
+    triggerRoundFlash();
   };
 
   const nextRound = () => {
     if (!canShowNextRound || !result) return;
     const newCount = Math.min(visibleCount + 1, result.rounds.length);
     setVisibleCount(newCount);
-    // Alternate banner attack glow per round (visual polish only).
     setAttackingTeam(((newCount - 1) % 2 === 0 ? 1 : 2) as 1 | 2);
+    triggerRoundFlash();
   };
 
   // Rematch: reset fight state then trigger a new fight
@@ -576,9 +638,19 @@ export function FightScreen({
         @keyframes hitShake { 0% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } 100% { transform: translateX(0); } }
         @keyframes continuePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         @keyframes shimmer { 0% { transform: translateX(-200%); } 100% { transform: translateX(500%); } }
+        @keyframes roundFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
       `}</style>
 
       <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-300">
+        {roundFlash && (
+          <div
+            className="absolute inset-0 pointer-events-none z-50"
+            style={{
+              background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,0,85,0.35) 0%, transparent 70%)",
+              animation: "roundFlash 0.45s ease forwards",
+            }}
+          />
+        )}
         {/* Fight Banner */}
         <div className="flex-shrink-0 border-b border-border/30">
           <FightBanner
@@ -758,6 +830,23 @@ export function FightScreen({
           >
             <ChevronLeft className="h-4 w-4" />
             Arena
+          </button>
+
+          {/* TTS narration toggle — always visible during a fight */}
+          <button
+            onClick={toggleTts}
+            className="flex items-center gap-1.5 transition-all active:scale-[0.97]"
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              padding: "6px 10px",
+              border: `1.5px solid ${ttsEnabled ? "rgba(0,240,255,0.5)" : "rgba(255,255,255,0.18)"}`,
+              background: ttsEnabled ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.04)",
+              color: ttsEnabled ? "#00f0ff" : "rgba(255,255,255,0.45)",
+            }}
+            title={ttsEnabled ? "Narration ON — tap to mute voice" : "Narration OFF — tap to enable voice"}
+          >
+            {ttsEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
           </button>
 
           {/* Right side — context-sensitive */}
