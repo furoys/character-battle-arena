@@ -2492,6 +2492,24 @@ async function generateAINarrative(
     const hasProfanity = c.behaviorTags?.includes("profanity");
     const profanityStyle: string | undefined = typeof v3?.profanityStyle === "string" ? v3.profanityStyle : undefined;
 
+    // Pokémon and similar creatures that cannot form words. Detect by universe
+    // name or an explicit tag so Mewtwo (who speaks telepathically in canon)
+    // can be individually overridden with a custom v3 profile note.
+    const universe = (c.universe ?? "").toLowerCase();
+    const hasNoSpeech =
+      c.behaviorTags?.includes("no_speech") ||
+      universe.includes("pokemon") ||
+      universe.includes("pokémon");
+
+    // Characters who would never swear — Disney/Pixar heroes, classic animated
+    // family characters, etc. Detectable by universe or explicit tag.
+    const hasFamilyLanguage =
+      !hasProfanity &&  // explicit profanity tag overrides family default
+      (c.behaviorTags?.includes("family_language") ||
+        universe.includes("disney") ||
+        universe.includes("pixar") ||
+        universe.includes("dreamworks"));
+
     return [
       `${c.name} (${c.universe} | Tier: ${tier}${pgi})`,
       `  WHAT THEY CAN DO:\n${moveList}`,
@@ -2502,7 +2520,13 @@ async function generateAINarrative(
       finishers    ? `  FINISHERS: ${finishers}` : null,
       specialRules ? `  SPECIAL RULES: ${specialRules}` : null,
       weakness     ? `  WEAKNESS: ${weakness}` : null,
-      hasProfanity ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}` : null,
+      hasNoSpeech
+        ? `  VOICE — SPEECH RESTRICTION: ${c.name} CANNOT SPEAK WORDS. They communicate only through cries, growls, body language, and physical action. They may vocalize their own name or wordless sounds of effort or pain. They may NEVER say a sentence, a word, or even a single human syllable. Do not give them dialogue lines. Express their emotion and intent entirely through physical description and sound.`
+        : hasFamilyLanguage
+          ? `  VOICE — LANGUAGE: ${c.name} does NOT swear. Ever. They express frustration, pain, and defiance through character-appropriate exclamations — "No!", "Not a chance!", grunts of effort, determined silence — never profanity. The vulgarity mandate does NOT apply to this character.`
+          : hasProfanity
+            ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}`
+            : null,
     ].filter(Boolean).join("\n");
   };
   const team1Info = team1.map(charProfile).join("\n\n");
@@ -2723,6 +2747,7 @@ CHARACTER RULES
 - Dialogue must sound like THAT character, not generic hero-speak.
 - If a character has a VOICE note, honor it exactly — including profanity. Deadpool says fuck. Wolverine says goddamn. Billy Butcher says cunt. Do not sanitize characters who canonically swear. Their actual voice is part of who they are.
 - VULGARITY MANDATE — this is a mature, R-rated arena. Default assumption: every fighter swears under combat stress unless they are explicitly a child or a literal saint. Use real, uncensored profanity (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) where natural. Use vicious, character-specific insults every round. NEVER replace swears with asterisks, dashes, "bleep," "expletive," or polite synonyms. NEVER soften personality to be "appropriate." NEVER skip an insult to keep the prose dignified — dignity is not the goal here. If you find yourself reaching for "darn," "heck," "shoot," or "you fool," stop and use the real word.
+- VOICE RESTRICTION EXCEPTIONS — any character whose profile includes a "VOICE — SPEECH RESTRICTION" note CANNOT speak words. Period. Do not give them any dialogue, quoted speech, or human language. Cries, growls, their own name, and raw physical expression only. Characters with a "VOICE — LANGUAGE" note do not swear — honor that exactly, even surrounded by characters who do. These per-character rules override the vulgarity mandate for those specific fighters.
 
 ==================================================
 DO NOT
