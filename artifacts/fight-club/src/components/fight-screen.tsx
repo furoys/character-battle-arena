@@ -517,6 +517,10 @@ export function FightScreen({
   // Pre-fetched TTS blobs for rounds that are complete but not yet visible.
   // Keyed by roundIdx (0-based). Cleared when the round becomes active.
   const preFetchRef = useRef<Map<number, Array<Promise<Blob | null>>>>(new Map());
+  // Tracks how far (char position in narrative) we have already fired TTS
+  // pre-fetch requests for each upcoming round. Used by both the streaming
+  // pre-fetch effect and the completed-round flush so they don't duplicate work.
+  const preFetchSentenceUpToRef = useRef<Record<number, number>>({});
   // Stable ref to the latest result so the round-switch effect can read it
   // without adding result to its dependency array.
   const resultRef = useRef<FightResult | null>(null);
@@ -639,11 +643,73 @@ export function FightScreen({
   useEffect(() => { duck(ttsSpeaking); }, [ttsSpeaking, duck]);
 
   // ── lifecycle stops ───────────────────────────────────────────────────────
-  useEffect(() => { if (!open) { stopTts(); preFetchRef.current.clear(); } }, [open, stopTts]);
+  useEffect(() => {
+    if (!open) { stopTts(); preFetchRef.current.clear(); preFetchSentenceUpToRef.current = {}; }
+  }, [open, stopTts]);
   useEffect(() => { if (showVictory) stopTts(); }, [showVictory, stopTts]);
   useEffect(() => {
-    if (isSimulating) { enqueuedUpToRef.current = {}; preFetchRef.current.clear(); stopTts(); }
+    if (isSimulating) {
+      enqueuedUpToRef.current = {};
+      preFetchRef.current.clear();
+      preFetchSentenceUpToRef.current = {};
+      stopTts();
+    }
   }, [isSimulating, stopTts]);
+
+  // ── streaming pre-fetch for upcoming rounds ───────────────────────────────
+  // Fires on every narrative update (including while the AI is still streaming).
+  // For any round that is AHEAD of the currently active one, detect newly
+  // complete sentences and immediately fire TTS fetches — so blobs are warming
+  // up long before the user clicks "Begin Match" / "Next Round".
+  //
+  // This is the key fix for the "big delay before narration starts" problem:
+  // the AI writes SETTING → ENTRANCE → ROUND 1 in order. When the user can
+  // click "Begin Match" (after ENTRANCE is done) Round 1 may still be
+  // streaming. Without this effect, drain() would have to wait for the first
+  // TTS API response (~1.5s). With it, blobs are already in-flight.
+  useEffect(() => {
+    if (!ttsEnabled || !result) return;
+
+    result.rounds.forEach((round, roundIdx) => {
+      // Only pre-fetch rounds that are ahead of the active one
+      if (roundIdx <= activeRoundRef.current) return;
+
+      const narrative = round.narrative;
+      if (!narrative || narrative.length === 0) return;
+
+      const fromPos = preFetchSentenceUpToRef.current[roundIdx] ?? 0;
+      if (narrative.length <= fromPos) return;
+
+      const re = /[.!?]+(?=[ \t\r\n]|$)/g;
+      re.lastIndex = fromPos;
+      let lastPos = fromPos;
+      let match: RegExpExecArray | null;
+      const newBlobs: Array<Promise<Blob | null>> = [];
+
+      while ((match = re.exec(narrative)) !== null) {
+        const endPos = match.index + match[0].length;
+        const clean = narrative.slice(lastPos, endPos)
+          .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+        if (clean.length >= 12) {
+          const v = ttsVoice;
+          newBlobs.push(
+            fetch("/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: clean, voice: v }),
+            }).then(r => r.ok ? r.blob() : null).catch(() => null)
+          );
+          lastPos = endPos;
+        }
+      }
+
+      if (newBlobs.length > 0) {
+        const existing = preFetchRef.current.get(roundIdx) ?? [];
+        preFetchRef.current.set(roundIdx, [...existing, ...newBlobs]);
+        preFetchSentenceUpToRef.current[roundIdx] = lastPos;
+      }
+    });
+  }, [result, ttsEnabled, ttsVoice]);
 
   // ── mid-stream sentence detection ─────────────────────────────────────────
   // Runs on every narrative text update. Finds newly complete sentences
@@ -715,57 +781,43 @@ export function FightScreen({
     void drain();
   }, [completedSections, visibleCount, ttsEnabled, ttsVoice, result, drain]);
 
-  // ── TTS pre-fetch for upcoming rounds ─────────────────────────────────────
-  // As soon as the streaming AI marks a round's section "complete", eagerly
-  // fetch its TTS audio so it's ready the moment the user clicks NEXT ROUND.
-  // Only pre-fetches rounds that haven't been shown yet (roundIdx > active).
+  // ── TTS pre-fetch flush when a round completes ────────────────────────────
+  // When the AI marks a round complete, the streaming pre-fetch above will
+  // have already fetched most sentences. This effect only needs to pick up
+  // the trailing text that never ended with sentence-terminating punctuation.
+  // It starts from where preFetchSentenceUpToRef left off — no duplicates.
   useEffect(() => {
     if (!ttsEnabled || !result || !completedSections) return;
 
     result.rounds.forEach((round, roundIdx) => {
       const sectionKey = `ROUND ${round.round}`;
       if (!completedSections.has(sectionKey)) return;
-      if (roundIdx <= activeRoundRef.current) return;  // already active or past
-      if (preFetchRef.current.has(roundIdx)) return;   // already pre-fetching
+      if (roundIdx <= activeRoundRef.current) return;
 
       const narrative = round.narrative;
-      const blobs: Array<Promise<Blob | null>> = [];
-      const v = ttsVoice;
-      const re = /[.!?]+(?=[ \t\r\n]|$)/g;
-      let lastPos = 0;
-      let match: RegExpExecArray | null;
+      if (!narrative) return;
 
-      while ((match = re.exec(narrative)) !== null) {
-        const endPos = match.index + match[0].length;
-        const clean = narrative.slice(lastPos, endPos)
-          .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
-        if (clean.length >= 12) {
-          blobs.push(
-            fetch("/api/tts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: clean, voice: v }),
-            }).then(r => r.ok ? r.blob() : null).catch(() => null)
-          );
-          lastPos = endPos;
-        }
-      }
-      // Trailing text after the last sentence-ending punctuation
-      const remaining = narrative.slice(lastPos)
+      // Start from where the streaming pre-fetch left off
+      const fromPos = preFetchSentenceUpToRef.current[roundIdx] ?? 0;
+      if (fromPos >= narrative.length) return;  // fully covered already
+
+      const remaining = narrative.slice(fromPos)
         .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
-      if (remaining.length >= 8) {
-        blobs.push(
-          fetch("/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: remaining, voice: v }),
-          }).then(r => r.ok ? r.blob() : null).catch(() => null)
-        );
+      if (remaining.length < 8) {
+        // Mark as fully covered even if nothing to fetch
+        preFetchSentenceUpToRef.current[roundIdx] = narrative.length;
+        return;
       }
 
-      if (blobs.length > 0) {
-        preFetchRef.current.set(roundIdx, blobs);
-      }
+      const blobP = fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: remaining, voice: ttsVoice }),
+      }).then(r => r.ok ? r.blob() : null).catch(() => null);
+
+      const existing = preFetchRef.current.get(roundIdx) ?? [];
+      preFetchRef.current.set(roundIdx, [...existing, blobP]);
+      preFetchSentenceUpToRef.current[roundIdx] = narrative.length;
     });
   }, [completedSections, ttsEnabled, result, ttsVoice]);
 
