@@ -163,6 +163,9 @@ interface FightScreenProps {
   // so the player always knows what rules are bending the fight. Server is
   // the source of truth — the result payload also carries it as a fallback.
   modifierId?: string | null;
+  // Controlled by the parent (NarrationToggle on home screen). If not provided
+  // falls back to the localStorage value so the component works standalone.
+  ttsEnabled?: boolean;
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -442,6 +445,7 @@ export function FightScreen({
   team1Images = [], team2Images = [],
   completedSections,
   modifierId,
+  ttsEnabled: ttsEnabledProp,
 }: FightScreenProps) {
   // Server-authoritative modifier (carried on the result payload) wins over
   // the prop, which is just an optimistic value passed in before the stream
@@ -472,9 +476,12 @@ export function FightScreen({
   }, [showVictory]);
 
   // ── TTS narration (OpenAI AI voice) ───────────────────────────────────────
-  const [ttsEnabled, setTtsEnabled] = useState(() => {
+  // If parent passes ttsEnabled (controlled), use that. Otherwise fall back to
+  // localStorage so the component still works when rendered standalone.
+  const [localTtsEnabled, setLocalTtsEnabled] = useState(() => {
     try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
   });
+  const ttsEnabled = ttsEnabledProp !== undefined ? ttsEnabledProp : localTtsEnabled;
   const [ttsVoice, setTtsVoiceState] = useState<TtsVoice>(() => {
     try {
       const v = localStorage.getItem("ava:tts-voice");
@@ -482,6 +489,21 @@ export function FightScreen({
     } catch { return "onyx"; }
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
+
+  // Tiny silent WAV — played synchronously inside click handlers to satisfy
+  // the browser's "audio must be started from a user gesture" requirement.
+  // Once this plays, all subsequent audio.play() calls (even after awaits)
+  // are permitted for the rest of the page session.
+  const audioUnlockedRef = useRef(false);
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    audioUnlockedRef.current = true;
+    // 0-sample silent WAV — plays instantly, unlocks the audio context.
+    const sil = new Audio(
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
+    );
+    sil.play().catch(() => {});
+  }, []);
 
   // All audio state lives in refs — never causes re-renders, safe to read
   // inside async callbacks without stale-closure problems.
@@ -552,13 +574,18 @@ export function FightScreen({
 
   // ── toggle / voice ────────────────────────────────────────────────────────
   const toggleTts = useCallback(() => {
-    setTtsEnabled(prev => {
+    setLocalTtsEnabled(prev => {
       const next = !prev;
       try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
       if (!next) stopTts();
       return next;
     });
   }, [stopTts]);
+
+  // Stop TTS immediately if the parent disables narration mid-fight.
+  useEffect(() => {
+    if (!ttsEnabled) stopTts();
+  }, [ttsEnabled, stopTts]);
 
   const setTtsVoice = useCallback((v: TtsVoice) => {
     setTtsVoiceState(v);
@@ -791,6 +818,10 @@ export function FightScreen({
   // Reveal handlers
   const beginMatch = () => {
     if (!canBeginMatch) return;
+    // Unlock the browser's audio autoplay gate synchronously from this click
+    // event. All subsequent audio.play() calls (including those after awaits
+    // inside drain()) will be permitted for the rest of the page session.
+    unlockAudio();
     setMatchBegun(true);
     setVisibleCount(1);
     setAttackingTeam(1);
@@ -799,6 +830,10 @@ export function FightScreen({
 
   const nextRound = () => {
     if (!canShowNextRound || !result) return;
+    // Re-unlock on every round button press (no-op after the first call,
+    // but kept here so pre-fetched blobs that start draining immediately
+    // after this click are always within an unlocked audio context).
+    unlockAudio();
     const newCount = Math.min(visibleCount + 1, result.rounds.length);
     setVisibleCount(newCount);
     setAttackingTeam(((newCount - 1) % 2 === 0 ? 1 : 2) as 1 | 2);

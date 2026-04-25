@@ -34,19 +34,11 @@ function writeLS(key: string, value: unknown) {
 
 type ActiveFilter = null | "__faves__" | "__recent__" | string;
 
-// ─── Narration toggle (reads/writes same LS key as fight-screen) ─────────────
-function NarrationToggle() {
-  const [on, setOn] = useState(() => {
-    try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
-  });
-  const toggle = () => {
-    const next = !on;
-    try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
-    setOn(next);
-  };
+// ─── Narration toggle (controlled — state lives in Home) ─────────────────────
+function NarrationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
-      onClick={toggle}
+      onClick={onToggle}
       title={on ? "AI Narration ON — tap to mute" : "AI Narration OFF — tap to enable"}
       className="flex items-center justify-center transition-all active:scale-[0.95]"
       style={{
@@ -313,6 +305,15 @@ export function Home() {
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [showChallengeMenu, setShowChallengeMenu] = useState(false);
   const [creatingChallenge, setCreatingChallenge] = useState(false);
+
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
+  });
+  const toggleTts = () => {
+    const next = !ttsEnabled;
+    try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
+    setTtsEnabled(next);
+  };
 
   // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
   const INITIAL_VISIBLE = 80;
@@ -617,7 +618,7 @@ export function Home() {
         >
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
-            <NarrationToggle />
+            <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
             <MusicToggle />
             {/* UPSET MODE — promoted to the top bar so the primary action row
                 stays focused on starting matches. Tap to toggle cached vs
@@ -1128,6 +1129,7 @@ export function Home() {
           team1Images={team1.map(c => c.imageUrl)}
           team2Images={team2.map(c => c.imageUrl)}
           completedSections={simulateFight.completedSections}
+          ttsEnabled={ttsEnabled}
         />
       </div>
 
