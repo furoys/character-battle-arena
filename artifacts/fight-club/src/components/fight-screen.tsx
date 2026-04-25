@@ -482,18 +482,68 @@ export function FightScreen({
     } catch { return "onyx"; }
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const spokenRound = useRef(0);
 
+  // All audio state lives in refs — never causes re-renders, safe to read
+  // inside async callbacks without stale-closure problems.
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Each queue item: a pre-fired fetch promise and the round it belongs to.
+  const sentenceQueueRef = useRef<Array<{ blobP: Promise<Blob | null>; round: number }>>([]);
+  const isDrainingRef    = useRef(false);
+  const activeRoundRef   = useRef(-1);           // -1 = stopped
+  // Per-round: char position in narrative up to which we have already enqueued.
+  const enqueuedUpToRef  = useRef<Record<number, number>>({});
+
+  // ── drain ─────────────────────────────────────────────────────────────────
+  // Plays items from sentenceQueueRef in order. Re-entrant-safe via isDrainingRef.
+  // Exits when the queue is empty or activeRoundRef changes (round switch / stop).
+  const drain = useCallback(async () => {
+    if (isDrainingRef.current) return;
+    isDrainingRef.current = true;
+    try {
+      while (true) {
+        const item = sentenceQueueRef.current[0];
+        if (!item || item.round !== activeRoundRef.current) break;
+        sentenceQueueRef.current.shift();
+
+        const blob = await item.blobP;
+        // Check again after the async wait — round may have changed.
+        if (!blob || item.round !== activeRoundRef.current) continue;
+
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        currentAudioRef.current = audio;
+        setTtsSpeaking(true);
+
+        await new Promise<void>(res => {
+          audio.onended = () => { URL.revokeObjectURL(url); currentAudioRef.current = null; res(); };
+          audio.onerror = () => { URL.revokeObjectURL(url); currentAudioRef.current = null; res(); };
+          audio.play().catch(() => res());
+        });
+      }
+    } finally {
+      isDrainingRef.current = false;
+      // Guard: a sentence may have arrived while we were shutting down.
+      if (sentenceQueueRef.current[0]?.round === activeRoundRef.current) {
+        void drain();
+      } else {
+        setTtsSpeaking(false);
+      }
+    }
+  }, []);
+
+  // ── hard stop ─────────────────────────────────────────────────────────────
   const stopTts = useCallback(() => {
+    activeRoundRef.current = -1;
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current.src = "";
       currentAudioRef.current = null;
     }
+    sentenceQueueRef.current = [];
     setTtsSpeaking(false);
   }, []);
 
+  // ── toggle / voice ────────────────────────────────────────────────────────
   const toggleTts = useCallback(() => {
     setTtsEnabled(prev => {
       const next = !prev;
@@ -506,54 +556,111 @@ export function FightScreen({
   const setTtsVoice = useCallback((v: TtsVoice) => {
     setTtsVoiceState(v);
     try { localStorage.setItem("ava:tts-voice", v); } catch {}
-    stopTts();
-  }, [stopTts]);
+    // Stop current audio + pending queue so the new voice takes effect on the
+    // next sentence, but keep activeRoundRef + enqueuedUpToRef intact so we
+    // don't re-read text the user already heard.
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.src = "";
+      currentAudioRef.current = null;
+    }
+    sentenceQueueRef.current = [];
+    setTtsSpeaking(false);
+  }, []);
 
-  // Stop audio when modal closes
+  // ── round switch ──────────────────────────────────────────────────────────
+  // When the user reveals a new round, cut old audio immediately and aim at
+  // the new round. The sentence-detection effect will start filling the queue.
   useEffect(() => {
-    if (!open) stopTts();
-  }, [open, stopTts]);
+    if (!ttsEnabled || visibleCount <= 0) return;
+    const roundIdx = visibleCount - 1;
+    if (activeRoundRef.current === roundIdx) return;
+    activeRoundRef.current = roundIdx;
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.src = "";
+      currentAudioRef.current = null;
+    }
+    sentenceQueueRef.current = [];
+    setTtsSpeaking(false);
+  }, [ttsEnabled, visibleCount]);
 
-  // Narrate the most recently revealed round via OpenAI TTS
+  // ── lifecycle stops ───────────────────────────────────────────────────────
+  useEffect(() => { if (!open)       stopTts(); }, [open,       stopTts]);
+  useEffect(() => { if (showVictory) stopTts(); }, [showVictory, stopTts]);
   useEffect(() => {
-    if (!ttsEnabled || !result || visibleCount === 0) return;
-    const round = result.rounds[visibleCount - 1];
-    if (!round || visibleCount <= spokenRound.current) return;
-    const roundKey = `ROUND ${round.round}`;
-    if (!completedSections?.has(roundKey)) return;
-    spokenRound.current = visibleCount;
+    if (isSimulating) { enqueuedUpToRef.current = {}; stopTts(); }
+  }, [isSimulating, stopTts]);
 
-    const clean = round.narrative.replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
-    if (!clean) return;
+  // ── mid-stream sentence detection ─────────────────────────────────────────
+  // Runs on every narrative text update. Finds newly complete sentences
+  // (. ! ? followed by whitespace or end-of-string) and pre-fetches their audio.
+  useEffect(() => {
+    if (!ttsEnabled || visibleCount <= 0 || !result) return;
+    const roundIdx = visibleCount - 1;
+    if (activeRoundRef.current !== roundIdx) return;
 
-    stopTts();
-    setTtsSpeaking(true);
+    const narrative = result.rounds[roundIdx]?.narrative ?? "";
+    const fromPos = enqueuedUpToRef.current[roundIdx] ?? 0;
+    if (narrative.length <= fromPos) return;
 
-    const voice = ttsVoice;
-    fetch("/api/tts", {
+    const re = /[.!?]+(?=[ \t\r\n]|$)/g;
+    re.lastIndex = fromPos;
+    let lastPos = fromPos;
+    let match: RegExpExecArray | null;
+
+    while ((match = re.exec(narrative)) !== null) {
+      const endPos = match.index + match[0].length;
+      const clean = narrative.slice(lastPos, endPos)
+        .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+      if (clean.length >= 12) {
+        const r = roundIdx;
+        const v = ttsVoice;
+        const blobP = fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: clean, voice: v }),
+        }).then(res => res.ok ? res.blob() : null).catch(() => null);
+        sentenceQueueRef.current.push({ blobP, round: r });
+        lastPos = endPos;
+      }
+    }
+
+    if (lastPos > fromPos) {
+      enqueuedUpToRef.current[roundIdx] = lastPos;
+      void drain();
+    }
+  }, [result, visibleCount, ttsEnabled, ttsVoice, drain]);
+
+  // ── end-of-round flush ────────────────────────────────────────────────────
+  // When a round's section is marked complete, speak any trailing text that
+  // didn't end with a sentence-terminating punctuation mark.
+  useEffect(() => {
+    if (!ttsEnabled || visibleCount <= 0 || !result || !completedSections) return;
+    const roundIdx = visibleCount - 1;
+    if (activeRoundRef.current !== roundIdx) return;
+    const round = result.rounds[roundIdx];
+    if (!round || !completedSections.has(`ROUND ${round.round}`)) return;
+
+    const narrative = round.narrative;
+    const fromPos = enqueuedUpToRef.current[roundIdx] ?? 0;
+    if (fromPos >= narrative.length) return;
+
+    const remaining = narrative.slice(fromPos)
+      .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+    if (remaining.length < 8) return;
+
+    const r = roundIdx;
+    const blobP = fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: clean, voice }),
-    })
-      .then(r => {
-        if (!r.ok) throw new Error("TTS failed");
-        return r.blob();
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        currentAudioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); setTtsSpeaking(false); currentAudioRef.current = null; };
-        audio.onerror = () => { URL.revokeObjectURL(url); setTtsSpeaking(false); currentAudioRef.current = null; };
-        return audio.play();
-      })
-      .catch(() => setTtsSpeaking(false));
-  }, [visibleCount, ttsEnabled, ttsVoice, result, completedSections, stopTts]);
+      body: JSON.stringify({ text: remaining, voice: ttsVoice }),
+    }).then(res => res.ok ? res.blob() : null).catch(() => null);
 
-  // Reset on new fight
-  useEffect(() => {
-    if (isSimulating) { spokenRound.current = 0; stopTts(); }
-  }, [isSimulating, stopTts]);
+    sentenceQueueRef.current.push({ blobP, round: r });
+    enqueuedUpToRef.current[roundIdx] = narrative.length;
+    void drain();
+  }, [completedSections, visibleCount, ttsEnabled, ttsVoice, result, drain]);
 
   // ── Round flash VFX ───────────────────────────────────────────────────────
   const [roundFlash, setRoundFlash] = useState(false);
