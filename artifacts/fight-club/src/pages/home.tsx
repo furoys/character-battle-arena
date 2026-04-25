@@ -8,7 +8,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Volume2, VolumeX } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Mic, MicOff } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -48,7 +48,7 @@ function NarrationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
         color: on ? "#00f0ff" : "rgba(255,255,255,0.35)",
       }}
     >
-      {on ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+      {on ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
     </button>
   );
 }

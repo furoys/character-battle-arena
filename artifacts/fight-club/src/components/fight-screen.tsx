@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react";
-import { ChevronLeft, Swords, Zap, Trophy, FastForward, Volume2 } from "lucide-react";
+import { ChevronLeft, Swords, Zap, Trophy, FastForward, Mic } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 import { ModifierBadge } from "@/components/modifier-badge";
 import { useMusic } from "@/contexts/music-context";
@@ -1109,7 +1109,7 @@ export function FightScreen({
               className="flex items-center gap-1"
               style={{ fontSize: 9, letterSpacing: "0.12em", fontWeight: 700, color: "#00ffcc" }}
             >
-              <Volume2 className="h-3 w-3" />
+              <Mic className="h-3 w-3" />
               <span>AI</span>
             </div>
           )}
