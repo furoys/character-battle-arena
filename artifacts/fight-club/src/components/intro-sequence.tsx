@@ -475,9 +475,6 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const audioCtxRef   = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const sourceRef     = useRef<AudioBufferSourceNode | null>(null);
-  // Cinematic hit source refs (two scheduled hits, each source is single-use)
-  const hitSrc1Ref  = useRef<AudioBufferSourceNode | null>(null);
-  const hitSrc2Ref  = useRef<AudioBufferSourceNode | null>(null);
   // Records wall-clock time at mount so we can compensate for decode latency
   const mountTimeRef = useRef(performance.now());
 
@@ -498,61 +495,33 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
   const stage = useStage(finish);
 
-  // ── Cinematic audio engine ────────────────────────────────────────────────
-  // Both files fetched in parallel. A single AudioContext clock drives
-  // everything — speech, two cinematic hits, and sidechain ducking — so
-  // audio events lock frame-perfectly to visual stage onsets regardless of
-  // network/decode latency.
+  // ── Voice audio engine ───────────────────────────────────────────────────
+  // Fetches intro-speech.mp3, runs it through a British RP AI effect chain
+  // (EQ + soft saturation + chorus + reverb), and starts playback timed to
+  // the first character card (Darth Vader, stage 3 onset ≈ 4 700ms from mount).
   useEffect(() => {
-    const base       = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-    const mountTime  = mountTimeRef.current;
+    const base      = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const mountTime = mountTimeRef.current;
     let   ctx: AudioContext | null = null;
 
-    // ── Visual stage onsets (seconds from component mount) ────────────────
-    // The advance() machine fires t0 → advance (no setStage yet), then each
-    // subsequent call does setTimeout(setStage, STAGE_DURATIONS[s-1]).  That
-    // means STAGE_DURATIONS[0] is consumed *twice* — once by t0, once as the
-    // delay before setStage(1).  Every real onset is STAGE_DURATIONS[0] later
-    // than the naïve prefix-sum would suggest.
-    //
-    //   Stage 2 — A·v·A logo crash  : D0+D0+D1          = 2 300ms
-    //   Stage 3 — Darth Vader (1st) : D0+D0+D1+D2       = 4 700ms
-    //   Stage 5 — ANYONE VS ANYONE  : D0 + sum(D0..D4)  = 21 375ms
-    const D0 = STAGE_DURATIONS[0];   // 1 070ms — added to every onset
-    const STAGE2_T = (D0 + STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;                              // 2.30 s
-    const STAGE3_T = (D0 + STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0)) / 1000;               // 4.70 s
-    const STAGE5_T = (D0 + STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0)) / 1000;               // 21.38 s
+    // Stage 3 (Darth Vader) real onset — advance() machine consumes
+    // STAGE_DURATIONS[0] twice, so every onset = D0 + prefix-sum.
+    const D0       = STAGE_DURATIONS[0];
+    const STAGE3_T = (D0 + STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0)) / 1000; // 4.70 s
 
-    // Sidechain duck profile — voice dips when hit fires, then recovers
-    const DUCK_TO      = 0.28;   // how far the speech dips (28% = punchy silence)
-    const DUCK_ATTACK  = 0.055;  // seconds to reach floor
-    const DUCK_RELEASE = 0.52;   // seconds to recover back to 1.0
-
-    Promise.all([
-      fetch(`${base}/intro-speech.mp3`).then(r => r.arrayBuffer()),
-      fetch(`${base}/cinematic-hit.mp3`).then(r => r.arrayBuffer()),
-    ])
-      .then(([speechBuf, hitBuf]) => {
+    fetch(`${base}/intro-speech.mp3`)
+      .then(r => r.arrayBuffer())
+      .then(buf => {
         ctx = new AudioContext();
         audioCtxRef.current = ctx;
-        return Promise.all([
-          ctx.decodeAudioData(speechBuf),
-          ctx.decodeAudioData(hitBuf),
-        ]);
+        return ctx.decodeAudioData(buf);
       })
-      .then(([speechDecoded, hitDecoded]) => {
+      .then(decoded => {
         if (!ctx) return;
 
-        // ── Decode-latency compensation ───────────────────────────────────
-        // Wall-clock time elapsed since mount = how long fetch+decode took.
-        // Hit times are adjusted so they fire at the correct wall-clock
-        // instant matching the visual stage onsets.
+        // Compensate for fetch + decode time so speech starts on Darth Vader.
         const decodeLatencySec = (performance.now() - mountTime) / 1000;
-        const hit1Rel        = Math.max(0.02, STAGE2_T - decodeLatencySec);  // rel to audio start
-        const hit2Rel        = Math.max(0.02, STAGE5_T - decodeLatencySec);
-        // Speech waits until Darth Vader hits the screen (stage 3 onset).
-        // If decode took longer than 3.63s (very slow network) we start immediately.
-        const speechStartRel = Math.max(0,    STAGE3_T - decodeLatencySec);
+        const speechStartRel   = Math.max(0, STAGE3_T - decodeLatencySec);
 
         // ── Master gain — drives overall fade-out in finish() ─────────────
         const master = ctx.createGain();
@@ -560,16 +529,9 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         masterGainRef.current = master;
         master.connect(ctx.destination);
 
-        // ── Speech bus — all voice paths merge here for sidechain ducking ─
-        const speechBus = ctx.createGain();
-        speechBus.gain.value = 1.0;       // automation target for ducking
-        speechBus.connect(master);
-
-        // ═════════════════════════════════════════════════════════════════
-        // SPEECH — full British RP AI effect chain (unchanged in quality)
-        // ═════════════════════════════════════════════════════════════════
+        // ── Voice effect chain ────────────────────────────────────────────
         const source = ctx.createBufferSource();
-        source.buffer = speechDecoded;
+        source.buffer = decoded;
         sourceRef.current = source;
 
         const lowShelf = ctx.createBiquadFilter();
@@ -610,61 +572,22 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         const reverbWet = ctx.createGain(); reverbWet.gain.value = 0.14;
         const dry = ctx.createGain(); dry.gain.value = 0.88;
 
-        // Speech chain: source → EQ stack → shaper → three paths → speechBus
+        // source → EQ → shaper → dry + chorus + reverb → master
         source.connect(lowShelf); lowShelf.connect(lowMid); lowMid.connect(rpForward);
         rpForward.connect(presence); presence.connect(highShelf); highShelf.connect(shaper);
-        shaper.connect(dry);          dry.connect(speechBus);
-        shaper.connect(chorusDelay);  chorusDelay.connect(chorusWet);  chorusWet.connect(speechBus);
-        shaper.connect(reverb);       reverb.connect(reverbWet);       reverbWet.connect(speechBus);
+        shaper.connect(dry);         dry.connect(master);
+        shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
+        shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
 
-        // ═════════════════════════════════════════════════════════════════
-        // CINEMATIC HIT — modest level; sidechain ducking gives it impact
-        // without burying the voice.
-        // ═════════════════════════════════════════════════════════════════
-        const hitBass = ctx.createBiquadFilter();
-        hitBass.type = "lowshelf"; hitBass.frequency.value = 100; hitBass.gain.value = 2.5;
-        hitBass.connect(master);   // hits bypass speechBus — no self-ducking
-
-        const hit1 = ctx.createBufferSource();
-        hit1.buffer = hitDecoded; hitSrc1Ref.current = hit1;
-        const hit1Gain = ctx.createGain(); hit1Gain.gain.value = 0.37;   // clear but not dominant
-        hit1.connect(hit1Gain); hit1Gain.connect(hitBass);
-
-        const hit2 = ctx.createBufferSource();
-        hit2.buffer = hitDecoded; hitSrc2Ref.current = hit2;
-        const hit2Gain = ctx.createGain(); hit2Gain.gain.value = 0.30;   // slightly softer for ANYONE VS
-        hit2.connect(hit2Gain); hit2Gain.connect(hitBass);
-
-        // ── Sidechain ducking — schedule on the AudioContext clock ────────
-        // Voice dips fast on hit impact, recovers naturally, stays intelligible.
-        const duck = speechBus.gain;
-        const t0   = ctx.currentTime;
-
-        // Hit 1 duck
-        duck.setValueAtTime(1.0, t0 + hit1Rel - 0.01);
-        duck.linearRampToValueAtTime(DUCK_TO, t0 + hit1Rel + DUCK_ATTACK);
-        duck.linearRampToValueAtTime(1.0,     t0 + hit1Rel + DUCK_ATTACK + DUCK_RELEASE);
-
-        // Hit 2 duck
-        duck.setValueAtTime(1.0, t0 + hit2Rel - 0.01);
-        duck.linearRampToValueAtTime(DUCK_TO, t0 + hit2Rel + DUCK_ATTACK);
-        duck.linearRampToValueAtTime(1.0,     t0 + hit2Rel + DUCK_ATTACK + DUCK_RELEASE);
-
-        // ── Launch — all three locked to the same clock ───────────────────
-        source.start(t0);
-        hit1.start(t0 + hit1Rel);
-        hit2.start(t0 + hit2Rel);
+        source.start(ctx.currentTime + speechStartRel);
       })
       .catch(() => {
-        // Graceful fallback: voice only, no effects
         const audio = new Audio(`${base}/intro-speech.mp3`);
         audio.play().catch(() => {});
       });
 
     return () => {
-      try { sourceRef.current?.stop();  } catch { /**/ }
-      try { hitSrc1Ref.current?.stop(); } catch { /**/ }
-      try { hitSrc2Ref.current?.stop(); } catch { /**/ }
+      try { sourceRef.current?.stop(); } catch { /**/ }
       ctx?.close().catch(() => {});
     };
   }, []);
