@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, useClerk } from "@clerk/react";
@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { AgeGate } from "@/components/age-gate";
+import { IntroSequence } from "@/components/intro-sequence";
 import { RotatePrompt } from "@/components/rotate-prompt";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
@@ -95,6 +96,17 @@ function ClerkQueryClientCacheInvalidator() {
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  // Show the intro once per session (sessionStorage clears when the tab/PWA closes).
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !sessionStorage.getItem("ava-intro-seen"); }
+    catch { return false; }
+  });
+
+  const handleIntroDone = () => {
+    try { sessionStorage.setItem("ava-intro-seen", "1"); } catch { /* noop */ }
+    setShowIntro(false);
+  };
+
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
@@ -113,6 +125,7 @@ function ClerkProviderWithRoutes() {
           <Layout>
             <Router />
           </Layout>
+          {showIntro && <IntroSequence onDone={handleIntroDone} />}
           <AgeGate />
           <RotatePrompt />
           <Toaster />
