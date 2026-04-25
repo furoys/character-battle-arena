@@ -82,6 +82,34 @@ function Scanlines() {
   );
 }
 
+// ── Brand constants (match logo.svg exactly) ──────────────────────────────────
+const BRAND_A_GRAD = "linear-gradient(180deg, #e0ffff 0%, #00f0ff 18%, #0088cc 60%, #001e33 100%)";
+const BRAND_V_GRAD = "linear-gradient(180deg, #fff0aa 0%, #ff7722 22%, #cc1100 68%, #550008 100%)";
+const BRAND_FONT = "'Impact', 'Arial Black', sans-serif";
+
+function GradLetter({
+  children, grad, glow, fontSize, anim, delay = 0,
+}: {
+  children: string; grad: string; glow: string;
+  fontSize: string; anim: string; delay?: number;
+}) {
+  return (
+    <span style={{
+      fontFamily: BRAND_FONT, fontWeight: 900,
+      fontSize, lineHeight: 1,
+      background: grad,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+      filter: `drop-shadow(0 0 18px ${glow}) drop-shadow(0 0 40px ${glow}80)`,
+      animation: `${anim} 0.45s ${delay}s cubic-bezier(0.16,1,0.3,1) both`,
+      display: "inline-block",
+    }}>
+      {children}
+    </span>
+  );
+}
+
 /** Stage 2 — A·v·A crashes in with glitch energy */
 function AvaTitle() {
   return (
@@ -95,39 +123,32 @@ function AvaTitle() {
         <div key={i} style={{
           position: "absolute", left: 0, right: 0,
           top: `${pct}%`, height: "1px",
-          background: `rgba(255,0,85,${0.25 + i * 0.1})`,
+          background: i < 2
+            ? `rgba(0,240,255,${0.3 + i * 0.1})`
+            : "rgba(255,119,34,0.4)",
           animation: `glitch-tear ${0.4 + i * 0.15}s ${i * 0.08}s ease-out both`,
         }} />
       ))}
 
-      {/* Letters */}
-      <div style={{ display: "flex", alignItems: "center", lineHeight: 1, gap: 0 }}>
-        <span style={{
-          fontFamily: "monospace", fontWeight: 900,
-          fontSize: "clamp(80px, 26vw, 150px)",
-          color: "#fff",
-          textShadow: "0 0 60px rgba(255,0,85,0.7), 0 0 120px rgba(255,0,85,0.3)",
-          animation: "crash-left 0.45s cubic-bezier(0.16,1,0.3,1) both",
-          display: "inline-block",
-        }}>A</span>
+      {/* A·v·A in exact brand colors */}
+      <div style={{ display: "flex", alignItems: "center", lineHeight: 1 }}>
+        <GradLetter
+          grad={BRAND_A_GRAD} glow="#00f0ff"
+          fontSize="clamp(80px, 26vw, 150px)"
+          anim="crash-left"
+        >A</GradLetter>
 
-        <span style={{
-          fontFamily: "monospace", fontWeight: 900,
-          fontSize: "clamp(48px, 16vw, 90px)",
-          color: "#ff0055",
-          textShadow: "0 0 40px #ff0055, 0 0 80px rgba(255,0,85,0.7)",
-          animation: "crash-center 0.4s 0.15s cubic-bezier(0.16,1,0.3,1) both",
-          display: "inline-block",
-        }}>·v·</span>
+        <GradLetter
+          grad={BRAND_V_GRAD} glow="#ff7722"
+          fontSize="clamp(48px, 16vw, 88px)"
+          anim="crash-center" delay={0.15}
+        >·v·</GradLetter>
 
-        <span style={{
-          fontFamily: "monospace", fontWeight: 900,
-          fontSize: "clamp(80px, 26vw, 150px)",
-          color: "#fff",
-          textShadow: "0 0 60px rgba(255,0,85,0.7), 0 0 120px rgba(255,0,85,0.3)",
-          animation: "crash-right 0.45s cubic-bezier(0.16,1,0.3,1) both",
-          display: "inline-block",
-        }}>A</span>
+        <GradLetter
+          grad={BRAND_A_GRAD} glow="#00f0ff"
+          fontSize="clamp(80px, 26vw, 150px)"
+          anim="crash-right"
+        >A</GradLetter>
       </div>
 
       <div style={{
@@ -139,12 +160,19 @@ function AvaTitle() {
         Anyone vs Anyone
       </div>
 
-      {/* Shockwave ring */}
+      {/* Shockwave ring — cyan on left, orange on right */}
       <div style={{
         position: "absolute", borderRadius: "50%",
         width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
-        border: "1px solid rgba(255,0,85,0.4)",
+        border: "1px solid rgba(0,240,255,0.35)",
         animation: "shockwave 1.8s 0.2s ease-out both",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute", borderRadius: "50%",
+        width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
+        border: "1px solid rgba(255,119,34,0.25)",
+        animation: "shockwave 2.2s 0.35s ease-out both",
         pointerEvents: "none",
       }} />
     </div>
@@ -252,46 +280,46 @@ function AnyoneVsAnyone() {
       animation: "shake 0.35s ease-out both",
       overflow: "hidden",
     }}>
-      {/* Top ANYONE */}
+      {/* Top ANYONE — cyan glow */}
       <div style={{
-        fontFamily: "'Arial Black', 'Impact', sans-serif",
+        fontFamily: BRAND_FONT,
         fontSize: "clamp(44px, 15vw, 90px)",
         fontWeight: 900, letterSpacing: "0.04em",
-        color: "#fff", textTransform: "uppercase",
+        color: "#e0ffff", textTransform: "uppercase",
         lineHeight: 1, whiteSpace: "nowrap",
-        textShadow: "0 0 40px rgba(255,255,255,0.25)",
+        textShadow: "0 0 30px rgba(0,240,255,0.6), 0 0 60px rgba(0,240,255,0.3)",
         animation: "slam-from-left 0.4s cubic-bezier(0.16,1,0.3,1) both",
       }}>ANYONE</div>
 
-      {/* VS — blood red explosion */}
+      {/* VS — brand orange-red explosion */}
       <div style={{
-        fontFamily: "'Arial Black', 'Impact', sans-serif",
+        fontFamily: BRAND_FONT,
         fontSize: "clamp(100px, 38vw, 220px)",
         fontWeight: 900, lineHeight: 0.78,
-        color: "#ff0055",
-        textShadow: "0 0 80px #ff0055, 0 0 160px rgba(255,0,85,0.6), 0 0 240px rgba(255,0,85,0.3)",
+        color: "#ff7722",
+        textShadow: "0 0 60px #ff7722, 0 0 120px rgba(255,119,34,0.6), 0 0 200px rgba(204,17,0,0.4)",
         letterSpacing: "-0.04em",
         animation: "vs-explode 0.45s 0.15s cubic-bezier(0.16,1,0.3,1) both",
       }}>VS</div>
 
-      {/* Bottom ANYONE */}
+      {/* Bottom ANYONE — warm glow */}
       <div style={{
-        fontFamily: "'Arial Black', 'Impact', sans-serif",
+        fontFamily: BRAND_FONT,
         fontSize: "clamp(44px, 15vw, 90px)",
         fontWeight: 900, letterSpacing: "0.04em",
-        color: "#fff", textTransform: "uppercase",
+        color: "#ffe0aa", textTransform: "uppercase",
         lineHeight: 1, whiteSpace: "nowrap",
-        textShadow: "0 0 40px rgba(255,255,255,0.25)",
+        textShadow: "0 0 30px rgba(255,119,34,0.5), 0 0 60px rgba(204,17,0,0.3)",
         animation: "slam-from-right 0.4s 0.08s cubic-bezier(0.16,1,0.3,1) both",
       }}>ANYONE</div>
 
-      {/* Horizontal energy line */}
+      {/* Horizontal energy line — brand cyan-to-orange */}
       <div style={{
         position: "absolute",
         left: 0, right: 0,
         top: "50%", height: 2,
-        background: "linear-gradient(90deg, transparent 0%, #ff0055 20%, #fff 50%, #ff0055 80%, transparent 100%)",
-        boxShadow: "0 0 30px #ff0055, 0 0 60px rgba(255,0,85,0.5)",
+        background: "linear-gradient(90deg, transparent 0%, #00f0ff 20%, #ffffff 50%, #ff7722 80%, transparent 100%)",
+        boxShadow: "0 0 30px rgba(0,240,255,0.5), 0 0 60px rgba(255,119,34,0.4)",
         animation: "energy-line 0.5s 0.2s ease-out both",
         pointerEvents: "none",
       }} />
@@ -299,72 +327,53 @@ function AnyoneVsAnyone() {
   );
 }
 
-/** Stage 6 — Full A·v·A logo, assembled and breathing */
+/** Stage 6 — Real logo SVG assembled and breathing, with brand rings */
 function FinalLogo() {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
     <div style={{
       position: "absolute", inset: 0,
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
     }}>
-      {/* Top accent line */}
+      {/* Actual brand logo SVG */}
       <div style={{
-        width: 64, height: 2, background: "#ff0055",
-        boxShadow: "0 0 24px #ff0055",
-        animation: "bar-expand 0.5s ease-out both",
-        marginBottom: 24,
-      }} />
-
-      {/* Logo */}
-      <div style={{
-        fontFamily: "monospace", fontWeight: 900,
-        fontSize: "clamp(80px, 28vw, 160px)",
-        color: "#fff", lineHeight: 1,
-        textShadow: "0 0 60px rgba(0,240,255,0.4), 0 0 120px rgba(0,240,255,0.2)",
-        animation: "logo-assemble 0.55s cubic-bezier(0.16,1,0.3,1) both",
+        animation: "logo-assemble 0.6s cubic-bezier(0.16,1,0.3,1) both",
+        filter: [
+          "drop-shadow(0 0 24px rgba(0,240,255,0.55))",
+          "drop-shadow(0 0 48px rgba(0,240,255,0.25))",
+          "drop-shadow(0 0 80px rgba(255,119,34,0.2))",
+        ].join(" "),
       }}>
-        A<span style={{
-          color: "#ff0055",
-          textShadow: "0 0 50px #ff0055, 0 0 100px rgba(255,0,85,0.6)",
-        }}>·v·</span>A
+        <img
+          src={`${base}/logo.svg`}
+          alt="A·v·A"
+          style={{ width: "clamp(240px, 72vw, 380px)", display: "block" }}
+        />
       </div>
 
-      {/* Tagline */}
-      <div style={{
-        fontSize: "clamp(9px, 3vw, 13px)", letterSpacing: "0.65em",
-        color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
-        fontWeight: 700, marginTop: 18,
-        animation: "fade-up 0.7s 0.4s ease-out both",
-      }}>
-        Anyone vs Anyone
-      </div>
-
-      {/* Bottom accent line */}
-      <div style={{
-        width: 64, height: 2, background: "#ff0055",
-        boxShadow: "0 0 24px #ff0055",
-        animation: "bar-expand 0.5s 0.1s ease-out both",
-        marginTop: 24,
-      }} />
-
-      {/* Three expanding shockwave rings */}
-      {[0, 0.4, 0.8].map((delay) => (
+      {/* Expanding shockwave rings — cyan left half, orange right half */}
+      {[
+        { delay: 0,   color: "rgba(0,240,255,0.3)" },
+        { delay: 0.4, color: "rgba(255,119,34,0.25)" },
+        { delay: 0.8, color: "rgba(0,240,255,0.2)" },
+      ].map(({ delay, color }) => (
         <div key={delay} style={{
           position: "absolute",
           width: "75vw", height: "75vw", maxWidth: 520, maxHeight: 520,
           borderRadius: "50%",
-          border: "1px solid rgba(255,0,85,0.25)",
+          border: `1px solid ${color}`,
           animation: `ring-expand 2.4s ${delay}s ease-out infinite`,
           pointerEvents: "none",
         }} />
       ))}
 
-      {/* Breathing glow blob */}
+      {/* Breathing dual-color glow blob */}
       <div style={{
         position: "absolute",
         width: "50vw", height: "50vw", maxWidth: 360, maxHeight: 360,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(255,0,85,0.08) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse at 40% 50%, rgba(0,240,255,0.07) 0%, rgba(255,119,34,0.05) 60%, transparent 80%)",
         animation: "breathe 2s 0.5s ease-in-out infinite alternate",
         pointerEvents: "none",
       }} />
