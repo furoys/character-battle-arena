@@ -20,6 +20,8 @@ import { subscribeForChallenge } from "@/lib/push-subscribe";
 import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
 import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 import { PendingChallengesBar } from "@/components/pending-challenges-bar";
+import { useMusic } from "@/contexts/music-context";
+import { MusicToggle } from "@/components/music-toggle";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -261,6 +263,8 @@ function HomeProfileButton() {
 
 // ─── Home page ───────────────────────────────────────────────────────────────
 export function Home() {
+  const { setTrack } = useMusic();
+  useEffect(() => { setTrack("lobby"); }, []);
   const { data: characters, isLoading } = useListCharacters();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -586,6 +590,7 @@ export function Home() {
         >
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
+            <MusicToggle />
             {/* UPSET MODE — promoted to the top bar so the primary action row
                 stays focused on starting matches. Tap to toggle cached vs
                 fresh verdict generation. */}

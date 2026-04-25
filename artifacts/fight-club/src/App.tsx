@@ -9,6 +9,7 @@ import { AgeGate } from "@/components/age-gate";
 import { IntroSequence } from "@/components/intro-sequence";
 import { RotatePrompt } from "@/components/rotate-prompt";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { MusicProvider } from "@/contexts/music-context";
 
 // Pages
 import { Home } from "@/pages/home";
@@ -138,7 +139,9 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <MusicProvider>
+        <ClerkProviderWithRoutes />
+      </MusicProvider>
     </WouterRouter>
   );
 }
