@@ -21,8 +21,8 @@ const CAST = [
 
 // ── Per-character durations — starts slow, accelerates, ends fast ─────────────
 //    i:  0    1    2    3    4    5    6    7    8    9   10   11   12   13   14
-const CHAR_DURATIONS = [1750, 1700, 1650, 1600, 1550, 1500, 1450, 1400, 1350, 1300, 1275, 1255, 1240, 1235, 1225];
-const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // ≈ 21680ms
+const CHAR_DURATIONS = [1250, 1200, 1150, 1100, 1050, 1000, 950, 900, 850, 800, 775, 755, 740, 735, 725];
+const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // ≈ 14180ms
 
 // ── Stage durations (ms) ──────────────────────────────────────────────────────
 const STAGE_DURATIONS = [
