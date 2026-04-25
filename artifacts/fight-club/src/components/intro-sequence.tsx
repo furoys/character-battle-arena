@@ -113,9 +113,8 @@ function GradLetter({
   );
 }
 
-/** Stage 2 — App icon slams in (exact look: blue ring + fighters + AVA) */
+/** Stage 2 — A·v·A letters crash in with electric energy ring */
 function AvaTitle() {
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
     <div style={{
       position: "absolute", inset: 0,
@@ -134,51 +133,73 @@ function AvaTitle() {
         }} />
       ))}
 
-      {/* App icon — exact visual: blue+red ring, fighters, AVA */}
+      {/* ── Electric energy ring (scales in, then spins) ── */}
       <div style={{
-        animation: "icon-slam 0.5s cubic-bezier(0.16,1,0.3,1) both",
-        filter: [
-          "drop-shadow(0 0 32px rgba(0,200,255,0.7))",
-          "drop-shadow(0 0 80px rgba(0,160,255,0.4))",
-          "drop-shadow(0 0 120px rgba(255,80,0,0.25))",
-        ].join(" "),
+        position: "absolute", pointerEvents: "none",
+        width: "min(84vw, 470px)", height: "min(84vw, 470px)",
+        animation: "ring-in 0.65s 0.08s cubic-bezier(0.16,1,0.3,1) both",
       }}>
-        <img
-          src={`${base}/app-icon.png`}
-          alt="A·v·A"
-          style={{
-            width: "clamp(200px, 64vw, 340px)",
-            height: "clamp(200px, 64vw, 340px)",
-            borderRadius: "22%",
-            display: "block",
-          }}
-        />
+        {/* Main spinning conic-gradient ring */}
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "50%",
+          background: "conic-gradient(from 0deg, #00f0ff 0deg, #0088cc 50deg, #5500dd 110deg, #cc1100 180deg, #ff7722 240deg, #ffcc00 300deg, #00f0ff 360deg)",
+          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #fff calc(100% - 5px))",
+          mask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #fff calc(100% - 5px))",
+          animation: "ring-spin 6s linear infinite",
+          filter: "blur(0.4px)",
+        }} />
+        {/* Outer cyan glow halo */}
+        <div style={{
+          position: "absolute", inset: -10, borderRadius: "50%",
+          boxShadow: "0 0 0 1px rgba(0,240,255,0.12), 0 0 50px rgba(0,200,255,0.35), 0 0 100px rgba(0,120,255,0.2)",
+          pointerEvents: "none",
+        }} />
+        {/* Outer orange glow halo */}
+        <div style={{
+          position: "absolute", inset: -20, borderRadius: "50%",
+          boxShadow: "0 0 70px rgba(255,100,0,0.2), 0 0 120px rgba(255,60,0,0.12)",
+          pointerEvents: "none",
+        }} />
+        {/* Counter-rotating sparse sparks */}
+        <div style={{
+          position: "absolute", inset: 6, borderRadius: "50%",
+          background: "conic-gradient(from 90deg, transparent 0deg, rgba(0,240,255,0.5) 5deg, transparent 10deg, transparent 175deg, rgba(255,119,34,0.5) 180deg, transparent 185deg, transparent 355deg)",
+          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+          mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+          animation: "ring-spin-reverse 2.6s linear infinite",
+          filter: "blur(1px)",
+        }} />
+      </div>
+
+      {/* A·v·A in exact brand colors — sit on top of ring */}
+      <div style={{ display: "flex", alignItems: "center", lineHeight: 1, position: "relative" }}>
+        <GradLetter
+          grad={BRAND_A_GRAD} glow="#00f0ff"
+          fontSize="clamp(80px, 26vw, 150px)"
+          anim="crash-left"
+        >A</GradLetter>
+
+        <GradLetter
+          grad={BRAND_V_GRAD} glow="#ff7722"
+          fontSize="clamp(48px, 16vw, 88px)"
+          anim="crash-center" delay={0.15}
+        >·v·</GradLetter>
+
+        <GradLetter
+          grad={BRAND_A_GRAD} glow="#00f0ff"
+          fontSize="clamp(80px, 26vw, 150px)"
+          anim="crash-right"
+        >A</GradLetter>
       </div>
 
       <div style={{
         fontSize: "clamp(9px, 2.8vw, 13px)", letterSpacing: "0.6em",
         color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
-        fontWeight: 700, marginTop: 24,
-        animation: "fade-up 0.7s 0.5s ease-out both",
+        fontWeight: 700, marginTop: 18, position: "relative",
+        animation: "fade-up 0.7s 0.6s ease-out both",
       }}>
         Anyone vs Anyone
       </div>
-
-      {/* Shockwave rings — cyan then orange */}
-      <div style={{
-        position: "absolute", borderRadius: "50%",
-        width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
-        border: "1px solid rgba(0,200,255,0.4)",
-        animation: "shockwave 1.8s 0.15s ease-out both",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", borderRadius: "50%",
-        width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
-        border: "1px solid rgba(255,80,0,0.3)",
-        animation: "shockwave 2.2s 0.3s ease-out both",
-        pointerEvents: "none",
-      }} />
     </div>
   );
 }
@@ -362,7 +383,7 @@ function AnyoneVsAnyone() {
   );
 }
 
-/** Stage 6 — App icon assembled and breathing, with expanding rings */
+/** Stage 6 — A·v·A SVG logo assembled, surrounded by electric energy ring */
 function FinalLogo() {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
@@ -371,40 +392,68 @@ function FinalLogo() {
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
     }}>
-      {/* App icon — exact icon with blue ring, fighters, AVA text */}
+      {/* Electric ring — same construction as AvaTitle, slower spin */}
       <div style={{
-        animation: "logo-assemble 0.6s cubic-bezier(0.16,1,0.3,1) both",
+        position: "absolute", pointerEvents: "none",
+        width: "min(84vw, 470px)", height: "min(84vw, 470px)",
+        animation: "logo-assemble 0.7s cubic-bezier(0.16,1,0.3,1) both",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "50%",
+          background: "conic-gradient(from 0deg, #00f0ff 0deg, #0088cc 50deg, #5500dd 110deg, #cc1100 180deg, #ff7722 240deg, #ffcc00 300deg, #00f0ff 360deg)",
+          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px))",
+          mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px))",
+          animation: "ring-spin 9s linear infinite",
+        }} />
+        <div style={{
+          position: "absolute", inset: -12, borderRadius: "50%",
+          boxShadow: "0 0 0 1px rgba(0,240,255,0.1), 0 0 55px rgba(0,200,255,0.4), 0 0 110px rgba(0,100,255,0.2)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", inset: -24, borderRadius: "50%",
+          boxShadow: "0 0 80px rgba(255,100,0,0.18)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", inset: 6, borderRadius: "50%",
+          background: "conic-gradient(from 270deg, transparent 0deg, rgba(0,240,255,0.4) 5deg, transparent 10deg, transparent 175deg, rgba(255,119,34,0.4) 180deg, transparent 185deg, transparent 355deg)",
+          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+          mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+          animation: "ring-spin-reverse 3.5s linear infinite",
+          filter: "blur(1px)",
+        }} />
+      </div>
+
+      {/* Actual brand SVG logo — on top of ring */}
+      <div style={{
+        position: "relative",
+        animation: "logo-assemble 0.55s cubic-bezier(0.16,1,0.3,1) both",
         filter: [
-          "drop-shadow(0 0 28px rgba(0,200,255,0.7))",
-          "drop-shadow(0 0 70px rgba(0,140,255,0.4))",
-          "drop-shadow(0 0 110px rgba(255,60,0,0.3))",
+          "drop-shadow(0 0 24px rgba(0,240,255,0.55))",
+          "drop-shadow(0 0 50px rgba(0,240,255,0.25))",
+          "drop-shadow(0 0 80px rgba(255,119,34,0.2))",
         ].join(" "),
       }}>
         <img
-          src={`${base}/app-icon.png`}
+          src={`${base}/logo.svg`}
           alt="A·v·A"
-          style={{
-            width: "clamp(220px, 66vw, 360px)",
-            height: "clamp(220px, 66vw, 360px)",
-            borderRadius: "22%",
-            display: "block",
-            animation: "breathe 2.2s 0.6s ease-in-out infinite alternate",
-          }}
+          style={{ width: "clamp(220px, 66vw, 360px)", display: "block" }}
         />
       </div>
 
-      {/* Expanding rings — cyan, orange, cyan */}
+      {/* Slow pulse rings radiating outward */}
       {[
-        { delay: 0,   color: "rgba(0,200,255,0.35)" },
-        { delay: 0.4, color: "rgba(255,80,0,0.28)" },
-        { delay: 0.8, color: "rgba(0,200,255,0.2)" },
+        { delay: 0,   color: "rgba(0,240,255,0.22)" },
+        { delay: 0.5, color: "rgba(255,119,34,0.18)" },
+        { delay: 1.0, color: "rgba(0,240,255,0.14)" },
       ].map(({ delay, color }) => (
         <div key={delay} style={{
           position: "absolute",
           width: "80vw", height: "80vw", maxWidth: 540, maxHeight: 540,
           borderRadius: "50%",
           border: `1px solid ${color}`,
-          animation: `ring-expand 2.4s ${delay}s ease-out infinite`,
+          animation: `ring-expand 2.8s ${delay}s ease-out infinite`,
           pointerEvents: "none",
         }} />
       ))}
@@ -524,12 +573,19 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
       {/* Keyframes */}
       <style>{`
-        @keyframes icon-slam {
-          0%   { opacity:0; transform: scale(0.4) translateY(-40px); filter: blur(16px); }
-          55%  { opacity:1; transform: scale(1.06) translateY(4px); filter: blur(0); }
-          72%  { transform: scale(0.97) translateY(-2px); }
-          85%  { transform: scale(1.02) translateY(0); }
-          100% { opacity:1; transform: scale(1) translateY(0); }
+        @keyframes ring-in {
+          0%   { opacity:0; transform: scale(0.25) rotate(-15deg); }
+          55%  { opacity:1; transform: scale(1.06) rotate(2deg); }
+          75%  { transform: scale(0.97) rotate(-1deg); }
+          100% { opacity:1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes ring-spin {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes ring-spin-reverse {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(-360deg); }
         }
         @keyframes crash-left {
           0%   { opacity:0; transform: translateX(-120px) skewX(-6deg); filter: blur(8px); }
