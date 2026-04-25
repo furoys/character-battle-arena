@@ -489,6 +489,7 @@ export function FightScreen({
     } catch { return "onyx"; }
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
+  const [narrationStartedRound, setNarrationStartedRound] = useState(-1);
 
   // Tiny silent WAV — played synchronously inside click handlers to satisfy
   // the browser's "audio must be started from a user gesture" requirement.
@@ -510,8 +511,9 @@ export function FightScreen({
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   // Each queue item: a pre-fired fetch promise and the round it belongs to.
   const sentenceQueueRef = useRef<Array<{ blobP: Promise<Blob | null>; round: number }>>([]);
-  const isDrainingRef    = useRef(false);
-  const activeRoundRef   = useRef(-1);           // -1 = stopped
+  const isDrainingRef      = useRef(false);
+  const narrationActiveRef = useRef(false);      // true once user clicks Play
+  const activeRoundRef     = useRef(-1);         // -1 = stopped
   // Per-round: char position in narrative up to which we have already enqueued.
   const enqueuedUpToRef  = useRef<Record<number, number>>({});
   // Pre-fetched TTS blobs for rounds that are complete but not yet visible.
@@ -586,6 +588,21 @@ export function FightScreen({
     });
   }, [stopTts]);
 
+  // ── play narration (user-initiated) ─────────────────────────────────────
+  // Called when the user taps the "Play narration" button for a round.
+  // Unlocks audio (no-op if already unlocked), marks the round as active,
+  // and starts draining the pre-fetched sentence queue.
+  const playNarration = useCallback(() => {
+    if (visibleCount <= 0) return;
+    unlockAudio();
+    narrationActiveRef.current = true;
+    setNarrationStartedRound(visibleCount - 1);
+    void drain();
+  }, [visibleCount, unlockAudio, drain]);
+
+  // Reset narration-started state when a new round is revealed.
+  useEffect(() => { setNarrationStartedRound(-1); }, [visibleCount]);
+
   // Stop TTS immediately if the parent disables narration mid-fight.
   useEffect(() => {
     if (!ttsEnabled) stopTts();
@@ -624,8 +641,10 @@ export function FightScreen({
     sentenceQueueRef.current = [];
     setTtsSpeaking(false);
 
-    // Use pre-fetched blobs for this round if available — avoids the ~1.5s
-    // TTS API round-trip and lets audio start the moment the round appears.
+    narrationActiveRef.current = false;
+
+    // Stage pre-fetched blobs into the sentence queue so they are ready the
+    // moment the user clicks "Play narration" — no extra API wait needed.
     const preFetched = preFetchRef.current.get(roundIdx);
     if (preFetched && preFetched.length > 0) {
       preFetched.forEach(blobP => {
@@ -634,7 +653,7 @@ export function FightScreen({
       preFetchRef.current.delete(roundIdx);
       const narrative = resultRef.current?.rounds[roundIdx]?.narrative ?? "";
       if (narrative.length > 0) enqueuedUpToRef.current[roundIdx] = narrative.length;
-      void drain();
+      // Do NOT drain here — wait for user to click Play.
     }
   }, [ttsEnabled, visibleCount, drain]);
 
@@ -747,7 +766,7 @@ export function FightScreen({
 
     if (lastPos > fromPos) {
       enqueuedUpToRef.current[roundIdx] = lastPos;
-      void drain();
+      if (narrationActiveRef.current) void drain();
     }
   }, [result, visibleCount, ttsEnabled, ttsVoice, drain]);
 
@@ -778,7 +797,7 @@ export function FightScreen({
 
     sentenceQueueRef.current.push({ blobP, round: r });
     enqueuedUpToRef.current[roundIdx] = narrative.length;
-    void drain();
+    if (narrationActiveRef.current) void drain();
   }, [completedSections, visibleCount, ttsEnabled, ttsVoice, result, drain]);
 
   // ── TTS pre-fetch flush when a round completes ────────────────────────────
@@ -1074,7 +1093,25 @@ export function FightScreen({
 
                 {/* 3+. ROUNDS — manually revealed via NEXT ROUND button */}
                 {result.rounds.slice(0, visibleCount).map((round, idx) => (
-                  <RoundBlock key={idx} round={round} index={idx} />
+                  <div key={idx}>
+                    <RoundBlock round={round} index={idx} />
+                    {/* Play narration — only on the most recently revealed round,
+                        only when ttsEnabled, and only until the user starts it. */}
+                    {ttsEnabled && idx === visibleCount - 1 && narrationStartedRound !== idx && (
+                      <div className="px-1 mt-1 animate-in fade-in duration-300">
+                        <button
+                          onClick={playNarration}
+                          className="flex items-center gap-2 py-2 transition-colors"
+                          style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}
+                          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
+                          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                        >
+                          <Mic className="h-3.5 w-3.5" />
+                          Play narration
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
 
                 {/* NEXT ROUND — appears once the most recently revealed
