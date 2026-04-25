@@ -476,8 +476,10 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const masterGainRef = useRef<GainNode | null>(null);
   const sourceRef     = useRef<AudioBufferSourceNode | null>(null);
   // Cinematic hit source refs (two scheduled hits, each source is single-use)
-  const hitSrc1Ref = useRef<AudioBufferSourceNode | null>(null);
-  const hitSrc2Ref = useRef<AudioBufferSourceNode | null>(null);
+  const hitSrc1Ref  = useRef<AudioBufferSourceNode | null>(null);
+  const hitSrc2Ref  = useRef<AudioBufferSourceNode | null>(null);
+  // Records wall-clock time at mount so we can compensate for decode latency
+  const mountTimeRef = useRef(performance.now());
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -496,19 +498,26 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
   const stage = useStage(finish);
 
-  // Play intro speech + cinematic hits through a shared Web Audio context.
-  // Both audio files are fetched in parallel so decoding latency is minimised
-  // and both sources are scheduled on the same AudioContext clock — guaranteeing
-  // the hits land exactly on the visual stage onsets regardless of network lag.
+  // ── Cinematic audio engine ────────────────────────────────────────────────
+  // Both files fetched in parallel. A single AudioContext clock drives
+  // everything — speech, two cinematic hits, and sidechain ducking — so
+  // audio events lock frame-perfectly to visual stage onsets regardless of
+  // network/decode latency.
   useEffect(() => {
-    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-    let ctx: AudioContext | null = null;
+    const base       = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const mountTime  = mountTimeRef.current;
+    let   ctx: AudioContext | null = null;
 
-    // ── Hit fire-times (seconds from speech start = AudioContext t=0) ────────
-    // Hit 1 — A·v·A logo crash   : stage 0 + stage 1 = 1070 + 160 = 1230ms
-    // Hit 2 — ANYONE VS ANYONE   : stages 0–4 summed  = 17 630ms
-    const HIT1_T = (STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;                          // 1.23s
-    const HIT2_T = STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0) / 1000;             // 17.63s
+    // ── Visual stage onsets (seconds from component mount) ────────────────
+    // Stage 2 — A·v·A logo crash  : 1070 + 160 = 1230ms
+    // Stage 5 — ANYONE VS ANYONE  : stages 0-4 sum = 17 630ms
+    const STAGE2_T = (STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;               // 1.23 s
+    const STAGE5_T = STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0) / 1000;  // 17.63 s
+
+    // Sidechain duck profile — voice dips when hit fires, then recovers
+    const DUCK_TO      = 0.28;   // how far the speech dips (28% = punchy silence)
+    const DUCK_ATTACK  = 0.055;  // seconds to reach floor
+    const DUCK_RELEASE = 0.52;   // seconds to recover back to 1.0
 
     Promise.all([
       fetch(`${base}/intro-speech.mp3`).then(r => r.arrayBuffer()),
@@ -525,150 +534,125 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       .then(([speechDecoded, hitDecoded]) => {
         if (!ctx) return;
 
-        // ── Master gain (controls everything together for fade-out) ──────────
+        // ── Decode-latency compensation ───────────────────────────────────
+        // Wall-clock time elapsed since mount = how long fetch+decode took.
+        // Hit times are adjusted so they fire at the correct wall-clock
+        // instant matching the visual stage onsets.
+        const decodeLatencySec = (performance.now() - mountTime) / 1000;
+        const hit1Rel = Math.max(0.02, STAGE2_T - decodeLatencySec);  // rel to audio start
+        const hit2Rel = Math.max(0.02, STAGE5_T - decodeLatencySec);
+
+        // ── Master gain — drives overall fade-out in finish() ─────────────
         const master = ctx.createGain();
         master.gain.value = 1.0;
         masterGainRef.current = master;
         master.connect(ctx.destination);
 
-        // ═════════════════════════════════════════════════════════════════════
-        // SPEECH — British RP AI voice effect chain (unchanged)
-        // ═════════════════════════════════════════════════════════════════════
+        // ── Speech bus — all voice paths merge here for sidechain ducking ─
+        const speechBus = ctx.createGain();
+        speechBus.gain.value = 1.0;       // automation target for ducking
+        speechBus.connect(master);
+
+        // ═════════════════════════════════════════════════════════════════
+        // SPEECH — full British RP AI effect chain (unchanged in quality)
+        // ═════════════════════════════════════════════════════════════════
         const source = ctx.createBufferSource();
         source.buffer = speechDecoded;
         sourceRef.current = source;
 
         const lowShelf = ctx.createBiquadFilter();
-        lowShelf.type = "lowshelf";
-        lowShelf.frequency.value = 180;
-        lowShelf.gain.value = 1.2;
+        lowShelf.type = "lowshelf"; lowShelf.frequency.value = 180; lowShelf.gain.value = 1.2;
 
         const lowMid = ctx.createBiquadFilter();
-        lowMid.type = "peaking";
-        lowMid.frequency.value = 270;
-        lowMid.Q.value = 1.4;
-        lowMid.gain.value = -2.2;
+        lowMid.type = "peaking"; lowMid.frequency.value = 270; lowMid.Q.value = 1.4; lowMid.gain.value = -2.2;
 
         const rpForward = ctx.createBiquadFilter();
-        rpForward.type = "peaking";
-        rpForward.frequency.value = 900;
-        rpForward.Q.value = 2.8;
-        rpForward.gain.value = 2.0;
+        rpForward.type = "peaking"; rpForward.frequency.value = 900; rpForward.Q.value = 2.8; rpForward.gain.value = 2.0;
 
         const presence = ctx.createBiquadFilter();
-        presence.type = "peaking";
-        presence.frequency.value = 3200;
-        presence.Q.value = 1.8;
-        presence.gain.value = 2.2;
+        presence.type = "peaking"; presence.frequency.value = 3200; presence.Q.value = 1.8; presence.gain.value = 2.2;
 
         const highShelf = ctx.createBiquadFilter();
-        highShelf.type = "highshelf";
-        highShelf.frequency.value = 8000;
-        highShelf.gain.value = 2.0;
+        highShelf.type = "highshelf"; highShelf.frequency.value = 8000; highShelf.gain.value = 2.0;
 
         const shaper = ctx.createWaveShaper();
-        const N = 512;
-        const curve = new Float32Array(N);
-        for (let i = 0; i < N; i++) {
-          const x = (i * 2) / N - 1;
-          curve[i] = Math.tanh(x * 1.2) / Math.tanh(1.2);
+        {
+          const N = 512; const curve = new Float32Array(N);
+          for (let i = 0; i < N; i++) { const x = (i * 2) / N - 1; curve[i] = Math.tanh(x * 1.2) / Math.tanh(1.2); }
+          shaper.curve = curve; shaper.oversample = "2x";
         }
-        shaper.curve = curve;
-        shaper.oversample = "2x";
 
-        const chorusDelay = ctx.createDelay(0.06);
-        chorusDelay.delayTime.value = 0.024;
-        const chorusLfo = ctx.createOscillator();
-        const chorusLfoGain = ctx.createGain();
-        chorusLfo.type = "sine";
-        chorusLfo.frequency.value = 0.55;
-        chorusLfoGain.gain.value = 0.0018;
-        chorusLfo.connect(chorusLfoGain);
-        chorusLfoGain.connect(chorusDelay.delayTime);
-        chorusLfo.start();
-        const chorusWet = ctx.createGain();
-        chorusWet.gain.value = 0.07;
+        const chorusDelay = ctx.createDelay(0.06); chorusDelay.delayTime.value = 0.024;
+        const chorusLfo = ctx.createOscillator(); const chorusLfoGain = ctx.createGain();
+        chorusLfo.type = "sine"; chorusLfo.frequency.value = 0.55; chorusLfoGain.gain.value = 0.0018;
+        chorusLfo.connect(chorusLfoGain); chorusLfoGain.connect(chorusDelay.delayTime); chorusLfo.start();
+        const chorusWet = ctx.createGain(); chorusWet.gain.value = 0.07;
 
-        const revSR = ctx.sampleRate;
-        const revLen = Math.floor(revSR * 0.55);
+        const revSR = ctx.sampleRate; const revLen = Math.floor(revSR * 0.55);
         const revIR = ctx.createBuffer(2, revLen, revSR);
         for (let ch = 0; ch < 2; ch++) {
           const d = revIR.getChannelData(ch);
-          for (let i = 0; i < revLen; i++) {
-            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.14));
-          }
+          for (let i = 0; i < revLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.14));
         }
-        const reverb = ctx.createConvolver();
-        reverb.buffer = revIR;
-        const reverbWet = ctx.createGain();
-        reverbWet.gain.value = 0.14;
+        const reverb = ctx.createConvolver(); reverb.buffer = revIR;
+        const reverbWet = ctx.createGain(); reverbWet.gain.value = 0.14;
+        const dry = ctx.createGain(); dry.gain.value = 0.88;
 
-        const dry = ctx.createGain();
-        dry.gain.value = 0.88;
+        // Speech chain: source → EQ stack → shaper → three paths → speechBus
+        source.connect(lowShelf); lowShelf.connect(lowMid); lowMid.connect(rpForward);
+        rpForward.connect(presence); presence.connect(highShelf); highShelf.connect(shaper);
+        shaper.connect(dry);          dry.connect(speechBus);
+        shaper.connect(chorusDelay);  chorusDelay.connect(chorusWet);  chorusWet.connect(speechBus);
+        shaper.connect(reverb);       reverb.connect(reverbWet);       reverbWet.connect(speechBus);
 
-        source.connect(lowShelf);
-        lowShelf.connect(lowMid);
-        lowMid.connect(rpForward);
-        rpForward.connect(presence);
-        presence.connect(highShelf);
-        highShelf.connect(shaper);
-        shaper.connect(dry);         dry.connect(master);
-        shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
-        shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
-
-        // ═════════════════════════════════════════════════════════════════════
-        // CINEMATIC HIT — bass-weighted, scheduled on the AudioContext clock
-        // so it locks perfectly to the visual stage onsets.
-        // ═════════════════════════════════════════════════════════════════════
-
-        // Shared bass-boost EQ for both hits — adds weight to the low-end thump
+        // ═════════════════════════════════════════════════════════════════
+        // CINEMATIC HIT — modest level; sidechain ducking gives it impact
+        // without burying the voice.
+        // ═════════════════════════════════════════════════════════════════
         const hitBass = ctx.createBiquadFilter();
-        hitBass.type = "lowshelf";
-        hitBass.frequency.value = 120;
-        hitBass.gain.value = 4.0;           // punchy sub-bass
-        const hitPresence = ctx.createBiquadFilter();
-        hitPresence.type = "peaking";
-        hitPresence.frequency.value = 2800;
-        hitPresence.Q.value = 1.2;
-        hitPresence.gain.value = 2.5;       // keeps the impact bright over speech
+        hitBass.type = "lowshelf"; hitBass.frequency.value = 100; hitBass.gain.value = 2.5;
+        hitBass.connect(master);   // hits bypass speechBus — no self-ducking
 
-        // Hit 1 — A·v·A logo crash (full volume, percussive impact)
         const hit1 = ctx.createBufferSource();
-        hit1.buffer = hitDecoded;
-        hitSrc1Ref.current = hit1;
-        const hit1Gain = ctx.createGain();
-        hit1Gain.gain.value = 0.78;
-        hit1.connect(hit1Gain);
-        hit1Gain.connect(hitBass);
+        hit1.buffer = hitDecoded; hitSrc1Ref.current = hit1;
+        const hit1Gain = ctx.createGain(); hit1Gain.gain.value = 0.46;   // clear but not dominant
+        hit1.connect(hit1Gain); hit1Gain.connect(hitBass);
 
-        // Hit 2 — ANYONE VS ANYONE slam (slightly softer, same colour)
         const hit2 = ctx.createBufferSource();
-        hit2.buffer = hitDecoded;
-        hitSrc2Ref.current = hit2;
-        const hit2Gain = ctx.createGain();
-        hit2Gain.gain.value = 0.62;         // pull back a little — speech is climactic here
-        hit2.connect(hit2Gain);
-        hit2Gain.connect(hitBass);
+        hit2.buffer = hitDecoded; hitSrc2Ref.current = hit2;
+        const hit2Gain = ctx.createGain(); hit2Gain.gain.value = 0.38;   // slightly softer for ANYONE VS
+        hit2.connect(hit2Gain); hit2Gain.connect(hitBass);
 
-        // hitBass → hitPresence → master
-        hitBass.connect(hitPresence);
-        hitPresence.connect(master);
+        // ── Sidechain ducking — schedule on the AudioContext clock ────────
+        // Voice dips fast on hit impact, recovers naturally, stays intelligible.
+        const duck = speechBus.gain;
+        const t0   = ctx.currentTime;
 
-        // ── Lock everything to the same AudioContext clock ───────────────────
-        const t0 = ctx.currentTime;         // grab once — all scheduling relative to this
-        source.start(t0);                   // speech: immediate
-        hit1.start(t0 + HIT1_T);           // hit 1:  1.23s — logo crash
-        hit2.start(t0 + HIT2_T);           // hit 2: 17.63s — ANYONE VS ANYONE
+        // Hit 1 duck
+        duck.setValueAtTime(1.0, t0 + hit1Rel - 0.01);
+        duck.linearRampToValueAtTime(DUCK_TO, t0 + hit1Rel + DUCK_ATTACK);
+        duck.linearRampToValueAtTime(1.0,     t0 + hit1Rel + DUCK_ATTACK + DUCK_RELEASE);
+
+        // Hit 2 duck
+        duck.setValueAtTime(1.0, t0 + hit2Rel - 0.01);
+        duck.linearRampToValueAtTime(DUCK_TO, t0 + hit2Rel + DUCK_ATTACK);
+        duck.linearRampToValueAtTime(1.0,     t0 + hit2Rel + DUCK_ATTACK + DUCK_RELEASE);
+
+        // ── Launch — all three locked to the same clock ───────────────────
+        source.start(t0);
+        hit1.start(t0 + hit1Rel);
+        hit2.start(t0 + hit2Rel);
       })
       .catch(() => {
+        // Graceful fallback: voice only, no effects
         const audio = new Audio(`${base}/intro-speech.mp3`);
         audio.play().catch(() => {});
       });
 
     return () => {
-      try { sourceRef.current?.stop(); }  catch {}
-      try { hitSrc1Ref.current?.stop(); } catch {}
-      try { hitSrc2Ref.current?.stop(); } catch {}
+      try { sourceRef.current?.stop();  } catch { /**/ }
+      try { hitSrc1Ref.current?.stop(); } catch { /**/ }
+      try { hitSrc2Ref.current?.stop(); } catch { /**/ }
       ctx?.close().catch(() => {});
     };
   }, []);
