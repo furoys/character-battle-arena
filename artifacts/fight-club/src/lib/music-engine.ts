@@ -9,11 +9,37 @@ class MusicEngine {
   private cleanupFns: Array<() => void> = [];
   private transitioning = false;
 
+  constructor() {
+    // Browsers suspend AudioContext until a user gesture. Attach capture-phase
+    // listeners so ANY click or touch anywhere in the document will unlock it
+    // and kick-start whichever track is supposed to be playing.
+    const unlock = () => {
+      if (!this.ctx) return; // context not yet created — keep listening
+      if (this.ctx.state !== "suspended") {
+        document.removeEventListener("click", unlock, true);
+        document.removeEventListener("touchstart", unlock, true);
+        return;
+      }
+      this.ctx.resume().then(() => {
+        document.removeEventListener("click", unlock, true);
+        document.removeEventListener("touchstart", unlock, true);
+        // If a track should be playing but oscillators never started, boot it
+        if (!this._muted && this.currentTrack !== "off" && this.cleanupFns.length === 0) {
+          const t = this.currentTrack;
+          this.currentTrack = "off";
+          void this.setTrack(t);
+        }
+      }).catch(() => {});
+    };
+    document.addEventListener("click", unlock, true);
+    document.addEventListener("touchstart", unlock, true);
+  }
+
   private ensureCtx() {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = this._volume;
+      this.masterGain.gain.value = this._muted ? 0 : this._volume;
       this.masterGain.connect(this.ctx.destination);
     }
     return { ctx: this.ctx, master: this.masterGain! };
@@ -564,19 +590,23 @@ class MusicEngine {
 
   setMuted(muted: boolean) {
     this._muted = muted;
+
     if (this.masterGain && this.ctx) {
+      // Oscillators are still running (just silenced). Simply ramp the master
+      // gain — no need to stop/restart the track, which would cause a glitch.
       const t = this.ctx.currentTime;
       this.masterGain.gain.cancelScheduledValues(t);
       this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, t);
       this.masterGain.gain.linearRampToValueAtTime(
         muted ? 0 : this._volume,
-        t + 0.4
+        t + 0.35
       );
-    }
-    if (!muted && this.currentTrack !== "off") {
+    } else if (!muted && this.currentTrack !== "off") {
+      // No AudioContext yet (never played). The unlock listener will start the
+      // track on the next user gesture. Force-start if context is already there.
       const track = this.currentTrack;
       this.currentTrack = "off";
-      this.setTrack(track);
+      void this.setTrack(track);
     }
   }
 
