@@ -5375,3 +5375,9 @@ id = "jert0SBo98SmECgBNy4Lw"
 uri = "file://attached_assets/generated_images/pitt_hair_c.png"
 type = "image"
 title = "Option C — Long tangled hair, three-quarter view, red/black palette"
+
+[[outputs]]
+id = "h9sWzvmyOG9hzD161MUxU"
+uri = "file://ava-roster.txt"
+type = "text"
+title = "A.v.A Full Roster — 955 Fighters"
