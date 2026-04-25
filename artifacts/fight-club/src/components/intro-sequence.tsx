@@ -472,9 +472,12 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const doneRef = useRef(false);
 
   // Web Audio refs for the AI voice effect chain
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioCtxRef   = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
-  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const sourceRef     = useRef<AudioBufferSourceNode | null>(null);
+  // Cinematic hit source refs (two scheduled hits, each source is single-use)
+  const hitSrc1Ref = useRef<AudioBufferSourceNode | null>(null);
+  const hitSrc2Ref = useRef<AudioBufferSourceNode | null>(null);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -493,62 +496,76 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
   const stage = useStage(finish);
 
-  // Play intro speech through AI voice effect chain on mount
+  // Play intro speech + cinematic hits through a shared Web Audio context.
+  // Both audio files are fetched in parallel so decoding latency is minimised
+  // and both sources are scheduled on the same AudioContext clock — guaranteeing
+  // the hits land exactly on the visual stage onsets regardless of network lag.
   useEffect(() => {
     const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     let ctx: AudioContext | null = null;
 
-    fetch(`${base}/intro-speech.mp3`)
-      .then(r => r.arrayBuffer())
-      .then(buf => {
+    // ── Hit fire-times (seconds from speech start = AudioContext t=0) ────────
+    // Hit 1 — A·v·A logo crash   : stage 0 + stage 1 = 1070 + 160 = 1230ms
+    // Hit 2 — ANYONE VS ANYONE   : stages 0–4 summed  = 17 630ms
+    const HIT1_T = (STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;                          // 1.23s
+    const HIT2_T = STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0) / 1000;             // 17.63s
+
+    Promise.all([
+      fetch(`${base}/intro-speech.mp3`).then(r => r.arrayBuffer()),
+      fetch(`${base}/cinematic-hit.mp3`).then(r => r.arrayBuffer()),
+    ])
+      .then(([speechBuf, hitBuf]) => {
         ctx = new AudioContext();
         audioCtxRef.current = ctx;
-        return ctx.decodeAudioData(buf);
+        return Promise.all([
+          ctx.decodeAudioData(speechBuf),
+          ctx.decodeAudioData(hitBuf),
+        ]);
       })
-      .then(decoded => {
+      .then(([speechDecoded, hitDecoded]) => {
         if (!ctx) return;
 
-        // ── Source ───────────────────────────────────────────────────────────
+        // ── Master gain (controls everything together for fade-out) ──────────
+        const master = ctx.createGain();
+        master.gain.value = 1.0;
+        masterGainRef.current = master;
+        master.connect(ctx.destination);
+
+        // ═════════════════════════════════════════════════════════════════════
+        // SPEECH — British RP AI voice effect chain (unchanged)
+        // ═════════════════════════════════════════════════════════════════════
         const source = ctx.createBufferSource();
-        source.buffer = decoded;
+        source.buffer = speechDecoded;
         sourceRef.current = source;
 
-        // ── EQ: low shelf — reduced body vs. before; RP voices sit more
-        //        in the midrange than the chest ────────────────────────────────
         const lowShelf = ctx.createBiquadFilter();
         lowShelf.type = "lowshelf";
         lowShelf.frequency.value = 180;
-        lowShelf.gain.value = 1.2; // was 2.2 — less chesty = more British
+        lowShelf.gain.value = 1.2;
 
-        // ── EQ: low-mid notch — scoops the American "boom" (200–350 Hz) ──────
         const lowMid = ctx.createBiquadFilter();
         lowMid.type = "peaking";
         lowMid.frequency.value = 270;
         lowMid.Q.value = 1.4;
-        lowMid.gain.value = -2.2; // pulls out warmth that anchors American accents
+        lowMid.gain.value = -2.2;
 
-        // ── EQ: RP forward placement — 900 Hz is where received-pronunciation
-        //        "projects from the front of the mouth" rather than the chest ─
         const rpForward = ctx.createBiquadFilter();
         rpForward.type = "peaking";
         rpForward.frequency.value = 900;
         rpForward.Q.value = 2.8;
         rpForward.gain.value = 2.0;
 
-        // ── EQ: consonant crispness — 3.2 kHz for sharp /t/, /k/, /s/ ────────
         const presence = ctx.createBiquadFilter();
         presence.type = "peaking";
         presence.frequency.value = 3200;
         presence.Q.value = 1.8;
         presence.gain.value = 2.2;
 
-        // ── EQ: high shelf — crystalline "cut-glass" RP air ──────────────────
         const highShelf = ctx.createBiquadFilter();
         highShelf.type = "highshelf";
         highShelf.frequency.value = 8000;
         highShelf.gain.value = 2.0;
 
-        // ── Saturation — feather-light; just keeps it from sounding flat ──────
         const shaper = ctx.createWaveShaper();
         const N = 512;
         const curve = new Float32Array(N);
@@ -559,23 +576,21 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         shaper.curve = curve;
         shaper.oversample = "2x";
 
-        // ── Ghost chorus — barely-there doubling; hint of AI, not robot ───────
         const chorusDelay = ctx.createDelay(0.06);
         chorusDelay.delayTime.value = 0.024;
         const chorusLfo = ctx.createOscillator();
         const chorusLfoGain = ctx.createGain();
         chorusLfo.type = "sine";
         chorusLfo.frequency.value = 0.55;
-        chorusLfoGain.gain.value = 0.0018; // imperceptible alone
+        chorusLfoGain.gain.value = 0.0018;
         chorusLfo.connect(chorusLfoGain);
         chorusLfoGain.connect(chorusDelay.delayTime);
         chorusLfo.start();
         const chorusWet = ctx.createGain();
-        chorusWet.gain.value = 0.07; // half of before — flavor not feature
+        chorusWet.gain.value = 0.07;
 
-        // ── Intimate reverb (longer decay, softer — a small elegant room) ─────
         const revSR = ctx.sampleRate;
-        const revLen = Math.floor(revSR * 0.55); // 550ms tail (more intimate)
+        const revLen = Math.floor(revSR * 0.55);
         const revIR = ctx.createBuffer(2, revLen, revSR);
         for (let ch = 0; ch < 2; ch++) {
           const d = revIR.getChannelData(ch);
@@ -586,41 +601,74 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         const reverb = ctx.createConvolver();
         reverb.buffer = revIR;
         const reverbWet = ctx.createGain();
-        reverbWet.gain.value = 0.14; // present but not washy
+        reverbWet.gain.value = 0.14;
 
-        // ── Master & dry gains ────────────────────────────────────────────────
         const dry = ctx.createGain();
         dry.gain.value = 0.88;
-        const master = ctx.createGain();
-        master.gain.value = 1.0;
-        masterGainRef.current = master;
 
-        // ── Signal path ───────────────────────────────────────────────────────
-        // source → lowShelf → lowMid → rpForward → presence → highShelf → shaper
-        //   ↳ dry path    → master → output
-        //   ↳ chorus path → master
-        //   ↳ reverb path → master
         source.connect(lowShelf);
         lowShelf.connect(lowMid);
         lowMid.connect(rpForward);
         rpForward.connect(presence);
         presence.connect(highShelf);
         highShelf.connect(shaper);
-        shaper.connect(dry);       dry.connect(master);
+        shaper.connect(dry);         dry.connect(master);
         shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
-        shaper.connect(reverb);    reverb.connect(reverbWet);       reverbWet.connect(master);
-        master.connect(ctx.destination);
+        shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
 
-        source.start();
+        // ═════════════════════════════════════════════════════════════════════
+        // CINEMATIC HIT — bass-weighted, scheduled on the AudioContext clock
+        // so it locks perfectly to the visual stage onsets.
+        // ═════════════════════════════════════════════════════════════════════
+
+        // Shared bass-boost EQ for both hits — adds weight to the low-end thump
+        const hitBass = ctx.createBiquadFilter();
+        hitBass.type = "lowshelf";
+        hitBass.frequency.value = 120;
+        hitBass.gain.value = 4.0;           // punchy sub-bass
+        const hitPresence = ctx.createBiquadFilter();
+        hitPresence.type = "peaking";
+        hitPresence.frequency.value = 2800;
+        hitPresence.Q.value = 1.2;
+        hitPresence.gain.value = 2.5;       // keeps the impact bright over speech
+
+        // Hit 1 — A·v·A logo crash (full volume, percussive impact)
+        const hit1 = ctx.createBufferSource();
+        hit1.buffer = hitDecoded;
+        hitSrc1Ref.current = hit1;
+        const hit1Gain = ctx.createGain();
+        hit1Gain.gain.value = 0.78;
+        hit1.connect(hit1Gain);
+        hit1Gain.connect(hitBass);
+
+        // Hit 2 — ANYONE VS ANYONE slam (slightly softer, same colour)
+        const hit2 = ctx.createBufferSource();
+        hit2.buffer = hitDecoded;
+        hitSrc2Ref.current = hit2;
+        const hit2Gain = ctx.createGain();
+        hit2Gain.gain.value = 0.62;         // pull back a little — speech is climactic here
+        hit2.connect(hit2Gain);
+        hit2Gain.connect(hitBass);
+
+        // hitBass → hitPresence → master
+        hitBass.connect(hitPresence);
+        hitPresence.connect(master);
+
+        // ── Lock everything to the same AudioContext clock ───────────────────
+        const t0 = ctx.currentTime;         // grab once — all scheduling relative to this
+        source.start(t0);                   // speech: immediate
+        hit1.start(t0 + HIT1_T);           // hit 1:  1.23s — logo crash
+        hit2.start(t0 + HIT2_T);           // hit 2: 17.63s — ANYONE VS ANYONE
       })
       .catch(() => {
-        // Fallback: play without effects if Web Audio unavailable
         const audio = new Audio(`${base}/intro-speech.mp3`);
         audio.play().catch(() => {});
       });
 
     return () => {
-      try { sourceRef.current?.stop(); } catch {}
+      try { sourceRef.current?.stop(); }  catch {}
+      try { hitSrc1Ref.current?.stop(); } catch {}
+      try { hitSrc2Ref.current?.stop(); } catch {}
       ctx?.close().catch(() => {});
     };
   }, []);
