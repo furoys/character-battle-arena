@@ -203,18 +203,35 @@ export function Intro() {
   const [started, setStarted] = useState(false);
   const audio = useAudioEngine();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
 
   const schedule = (fn: () => void, ms: number) => {
     const t = setTimeout(fn, ms);
     timers.current.push(t);
   };
 
+  const duckMusic = (toVol: number, holdMs: number) => {
+    const el = musicRef.current;
+    if (!el) return;
+    el.volume = toVol;
+    setTimeout(() => { if (musicRef.current) musicRef.current.volume = 0.55; }, holdMs);
+  };
+
   const runSequence = useCallback(() => {
     if (started) return;
     setStarted(true);
 
-    // 0.0s — bass rumble
+    // Start background music immediately on tap
+    const el = musicRef.current;
+    if (el) {
+      el.currentTime = 0;
+      el.volume = 0.55;
+      el.play().catch(() => {});
+    }
+
+    // 0.0s — bass rumble (duck music briefly for the punch)
     audio.bassRumble(1.4);
+    duckMusic(0.25, 600);
 
     // 0.7s — logo
     schedule(() => {
@@ -222,17 +239,21 @@ export function Intro() {
       audio.electricHum(0.8);
     }, 700);
 
-    // 1.5s — montage starts
+    // 1.5s — montage starts (quick whooshes ride on top of music)
     schedule(() => setPhase("montage"), 1500);
     schedule(() => { setMontageIdx(0); audio.whoosh(); }, 1500);
     schedule(() => { setMontageIdx(1); audio.whoosh(); }, 1800);
     schedule(() => { setMontageIdx(2); audio.whoosh(); }, 2100);
-    schedule(() => { setMontageIdx(3); audio.whoosh(); }, 2400); // overlaps VS phase start but fine
+    schedule(() => { setMontageIdx(3); audio.whoosh(); }, 2400);
 
-    // 2.4s — VS silhouettes
-    schedule(() => { setPhase("vs"); audio.bassHit(); }, 2700);
+    // 2.7s — VS silhouettes + bass hit (big duck)
+    schedule(() => {
+      setPhase("vs");
+      audio.bassHit();
+      duckMusic(0.18, 700);
+    }, 2700);
 
-    // 3.4s — glitch
+    // 3.7s — glitch
     schedule(() => {
       setPhase("glitch");
       setGlitchActive(true);
@@ -241,24 +262,40 @@ export function Intro() {
       setTimeout(() => setShake(false), 400);
     }, 3700);
 
-    // 4.2s — arena
+    // 4.5s — arena
     schedule(() => {
       setGlitchActive(false);
       setPhase("arena");
     }, 4500);
 
-    // 5.0s — WHO WINS
-    schedule(() => { setPhase("whowins"); audio.impact(); }, 5300);
+    // 5.3s — WHO WINS + impact (biggest duck)
+    schedule(() => {
+      setPhase("whowins");
+      audio.impact();
+      duckMusic(0.12, 900);
+    }, 5300);
 
-    // 5.8s — ENTER
-    schedule(() => setPhase("enter"), 6200);
+    // 6.2s — ENTER CTA (music swells back up fully)
+    schedule(() => {
+      setPhase("enter");
+      if (musicRef.current) musicRef.current.volume = 0.65;
+    }, 6200);
   }, [started, audio]);
 
   useEffect(() => {
     return () => timers.current.forEach(clearTimeout);
   }, []);
 
-  const done = () => setPhase("done");
+  const done = () => {
+    setPhase("done");
+    const el = musicRef.current;
+    if (el) {
+      const fade = setInterval(() => {
+        if (el.volume <= 0.05) { el.pause(); el.volume = 0; clearInterval(fade); return; }
+        el.volume = Math.max(0, el.volume - 0.04);
+      }, 80);
+    }
+  };
 
   return (
     <div
@@ -354,6 +391,9 @@ export function Intro() {
           0%,100%{opacity:0.04}50%{opacity:0.08}
         }
       `}</style>
+
+      {/* Hidden background music */}
+      <audio ref={musicRef} src="/intro-music.mp3" preload="auto" />
 
       {/* Scanline overlay — always present */}
       <div
@@ -686,7 +726,11 @@ export function Intro() {
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.2em" }}>
             (In the real app, this transitions to the fight screen)
           </div>
-          <button onClick={() => { setPhase("black"); setStarted(false); }} style={{
+          <button onClick={() => {
+            setPhase("black");
+            setStarted(false);
+            if (musicRef.current) { musicRef.current.pause(); musicRef.current.currentTime = 0; }
+          }} style={{
             marginTop: 24, fontSize: 9, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)",
             background: "none", border: "1px solid rgba(255,255,255,0.1)", padding: "8px 16px", cursor: "pointer",
           }}>
