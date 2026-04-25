@@ -44,6 +44,7 @@ export default defineConfig({
       includeAssets: ["app-icon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,woff2}"],
+        globIgnores: ["**/ava-cinematic-intro.html"],
       },
       manifest: {
         name: "A.v.A — Anyone vs Anyone",
