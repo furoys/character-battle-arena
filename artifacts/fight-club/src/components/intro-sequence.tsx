@@ -509,12 +509,19 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     let   ctx: AudioContext | null = null;
 
     // ── Visual stage onsets (seconds from component mount) ────────────────
-    // Stage 2 — A·v·A logo crash  : 1070 + 160          = 1 230ms
-    // Stage 3 — Darth Vader (1st char card): +2400       = 3 630ms
-    // Stage 5 — ANYONE VS ANYONE  : stages 0-4 sum      = 17 630ms
-    const STAGE2_T = (STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;               // 1.23 s
-    const STAGE3_T = STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0) / 1000;  // 3.63 s
-    const STAGE5_T = STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0) / 1000;  // 17.63 s
+    // The advance() machine fires t0 → advance (no setStage yet), then each
+    // subsequent call does setTimeout(setStage, STAGE_DURATIONS[s-1]).  That
+    // means STAGE_DURATIONS[0] is consumed *twice* — once by t0, once as the
+    // delay before setStage(1).  Every real onset is STAGE_DURATIONS[0] later
+    // than the naïve prefix-sum would suggest.
+    //
+    //   Stage 2 — A·v·A logo crash  : D0+D0+D1          = 2 300ms
+    //   Stage 3 — Darth Vader (1st) : D0+D0+D1+D2       = 4 700ms
+    //   Stage 5 — ANYONE VS ANYONE  : D0 + sum(D0..D4)  = 21 375ms
+    const D0 = STAGE_DURATIONS[0];   // 1 070ms — added to every onset
+    const STAGE2_T = (D0 + STAGE_DURATIONS[0] + STAGE_DURATIONS[1]) / 1000;                              // 2.30 s
+    const STAGE3_T = (D0 + STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0)) / 1000;               // 4.70 s
+    const STAGE5_T = (D0 + STAGE_DURATIONS.slice(0, 5).reduce((a, b) => a + b, 0)) / 1000;               // 21.38 s
 
     // Sidechain duck profile — voice dips when hit fires, then recovers
     const DUCK_TO      = 0.28;   // how far the speech dips (28% = punchy silence)
