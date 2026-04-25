@@ -676,7 +676,6 @@ export function FightScreen({
       setMatchBegun(false);
       setShowVictory(false);
       setAttackingTeam(0);
-      spokenRound.current = 0;
     }
   }, [open]);
 
