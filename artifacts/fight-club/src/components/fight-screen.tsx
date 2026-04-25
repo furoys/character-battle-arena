@@ -457,7 +457,7 @@ export function FightScreen({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // ── Music wiring ──────────────────────────────────────────────────────────
-  const { setTrack } = useMusic();
+  const { setTrack, duck } = useMusic();
 
   useEffect(() => {
     if (open) {
@@ -492,6 +492,13 @@ export function FightScreen({
   const activeRoundRef   = useRef(-1);           // -1 = stopped
   // Per-round: char position in narrative up to which we have already enqueued.
   const enqueuedUpToRef  = useRef<Record<number, number>>({});
+  // Pre-fetched TTS blobs for rounds that are complete but not yet visible.
+  // Keyed by roundIdx (0-based). Cleared when the round becomes active.
+  const preFetchRef = useRef<Map<number, Array<Promise<Blob | null>>>>(new Map());
+  // Stable ref to the latest result so the round-switch effect can read it
+  // without adding result to its dependency array.
+  const resultRef = useRef<FightResult | null>(null);
+  useEffect(() => { resultRef.current = result; }, [result]);
 
   // ── drain ─────────────────────────────────────────────────────────────────
   // Plays items from sentenceQueueRef in order. Re-entrant-safe via isDrainingRef.
@@ -557,20 +564,22 @@ export function FightScreen({
     setTtsVoiceState(v);
     try { localStorage.setItem("ava:tts-voice", v); } catch {}
     // Stop current audio + pending queue so the new voice takes effect on the
-    // next sentence, but keep activeRoundRef + enqueuedUpToRef intact so we
-    // don't re-read text the user already heard.
+    // next sentence. Clear pre-fetched blobs — they used the old voice.
+    // Keep activeRoundRef + enqueuedUpToRef so we don't re-read already-heard text.
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current.src = "";
       currentAudioRef.current = null;
     }
     sentenceQueueRef.current = [];
+    preFetchRef.current.clear();
     setTtsSpeaking(false);
   }, []);
 
   // ── round switch ──────────────────────────────────────────────────────────
   // When the user reveals a new round, cut old audio immediately and aim at
-  // the new round. The sentence-detection effect will start filling the queue.
+  // the new round. If the round was pre-fetched, start draining immediately
+  // (no API wait). Otherwise the sentence-detection effect fills the queue.
   useEffect(() => {
     if (!ttsEnabled || visibleCount <= 0) return;
     const roundIdx = visibleCount - 1;
@@ -583,13 +592,30 @@ export function FightScreen({
     }
     sentenceQueueRef.current = [];
     setTtsSpeaking(false);
-  }, [ttsEnabled, visibleCount]);
+
+    // Use pre-fetched blobs for this round if available — avoids the ~1.5s
+    // TTS API round-trip and lets audio start the moment the round appears.
+    const preFetched = preFetchRef.current.get(roundIdx);
+    if (preFetched && preFetched.length > 0) {
+      preFetched.forEach(blobP => {
+        sentenceQueueRef.current.push({ blobP, round: roundIdx });
+      });
+      preFetchRef.current.delete(roundIdx);
+      const narrative = resultRef.current?.rounds[roundIdx]?.narrative ?? "";
+      if (narrative.length > 0) enqueuedUpToRef.current[roundIdx] = narrative.length;
+      void drain();
+    }
+  }, [ttsEnabled, visibleCount, drain]);
+
+  // ── music ducking ─────────────────────────────────────────────────────────
+  // Drop music volume to ~12% while the narrator is speaking, restore after.
+  useEffect(() => { duck(ttsSpeaking); }, [ttsSpeaking, duck]);
 
   // ── lifecycle stops ───────────────────────────────────────────────────────
-  useEffect(() => { if (!open)       stopTts(); }, [open,       stopTts]);
+  useEffect(() => { if (!open) { stopTts(); preFetchRef.current.clear(); } }, [open, stopTts]);
   useEffect(() => { if (showVictory) stopTts(); }, [showVictory, stopTts]);
   useEffect(() => {
-    if (isSimulating) { enqueuedUpToRef.current = {}; stopTts(); }
+    if (isSimulating) { enqueuedUpToRef.current = {}; preFetchRef.current.clear(); stopTts(); }
   }, [isSimulating, stopTts]);
 
   // ── mid-stream sentence detection ─────────────────────────────────────────
@@ -661,6 +687,60 @@ export function FightScreen({
     enqueuedUpToRef.current[roundIdx] = narrative.length;
     void drain();
   }, [completedSections, visibleCount, ttsEnabled, ttsVoice, result, drain]);
+
+  // ── TTS pre-fetch for upcoming rounds ─────────────────────────────────────
+  // As soon as the streaming AI marks a round's section "complete", eagerly
+  // fetch its TTS audio so it's ready the moment the user clicks NEXT ROUND.
+  // Only pre-fetches rounds that haven't been shown yet (roundIdx > active).
+  useEffect(() => {
+    if (!ttsEnabled || !result || !completedSections) return;
+
+    result.rounds.forEach((round, roundIdx) => {
+      const sectionKey = `ROUND ${round.round}`;
+      if (!completedSections.has(sectionKey)) return;
+      if (roundIdx <= activeRoundRef.current) return;  // already active or past
+      if (preFetchRef.current.has(roundIdx)) return;   // already pre-fetching
+
+      const narrative = round.narrative;
+      const blobs: Array<Promise<Blob | null>> = [];
+      const v = ttsVoice;
+      const re = /[.!?]+(?=[ \t\r\n]|$)/g;
+      let lastPos = 0;
+      let match: RegExpExecArray | null;
+
+      while ((match = re.exec(narrative)) !== null) {
+        const endPos = match.index + match[0].length;
+        const clean = narrative.slice(lastPos, endPos)
+          .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+        if (clean.length >= 12) {
+          blobs.push(
+            fetch("/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: clean, voice: v }),
+            }).then(r => r.ok ? r.blob() : null).catch(() => null)
+          );
+          lastPos = endPos;
+        }
+      }
+      // Trailing text after the last sentence-ending punctuation
+      const remaining = narrative.slice(lastPos)
+        .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+      if (remaining.length >= 8) {
+        blobs.push(
+          fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: remaining, voice: v }),
+          }).then(r => r.ok ? r.blob() : null).catch(() => null)
+        );
+      }
+
+      if (blobs.length > 0) {
+        preFetchRef.current.set(roundIdx, blobs);
+      }
+    });
+  }, [completedSections, ttsEnabled, result, ttsVoice]);
 
   // ── Round flash VFX ───────────────────────────────────────────────────────
   const [roundFlash, setRoundFlash] = useState(false);

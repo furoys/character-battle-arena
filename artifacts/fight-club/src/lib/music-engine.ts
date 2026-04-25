@@ -6,6 +6,7 @@ class MusicEngine {
   private currentTrack: MusicTrack = "off";
   private _muted = false;
   private _volume = 0.34;
+  private _ducked = false;
   private cleanupFns: Array<() => void> = [];
   private transitioning = false;
 
@@ -64,10 +65,8 @@ class MusicEngine {
       if (this.masterGain && this.ctx) {
         const t = this.ctx.currentTime;
         this.masterGain.gain.setValueAtTime(0, t);
-        this.masterGain.gain.linearRampToValueAtTime(
-          this._muted ? 0 : this._volume,
-          t + 0.5
-        );
+        const target = this._muted ? 0 : this._ducked ? this._volume * 0.12 : this._volume;
+        this.masterGain.gain.linearRampToValueAtTime(target, t + 0.5);
       }
     }, delaySec * 1000);
   }
@@ -488,6 +487,18 @@ class MusicEngine {
   }
 
   // ─── Public API ─────────────────────────────────────────────────────────────
+
+  // Temporarily lower music volume while narration is speaking, then restore.
+  // Fades smoothly so the transition isn't jarring.
+  duck(active: boolean, fadeSec = 0.45) {
+    this._ducked = active;
+    if (this._muted || !this.ctx || !this.masterGain) return;
+    const target = active ? this._volume * 0.12 : this._volume;
+    const t = this.ctx.currentTime;
+    this.masterGain.gain.cancelScheduledValues(t);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, t);
+    this.masterGain.gain.linearRampToValueAtTime(target, t + fadeSec);
+  }
 
   setMuted(muted: boolean) {
     this._muted = muted;

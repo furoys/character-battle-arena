@@ -6,6 +6,7 @@ interface MusicContextValue {
   muted: boolean;
   setTrack: (t: MusicTrack) => void;
   toggleMute: () => void;
+  duck: (active: boolean) => void;
 }
 
 const MusicContext = createContext<MusicContextValue>({
@@ -13,6 +14,7 @@ const MusicContext = createContext<MusicContextValue>({
   muted: false,
   setTrack: () => {},
   toggleMute: () => {},
+  duck: () => {},
 });
 
 export function MusicProvider({ children }: { children: ReactNode }) {
@@ -34,6 +36,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem("ava_music_muted", String(next)); } catch {}
   }, []);
 
+  const duck = useCallback((active: boolean) => {
+    musicEngine.duck(active);
+  }, []);
+
   useEffect(() => {
     musicEngine.setMuted(muted);
     if (!muted) {
@@ -42,7 +48,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <MusicContext.Provider value={{ track, muted, setTrack, toggleMute }}>
+    <MusicContext.Provider value={{ track, muted, setTrack, toggleMute, duck }}>
       {children}
     </MusicContext.Provider>
   );
