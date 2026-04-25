@@ -1,36 +1,39 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
-// ── Cast ──────────────────────────────────────────────────────────────────────
+// ── Cast — 15 characters from across every universe ───────────────────────────
 const CAST = [
+  { name: "DARTH VADER",   sub: "Star Wars",           img: "darth-vader.jpg",   color: "#a855f7" },
   { name: "GOKU",          sub: "Dragon Ball Z",       img: "goku.jpg",          color: "#f59e0b" },
   { name: "BATMAN",        sub: "Legacy Comics",       img: "batman.jpg",        color: "#c084fc" },
-  { name: "SPAWN",         sub: "Image Comics",        img: "spawn.jpg",         color: "#00f0ff" },
-  { name: "DARTH VADER",   sub: "Star Wars",           img: "darth-vader.jpg",   color: "#a855f7" },
-  { name: "DEADPOOL",      sub: "Multiverse Comics",   img: "deadpool.jpg",      color: "#ef4444" },
   { name: "KRATOS",        sub: "God of War",          img: "kratos.jpg",        color: "#dc2626" },
+  { name: "SPAWN",         sub: "Image Comics",        img: "spawn.jpg",         color: "#00f0ff" },
+  { name: "ALL MIGHT",     sub: "My Hero Academia",    img: "all-might.jpg",     color: "#3b82f6" },
+  { name: "DEADPOOL",      sub: "Multiverse Comics",   img: "deadpool.jpg",      color: "#ef4444" },
+  { name: "ALUCARD",       sub: "Hellsing",            img: "alucard.jpg",       color: "#b91c1c" },
+  { name: "JOKER",         sub: "Legacy Comics",       img: "joker.jpg",         color: "#84cc16" },
+  { name: "SPIDER-MAN",    sub: "Multiverse Comics",   img: "spider-man.jpg",    color: "#ef4444" },
+  { name: "ACHILLES",      sub: "Greek Mythology",     img: "achilles.jpg",      color: "#ca8a04" },
+  { name: "AGENT SMITH",   sub: "The Matrix",          img: "agent-smith.jpg",   color: "#4ade80" },
   { name: "MILES MORALES", sub: "Spider-Verse",        img: "miles-morales.jpg", color: "#3b82f6" },
+  { name: "ALIEN QUEEN",   sub: "Sci-Fi Horror",       img: "alien-queen.jpg",   color: "#86efac" },
   { name: "PITT",          sub: "Full Bleed Studios",  img: "pitt.jpg",          color: "#00f0ff" },
 ];
 
+// ── Per-character durations — starts slow, accelerates, ends fast ─────────────
+//    i:  0    1    2    3    4    5    6    7    8    9   10   11   12   13   14
+const CHAR_DURATIONS = [750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 275, 255, 240, 235, 225];
+const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // ≈ 6680ms
+
 // ── Stage durations (ms) ──────────────────────────────────────────────────────
-//  0 → black static awakening
-//  1 → opening crackle-flash
-//  2 → A·v·A logo crashes in
-//  3 → character showcase  (CHAR_DURATION × CAST.length)
-//  4 → impact flash between showcase and ANYONE VS ANYONE
-//  5 → ANYONE VS ANYONE slab collision
-//  6 → full logo assembled, rings breathing
-//  7 → iris-out fade
-const CHAR_DURATION = 900;
 const STAGE_DURATIONS = [
-  800,                          // 0
-  120,                          // 1
-  1800,                         // 2
-  CHAR_DURATION * CAST.length,  // 3 = 7200
-  200,                          // 4
-  2200,                         // 5
-  2600,                         // 6
-  700,                          // 7
+  800,               // 0 — black awakening
+  120,               // 1 — opening crackle-flash
+  1800,              // 2 — icon slams in
+  TOTAL_SHOWCASE_MS, // 3 — character showcase
+  200,               // 4 — impact flash
+  2200,              // 5 — ANYONE VS ANYONE
+  2600,              // 6 — logo assembled
+  700,               // 7 — iris-out
 ];
 
 const NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`;
@@ -180,12 +183,23 @@ function AvaTitle() {
   );
 }
 
-/** Stage 3 — One character at a time, full-screen cinematic portrait */
-function CharCard({ char, idx }: { char: typeof CAST[0]; idx: number }) {
+/** Stage 3 — One character at a time, full-screen cinematic portrait.
+ *  Adapts text speed + layout to card duration (fast cards = snappier text). */
+function CharCard({ char, idx, duration }: { char: typeof CAST[0]; idx: number; duration: number }) {
   const fromRight = idx % 2 === 1;
+  // Rotate through 3 layout moods: standard | centered | corner
+  const mood = idx % 3;
+  const isFast = duration < 400;
+  const textDelay = isFast ? 0 : 0.15;
+  const textDur   = isFast ? 0.2 : 0.4;
+  const textAnim  = isFast ? "text-slam" : fromRight ? "slide-up-text" : "slide-right-text";
+
+  // Accent bar direction varies by mood
+  const barSide = mood === 0 ? (fromRight ? "right" : "left") : mood === 1 ? "left" : "right";
+
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-      {/* Portrait */}
+      {/* Portrait — Ken Burns zoom, faster on quick cards */}
       <img
         src={imgUrl(char.img)}
         alt=""
@@ -193,78 +207,98 @@ function CharCard({ char, idx }: { char: typeof CAST[0]; idx: number }) {
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
           objectFit: "cover", objectPosition: "top center",
-          animation: "ken-burns 0.9s ease-out both",
-          transformOrigin: "center top",
+          animation: `ken-burns ${isFast ? "0.4s" : "0.85s"} ease-out both`,
+          transformOrigin: mood === 1 ? "center center" : "center top",
         }}
       />
 
-      {/* Layered overlays */}
+      {/* Layered overlays — mood 1 (centered): heavier side vignette */}
       <div style={{
         position: "absolute", inset: 0,
-        background: [
-          "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.55) 35%, transparent 65%)",
-          "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 20%)",
-          `radial-gradient(ellipse at ${fromRight ? "70%" : "30%"} 50%, ${char.color}18 0%, transparent 55%)`,
-        ].join(", "),
+        background: mood === 1
+          ? [
+              "linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.6) 30%, transparent 55%)",
+              "linear-gradient(to right, rgba(0,0,0,0.65) 0%, transparent 40%, rgba(0,0,0,0.65) 100%)",
+              `radial-gradient(ellipse at 50% 55%, ${char.color}1a 0%, transparent 60%)`,
+            ].join(", ")
+          : [
+              "linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.55) 35%, transparent 60%)",
+              "linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 18%)",
+              `radial-gradient(ellipse at ${fromRight ? "70%" : "30%"} 50%, ${char.color}16 0%, transparent 55%)`,
+            ].join(", "),
       }} />
 
-      {/* Colored accent bar — left or right alternating */}
+      {/* Colored accent bar */}
       <div style={{
         position: "absolute", top: 0, bottom: 0,
-        [fromRight ? "right" : "left"]: 0,
-        width: 5,
+        [barSide]: 0,
+        width: isFast ? 3 : 5,
         background: char.color,
-        boxShadow: `0 0 40px ${char.color}, 0 0 80px ${char.color}60`,
-        animation: "bar-drop 0.5s ease-out both",
+        boxShadow: `0 0 ${isFast ? 20 : 40}px ${char.color}, 0 0 ${isFast ? 40 : 80}px ${char.color}60`,
+        animation: "bar-drop 0.35s ease-out both",
       }} />
 
-      {/* Character info — bottom */}
-      <div style={{
-        position: "absolute", bottom: 64, left: 24, right: 24,
-        animation: `slide-up-text 0.45s 0.18s cubic-bezier(0.16,1,0.3,1) both`,
-      }}>
+      {/* On fast cards: thin top bar too for extra energy */}
+      {isFast && (
         <div style={{
-          fontSize: "clamp(8px, 2.5vw, 10px)", letterSpacing: "0.5em",
-          color: char.color, textTransform: "uppercase", fontWeight: 800,
-          textShadow: `0 0 20px ${char.color}`,
-          marginBottom: 10, display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <span style={{
-            display: "inline-block", width: 24, height: 1.5,
-            background: char.color, boxShadow: `0 0 8px ${char.color}`,
-          }} />
-          vs anyone
-          <span style={{
-            display: "inline-block", width: 24, height: 1.5,
-            background: char.color, boxShadow: `0 0 8px ${char.color}`,
-          }} />
-        </div>
+          position: "absolute", left: 0, right: 0, top: 0,
+          height: 2,
+          background: `linear-gradient(90deg, transparent, ${char.color}, transparent)`,
+          boxShadow: `0 0 16px ${char.color}`,
+          animation: "bar-expand 0.2s ease-out both",
+        }} />
+      )}
+
+      {/* Character info — position varies by mood */}
+      <div style={{
+        position: "absolute",
+        bottom: mood === 1 ? 48 : 60,
+        left: mood === 0 && fromRight ? undefined : 20,
+        right: mood === 0 && fromRight ? 20 : undefined,
+        textAlign: mood === 1 ? "center" : (mood === 0 && fromRight) ? "right" : "left",
+        animation: `${textAnim} ${textDur}s ${textDelay}s cubic-bezier(0.16,1,0.3,1) both`,
+      }}>
+        {!isFast && (
+          <div style={{
+            fontSize: "clamp(7px, 2.2vw, 9px)", letterSpacing: "0.5em",
+            color: char.color, textTransform: "uppercase", fontWeight: 800,
+            textShadow: `0 0 16px ${char.color}`,
+            marginBottom: 8,
+          }}>
+            {char.sub}
+          </div>
+        )}
 
         <div style={{
-          fontFamily: "'Arial Black', 'Impact', sans-serif",
-          fontSize: "clamp(38px, 13vw, 76px)",
+          fontFamily: BRAND_FONT,
+          fontSize: isFast
+            ? "clamp(32px, 11vw, 62px)"
+            : "clamp(38px, 13vw, 74px)",
           fontWeight: 900, lineHeight: 0.88,
           color: "#ffffff", textTransform: "uppercase",
           letterSpacing: "-0.02em",
-          textShadow: `0 2px 30px rgba(0,0,0,0.9), 0 0 60px ${char.color}30`,
+          textShadow: `0 2px 20px rgba(0,0,0,0.9), 0 0 50px ${char.color}35`,
         }}>
           {char.name}
         </div>
 
-        <div style={{
-          fontSize: "clamp(8px, 2.2vw, 10px)", letterSpacing: "0.3em",
-          color: "rgba(255,255,255,0.3)", textTransform: "uppercase",
-          fontWeight: 600, marginTop: 10,
-        }}>
-          {char.sub}
-        </div>
+        {isFast && (
+          <div style={{
+            fontSize: "clamp(7px, 2vw, 9px)", letterSpacing: "0.35em",
+            color: char.color, textTransform: "uppercase",
+            fontWeight: 700, marginTop: 6,
+            textShadow: `0 0 12px ${char.color}`,
+          }}>
+            {char.sub}
+          </div>
+        )}
       </div>
 
       {/* Entry flash-wipe */}
       <div style={{
         position: "absolute", inset: 0,
         background: "#fff",
-        animation: "flash-wipe 0.18s ease-out both",
+        animation: `flash-wipe ${isFast ? "0.1s" : "0.16s"} ease-out both`,
         pointerEvents: "none",
       }} />
     </div>
@@ -410,20 +444,31 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   }, []);
 
   // Character cycling during stage 3
+  // Bug-fix: charIdx and flash change together so the old card never re-appears
+  // after the flash. Timing accelerates via CHAR_DURATIONS[idx].
   useEffect(() => {
     if (stage !== 3) return;
+    setCharIdx(0);           // always start at 0
+    setFlashFrame(false);
     let idx = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const step = () => {
+
+    const advance = () => {
       idx++;
       if (idx >= CAST.length) return;
-      // Short white flash between chars
+      // Atomically: new card + flash in same React batch → old card never resurfaces
+      setCharIdx(idx);
       setFlashFrame(true);
-      const t1 = setTimeout(() => setFlashFrame(false), 80);
-      const t2 = setTimeout(() => { setCharIdx(idx); step(); }, CHAR_DURATION);
-      timers.push(t1, t2);
+      const t1 = setTimeout(() => setFlashFrame(false), 70);
+      timers.push(t1);
+      // Schedule next advance using THIS card's display duration
+      const dur = CHAR_DURATIONS[idx] ?? 300;
+      const t2 = setTimeout(advance, dur);
+      timers.push(t2);
     };
-    const t0 = setTimeout(step, CHAR_DURATION);
+
+    // First card shows for its own duration, then we advance
+    const t0 = setTimeout(advance, CHAR_DURATIONS[0]);
     timers.push(t0);
     return () => timers.forEach(clearTimeout);
   }, [stage]);
@@ -450,7 +495,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       {stage === 2 && <AvaTitle />}
 
       {stage === 3 && !flashFrame && (
-        <CharCard key={charIdx} char={CAST[charIdx]} idx={charIdx} />
+        <CharCard key={charIdx} char={CAST[charIdx]} idx={charIdx} duration={CHAR_DURATIONS[charIdx]} />
       )}
 
       {stage === 5 && <AnyoneVsAnyone />}
@@ -526,6 +571,16 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
           0%   { opacity:0; transform: translateY(40px); }
           60%  { opacity:1; transform: translateY(-4px); }
           100% { opacity:1; transform: translateY(0); }
+        }
+        @keyframes slide-right-text {
+          0%   { opacity:0; transform: translateX(-30px); }
+          60%  { opacity:1; transform: translateX(3px); }
+          100% { opacity:1; transform: translateX(0); }
+        }
+        @keyframes text-slam {
+          0%   { opacity:0; transform: scale(1.15); filter: blur(4px); }
+          50%  { opacity:1; transform: scale(0.98); filter: blur(0); }
+          100% { opacity:1; transform: scale(1); }
         }
         @keyframes flash-wipe {
           0%   { opacity:1; }
