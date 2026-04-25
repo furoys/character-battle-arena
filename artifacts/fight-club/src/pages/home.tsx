@@ -8,7 +8,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Volume2, VolumeX } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -33,6 +33,33 @@ function writeLS(key: string, value: unknown) {
 }
 
 type ActiveFilter = null | "__faves__" | "__recent__" | string;
+
+// ─── Narration toggle (reads/writes same LS key as fight-screen) ─────────────
+function NarrationToggle() {
+  const [on, setOn] = useState(() => {
+    try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    const next = !on;
+    try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
+    setOn(next);
+  };
+  return (
+    <button
+      onClick={toggle}
+      title={on ? "AI Narration ON — tap to mute" : "AI Narration OFF — tap to enable"}
+      className="flex items-center justify-center transition-all active:scale-[0.95]"
+      style={{
+        width: 30, height: 30,
+        border: `1.5px solid ${on ? "rgba(0,240,255,0.45)" : "rgba(255,255,255,0.15)"}`,
+        background: on ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.03)",
+        color: on ? "#00f0ff" : "rgba(255,255,255,0.35)",
+      }}
+    >
+      {on ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
 
 // ─── Corner bracket decoration ──────────────────────────────────────────────
 function Brackets({ color, size = 10 }: { color: string; size?: number }) {
@@ -590,6 +617,7 @@ export function Home() {
         >
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
+            <NarrationToggle />
             <MusicToggle />
             {/* UPSET MODE — promoted to the top bar so the primary action row
                 stays focused on starting matches. Tap to toggle cached vs

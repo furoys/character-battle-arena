@@ -2,10 +2,71 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useUser, useClerk, Show } from "@clerk/react";
 import { format } from "date-fns";
-import { Trophy, Swords, Star, LogOut, User as UserIcon, Pencil } from "lucide-react";
+import { Trophy, Swords, Star, LogOut, User as UserIcon, Pencil, Volume2 } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { CharacterPicker } from "@/components/character-picker";
 import { UsernameEditor } from "@/components/username-editor";
+
+const TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"] as const;
+type TtsVoice = (typeof TTS_VOICES)[number];
+
+const VOICE_LABELS: Record<TtsVoice, string> = {
+  alloy: "Alloy — balanced",
+  echo: "Echo — warm",
+  fable: "Fable — expressive",
+  onyx: "Onyx — deep",
+  nova: "Nova — bright",
+  shimmer: "Shimmer — soft",
+};
+
+function NarrationSettings() {
+  const [voice, setVoiceState] = useState<TtsVoice>(() => {
+    try {
+      const v = localStorage.getItem("ava:tts-voice");
+      return TTS_VOICES.includes(v as TtsVoice) ? (v as TtsVoice) : "onyx";
+    } catch { return "onyx"; }
+  });
+
+  const setVoice = (v: TtsVoice) => {
+    setVoiceState(v);
+    try { localStorage.setItem("ava:tts-voice", v); } catch {}
+  };
+
+  return (
+    <div
+      className="flex-shrink-0 px-4 py-4"
+      style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <p className="text-[9px] font-bold uppercase tracking-[0.3em] mb-3 flex items-center gap-2"
+        style={{ color: "rgba(255,255,255,0.4)" }}>
+        <Volume2 className="h-3 w-3" />
+        Narration voice
+      </p>
+      <div className="grid grid-cols-3 gap-1.5">
+        {TTS_VOICES.map(v => (
+          <button
+            key={v}
+            onClick={() => setVoice(v)}
+            className="flex flex-col items-center gap-0.5 py-2 px-1 transition-all active:scale-[0.97]"
+            style={{
+              border: `1.5px solid ${voice === v ? "rgba(0,240,255,0.5)" : "rgba(255,255,255,0.08)"}`,
+              background: voice === v ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.02)",
+            }}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: voice === v ? "#00f0ff" : "rgba(255,255,255,0.5)" }}>
+              {v}
+            </span>
+            <span className="text-[8px] tracking-wide"
+              style={{ color: "rgba(255,255,255,0.25)" }}>
+              {VOICE_LABELS[v].split("—")[1]?.trim()}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type StatsResponse = {
   totalFights: number;
@@ -27,14 +88,17 @@ const apiBase = import.meta.env.BASE_URL;
 
 export function Profile() {
   return (
-    <>
-      <Show when="signed-out">
-        <SignedOutPrompt />
-      </Show>
-      <Show when="signed-in">
-        <SignedInProfile />
-      </Show>
-    </>
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Show when="signed-out">
+          <SignedOutPrompt />
+        </Show>
+        <Show when="signed-in">
+          <SignedInProfile />
+        </Show>
+      </div>
+      <NarrationSettings />
+    </div>
   );
 }
 

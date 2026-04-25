@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react";
-import { ChevronLeft, Swords, Zap, Trophy, FastForward, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, Swords, Zap, Trophy, FastForward, Volume2 } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 import { ModifierBadge } from "@/components/modifier-badge";
 import { useMusic } from "@/contexts/music-context";
@@ -989,57 +989,16 @@ export function FightScreen({
             Arena
           </button>
 
-          {/* TTS narration toggle + voice picker */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={toggleTts}
-              className="flex items-center gap-1.5 transition-all active:scale-[0.97]"
-              style={{
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                padding: "6px 9px",
-                border: `1.5px solid ${ttsEnabled ? "rgba(0,240,255,0.5)" : "rgba(255,255,255,0.18)"}`,
-                background: ttsEnabled ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.04)",
-                color: ttsEnabled ? (ttsSpeaking ? "#00ffcc" : "#00f0ff") : "rgba(255,255,255,0.45)",
-                transition: "all 0.2s",
-              }}
-              title={ttsEnabled ? "AI Narration ON — tap to mute" : "AI Narration OFF — tap to enable"}
+          {/* Narration speaking indicator — visible when audio is playing */}
+          {ttsEnabled && ttsSpeaking && (
+            <div
+              className="flex items-center gap-1"
+              style={{ fontSize: 9, letterSpacing: "0.12em", fontWeight: 700, color: "#00ffcc" }}
             >
-              {ttsEnabled
-                ? ttsSpeaking
-                  ? <span style={{ fontSize: 9, letterSpacing: "0.06em", fontWeight: 700 }}>▶ AI</span>
-                  : <Volume2 className="h-3 w-3" />
-                : <VolumeX className="h-3 w-3" />}
-            </button>
-            {ttsEnabled && (
-              <select
-                value={ttsVoice}
-                onChange={e => setTtsVoice(e.target.value as Parameters<typeof setTtsVoice>[0])}
-                style={{
-                  fontSize: 9,
-                  letterSpacing: "0.12em",
-                  fontWeight: 700,
-                  padding: "5px 5px 5px 6px",
-                  background: "rgba(0,240,255,0.07)",
-                  border: "1.5px solid rgba(0,240,255,0.28)",
-                  color: "#00f0ff",
-                  outline: "none",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  textTransform: "uppercase",
-                  appearance: "none",
-                  WebkitAppearance: "none",
-                }}
-                title="Choose AI voice"
-              >
-                {TTS_VOICES.map(v => (
-                  <option key={v} value={v} style={{ background: "#111", color: "#fff" }}>
-                    {v.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+              <Volume2 className="h-3 w-3" />
+              <span>AI</span>
+            </div>
+          )}
 
           {/* Right side — context-sensitive */}
           {result && (
