@@ -4,6 +4,7 @@ import charactersRouter from "./characters";
 import fightsRouter from "./fights";
 import suggestionsRouter from "./suggestions";
 import challengesRouter from "./challenges";
+import ttsRouter from "./tts";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(charactersRouter);
 router.use(fightsRouter);
 router.use(suggestionsRouter);
 router.use(challengesRouter);
+router.use(ttsRouter);
 
 export default router;

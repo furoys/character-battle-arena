@@ -5,6 +5,9 @@ import { VictoryScreen } from "@/components/victory-screen";
 import { ModifierBadge } from "@/components/modifier-badge";
 import { useMusic } from "@/contexts/music-context";
 
+const TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"] as const;
+type TtsVoice = (typeof TTS_VOICES)[number];
+
 function renderMarkdown(text: string): React.ReactNode[] {
   return text.split("\n").map((line, lineIdx) => {
     const isBullet = /^[\-\*]\s+/.test(line);
@@ -461,7 +464,6 @@ export function FightScreen({
       setTrack("battle");
     } else {
       setTrack("lobby");
-      window.speechSynthesis?.cancel();
     }
   }, [open]);
 
@@ -469,22 +471,50 @@ export function FightScreen({
     if (showVictory) setTrack("victory");
   }, [showVictory]);
 
-  // ── TTS narration ─────────────────────────────────────────────────────────
+  // ── TTS narration (OpenAI AI voice) ───────────────────────────────────────
   const [ttsEnabled, setTtsEnabled] = useState(() => {
     try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
   });
+  const [ttsVoice, setTtsVoiceState] = useState<TtsVoice>(() => {
+    try {
+      const v = localStorage.getItem("ava:tts-voice");
+      return TTS_VOICES.includes(v as TtsVoice) ? (v as TtsVoice) : "onyx";
+    } catch { return "onyx"; }
+  });
+  const [ttsSpeaking, setTtsSpeaking] = useState(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const spokenRound = useRef(0);
+
+  const stopTts = useCallback(() => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.src = "";
+      currentAudioRef.current = null;
+    }
+    setTtsSpeaking(false);
+  }, []);
 
   const toggleTts = useCallback(() => {
     setTtsEnabled(prev => {
       const next = !prev;
       try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
-      if (!next) window.speechSynthesis?.cancel();
+      if (!next) stopTts();
       return next;
     });
-  }, []);
+  }, [stopTts]);
 
-  // Speak the most recently revealed round once it finishes streaming
+  const setTtsVoice = useCallback((v: TtsVoice) => {
+    setTtsVoiceState(v);
+    try { localStorage.setItem("ava:tts-voice", v); } catch {}
+    stopTts();
+  }, [stopTts]);
+
+  // Stop audio when modal closes
+  useEffect(() => {
+    if (!open) stopTts();
+  }, [open, stopTts]);
+
+  // Narrate the most recently revealed round via OpenAI TTS
   useEffect(() => {
     if (!ttsEnabled || !result || visibleCount === 0) return;
     const round = result.rounds[visibleCount - 1];
@@ -492,18 +522,38 @@ export function FightScreen({
     const roundKey = `ROUND ${round.round}`;
     if (!completedSections?.has(roundKey)) return;
     spokenRound.current = visibleCount;
-    const clean = round.narrative.replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
-    const utter = new SpeechSynthesisUtterance(clean);
-    utter.rate = 0.88;
-    utter.pitch = 0.82;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
-  }, [visibleCount, ttsEnabled, result, completedSections]);
 
-  // Reset spokenRound when a new fight begins
+    const clean = round.narrative.replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
+    if (!clean) return;
+
+    stopTts();
+    setTtsSpeaking(true);
+
+    const voice = ttsVoice;
+    fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: clean, voice }),
+    })
+      .then(r => {
+        if (!r.ok) throw new Error("TTS failed");
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        currentAudioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); setTtsSpeaking(false); currentAudioRef.current = null; };
+        audio.onerror = () => { URL.revokeObjectURL(url); setTtsSpeaking(false); currentAudioRef.current = null; };
+        return audio.play();
+      })
+      .catch(() => setTtsSpeaking(false));
+  }, [visibleCount, ttsEnabled, ttsVoice, result, completedSections, stopTts]);
+
+  // Reset on new fight
   useEffect(() => {
-    if (isSimulating) spokenRound.current = 0;
-  }, [isSimulating]);
+    if (isSimulating) { spokenRound.current = 0; stopTts(); }
+  }, [isSimulating, stopTts]);
 
   // ── Round flash VFX ───────────────────────────────────────────────────────
   const [roundFlash, setRoundFlash] = useState(false);
@@ -832,22 +882,57 @@ export function FightScreen({
             Arena
           </button>
 
-          {/* TTS narration toggle — always visible during a fight */}
-          <button
-            onClick={toggleTts}
-            className="flex items-center gap-1.5 transition-all active:scale-[0.97]"
-            style={{
-              fontSize: 10,
-              letterSpacing: "0.18em",
-              padding: "6px 10px",
-              border: `1.5px solid ${ttsEnabled ? "rgba(0,240,255,0.5)" : "rgba(255,255,255,0.18)"}`,
-              background: ttsEnabled ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.04)",
-              color: ttsEnabled ? "#00f0ff" : "rgba(255,255,255,0.45)",
-            }}
-            title={ttsEnabled ? "Narration ON — tap to mute voice" : "Narration OFF — tap to enable voice"}
-          >
-            {ttsEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
-          </button>
+          {/* TTS narration toggle + voice picker */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTts}
+              className="flex items-center gap-1.5 transition-all active:scale-[0.97]"
+              style={{
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                padding: "6px 9px",
+                border: `1.5px solid ${ttsEnabled ? "rgba(0,240,255,0.5)" : "rgba(255,255,255,0.18)"}`,
+                background: ttsEnabled ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.04)",
+                color: ttsEnabled ? (ttsSpeaking ? "#00ffcc" : "#00f0ff") : "rgba(255,255,255,0.45)",
+                transition: "all 0.2s",
+              }}
+              title={ttsEnabled ? "AI Narration ON — tap to mute" : "AI Narration OFF — tap to enable"}
+            >
+              {ttsEnabled
+                ? ttsSpeaking
+                  ? <span style={{ fontSize: 9, letterSpacing: "0.06em", fontWeight: 700 }}>▶ AI</span>
+                  : <Volume2 className="h-3 w-3" />
+                : <VolumeX className="h-3 w-3" />}
+            </button>
+            {ttsEnabled && (
+              <select
+                value={ttsVoice}
+                onChange={e => setTtsVoice(e.target.value as Parameters<typeof setTtsVoice>[0])}
+                style={{
+                  fontSize: 9,
+                  letterSpacing: "0.12em",
+                  fontWeight: 700,
+                  padding: "5px 5px 5px 6px",
+                  background: "rgba(0,240,255,0.07)",
+                  border: "1.5px solid rgba(0,240,255,0.28)",
+                  color: "#00f0ff",
+                  outline: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textTransform: "uppercase",
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                }}
+                title="Choose AI voice"
+              >
+                {TTS_VOICES.map(v => (
+                  <option key={v} value={v} style={{ background: "#111", color: "#fff" }}>
+                    {v.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {/* Right side — context-sensitive */}
           {result && (
