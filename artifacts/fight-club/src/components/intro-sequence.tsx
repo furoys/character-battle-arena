@@ -513,79 +513,86 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         source.buffer = decoded;
         sourceRef.current = source;
 
-        // ── EQ: presence boost — 2.8 kHz adds AI "clarity" and definition ───
+        // ── EQ: low shelf — warmth & body (Lara Croft chest resonance) ─────────
+        const lowShelf = ctx.createBiquadFilter();
+        lowShelf.type = "lowshelf";
+        lowShelf.frequency.value = 180;
+        lowShelf.gain.value = 2.2;
+
+        // ── EQ: presence — light touch, keeps voice forward without sharpness ─
         const presence = ctx.createBiquadFilter();
         presence.type = "peaking";
-        presence.frequency.value = 2800;
-        presence.Q.value = 2.0;
-        presence.gain.value = 3.0;
+        presence.frequency.value = 2600;
+        presence.Q.value = 1.6;
+        presence.gain.value = 1.4;
 
-        // ── EQ: high shelf — metallic sheen above 6 kHz ──────────────────────
+        // ── EQ: high shelf — subtle air, not metallic ─────────────────────────
         const highShelf = ctx.createBiquadFilter();
         highShelf.type = "highshelf";
-        highShelf.frequency.value = 6000;
-        highShelf.gain.value = 2.8;
+        highShelf.frequency.value = 7000;
+        highShelf.gain.value = 1.0;
 
-        // ── EQ: low-mid scoop — pull out "warmth" to feel less human ─────────
+        // ── EQ: low-mid — barely scooped, just enough to stay out of mud ─────
         const lowMid = ctx.createBiquadFilter();
         lowMid.type = "peaking";
         lowMid.frequency.value = 380;
         lowMid.Q.value = 1.2;
-        lowMid.gain.value = -2.2;
+        lowMid.gain.value = -0.8;
 
-        // ── Saturation — very subtle, adds synthetic odd harmonics ───────────
+        // ── Saturation — feather-light; just keeps it from sounding flat ──────
         const shaper = ctx.createWaveShaper();
         const N = 512;
         const curve = new Float32Array(N);
         for (let i = 0; i < N; i++) {
           const x = (i * 2) / N - 1;
-          curve[i] = Math.tanh(x * 1.7) / Math.tanh(1.7);
+          curve[i] = Math.tanh(x * 1.2) / Math.tanh(1.2);
         }
         shaper.curve = curve;
         shaper.oversample = "2x";
 
-        // ── Chorus — the "AI doubling" quality (modulated 22ms delay) ────────
+        // ── Ghost chorus — barely-there doubling; hint of AI, not robot ───────
         const chorusDelay = ctx.createDelay(0.06);
-        chorusDelay.delayTime.value = 0.022;
+        chorusDelay.delayTime.value = 0.024;
         const chorusLfo = ctx.createOscillator();
         const chorusLfoGain = ctx.createGain();
         chorusLfo.type = "sine";
-        chorusLfo.frequency.value = 0.75;
-        chorusLfoGain.gain.value = 0.0022; // subtle pitch wobble
+        chorusLfo.frequency.value = 0.55;
+        chorusLfoGain.gain.value = 0.0018; // imperceptible alone
         chorusLfo.connect(chorusLfoGain);
         chorusLfoGain.connect(chorusDelay.delayTime);
         chorusLfo.start();
         const chorusWet = ctx.createGain();
-        chorusWet.gain.value = 0.16;
+        chorusWet.gain.value = 0.07; // half of before — flavor not feature
 
-        // ── Short metallic reverb (synthesized IR — tight digital space) ─────
+        // ── Intimate reverb (longer decay, softer — a small elegant room) ─────
         const revSR = ctx.sampleRate;
-        const revLen = Math.floor(revSR * 0.32);
+        const revLen = Math.floor(revSR * 0.55); // 550ms tail (more intimate)
         const revIR = ctx.createBuffer(2, revLen, revSR);
         for (let ch = 0; ch < 2; ch++) {
           const d = revIR.getChannelData(ch);
           for (let i = 0; i < revLen; i++) {
-            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.07));
+            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.14));
           }
         }
         const reverb = ctx.createConvolver();
         reverb.buffer = revIR;
         const reverbWet = ctx.createGain();
-        reverbWet.gain.value = 0.18;
+        reverbWet.gain.value = 0.14; // present but not washy
 
         // ── Master & dry gains ────────────────────────────────────────────────
         const dry = ctx.createGain();
-        dry.gain.value = 0.8;
+        dry.gain.value = 0.88;
         const master = ctx.createGain();
-        master.gain.value = 1.05;
+        master.gain.value = 1.0;
         masterGainRef.current = master;
 
         // ── Signal path ───────────────────────────────────────────────────────
-        // source → presence → lowMid → highShelf → shaper
+        // source → lowShelf → presence → lowMid → highShelf → shaper
         //   ↳ dry path    → master → output
         //   ↳ chorus path → master
         //   ↳ reverb path → master
-        source.connect(presence);
+        source.connect(lowShelf);
+        lowShelf.connect(presence);
         presence.connect(lowMid);
         lowMid.connect(highShelf);
         highShelf.connect(shaper);
