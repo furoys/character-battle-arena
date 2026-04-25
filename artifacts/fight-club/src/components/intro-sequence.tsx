@@ -513,31 +513,40 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         source.buffer = decoded;
         sourceRef.current = source;
 
-        // ── EQ: low shelf — warmth & body (Lara Croft chest resonance) ─────────
+        // ── EQ: low shelf — reduced body vs. before; RP voices sit more
+        //        in the midrange than the chest ────────────────────────────────
         const lowShelf = ctx.createBiquadFilter();
         lowShelf.type = "lowshelf";
         lowShelf.frequency.value = 180;
-        lowShelf.gain.value = 2.2;
+        lowShelf.gain.value = 1.2; // was 2.2 — less chesty = more British
 
-        // ── EQ: presence — light touch, keeps voice forward without sharpness ─
-        const presence = ctx.createBiquadFilter();
-        presence.type = "peaking";
-        presence.frequency.value = 2600;
-        presence.Q.value = 1.6;
-        presence.gain.value = 1.4;
-
-        // ── EQ: high shelf — subtle air, not metallic ─────────────────────────
-        const highShelf = ctx.createBiquadFilter();
-        highShelf.type = "highshelf";
-        highShelf.frequency.value = 7000;
-        highShelf.gain.value = 1.0;
-
-        // ── EQ: low-mid — barely scooped, just enough to stay out of mud ─────
+        // ── EQ: low-mid notch — scoops the American "boom" (200–350 Hz) ──────
         const lowMid = ctx.createBiquadFilter();
         lowMid.type = "peaking";
-        lowMid.frequency.value = 380;
-        lowMid.Q.value = 1.2;
-        lowMid.gain.value = -0.8;
+        lowMid.frequency.value = 270;
+        lowMid.Q.value = 1.4;
+        lowMid.gain.value = -2.2; // pulls out warmth that anchors American accents
+
+        // ── EQ: RP forward placement — 900 Hz is where received-pronunciation
+        //        "projects from the front of the mouth" rather than the chest ─
+        const rpForward = ctx.createBiquadFilter();
+        rpForward.type = "peaking";
+        rpForward.frequency.value = 900;
+        rpForward.Q.value = 2.8;
+        rpForward.gain.value = 2.0;
+
+        // ── EQ: consonant crispness — 3.2 kHz for sharp /t/, /k/, /s/ ────────
+        const presence = ctx.createBiquadFilter();
+        presence.type = "peaking";
+        presence.frequency.value = 3200;
+        presence.Q.value = 1.8;
+        presence.gain.value = 2.2;
+
+        // ── EQ: high shelf — crystalline "cut-glass" RP air ──────────────────
+        const highShelf = ctx.createBiquadFilter();
+        highShelf.type = "highshelf";
+        highShelf.frequency.value = 8000;
+        highShelf.gain.value = 2.0;
 
         // ── Saturation — feather-light; just keeps it from sounding flat ──────
         const shaper = ctx.createWaveShaper();
@@ -587,14 +596,15 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         masterGainRef.current = master;
 
         // ── Signal path ───────────────────────────────────────────────────────
-        // source → lowShelf → presence → lowMid → highShelf → shaper
+        // source → lowShelf → lowMid → rpForward → presence → highShelf → shaper
         //   ↳ dry path    → master → output
         //   ↳ chorus path → master
         //   ↳ reverb path → master
         source.connect(lowShelf);
-        lowShelf.connect(presence);
-        presence.connect(lowMid);
-        lowMid.connect(highShelf);
+        lowShelf.connect(lowMid);
+        lowMid.connect(rpForward);
+        rpForward.connect(presence);
+        presence.connect(highShelf);
         highShelf.connect(shaper);
         shaper.connect(dry);       dry.connect(master);
         shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
