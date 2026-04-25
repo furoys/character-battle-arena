@@ -639,6 +639,18 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     CAST.forEach(c => { const i = new Image(); i.src = imgUrl(c.img); });
   }, []);
 
+  // Boost speech gain for the final ~4 seconds (stages 6 + 7)
+  useEffect(() => {
+    if (stage !== 6) return;
+    const master = masterGainRef.current;
+    const ctx = audioCtxRef.current;
+    if (!master || !ctx || ctx.state === "closed") return;
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(master.gain.value, t);
+    master.gain.linearRampToValueAtTime(1.7, t + 0.4);
+  }, [stage]);
+
   // Skip button after 2s
   useEffect(() => {
     const t = setTimeout(() => setCanSkip(true), 2000);
