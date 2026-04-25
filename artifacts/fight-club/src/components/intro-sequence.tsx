@@ -110,8 +110,9 @@ function GradLetter({
   );
 }
 
-/** Stage 2 — A·v·A crashes in with glitch energy */
+/** Stage 2 — App icon slams in (exact look: blue ring + fighters + AVA) */
 function AvaTitle() {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
     <div style={{
       position: "absolute", inset: 0,
@@ -130,49 +131,49 @@ function AvaTitle() {
         }} />
       ))}
 
-      {/* A·v·A in exact brand colors */}
-      <div style={{ display: "flex", alignItems: "center", lineHeight: 1 }}>
-        <GradLetter
-          grad={BRAND_A_GRAD} glow="#00f0ff"
-          fontSize="clamp(80px, 26vw, 150px)"
-          anim="crash-left"
-        >A</GradLetter>
-
-        <GradLetter
-          grad={BRAND_V_GRAD} glow="#ff7722"
-          fontSize="clamp(48px, 16vw, 88px)"
-          anim="crash-center" delay={0.15}
-        >·v·</GradLetter>
-
-        <GradLetter
-          grad={BRAND_A_GRAD} glow="#00f0ff"
-          fontSize="clamp(80px, 26vw, 150px)"
-          anim="crash-right"
-        >A</GradLetter>
+      {/* App icon — exact visual: blue+red ring, fighters, AVA */}
+      <div style={{
+        animation: "icon-slam 0.5s cubic-bezier(0.16,1,0.3,1) both",
+        filter: [
+          "drop-shadow(0 0 32px rgba(0,200,255,0.7))",
+          "drop-shadow(0 0 80px rgba(0,160,255,0.4))",
+          "drop-shadow(0 0 120px rgba(255,80,0,0.25))",
+        ].join(" "),
+      }}>
+        <img
+          src={`${base}/app-icon.png`}
+          alt="A·v·A"
+          style={{
+            width: "clamp(200px, 64vw, 340px)",
+            height: "clamp(200px, 64vw, 340px)",
+            borderRadius: "22%",
+            display: "block",
+          }}
+        />
       </div>
 
       <div style={{
         fontSize: "clamp(9px, 2.8vw, 13px)", letterSpacing: "0.6em",
         color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
-        fontWeight: 700, marginTop: 18,
-        animation: "fade-up 0.7s 0.6s ease-out both",
+        fontWeight: 700, marginTop: 24,
+        animation: "fade-up 0.7s 0.5s ease-out both",
       }}>
         Anyone vs Anyone
       </div>
 
-      {/* Shockwave ring — cyan on left, orange on right */}
+      {/* Shockwave rings — cyan then orange */}
       <div style={{
         position: "absolute", borderRadius: "50%",
         width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
-        border: "1px solid rgba(0,240,255,0.35)",
-        animation: "shockwave 1.8s 0.2s ease-out both",
+        border: "1px solid rgba(0,200,255,0.4)",
+        animation: "shockwave 1.8s 0.15s ease-out both",
         pointerEvents: "none",
       }} />
       <div style={{
         position: "absolute", borderRadius: "50%",
         width: "80vw", height: "80vw", maxWidth: 600, maxHeight: 600,
-        border: "1px solid rgba(255,119,34,0.25)",
-        animation: "shockwave 2.2s 0.35s ease-out both",
+        border: "1px solid rgba(255,80,0,0.3)",
+        animation: "shockwave 2.2s 0.3s ease-out both",
         pointerEvents: "none",
       }} />
     </div>
@@ -327,7 +328,7 @@ function AnyoneVsAnyone() {
   );
 }
 
-/** Stage 6 — Real logo SVG assembled and breathing, with brand rings */
+/** Stage 6 — App icon assembled and breathing, with expanding rings */
 function FinalLogo() {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
@@ -336,47 +337,43 @@ function FinalLogo() {
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
     }}>
-      {/* Actual brand logo SVG */}
+      {/* App icon — exact icon with blue ring, fighters, AVA text */}
       <div style={{
         animation: "logo-assemble 0.6s cubic-bezier(0.16,1,0.3,1) both",
         filter: [
-          "drop-shadow(0 0 24px rgba(0,240,255,0.55))",
-          "drop-shadow(0 0 48px rgba(0,240,255,0.25))",
-          "drop-shadow(0 0 80px rgba(255,119,34,0.2))",
+          "drop-shadow(0 0 28px rgba(0,200,255,0.7))",
+          "drop-shadow(0 0 70px rgba(0,140,255,0.4))",
+          "drop-shadow(0 0 110px rgba(255,60,0,0.3))",
         ].join(" "),
       }}>
         <img
-          src={`${base}/logo.svg`}
+          src={`${base}/app-icon.png`}
           alt="A·v·A"
-          style={{ width: "clamp(240px, 72vw, 380px)", display: "block" }}
+          style={{
+            width: "clamp(220px, 66vw, 360px)",
+            height: "clamp(220px, 66vw, 360px)",
+            borderRadius: "22%",
+            display: "block",
+            animation: "breathe 2.2s 0.6s ease-in-out infinite alternate",
+          }}
         />
       </div>
 
-      {/* Expanding shockwave rings — cyan left half, orange right half */}
+      {/* Expanding rings — cyan, orange, cyan */}
       {[
-        { delay: 0,   color: "rgba(0,240,255,0.3)" },
-        { delay: 0.4, color: "rgba(255,119,34,0.25)" },
-        { delay: 0.8, color: "rgba(0,240,255,0.2)" },
+        { delay: 0,   color: "rgba(0,200,255,0.35)" },
+        { delay: 0.4, color: "rgba(255,80,0,0.28)" },
+        { delay: 0.8, color: "rgba(0,200,255,0.2)" },
       ].map(({ delay, color }) => (
         <div key={delay} style={{
           position: "absolute",
-          width: "75vw", height: "75vw", maxWidth: 520, maxHeight: 520,
+          width: "80vw", height: "80vw", maxWidth: 540, maxHeight: 540,
           borderRadius: "50%",
           border: `1px solid ${color}`,
           animation: `ring-expand 2.4s ${delay}s ease-out infinite`,
           pointerEvents: "none",
         }} />
       ))}
-
-      {/* Breathing dual-color glow blob */}
-      <div style={{
-        position: "absolute",
-        width: "50vw", height: "50vw", maxWidth: 360, maxHeight: 360,
-        borderRadius: "50%",
-        background: "radial-gradient(ellipse at 40% 50%, rgba(0,240,255,0.07) 0%, rgba(255,119,34,0.05) 60%, transparent 80%)",
-        animation: "breathe 2s 0.5s ease-in-out infinite alternate",
-        pointerEvents: "none",
-      }} />
     </div>
   );
 }
@@ -398,8 +395,11 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
   const stage = useStage(finish);
 
-  // Preload all character images
+  // Preload character images + app icon (used in stages 2 & 6)
   useEffect(() => {
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const icon = new Image();
+    icon.src = `${base}/app-icon.png`;
     CAST.forEach(c => { const i = new Image(); i.src = imgUrl(c.img); });
   }, []);
 
@@ -479,6 +479,13 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
       {/* Keyframes */}
       <style>{`
+        @keyframes icon-slam {
+          0%   { opacity:0; transform: scale(0.4) translateY(-40px); filter: blur(16px); }
+          55%  { opacity:1; transform: scale(1.06) translateY(4px); filter: blur(0); }
+          72%  { transform: scale(0.97) translateY(-2px); }
+          85%  { transform: scale(1.02) translateY(0); }
+          100% { opacity:1; transform: scale(1) translateY(0); }
+        }
         @keyframes crash-left {
           0%   { opacity:0; transform: translateX(-120px) skewX(-6deg); filter: blur(8px); }
           60%  { opacity:1; transform: translateX(6px) skewX(1deg); filter: blur(0); }
