@@ -504,11 +504,6 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     const mountTime = mountTimeRef.current;
     let   ctx: AudioContext | null = null;
 
-    // Stage 3 (Darth Vader) real onset — advance() machine consumes
-    // STAGE_DURATIONS[0] twice, so every onset = D0 + prefix-sum.
-    const D0       = STAGE_DURATIONS[0];
-    const STAGE3_T = (D0 + STAGE_DURATIONS.slice(0, 3).reduce((a, b) => a + b, 0)) / 1000; // 4.70 s
-
     fetch(`${base}/intro-speech.mp3`)
       .then(r => r.arrayBuffer())
       .then(buf => {
@@ -519,9 +514,12 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       .then(decoded => {
         if (!ctx) return;
 
-        // Compensate for fetch + decode time so speech starts on Darth Vader.
+        // The speech file is exactly as long as the intro (24.984 s).
+        // Start playback from the offset matching how much time has already
+        // elapsed since mount (fetch + decode latency), so the words always
+        // land on the correct visual frame.
         const decodeLatencySec = (performance.now() - mountTime) / 1000;
-        const speechStartRel   = Math.max(0, STAGE3_T - decodeLatencySec);
+        const audioOffset = Math.min(decodeLatencySec, decoded.duration - 0.1);
 
         // ── Master gain — drives overall fade-out in finish() ─────────────
         const master = ctx.createGain();
@@ -579,7 +577,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
         shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
 
-        source.start(ctx.currentTime + speechStartRel);
+        source.start(ctx.currentTime, audioOffset);
       })
       .catch(() => {
         const audio = new Audio(`${base}/intro-speech.mp3`);
