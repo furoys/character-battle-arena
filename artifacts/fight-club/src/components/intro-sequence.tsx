@@ -605,7 +605,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     const el = new Audio(`${base}/intro-music.mp3`);
-    el.volume = 0.15;
+    el.volume = 0.32;
     el.preload = "auto";
     musicRef.current = el;
     el.play().catch(() => {});
@@ -618,16 +618,16 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     if (!el) return;
     // stage 2 (A·v·A slam) and stage 5 (ANYONE VS ANYONE) — heavy duck
     if (stage === 2 || stage === 5) {
-      el.volume = 0.07;
+      el.volume = 0.14;
     // stage 4 (impact flash) — deepest duck
     } else if (stage === 4) {
-      el.volume = 0.04;
+      el.volume = 0.08;
     // stage 6 (final logo) — swell back up
     } else if (stage === 6) {
-      el.volume = 0.18;
+      el.volume = 0.38;
     // stage 3 (character showcase) — keep moderate, music supports the montage
     } else if (stage === 3) {
-      el.volume = 0.13;
+      el.volume = 0.28;
     }
   }, [stage]);
 
