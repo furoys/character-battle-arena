@@ -139,31 +139,31 @@ function AvaTitle() {
         width: "min(84vw, 470px)", height: "min(84vw, 470px)",
         animation: "ring-in 0.65s 0.08s cubic-bezier(0.16,1,0.3,1) both",
       }}>
-        {/* Main spinning conic-gradient ring */}
+        {/* Main spinning blue-fire ring */}
         <div style={{
           position: "absolute", inset: 0, borderRadius: "50%",
-          background: "conic-gradient(from 0deg, #00f0ff 0deg, #0088cc 50deg, #5500dd 110deg, #cc1100 180deg, #ff7722 240deg, #ffcc00 300deg, #00f0ff 360deg)",
+          background: "conic-gradient(from 0deg, #000a2e 0deg, #001a6e 30deg, #0044cc 75deg, #0088ff 120deg, #00ccff 155deg, #88eeff 180deg, #00ccff 205deg, #0088ff 240deg, #0044cc 285deg, #001a6e 330deg, #000a2e 360deg)",
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #fff calc(100% - 5px))",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #fff calc(100% - 5px))",
           animation: "ring-spin 6s linear infinite",
           filter: "blur(0.4px)",
         }} />
-        {/* Outer cyan glow halo */}
+        {/* Inner blue glow halo */}
         <div style={{
           position: "absolute", inset: -10, borderRadius: "50%",
-          boxShadow: "0 0 0 1px rgba(0,240,255,0.12), 0 0 50px rgba(0,200,255,0.35), 0 0 100px rgba(0,120,255,0.2)",
+          boxShadow: "0 0 0 1px rgba(0,140,255,0.15), 0 0 50px rgba(0,100,255,0.55), 0 0 100px rgba(0,60,220,0.3)",
           pointerEvents: "none",
         }} />
-        {/* Outer orange glow halo */}
+        {/* Outer diffuse blue glow */}
         <div style={{
           position: "absolute", inset: -20, borderRadius: "50%",
-          boxShadow: "0 0 70px rgba(255,100,0,0.2), 0 0 120px rgba(255,60,0,0.12)",
+          boxShadow: "0 0 90px rgba(0,80,255,0.18), 0 0 160px rgba(0,50,200,0.1)",
           pointerEvents: "none",
         }} />
-        {/* Counter-rotating sparse sparks */}
+        {/* Counter-rotating cyan-white sparks */}
         <div style={{
           position: "absolute", inset: 6, borderRadius: "50%",
-          background: "conic-gradient(from 90deg, transparent 0deg, rgba(0,240,255,0.5) 5deg, transparent 10deg, transparent 175deg, rgba(255,119,34,0.5) 180deg, transparent 185deg, transparent 355deg)",
+          background: "conic-gradient(from 90deg, transparent 0deg, rgba(150,220,255,0.7) 5deg, transparent 10deg, transparent 175deg, rgba(200,240,255,0.5) 180deg, transparent 185deg, transparent 355deg)",
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
           animation: "ring-spin-reverse 2.6s linear infinite",
@@ -400,24 +400,24 @@ function FinalLogo() {
       }}>
         <div style={{
           position: "absolute", inset: 0, borderRadius: "50%",
-          background: "conic-gradient(from 0deg, #00f0ff 0deg, #0088cc 50deg, #5500dd 110deg, #cc1100 180deg, #ff7722 240deg, #ffcc00 300deg, #00f0ff 360deg)",
+          background: "conic-gradient(from 0deg, #000a2e 0deg, #001a6e 30deg, #0044cc 75deg, #0088ff 120deg, #00ccff 155deg, #88eeff 180deg, #00ccff 205deg, #0088ff 240deg, #0044cc 285deg, #001a6e 330deg, #000a2e 360deg)",
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px))",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px))",
           animation: "ring-spin 9s linear infinite",
         }} />
         <div style={{
           position: "absolute", inset: -12, borderRadius: "50%",
-          boxShadow: "0 0 0 1px rgba(0,240,255,0.1), 0 0 55px rgba(0,200,255,0.4), 0 0 110px rgba(0,100,255,0.2)",
+          boxShadow: "0 0 0 1px rgba(0,140,255,0.12), 0 0 55px rgba(0,100,255,0.55), 0 0 110px rgba(0,60,220,0.25)",
           pointerEvents: "none",
         }} />
         <div style={{
           position: "absolute", inset: -24, borderRadius: "50%",
-          boxShadow: "0 0 80px rgba(255,100,0,0.18)",
+          boxShadow: "0 0 100px rgba(0,80,255,0.18), 0 0 180px rgba(0,50,200,0.1)",
           pointerEvents: "none",
         }} />
         <div style={{
           position: "absolute", inset: 6, borderRadius: "50%",
-          background: "conic-gradient(from 270deg, transparent 0deg, rgba(0,240,255,0.4) 5deg, transparent 10deg, transparent 175deg, rgba(255,119,34,0.4) 180deg, transparent 185deg, transparent 355deg)",
+          background: "conic-gradient(from 270deg, transparent 0deg, rgba(150,220,255,0.6) 5deg, transparent 10deg, transparent 175deg, rgba(200,240,255,0.5) 180deg, transparent 185deg, transparent 355deg)",
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
           animation: "ring-spin-reverse 3.5s linear infinite",
@@ -430,9 +430,9 @@ function FinalLogo() {
         position: "relative",
         animation: "logo-assemble 0.55s cubic-bezier(0.16,1,0.3,1) both",
         filter: [
-          "drop-shadow(0 0 24px rgba(0,240,255,0.55))",
-          "drop-shadow(0 0 50px rgba(0,240,255,0.25))",
-          "drop-shadow(0 0 80px rgba(255,119,34,0.2))",
+          "drop-shadow(0 0 24px rgba(0,150,255,0.7))",
+          "drop-shadow(0 0 50px rgba(0,100,255,0.35))",
+          "drop-shadow(0 0 80px rgba(0,60,220,0.2))",
         ].join(" "),
       }}>
         <img
