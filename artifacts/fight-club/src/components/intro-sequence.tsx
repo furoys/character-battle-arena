@@ -478,16 +478,27 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   // Records wall-clock time at mount so we can compensate for decode latency
   const mountTimeRef = useRef(performance.now());
 
+  // Background music — plain HTML audio element for simplicity
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
-    // Smooth fade out via Web Audio API master gain
+    // Smooth fade out via Web Audio API master gain (speech)
     const master = masterGainRef.current;
     const ctx = audioCtxRef.current;
     if (master && ctx && ctx.state !== "closed") {
       const t = ctx.currentTime;
       master.gain.setValueAtTime(master.gain.value, t);
       master.gain.linearRampToValueAtTime(0, t + 0.55);
+    }
+    // Fade out background music in parallel
+    const music = musicRef.current;
+    if (music) {
+      const fade = setInterval(() => {
+        if (music.volume <= 0.04) { music.pause(); clearInterval(fade); return; }
+        music.volume = Math.max(0, music.volume - 0.04);
+      }, 35);
     }
     setExiting(true);
     setTimeout(onDone, 650);
@@ -589,6 +600,36 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       ctx?.close().catch(() => {});
     };
   }, []);
+
+  // ── Background music ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const el = new Audio(`${base}/intro-music.mp3`);
+    el.volume = 0.32;
+    el.preload = "auto";
+    musicRef.current = el;
+    el.play().catch(() => {});
+    return () => { el.pause(); el.src = ""; };
+  }, []);
+
+  // Duck / restore music volume on stage transitions so speech stays clear
+  useEffect(() => {
+    const el = musicRef.current;
+    if (!el) return;
+    // stage 2 (A·v·A slam) and stage 5 (ANYONE VS ANYONE) — heavy duck
+    if (stage === 2 || stage === 5) {
+      el.volume = 0.14;
+    // stage 4 (impact flash) — deepest duck
+    } else if (stage === 4) {
+      el.volume = 0.08;
+    // stage 6 (final logo) — swell back up
+    } else if (stage === 6) {
+      el.volume = 0.38;
+    // stage 3 (character showcase) — keep moderate, music supports the montage
+    } else if (stage === 3) {
+      el.volume = 0.28;
+    }
+  }, [stage]);
 
   // Preload character images + app icon (used in stages 2 & 6)
   useEffect(() => {
