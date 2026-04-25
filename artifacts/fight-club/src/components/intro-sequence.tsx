@@ -19,23 +19,23 @@ const CAST = [
   { name: "PITT",          sub: "Full Bleed Studios",  img: "pitt.jpg",          color: "#00f0ff" },
 ];
 
-// ── Per-character durations — scaled to fit the 24.984s intro speech audio ────
-// Proportional scale: 24,980ms total / 18,700ms original = ×1.336
+// ── Per-character durations — scaled to fit the 33.802s intro speech audio ────
+// Proportional scale: 33,802ms total / 24,980ms previous = ×1.3531
 // Starts slower, accelerates, ends fast — same ramp shape, longer window.
-//    i:  0     1     2     3     4     5    6    7    8    9   10   11   12   13   14
-const CHAR_DURATIONS = [1605, 1455, 1320, 1210, 1095, 1000, 910, 830, 755, 690, 620, 570, 515, 600, 560];
-const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // 13,735ms
+//    i:  0     1     2     3     4     5     6     7     8    9   10   11   12   13   14
+const CHAR_DURATIONS = [2172, 1969, 1786, 1637, 1482, 1353, 1231, 1123, 1022, 934, 839, 771, 697, 812, 758];
+const TOTAL_SHOWCASE_MS = CHAR_DURATIONS.reduce((a, b) => a + b, 0); // 18,586ms
 
-// ── Stage durations (ms) — total = 24,980ms ≈ intro-speech.mp3 (24.984s) ─────
+// ── Stage durations (ms) — total = 33,802ms ≈ intro-speech.mp3 (33.802s) ─────
 const STAGE_DURATIONS = [
-  1070,              // 0 — black awakening        (×1.336 from 800ms)
-  160,               // 1 — opening crackle-flash  (×1.336 from 120ms)
-  2400,              // 2 — icon slams in          (×1.336 from 1800ms)
-  TOTAL_SHOWCASE_MS, // 3 — character showcase     13,735ms
-  265,               // 4 — impact flash           (×1.336 from 200ms)
-  2940,              // 5 — ANYONE VS ANYONE       (×1.336 from 2200ms)
-  3475,              // 6 — logo assembled         (×1.336 from 2600ms)
-  935,               // 7 — iris-out               (×1.336 from 700ms)
+  1448,              // 0 — black awakening        (×1.3531 from 1070ms)
+  217,               // 1 — opening crackle-flash  (×1.3531 from 160ms)
+  3247,              // 2 — icon slams in          (×1.3531 from 2400ms)
+  TOTAL_SHOWCASE_MS, // 3 — character showcase     18,586ms
+  359,               // 4 — impact flash           (×1.3531 from 265ms)
+  3978,              // 5 — ANYONE VS ANYONE       (×1.3531 from 2940ms)
+  4702,              // 6 — logo assembled         (×1.3531 from 3475ms)
+  1265,              // 7 — iris-out               (×1.3531 from 935ms)
 ];
 
 const NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`;
@@ -525,7 +525,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       .then(decoded => {
         if (!ctx) return;
 
-        // The speech file is exactly as long as the intro (24.984 s).
+        // The speech file is exactly as long as the intro (33.802 s).
         // Start playback from the offset matching how much time has already
         // elapsed since mount (fetch + decode latency), so the words always
         // land on the correct visual frame.
