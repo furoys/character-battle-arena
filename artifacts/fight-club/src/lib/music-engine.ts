@@ -358,137 +358,31 @@ class MusicEngine {
   // ─── BATTLE ── slow, menacing, sub-bass driven war drums ───────────────────
   private playBattle() {
     const { ctx, master } = this.ensureCtx();
-    const BPM = 108;            // Slower = more menacing
-    const BEAT = 60 / BPM;      // ~0.555s per 8th-note step
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-    // ── Continuous sub-bass pedal on E1 (41 Hz) — the rumble underneath
-    const pedal = ctx.createOscillator();
-    const pedalGain = ctx.createGain();
-    pedal.type = "sine";
-    pedal.frequency.value = 41.2;
-    pedalGain.gain.value = 0.35;
-    pedal.connect(pedalGain);
-    pedalGain.connect(master);
-    pedal.start();
+    let source: AudioBufferSourceNode | null = null;
+    let stopped = false;
 
-    // ── Distorted bass channel through waveshaper for grit
-    const bassFilter = ctx.createBiquadFilter();
-    bassFilter.type = "lowpass";
-    bassFilter.frequency.value = 280;
-    bassFilter.Q.value = 5;
-
-    const shaper = ctx.createWaveShaper();
-    const curve = new Float32Array(1024);
-    for (let i = 0; i < 1024; i++) {
-      const x = (i * 2) / 1024 - 1;
-      curve[i] = Math.tanh(x * 3.5);   // Soft saturation
-    }
-    shaper.curve = curve;
-    shaper.oversample = "2x";
-
-    const bassBus = ctx.createGain();
-    bassBus.gain.value = 0.55;
-    bassFilter.connect(shaper);
-    shaper.connect(bassBus);
-    bassBus.connect(master);
-
-    // ── Slow filter sweep on bass for breathing tension
-    const sweepLfo = ctx.createOscillator();
-    const sweepLfoG = ctx.createGain();
-    sweepLfo.type = "sine";
-    sweepLfo.frequency.value = 0.18;
-    sweepLfoG.gain.value = 180;
-    sweepLfo.connect(sweepLfoG);
-    sweepLfoG.connect(bassFilter.frequency);
-    sweepLfo.start();
+    fetch(`${base}/battle.mp3`)
+      .then(r => r.arrayBuffer())
+      .then(buf => {
+        if (stopped || this.currentTrack !== "battle") return Promise.resolve(undefined as AudioBuffer | undefined);
+        return ctx.decodeAudioData(buf);
+      })
+      .then(decoded => {
+        if (!decoded || stopped || this.currentTrack !== "battle") return;
+        source = ctx.createBufferSource();
+        source.buffer = decoded;
+        source.loop = true;
+        source.connect(master);
+        source.start();
+      })
+      .catch(() => { /* silent fail if fetch/decode errors */ });
 
     this.cleanupFns.push(() => {
-      try {
-        const t = ctx.currentTime;
-        pedalGain.gain.linearRampToValueAtTime(0, t + 0.4);
-        bassBus.gain.linearRampToValueAtTime(0, t + 0.4);
-        setTimeout(() => { try { pedal.stop(); sweepLfo.stop(); } catch {} }, 450);
-      } catch {}
+      stopped = true;
+      try { source?.stop(); } catch { /**/ }
     });
-
-    // E-minor riff — heavy, deliberate, ominous (low octaves)
-    // 8th-note grid (16 steps per bar)
-    const bassSeq = [
-      41.2,  41.2,  0,    61.74, 41.2,  0,    49.0, 41.2,
-      41.2,  0,     55.0, 0,     49.0, 41.2,  0,    61.74,
-    ];
-    // Sparse menacing high motif (cello-like) — long sustained notes
-    const motifSeq: Array<[number, number]> = [
-      [164.81, 4],   // E3, 4 beats
-      [196.0,  3],   // G3, 3 beats
-      [185.0,  2],   // F#3
-      [146.83, 4],   // D3
-      [164.81, 4],   // E3
-      [233.08, 3],   // Bb3 (tritone — dread)
-      [220.0,  2],   // A3
-      [246.94, 4],   // B3
-    ];
-
-    let step = 0;
-    let motifStep = 0;
-    let running = true;
-
-    const tick = () => {
-      if (!running) return;
-      const t = ctx.currentTime + 0.04;
-      const i = step % bassSeq.length;
-      const freq = bassSeq[i];
-
-      // Bass note (skip rests)
-      if (freq > 0) {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = "sawtooth";
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.55, t + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.001, t + BEAT * 1.4);
-        o.connect(g);
-        g.connect(bassFilter);
-        o.start(t);
-        o.stop(t + BEAT * 1.5);
-      }
-
-      // BIG kick on every downbeat (every 4 steps), heartbeat-double on bar 4
-      if (step % 4 === 0) this.scheduleKick(t);
-      if (step % 16 === 12) this.scheduleHeartbeat(t);
-      // Sparse snare on the 3rd of every bar for tension
-      if (step % 16 === 8) this.scheduleSnare(t);
-
-      // High motif — change every 4 steps based on motifSeq durations
-      if (step % 4 === 0) {
-        const [mfreq, mbeats] = motifSeq[motifStep % motifSeq.length];
-        const dur = mbeats * BEAT * 2;
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        const lp = ctx.createBiquadFilter();
-        o.type = "sawtooth";
-        o.frequency.value = mfreq;
-        lp.type = "lowpass";
-        lp.frequency.value = 1100;
-        lp.Q.value = 1.5;
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.07, t + 0.4);
-        g.gain.setValueAtTime(0.07, t + dur * 0.7);
-        g.gain.linearRampToValueAtTime(0, t + dur);
-        o.connect(lp); lp.connect(g); g.connect(master);
-        o.start(t);
-        o.stop(t + dur + 0.05);
-        motifStep++;
-      }
-
-      step++;
-      const id = setTimeout(tick, BEAT * 1000);
-      this.cleanupFns.push(() => clearTimeout(id));
-    };
-
-    tick();
-    this.cleanupFns.push(() => { running = false; });
   }
 
   // ─── VICTORY ────────────────────────────────────────────────────────────────
