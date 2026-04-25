@@ -627,12 +627,12 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
         const hit1 = ctx.createBufferSource();
         hit1.buffer = hitDecoded; hitSrc1Ref.current = hit1;
-        const hit1Gain = ctx.createGain(); hit1Gain.gain.value = 0.46;   // clear but not dominant
+        const hit1Gain = ctx.createGain(); hit1Gain.gain.value = 0.37;   // clear but not dominant
         hit1.connect(hit1Gain); hit1Gain.connect(hitBass);
 
         const hit2 = ctx.createBufferSource();
         hit2.buffer = hitDecoded; hitSrc2Ref.current = hit2;
-        const hit2Gain = ctx.createGain(); hit2Gain.gain.value = 0.38;   // slightly softer for ANYONE VS
+        const hit2Gain = ctx.createGain(); hit2Gain.gain.value = 0.30;   // slightly softer for ANYONE VS
         hit2.connect(hit2Gain); hit2Gain.connect(hitBass);
 
         // ── Sidechain ducking — schedule on the AudioContext clock ────────
