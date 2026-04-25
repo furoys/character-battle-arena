@@ -10,37 +10,39 @@ class MusicEngine {
   private transitioning = false;
 
   constructor() {
-    // Browsers suspend AudioContext until a user gesture. Attach capture-phase
-    // listeners so ANY click or touch anywhere in the document will unlock it
-    // and kick-start whichever track is supposed to be playing.
-    const unlock = () => {
-      if (!this.ctx) return; // context not yet created — keep listening
-      if (this.ctx.state !== "suspended") {
-        document.removeEventListener("click", unlock, true);
-        document.removeEventListener("touchstart", unlock, true);
-        return;
-      }
-      this.ctx.resume().then(() => {
-        document.removeEventListener("click", unlock, true);
-        document.removeEventListener("touchstart", unlock, true);
-        // If a track should be playing but oscillators never started, boot it
-        if (!this._muted && this.currentTrack !== "off" && this.cleanupFns.length === 0) {
-          const t = this.currentTrack;
-          this.currentTrack = "off";
-          void this.setTrack(t);
-        }
-      }).catch(() => {});
+    // Capture-phase listener: the moment the user touches anything, call
+    // ctx.resume() synchronously (user-gesture token is alive at this point).
+    // We never remove this listener — it's a no-op once the ctx is running.
+    const unlockOnGesture = () => {
+      if (!this.ctx || this.ctx.state !== "suspended" || this._muted) return;
+      void this.ctx.resume(); // triggers onstatechange → starts the track
     };
-    document.addEventListener("click", unlock, true);
-    document.addEventListener("touchstart", unlock, true);
+    document.addEventListener("click", unlockOnGesture, true);
+    document.addEventListener("touchstart", unlockOnGesture, true);
   }
 
   private ensureCtx() {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = this._muted ? 0 : this._volume;
+      this.masterGain.gain.value = 0; // always start at 0; restoreGain fades in
       this.masterGain.connect(this.ctx.destination);
+
+      // When the context transitions to "running" (first user gesture unlocks it,
+      // or ctx.resume() succeeds after mute), start the pending track if nothing
+      // is already producing audio.
+      this.ctx.onstatechange = () => {
+        if (
+          this.ctx?.state === "running" &&
+          !this._muted &&
+          this.currentTrack !== "off" &&
+          this.cleanupFns.length === 0
+        ) {
+          const t = this.currentTrack;
+          this.currentTrack = "off";
+          void this.setTrack(t);
+        }
+      };
     }
     return { ctx: this.ctx, master: this.masterGain! };
   }
@@ -86,7 +88,12 @@ class MusicEngine {
     }
 
     const { ctx } = this.ensureCtx();
-    if (ctx.state === "suspended") await ctx.resume();
+
+    // If the AudioContext is still suspended (browser autoplay policy), don't
+    // try to start oscillators — onstatechange will call setTrack again once
+    // the user's first gesture allows ctx.resume() to succeed.
+    if (ctx.state !== "running") return;
+
     this.restoreGain(0.05);
 
     await new Promise<void>((r) => setTimeout(r, 100));
@@ -591,22 +598,26 @@ class MusicEngine {
   setMuted(muted: boolean) {
     this._muted = muted;
 
-    if (this.masterGain && this.ctx) {
-      // Oscillators are still running (just silenced). Simply ramp the master
-      // gain — no need to stop/restart the track, which would cause a glitch.
-      const t = this.ctx.currentTime;
-      this.masterGain.gain.cancelScheduledValues(t);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, t);
-      this.masterGain.gain.linearRampToValueAtTime(
-        muted ? 0 : this._volume,
-        t + 0.35
-      );
-    } else if (!muted && this.currentTrack !== "off") {
-      // No AudioContext yet (never played). The unlock listener will start the
-      // track on the next user gesture. Force-start if context is already there.
-      const track = this.currentTrack;
-      this.currentTrack = "off";
-      void this.setTrack(track);
+    if (!this.ctx) return; // ctx not created yet — the flag alone is enough
+
+    if (muted) {
+      // ctx.suspend() halts ALL audio output at the hardware level — no amount
+      // of scheduled gain automation can leak through. Oscillators stay in
+      // cleanupFns so they resume seamlessly when un-muted.
+      if (this.masterGain) {
+        // Also zero the gain so there's no momentary blip if ctx is later
+        // resumed from a different path (e.g. onstatechange).
+        const t = this.ctx.currentTime;
+        this.masterGain.gain.cancelScheduledValues(t);
+        this.masterGain.gain.setValueAtTime(0, t);
+      }
+      void this.ctx.suspend();
+    } else {
+      // ctx.resume() called from the mute-button click = a user gesture, so
+      // it works even when the context was suspended by the browser's autoplay
+      // policy (never had a prior interaction). onstatechange handles
+      // restarting the track when oscillators were cleared.
+      void this.ctx.resume();
     }
   }
 
