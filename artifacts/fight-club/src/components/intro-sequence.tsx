@@ -469,14 +469,41 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const [exiting, setExiting] = useState(false);
   const doneRef = useRef(false);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
+    // Fade out speech audio when intro ends
+    const audio = audioRef.current;
+    if (audio && !audio.paused) {
+      const fade = setInterval(() => {
+        if (audio.volume > 0.05) {
+          audio.volume = Math.max(0, audio.volume - 0.07);
+        } else {
+          audio.pause();
+          clearInterval(fade);
+        }
+      }, 40);
+    }
     setExiting(true);
     setTimeout(onDone, 650);
   }, [onDone]);
 
   const stage = useStage(finish);
+
+  // Play intro speech on mount
+  useEffect(() => {
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const audio = new Audio(`${base}/intro-speech.mp3`);
+    audio.volume = 1;
+    audioRef.current = audio;
+    audio.play().catch(() => {});
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
 
   // Preload character images + app icon (used in stages 2 & 6)
   useEffect(() => {
