@@ -5381,3 +5381,9 @@ id = "h9sWzvmyOG9hzD161MUxU"
 uri = "file://ava-roster.txt"
 type = "text"
 title = "A.v.A Full Roster — 955 Fighters"
+
+[[outputs]]
+id = "KIHa_j_QgsLZgaRkOHqPU"
+uri = "file://ava-roster.pdf"
+type = "pdf"
+title = "A.v.A Full Roster — 955 Fighters (PDF)"
