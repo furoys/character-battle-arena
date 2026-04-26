@@ -16,7 +16,7 @@ import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setCreatorToken } from "@/lib/challenge-tokens";
-import { subscribeForChallenge } from "@/lib/push-subscribe";
+import { subscribeForChallenge, requestNotificationPermissionFromGesture } from "@/lib/push-subscribe";
 import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
 import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 import { PendingChallengesBar } from "@/components/pending-challenges-bar";
@@ -515,6 +515,11 @@ export function Home() {
       toast({ title: "Pick Your Team", description: "Add at least 1 fighter to Team 1 first", variant: "destructive" });
       return;
     }
+    // Ask for notification permission BEFORE any await — iOS Safari and
+    // Chrome Android suppress the prompt if it's requested after the
+    // user-gesture context is lost (i.e. across a fetch). We ignore the
+    // result here; the subsequent subscribe call uses the resolved state.
+    const permissionPromise = requestNotificationPermissionFromGesture();
     setCreatingChallenge(true);
     try {
       const r = await fetch("/api/challenges", {
@@ -526,11 +531,11 @@ export function Home() {
       const { code, creatorToken } = await r.json() as { code: string; creatorToken?: string };
       if (creatorToken) {
         setCreatorToken(code, creatorToken);
-        // Fire-and-forget: ask for notification permission and register a push
-        // subscription so the creator can leave the screen and still be told
-        // when their friend accepts. Silent on failure / denial — UI also
-        // polls as a fallback.
-        void subscribeForChallenge({ code, token: creatorToken, prompt: true });
+        // Fire-and-forget: register a push subscription so the creator can
+        // leave the screen and still be told when their friend accepts.
+        // Permission was already prompted above; prompt:false here just uses
+        // the resolved state. UI polls as a fallback regardless.
+        void permissionPromise.then(() => subscribeForChallenge({ code, token: creatorToken, prompt: false }));
       }
       navigate(`/challenge/${code}?creator=1`);
     } catch (e) {

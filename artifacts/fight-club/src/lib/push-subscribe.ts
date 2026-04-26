@@ -27,6 +27,30 @@ export function pushSupported(): boolean {
   );
 }
 
+// Synchronous (returns a Promise but with NO awaits before the request) helper
+// to ask for notification permission. MUST be called from a click/tap handler
+// directly — iOS Safari and Chrome Android suppress the prompt if requested
+// after an `await`, because the user-gesture context is lost. Returns the
+// resolved permission state, or "unsupported" / "denied" when push isn't
+// available. Safe to call when permission is already granted/denied.
+export function requestNotificationPermissionFromGesture(): Promise<NotificationPermission | "unsupported"> {
+  if (!pushSupported()) return Promise.resolve("unsupported");
+  if (Notification.permission !== "default") {
+    return Promise.resolve(Notification.permission);
+  }
+  try {
+    const p = Notification.requestPermission();
+    // Some old browsers return undefined and use the callback form; treat as
+    // "default" so we don't crash on .then.
+    if (p && typeof (p as Promise<NotificationPermission>).then === "function") {
+      return (p as Promise<NotificationPermission>).catch(() => "denied" as NotificationPermission);
+    }
+    return Promise.resolve(Notification.permission);
+  } catch {
+    return Promise.resolve("denied");
+  }
+}
+
 async function getReg(): Promise<ServiceWorkerRegistration | null> {
   if (!("serviceWorker" in navigator)) return null;
   try {
