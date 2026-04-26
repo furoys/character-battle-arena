@@ -11,7 +11,7 @@ import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setJoinerToken, getCreatorToken, getJoinerToken } from "@/lib/challenge-tokens";
-import { subscribeForChallenge, pushSupported } from "@/lib/push-subscribe";
+import { subscribeForChallenge, pushSupported, requestNotificationPermissionFromGesture } from "@/lib/push-subscribe";
 import { ModifierBadge } from "@/components/modifier-badge";
 
 interface ChallengeData {
@@ -448,6 +448,11 @@ export function Challenge() {
 
   const handleAccept = async () => {
     if (!challenge || team2.length === 0) return;
+    // Ask for notification permission BEFORE the await fetch — on iOS Safari
+    // and Chrome Android the prompt is silently suppressed if it fires after
+    // the user-gesture context is lost. We chain the actual subscribe call
+    // off this promise once the accept response comes back.
+    const permissionPromise = requestNotificationPermissionFromGesture();
     setAccepting(true);
     try {
       const r = await fetch(`/api/challenges/${challenge.code}/accept`, {
@@ -465,11 +470,13 @@ export function Challenge() {
       };
 
       // Persist joiner identity so /ready and /push/subscribe can prove who we
-      // are. Then ask for notification permission so we can be notified when
-      // the creator hits READY in the lobby.
+      // are. Permission was already requested above (gesture-preserving);
+      // prompt:false uses the resolved state without re-prompting.
       if (updated.joinerToken) {
         setJoinerToken(challenge.code, updated.joinerToken);
-        void subscribeForChallenge({ code: challenge.code, token: updated.joinerToken, prompt: true });
+        void permissionPromise.then(() => subscribeForChallenge({
+          code: challenge.code, token: updated.joinerToken!, prompt: false,
+        }));
       }
 
       // Drop into the lobby — the existing render path picks LOBBY when

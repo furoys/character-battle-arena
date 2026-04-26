@@ -63,13 +63,22 @@ export async function sendPushToChallengeRole(
       sent++;
     } catch (e) {
       failed++;
-      const err = e as { statusCode?: number; message?: string };
-      // 404 / 410 → endpoint dead, drop it. Anything else: log and keep.
-      if (err.statusCode === 404 || err.statusCode === 410) {
+      const err = e as { statusCode?: number; message?: string; body?: string };
+      // Always surface why the send failed — silently dropping 404/410s hides
+      // real bugs (e.g. mid-session subscription revocation, payload errors,
+      // VAPID misconfig). 404/410 also drop the now-dead row so the table
+      // doesn't accumulate ghost endpoints.
+      const dropping = err.statusCode === 404 || err.statusCode === 410;
+      logger.warn({
+        statusCode: err.statusCode,
+        err: err.message,
+        body: err.body,
+        endpointHost: (() => { try { return new URL(sub.endpoint).host; } catch { return "?"; } })(),
+        dropping,
+      }, "push send failed");
+      if (dropping) {
         await db.delete(pushSubscriptionsTable)
           .where(eq(pushSubscriptionsTable.endpoint, sub.endpoint));
-      } else {
-        logger.warn({ err: err.message, statusCode: err.statusCode }, "push send failed");
       }
     }
   }));
