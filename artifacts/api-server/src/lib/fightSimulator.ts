@@ -2669,15 +2669,17 @@ ${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that cr
         ? "=== SETTING ==="
         : `=== ROUND ${opts.rounds[0]! + 1} ===`;
       const skipNote = opts.isSecondHalf
-        ? `IMPORTANT — PARTIAL OUTPUT MODE:
-- This is the SECOND HALF of the fight. The SETTING, ENTRANCE, and ROUNDS 1–${opts.rounds[0]} have ALREADY been written by another pass — DO NOT rewrite them.
+        ? `IMPORTANT — SPLIT WRITING (your assigned sections only):
+- The SETTING, ENTRANCE, and ROUNDS 1–${opts.rounds[0]} have ALREADY been written by another pass — DO NOT rewrite them.
 - Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no "continue", no "got it", no apology, no commentary of any kind.
 - Treat the fight state as if those earlier sections happened exactly as the BATTLE LOGIC BRIEF and DAMAGE STATE describe. The HP values you see at the start of YOUR rounds are the current state.
-- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Nothing else.`
-        : `IMPORTANT — PARTIAL OUTPUT MODE:
-- This is the FIRST HALF of the fight. Another pass will write the remaining rounds, RESULT, and WHY THEY WON.
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Nothing else.
+- Each assigned section must be written FULLY at its target length. Do NOT cut a section short. Do NOT add a "to be continued", "continue later", "partial", "(output limit)", or any other end-of-section marker. The reader sees this verbatim.`
+        : `IMPORTANT — SPLIT WRITING (your assigned sections only):
+- Another pass will write the remaining rounds, RESULT, and WHY THEY WON. You are not responsible for them and must not reference them.
 - Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no commentary.
-- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Do NOT write RESULT or WHY THEY WON — those belong to the other pass. Do NOT add a closing remark.`;
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Do NOT write RESULT or WHY THEY WON — those belong to the other pass. Do NOT add a closing remark.
+- Each assigned section must be written FULLY at its target length. Do NOT cut a section short. Do NOT add a "to be continued", "continue later", "partial", "(output limit)", or any other end-of-section marker. The reader sees this verbatim.`;
       blocks.push(skipNote);
     }
     if (opts.intro) {
@@ -2816,7 +2818,7 @@ FORMAT RULES:
 
 CRITICAL OUTPUT DISCIPLINE:
 - NEVER add a "State of Fighters" block, damage summary, HP report, or any structured status section at the end of a round. Fighter conditions must be woven into the prose itself.
-- NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)". The output is the final reader-facing text. Stay in the scene.
+- NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)", "(continued later)", "Continue this scene later", "to be continued", "partial output", "output limit", "(more next pass)". The output is the final reader-facing text. Stay in the scene.
 - NEVER abbreviate or truncate a section because you're worried about length. Either write it fully or skip it cleanly — there is no third option.
 - NEVER restate the previous sentence with different words. If a beat is described, the next beat advances; it does not echo.${allianceTrigger ? `
 
@@ -2826,10 +2828,14 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
   const promptWithOutputBlock = (outputBlock: string) =>
     prompt.replace("__OUTPUT_FORMAT_BLOCK__", outputBlock);
 
-  // Per-section token estimates (gpt-4o):
-  //   SETTING + ENTRANCE ≈ 800 tokens
-  //   each ROUND          ≈ 1200 tokens  (4-6 full paragraphs)
-  //   RESULT + WHY THEY WON ≈ 1200 tokens
+  // Per-section token estimates (gpt-4o, observed):
+  //   SETTING + ENTRANCE ≈ 1200 tokens (multi-fighter teams push entrance long)
+  //   each ROUND          ≈ 1600 tokens  (4-6 rich paragraphs with dialogue)
+  //   RESULT + WHY THEY WON ≈ 1500 tokens
+  // Older budgets (800 / 1200) were tight enough that the LAST round in the
+  // first half got truncated mid-paragraph and the model would emit a
+  // "continue later" meta-marker. We give every section ~30% headroom now.
+  // The 10000 hard cap still keeps cost bounded for 7-round fights.
   // For fights with 3+ rounds we split the work across two AI calls that run
   // in parallel, halving the wall-clock time. Quality is unchanged because
   // both calls receive the identical character profiles, locked verdict,
@@ -2847,8 +2853,8 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const promptB = promptWithOutputBlock(
       buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
     );
-    const tokensA = Math.min(10000, 800 + firstHalf.length * 1200);
-    const tokensB = Math.min(10000, 1200 + secondHalf.length * 1200);
+    const tokensA = Math.min(12000, 1200 + firstHalf.length * 1600);
+    const tokensB = Math.min(12000, 1500 + secondHalf.length * 1600);
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
@@ -2867,7 +2873,7 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const fullPrompt = promptWithOutputBlock(
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
-    const narrativeTokens = Math.min(10000, 2500 + roundCount * 1200);
+    const narrativeTokens = Math.min(12000, 2700 + roundCount * 1600);
     const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
     raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 60_000, streamer?.onDelta);
     streamer?.onEnd(raw);
