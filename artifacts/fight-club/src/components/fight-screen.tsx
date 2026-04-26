@@ -981,6 +981,22 @@ export function FightScreen({
         @keyframes continuePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         @keyframes shimmer { 0% { transform: translateX(-200%); } 100% { transform: translateX(500%); } }
         @keyframes roundFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes narrationGlow {
+          0%, 100% { box-shadow: 0 0 24px rgba(255,0,85,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset; }
+          50% { box-shadow: 0 0 48px rgba(255,0,85,0.85), 0 0 0 1px rgba(255,255,255,0.18) inset; }
+        }
+        @keyframes narrationSheen {
+          0% { transform: translateX(-150%) skewX(-20deg); }
+          60%, 100% { transform: translateX(250%) skewX(-20deg); }
+        }
+        @keyframes soundBar1 { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+        @keyframes soundBar2 { 0%, 100% { transform: scaleY(0.6); } 50% { transform: scaleY(0.25); } }
+        @keyframes soundBar3 { 0%, 100% { transform: scaleY(0.45); } 50% { transform: scaleY(0.95); } }
+        @keyframes soundBar4 { 0%, 100% { transform: scaleY(0.8); } 50% { transform: scaleY(0.4); } }
+        @keyframes micRing {
+          0% { transform: scale(1); opacity: 0.7; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
       `}</style>
 
       <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-300">
@@ -1096,18 +1112,64 @@ export function FightScreen({
                   <div key={idx}>
                     <RoundBlock round={round} index={idx} />
                     {/* Play narration — only on the most recently revealed round,
-                        only when ttsEnabled, and only until the user starts it. */}
+                        only when ttsEnabled, and only until the user starts it.
+                        Bold, glowing CTA: filled primary, animated sound bars,
+                        ripple ring around the mic. Designed to read at a glance
+                        as "tap here to hear it spoken." */}
                     {ttsEnabled && idx === visibleCount - 1 && narrationStartedRound !== idx && (
-                      <div className="px-1 mt-1 animate-in fade-in duration-300">
+                      <div className="px-1 mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <button
                           onClick={playNarration}
-                          className="flex items-center gap-2 py-2 transition-colors"
-                          style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}
-                          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                          className="group relative w-full overflow-hidden font-display uppercase text-white px-5 py-4 transition-transform active:scale-[0.98]"
+                          style={{
+                            background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%)",
+                            border: "1px solid rgba(255,255,255,0.18)",
+                            animation: "narrationGlow 1.8s ease-in-out infinite",
+                            letterSpacing: "0.28em",
+                            fontSize: 15,
+                          }}
                         >
-                          <Mic className="h-3.5 w-3.5" />
-                          Play narration
+                          {/* Diagonal sheen sweep */}
+                          <span
+                            className="pointer-events-none absolute top-0 left-0 h-full w-1/3"
+                            style={{
+                              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
+                              animation: "narrationSheen 2.6s ease-in-out infinite",
+                            }}
+                          />
+                          <span className="relative flex items-center justify-center gap-3">
+                            {/* Mic with expanding ripple ring */}
+                            <span className="relative inline-flex items-center justify-center h-6 w-6">
+                              <span
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                  border: "1.5px solid rgba(255,255,255,0.85)",
+                                  animation: "micRing 1.8s ease-out infinite",
+                                }}
+                              />
+                              <Mic className="h-5 w-5 relative" />
+                            </span>
+                            <span className="font-bold">Play Narration</span>
+                            {/* Animated sound-wave bars */}
+                            <span className="flex items-end gap-[3px] h-5 ml-1">
+                              <span
+                                className="w-[3px] bg-white rounded-full origin-bottom"
+                                style={{ height: "100%", animation: "soundBar1 0.9s ease-in-out infinite" }}
+                              />
+                              <span
+                                className="w-[3px] bg-white rounded-full origin-bottom"
+                                style={{ height: "100%", animation: "soundBar2 0.9s ease-in-out 0.12s infinite" }}
+                              />
+                              <span
+                                className="w-[3px] bg-white rounded-full origin-bottom"
+                                style={{ height: "100%", animation: "soundBar3 0.9s ease-in-out 0.24s infinite" }}
+                              />
+                              <span
+                                className="w-[3px] bg-white rounded-full origin-bottom"
+                                style={{ height: "100%", animation: "soundBar4 0.9s ease-in-out 0.36s infinite" }}
+                              />
+                            </span>
+                          </span>
                         </button>
                       </div>
                     )}
