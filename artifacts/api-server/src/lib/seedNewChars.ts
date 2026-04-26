@@ -1788,4 +1788,14 @@ export async function seedNewChars(): Promise<void> {
     console.log(`[seed] Removed ${removed.length} duplicate "Dr. Manhattan" row(s)`);
   }
 
+  // One-off cleanup: remove the legacy "The Joker" duplicate (the canonical
+  // entry is "Joker"). Safe to run repeatedly — no-op once the row is gone.
+  const removedJoker = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "The Joker"))
+    .returning({ id: charactersTable.id });
+  if (removedJoker.length > 0) {
+    console.log(`[seed] Removed ${removedJoker.length} duplicate "The Joker" row(s)`);
+  }
+
 }
