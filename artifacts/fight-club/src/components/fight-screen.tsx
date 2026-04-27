@@ -52,18 +52,19 @@ function FightLoadingSequence({ team1Names, team2Names }: { team1Names: string[]
   const [phase, setPhase] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // Phase cadence is tuned so all 7 phases play through within the typical
-  // ~10–12s pre-text window (until the first narrative delta arrives). On the
-  // last phase we just hold instead of looping back to phase 0 — reaching
-  // "the dust settles" should feel like a natural arrival, not a reset.
+  // Phase cadence: cycle continuously through all 7 phases so the loader
+  // never visually freezes when the backend takes longer than the ~10s
+  // initial budget. Slow networks or AI verdict timeouts can push the wait
+  // to 30–60s — looping the phases keeps the UI feeling alive instead of
+  // dead-stuck on "the dust settles."
   useEffect(() => {
     const iv = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setPhase(p => Math.min(p + 1, FIGHT_PHASES.length - 1));
+        setPhase(p => (p + 1) % FIGHT_PHASES.length);
         setVisible(true);
       }, 220);
-    }, 1400);
+    }, 1800);
     return () => clearInterval(iv);
   }, []);
 
