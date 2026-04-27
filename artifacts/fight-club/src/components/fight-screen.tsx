@@ -491,6 +491,23 @@ export function FightScreen({
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
   const [narrationStartedRound, setNarrationStartedRound] = useState(-1);
+  // When the TTS server returns 503 (upstream gpt-audio proxy is down or
+  // refused), flip this flag so the narration UI hides itself for the rest
+  // of the session instead of showing a button that produces silence.
+  const [ttsBroken, setTtsBroken] = useState(false);
+  const ttsFetch = useCallback((text: string, voice: TtsVoice): Promise<Blob | null> => {
+    if (ttsBroken) return Promise.resolve(null);
+    return fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voice }),
+    })
+      .then(r => {
+        if (r.status === 503) { setTtsBroken(true); return null; }
+        return r.ok ? r.blob() : null;
+      })
+      .catch(() => null);
+  }, [ttsBroken]);
 
   // Tiny silent WAV — played synchronously inside click handlers to satisfy
   // the browser's "audio must be started from a user gesture" requirement.
@@ -711,14 +728,7 @@ export function FightScreen({
         const clean = narrative.slice(lastPos, endPos)
           .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
         if (clean.length >= 12) {
-          const v = ttsVoice;
-          newBlobs.push(
-            fetch("/api/tts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: clean, voice: v }),
-            }).then(r => r.ok ? r.blob() : null).catch(() => null)
-          );
+          newBlobs.push(ttsFetch(clean, ttsVoice));
           lastPos = endPos;
         }
       }
@@ -754,12 +764,7 @@ export function FightScreen({
         .replace(/\*\*/g, "").replace(/^[-*]\s+/gm, "").trim();
       if (clean.length >= 12) {
         const r = roundIdx;
-        const v = ttsVoice;
-        const blobP = fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: clean, voice: v }),
-        }).then(res => res.ok ? res.blob() : null).catch(() => null);
+        const blobP = ttsFetch(clean, ttsVoice);
         sentenceQueueRef.current.push({ blobP, round: r });
         lastPos = endPos;
       }
@@ -790,11 +795,7 @@ export function FightScreen({
     if (remaining.length < 8) return;
 
     const r = roundIdx;
-    const blobP = fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: remaining, voice: ttsVoice }),
-    }).then(res => res.ok ? res.blob() : null).catch(() => null);
+    const blobP = ttsFetch(remaining, ttsVoice);
 
     sentenceQueueRef.current.push({ blobP, round: r });
     enqueuedUpToRef.current[roundIdx] = narrative.length;
@@ -829,11 +830,7 @@ export function FightScreen({
         return;
       }
 
-      const blobP = fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: remaining, voice: ttsVoice }),
-      }).then(r => r.ok ? r.blob() : null).catch(() => null);
+      const blobP = ttsFetch(remaining, ttsVoice);
 
       const existing = preFetchRef.current.get(roundIdx) ?? [];
       preFetchRef.current.set(roundIdx, [...existing, blobP]);
@@ -1117,7 +1114,7 @@ export function FightScreen({
                         Bold, glowing CTA: filled primary, animated sound bars,
                         ripple ring around the mic. Designed to read at a glance
                         as "tap here to hear it spoken." */}
-                    {ttsEnabled && idx === visibleCount - 1 && narrationStartedRound !== idx && (
+                    {ttsEnabled && !ttsBroken && idx === visibleCount - 1 && narrationStartedRound !== idx && (
                       <div className="px-1 mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <button
                           onClick={playNarration}
@@ -1256,7 +1253,7 @@ export function FightScreen({
           </button>
 
           {/* Narration speaking indicator — visible when audio is playing */}
-          {ttsEnabled && ttsSpeaking && (
+          {ttsEnabled && !ttsBroken && ttsSpeaking && (
             <div
               className="flex items-center gap-1"
               style={{ fontSize: 9, letterSpacing: "0.12em", fontWeight: 700, color: "#00ffcc" }}
