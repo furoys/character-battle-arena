@@ -19,7 +19,7 @@ const POSITIVE_SYNERGIES: {
   { label: "TEAM AVATAR", anyOf: ["Aang", "Katara", "Zuko", "Toph Beifong", "Sokka"], minMatch: 2, bonus: 0.15 },
   { label: "Z-FIGHTERS", anyOf: ["Goku", "Vegeta", "Gohan", "Piccolo", "Krillin", "Trunks", "Goten"], minMatch: 2, bonus: 0.13 },
   { label: "AVENGERS ASSEMBLE", anyOf: ["Captain America", "Iron Man", "Thor", "Hulk", "Black Widow", "Hawkeye", "Spider-Man", "Vision", "Wanda Maximoff", "Ant-Man"], minMatch: 2, bonus: 0.12 },
-  { label: "JUSTICE LEAGUE", anyOf: ["Superman", "Batman", "Wonder Woman", "The Flash", "Aquaman", "Green Lantern", "Cyborg"], minMatch: 2, bonus: 0.12 },
+  { label: "JUSTICE LEAGUE", anyOf: ["Superman", "Batman", "Wonder Woman", "Flash", "Aquaman", "Green Lantern", "Cyborg"], minMatch: 2, bonus: 0.12 },
   { label: "STRAW HAT CREW", anyOf: ["Monkey D. Luffy", "Roronoa Zoro", "Sanji", "Nami", "Usopp", "Nico Robin", "Franky", "Brook", "Tony Tony Chopper", "Jinbe"], minMatch: 2, bonus: 0.12 },
   { label: "FAIRY TAIL GUILD", anyOf: ["Natsu Dragneel", "Erza Scarlet", "Gildarts Clive", "Gray Fullbuster", "Lucy Heartfilia"], minMatch: 2, bonus: 0.12 },
   { label: "HASHIRA CORPS", anyOf: ["Tanjiro Kamado", "Zenitsu Agatsuma", "Inosuke Hashibira", "Giyu Tomioka", "Kyojuro Rengoku", "Tengen Uzui", "Muichiro Tokito", "Gyomei Himejima"], minMatch: 2, bonus: 0.10 },
