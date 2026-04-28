@@ -3374,11 +3374,16 @@ export async function simulateFight(
   const base2 = teamPower(team2);
 
   // ── LOGICAL DECISION SYSTEM ────────────────────────────────────────────────
-  // Run math-based assessment first for instant fallback, then AI assessment
-  // in parallel with arena/setup work. The AI's lore knowledge overrides math
-  // if it returns in time; otherwise the math result is used transparently.
-  const mathAssessment = assessMatchup(team1, team2);
-  const assessmentPromise = aiAssessMatchup(team1, team2, mathAssessment);
+  // Math-based assessment is authoritative and instant. We previously also ran
+  // an AI matchup pass with up to a 12s timeout that could refine the verdict
+  // for lore-heavy matchups (e.g. Goku vs a high-stat human), but it gated
+  // EVERY fight behind that 12s wait — even cached/easy matchups — and pushed
+  // total time-to-first-content to 14-20s on the deployed proxy. Users
+  // consistently reported "fights aren't loading." Math is good enough for the
+  // overwhelming majority of matchups; if we want lore-aware verdicts back,
+  // do it as a background pre-compute keyed on the team composition cache,
+  // not a per-request blocker. See use-simulate-fight-stream.ts client hook.
+  const assessment = assessMatchup(team1, team2);
 
   // Power gap: 0 = equal, ~±0.35 at extreme mismatch
   const totalPower = base1 + base2;
@@ -3399,9 +3404,6 @@ export async function simulateFight(
   let hp2 = 100;
 
   const rounds: FightRound[] = [];
-
-  // Await the AI matchup assessment now (it was kicked off above in parallel with setup).
-  const assessment = await assessmentPromise;
 
   // Round count comes from the logical decision system — blowouts get 1-2 rounds,
   // close fights get the full 5. No more 5-round padding for mismatches.
