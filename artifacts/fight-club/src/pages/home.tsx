@@ -35,20 +35,34 @@ function writeLS(key: string, value: unknown) {
 type ActiveFilter = null | "__faves__" | "__recent__" | string;
 
 // ─── Narration toggle (controlled — state lives in Home) ─────────────────────
+// Pre-fight narration chip — sits above the FIGHT bar so players make the
+// audio choice at the moment of commitment rather than digging through a
+// top-bar icon. Wider + labeled so the state is unmistakable.
 function NarrationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      title={on ? "AI Narration ON — tap to mute" : "AI Narration OFF — tap to enable"}
-      className="flex items-center justify-center transition-all active:scale-[0.95]"
+      aria-pressed={on}
+      aria-label={on ? "Turn AI narration off" : "Turn AI narration on"}
+      title={on ? "AI Narration ON — tap to turn off" : "AI Narration OFF — tap to enable"}
+      className="w-full flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
       style={{
-        width: 30, height: 30,
-        border: `1.5px solid ${on ? "rgba(0,240,255,0.45)" : "rgba(255,255,255,0.15)"}`,
-        background: on ? "rgba(0,240,255,0.08)" : "rgba(255,255,255,0.03)",
-        color: on ? "#00f0ff" : "rgba(255,255,255,0.35)",
+        height: 30,
+        background: on
+          ? "linear-gradient(180deg, rgba(0,240,255,0.10) 0%, rgba(0,240,255,0.18) 100%)"
+          : "rgba(255,255,255,0.025)",
+        borderTop: `1px solid ${on ? "rgba(0,240,255,0.45)" : "rgba(255,255,255,0.10)"}`,
+        borderBottom: `1px solid ${on ? "rgba(0,240,255,0.20)" : "rgba(255,255,255,0.06)"}`,
+        color: on ? "#00f0ff" : "rgba(255,255,255,0.45)",
+        fontFamily: "var(--font-display, monospace)",
+        fontSize: 9,
+        letterSpacing: "0.28em",
+        fontWeight: 700,
+        textTransform: "uppercase",
       }}
     >
-      {on ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
+      {on ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
+      <span>Narration: {on ? "On" : "Off"}</span>
     </button>
   );
 }
@@ -623,7 +637,6 @@ export function Home() {
         >
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
-            <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
             <MusicToggle />
             {/* UPSET MODE — promoted to the top bar so the primary action row
                 stays focused on starting matches. Tap to toggle cached vs
@@ -901,6 +914,13 @@ export function Home() {
             boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
           }}
         >
+          {/* Narration toggle — appears alongside FIGHT so the user explicitly
+              opts in (or out) of AI narration at the moment of commitment.
+              Lives here (not the top bar) because the choice is per-fight. */}
+          {canFight && (
+            <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
+          )}
+
           {/* Chaos modifier strip — sits directly above the FIGHT bar so the
               modifier in play is visible at the moment of commitment. The same
               picker is also reachable from the CHALLENGE dropdown so the
@@ -1135,6 +1155,7 @@ export function Home() {
           team2Images={team2.map(c => c.imageUrl)}
           completedSections={simulateFight.completedSections}
           ttsEnabled={ttsEnabled}
+          onToggleTts={toggleTts}
         />
       </div>
 
