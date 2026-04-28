@@ -384,106 +384,34 @@ class MusicEngine {
     });
   }
 
-  // ─── VICTORY ────────────────────────────────────────────────────────────────
+  // ─── VICTORY ── trap victory anthem (looped MP3) ───────────────────────────
   private playVictory() {
     const { ctx, master } = this.ensureCtx();
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-    // Triumphant E-major ascending fanfare
-    const fanfare: [number, number][] = [
-      [329.63, 0.18], // E4
-      [329.63, 0.18], // E4
-      [493.88, 0.22], // B4
-      [659.25, 0.30], // E5
-      [587.33, 0.15], // D5
-      [659.25, 0.22], // E5 — peak
-      [554.37, 0.14],
-      [493.88, 0.14],
-      [440.0,  0.14],
-      [415.30, 0.14],
-      [493.88, 0.20],
-      [659.25, 0.55], // big final note
-    ];
+    let source: AudioBufferSourceNode | null = null;
+    let stopped = false;
 
-    let t = ctx.currentTime + 0.2;
-    fanfare.forEach(([freq, dur]) => {
-      this.scheduleNote(freq, "sawtooth", 0.18, t, dur);
-      // Add harmony a 5th below
-      this.scheduleNote(freq * 0.667, "sine", 0.06, t, dur);
-      t += dur + 0.02;
+    fetch(`${base}/victory.mp3`)
+      .then(r => r.arrayBuffer())
+      .then(buf => {
+        if (stopped || this.currentTrack !== "victory") return Promise.resolve(undefined as AudioBuffer | undefined);
+        return ctx.decodeAudioData(buf);
+      })
+      .then(decoded => {
+        if (!decoded || stopped || this.currentTrack !== "victory") return;
+        source = ctx.createBufferSource();
+        source.buffer = decoded;
+        source.loop = true;
+        source.connect(master);
+        source.start();
+      })
+      .catch(() => { /* silent fail if fetch/decode errors */ });
+
+    this.cleanupFns.push(() => {
+      stopped = true;
+      try { source?.stop(); } catch { /**/ }
     });
-
-    // Big final chord after fanfare
-    const chordT = t + 0.1;
-    [329.63, 415.30, 493.88, 659.25].forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0, chordT);
-      g.gain.linearRampToValueAtTime(0.07 - i * 0.01, chordT + 0.3);
-      g.gain.setValueAtTime(0.07 - i * 0.01, chordT + 1.5);
-      g.gain.linearRampToValueAtTime(0, chordT + 2.5);
-      o.connect(g);
-      g.connect(master);
-      o.start(chordT);
-      o.stop(chordT + 2.6);
-    });
-
-    // After fanfare finishes, transition to soft victory ambient loop
-    const fanfareDuration = (chordT + 2.6 - (ctx.currentTime + 0.2)) * 1000;
-    const loopTimeout = setTimeout(() => {
-      if (this.currentTrack === "victory") this.playVictoryLoop();
-    }, fanfareDuration + 200);
-    this.cleanupFns.push(() => clearTimeout(loopTimeout));
-  }
-
-  private playVictoryLoop() {
-    if (this.currentTrack !== "victory") return;
-    const { ctx, master } = this.ensureCtx();
-
-    // Soft E-major chord hum
-    const chordNotes = [164.81, 207.65, 246.94, 329.63]; // E3, G#3, B3, E4
-    chordNotes.forEach((freq) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      g.gain.value = 0.045;
-      o.connect(g);
-      g.connect(master);
-      o.start();
-      this.cleanupFns.push(() => {
-        try {
-          const t = ctx.currentTime;
-          g.gain.linearRampToValueAtTime(0, t + 0.5);
-          setTimeout(() => { try { o.stop(); } catch {} }, 550);
-        } catch {}
-      });
-    });
-
-    // Gentle melody over the top
-    const loopMel = [329.63, 415.30, 493.88, 554.37, 493.88, 415.30];
-    let step = 0;
-    const playMel = () => {
-      const t = ctx.currentTime;
-      const freq = loopMel[step % loopMel.length];
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.06, t + 0.4);
-      g.gain.setValueAtTime(0.06, t + 1.0);
-      g.gain.linearRampToValueAtTime(0, t + 1.6);
-      o.connect(g);
-      g.connect(master);
-      o.start(t);
-      o.stop(t + 1.7);
-      step++;
-    };
-    playMel();
-    const iv = setInterval(playMel, 1700);
-    this.cleanupFns.push(() => clearInterval(iv));
   }
 
   // ─── Public API ─────────────────────────────────────────────────────────────
