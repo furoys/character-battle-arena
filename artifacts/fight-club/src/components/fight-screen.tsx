@@ -496,23 +496,19 @@ export function FightScreen({
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
   const [narrationStartedRound, setNarrationStartedRound] = useState(-1);
-  // When the TTS server returns 503 (upstream gpt-audio proxy is down or
-  // refused), flip this flag so the narration UI hides itself for the rest
-  // of the session instead of showing a button that produces silence.
-  const [ttsBroken, setTtsBroken] = useState(false);
+  // The upstream gpt-audio proxy occasionally returns 503 (timeouts).
+  // Don't latch a session-wide "broken" flag — a single failed sentence
+  // shouldn't silence the rest of the fight. Just return null for that
+  // chunk; the drain loop skips nulls and the next sentence retries.
   const ttsFetch = useCallback((text: string, voice: TtsVoice): Promise<Blob | null> => {
-    if (ttsBroken) return Promise.resolve(null);
     return fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice }),
     })
-      .then(r => {
-        if (r.status === 503) { setTtsBroken(true); return null; }
-        return r.ok ? r.blob() : null;
-      })
+      .then(r => (r.ok ? r.blob() : null))
       .catch(() => null);
-  }, [ttsBroken]);
+  }, []);
 
   // Tiny silent WAV — played synchronously inside click handlers to satisfy
   // the browser's "audio must be started from a user gesture" requirement.
@@ -1119,7 +1115,7 @@ export function FightScreen({
                         Bold, glowing CTA: filled primary, animated sound bars,
                         ripple ring around the mic. Designed to read at a glance
                         as "tap here to hear it spoken." */}
-                    {ttsEnabled && !ttsBroken && idx === visibleCount - 1 && narrationStartedRound !== idx && (
+                    {ttsEnabled && idx === visibleCount - 1 && narrationStartedRound !== idx && (
                       <div className="px-1 mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <button
                           onClick={playNarration}
@@ -1263,7 +1259,7 @@ export function FightScreen({
               stops the current sentence + clears the queue via the existing
               ttsEnabled-effect → stopTts() chain. To turn narration back on
               the user goes back to Arena and toggles it pre-fight. */}
-          {ttsEnabled && !ttsBroken && (
+          {ttsEnabled && (
             <button
               onClick={() => { (onToggleTts ?? toggleTts)(); }}
               aria-pressed={false}
