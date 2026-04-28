@@ -9,6 +9,10 @@ class MusicEngine {
   private _ducked = false;
   private cleanupFns: Array<() => void> = [];
   private transitioning = false;
+  // Decoded AudioBuffer cache keyed by URL. Lets us pre-warm large MP3s
+  // (battle, victory) so the music starts instantly when the track switches
+  // instead of waiting on a fetch + decode round-trip.
+  private bufferCache = new Map<string, Promise<AudioBuffer | null>>();
 
   constructor() {
     // Capture-phase listener: the moment the user touches anything, call
@@ -75,10 +79,15 @@ class MusicEngine {
     if (track === this.currentTrack || this.transitioning) return;
     this.transitioning = true;
 
-    this.stopAll(0.5);
+    // Snappier crossfade when switching to victory — players want the win
+    // sting to land the instant the screen reveals, not a full second later.
+    const fadeSec = track === "victory" ? 0.18 : 0.5;
+    const waitMs  = track === "victory" ? 200  : 600;
+
+    this.stopAll(fadeSec);
     this.currentTrack = track;
 
-    await new Promise<void>((r) => setTimeout(r, 600));
+    await new Promise<void>((r) => setTimeout(r, waitMs));
     this.transitioning = false;
 
     if (track === "off" || this._muted) {
@@ -354,29 +363,36 @@ class MusicEngine {
     this.cleanupFns.push(() => clearInterval(iv));
   }
 
-  // ─── BATTLE ── slow, menacing, sub-bass driven war drums ───────────────────
-  private playBattle() {
-    const { ctx, master } = this.ensureCtx();
-    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  // Fetch + decode an MP3 once per URL; subsequent calls return the cached
+  // promise. Used by both playBattle/playVictory and the pre-warm path.
+  private loadBuffer(url: string): Promise<AudioBuffer | null> {
+    const cached = this.bufferCache.get(url);
+    if (cached) return cached;
+    const { ctx } = this.ensureCtx();
+    const p = fetch(url)
+      .then(r => r.arrayBuffer())
+      .then(buf => ctx.decodeAudioData(buf))
+      .catch(() => null);
+    this.bufferCache.set(url, p);
+    return p;
+  }
 
+  // Play a looping pre-decoded buffer for the given track. Returns immediately
+  // if the buffer is already cached (the common case for victory once battle
+  // has pre-warmed it), otherwise waits for fetch+decode.
+  private playLoopedBuffer(url: string, track: MusicTrack) {
+    const { ctx, master } = this.ensureCtx();
     let source: AudioBufferSourceNode | null = null;
     let stopped = false;
 
-    fetch(`${base}/battle.mp3`)
-      .then(r => r.arrayBuffer())
-      .then(buf => {
-        if (stopped || this.currentTrack !== "battle") return Promise.resolve(undefined as AudioBuffer | undefined);
-        return ctx.decodeAudioData(buf);
-      })
-      .then(decoded => {
-        if (!decoded || stopped || this.currentTrack !== "battle") return;
-        source = ctx.createBufferSource();
-        source.buffer = decoded;
-        source.loop = true;
-        source.connect(master);
-        source.start();
-      })
-      .catch(() => { /* silent fail if fetch/decode errors */ });
+    void this.loadBuffer(url).then(decoded => {
+      if (!decoded || stopped || this.currentTrack !== track) return;
+      source = ctx.createBufferSource();
+      source.buffer = decoded;
+      source.loop = true;
+      source.connect(master);
+      source.start();
+    });
 
     this.cleanupFns.push(() => {
       stopped = true;
@@ -384,34 +400,19 @@ class MusicEngine {
     });
   }
 
+  // ─── BATTLE ── looping war-drum bed (MP3) ──────────────────────────────────
+  private playBattle() {
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    this.playLoopedBuffer(`${base}/battle.mp3`, "battle");
+    // Pre-warm the victory buffer in the background so the win sting can
+    // start instantly the moment the fight ends — no fetch/decode wait.
+    void this.loadBuffer(`${base}/victory.mp3`);
+  }
+
   // ─── VICTORY ── trap victory anthem (looped MP3) ───────────────────────────
   private playVictory() {
-    const { ctx, master } = this.ensureCtx();
     const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-
-    let source: AudioBufferSourceNode | null = null;
-    let stopped = false;
-
-    fetch(`${base}/victory.mp3`)
-      .then(r => r.arrayBuffer())
-      .then(buf => {
-        if (stopped || this.currentTrack !== "victory") return Promise.resolve(undefined as AudioBuffer | undefined);
-        return ctx.decodeAudioData(buf);
-      })
-      .then(decoded => {
-        if (!decoded || stopped || this.currentTrack !== "victory") return;
-        source = ctx.createBufferSource();
-        source.buffer = decoded;
-        source.loop = true;
-        source.connect(master);
-        source.start();
-      })
-      .catch(() => { /* silent fail if fetch/decode errors */ });
-
-    this.cleanupFns.push(() => {
-      stopped = true;
-      try { source?.stop(); } catch { /**/ }
-    });
+    this.playLoopedBuffer(`${base}/victory.mp3`, "victory");
   }
 
   // ─── Public API ─────────────────────────────────────────────────────────────
