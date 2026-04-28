@@ -1798,4 +1798,16 @@ export async function seedNewChars(): Promise<void> {
     console.log(`[seed] Removed ${removedJoker.length} duplicate "The Joker" row(s)`);
   }
 
+  // One-off cleanup: remove the legacy weaker "The Flash" duplicate (the
+  // canonical entry is "Flash" — same Barry Allen, but stronger stats and
+  // the proper /characters/flash.jpg image). The dump entry has already been
+  // stripped so this only runs once per DB.
+  const removedFlash = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "The Flash"))
+    .returning({ id: charactersTable.id });
+  if (removedFlash.length > 0) {
+    console.log(`[seed] Removed ${removedFlash.length} duplicate "The Flash" row(s)`);
+  }
+
 }
