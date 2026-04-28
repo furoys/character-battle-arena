@@ -167,6 +167,10 @@ interface FightScreenProps {
   // Controlled by the parent (NarrationToggle on home screen). If not provided
   // falls back to the localStorage value so the component works standalone.
   ttsEnabled?: boolean;
+  // Optional callback so the in-fight MUTE button can flip the parent's state
+  // (the parent owns the canonical ttsEnabled when controlled). When omitted
+  // the component falls back to its local toggle.
+  onToggleTts?: () => void;
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -447,6 +451,7 @@ export function FightScreen({
   completedSections,
   modifierId,
   ttsEnabled: ttsEnabledProp,
+  onToggleTts,
 }: FightScreenProps) {
   // Server-authoritative modifier (carried on the result payload) wins over
   // the prop, which is just an optimistic value passed in before the stream
@@ -1252,15 +1257,49 @@ export function FightScreen({
             Arena
           </button>
 
-          {/* Narration speaking indicator — visible when audio is playing */}
-          {ttsEnabled && !ttsBroken && ttsSpeaking && (
-            <div
-              className="flex items-center gap-1"
-              style={{ fontSize: 9, letterSpacing: "0.12em", fontWeight: 700, color: "#00ffcc" }}
+          {/* In-fight MUTE button — appears whenever narration is enabled and
+              the upstream TTS service is alive. Tapping it flips the parent's
+              ttsEnabled (or the local state when uncontrolled) to false, which
+              stops the current sentence + clears the queue via the existing
+              ttsEnabled-effect → stopTts() chain. To turn narration back on
+              the user goes back to Arena and toggles it pre-fight. */}
+          {ttsEnabled && !ttsBroken && (
+            <button
+              onClick={() => { (onToggleTts ?? toggleTts)(); }}
+              aria-pressed={false}
+              aria-label="Mute AI narration"
+              title="Mute AI narration (re-enable in Arena)"
+              className="flex items-center gap-1.5 px-2.5 py-1 transition-all active:scale-[0.95]"
+              style={{
+                background: ttsSpeaking ? "rgba(0,255,204,0.10)" : "rgba(0,240,255,0.06)",
+                border: `1px solid ${ttsSpeaking ? "rgba(0,255,204,0.45)" : "rgba(0,240,255,0.30)"}`,
+                color: ttsSpeaking ? "#00ffcc" : "#00f0ff",
+                fontSize: 9,
+                letterSpacing: "0.18em",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                fontFamily: "var(--font-display, monospace)",
+              }}
             >
               <Mic className="h-3 w-3" />
-              <span>AI</span>
-            </div>
+              <span>{ttsSpeaking ? "Mute" : "Mute Narration"}</span>
+              {ttsSpeaking && (
+                <span className="flex items-end gap-[2px] h-3 ml-0.5">
+                  <span
+                    className="w-[2px] bg-current rounded-full origin-bottom"
+                    style={{ height: "100%", animation: "soundBar1 0.9s ease-in-out infinite" }}
+                  />
+                  <span
+                    className="w-[2px] bg-current rounded-full origin-bottom"
+                    style={{ height: "100%", animation: "soundBar2 0.9s ease-in-out 0.12s infinite" }}
+                  />
+                  <span
+                    className="w-[2px] bg-current rounded-full origin-bottom"
+                    style={{ height: "100%", animation: "soundBar3 0.9s ease-in-out 0.24s infinite" }}
+                  />
+                </span>
+              )}
+            </button>
           )}
 
           {/* Right side — context-sensitive */}
