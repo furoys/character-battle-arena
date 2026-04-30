@@ -14,23 +14,38 @@ import { consumeEnergy, OutOfEnergyError } from "../lib/energy";
 
 // Helper for the challenge wait branch — poll the DB for the OTHER player's
 // fightId to appear, then return it. Returns null on timeout or close.
+// Result of a waiter poll. `fightId` means the other player generated and we
+// should replay. `claimAvailable` means the other player released the
+// generation slot (e.g. ran out of energy) and we should attempt to claim it
+// ourselves. Otherwise keep waiting.
+type WaitResult =
+  | { kind: "fightId"; fightId: number }
+  | { kind: "claimAvailable" }
+  | { kind: "timeout" };
+
 async function waitForChallengeFightId(
   code: string,
   timeoutMs: number,
   isClosed: () => boolean,
-): Promise<number | null> {
+): Promise<WaitResult> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (isClosed()) return null;
+    if (isClosed()) return { kind: "timeout" };
     await new Promise((r) => setTimeout(r, 1500));
     const [c] = await db
-      .select({ fightId: challengesTable.fightId })
+      .select({
+        fightId: challengesTable.fightId,
+        generatingAt: challengesTable.generatingAt,
+      })
       .from(challengesTable)
       .where(eq(challengesTable.code, code))
       .limit(1);
-    if (c?.fightId) return c.fightId;
+    if (c?.fightId) return { kind: "fightId", fightId: c.fightId };
+    // Slot was released (other player ran out of energy / aborted) — let the
+    // caller take a turn at claiming it instead of waiting the full timeout.
+    if (c && c.generatingAt === null) return { kind: "claimAvailable" };
   }
-  return null;
+  return { kind: "timeout" };
 }
 
 const router: IRouter = Router();
@@ -217,6 +232,24 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
+  // ── Energy gate (signed-in users only) ────────────────────────────────────
+  // The streaming endpoint (/fights/stream) is the one the UI actually calls,
+  // but this non-streaming endpoint is still exposed and would otherwise be a
+  // bypass. POST /fights always generates a fresh fight (no claim/replay
+  // races to worry about), so charge unconditionally for signed-in users.
+  const postFightsUserId = getOptionalUserId(req);
+  if (postFightsUserId) {
+    try {
+      await consumeEnergy(postFightsUserId);
+    } catch (err) {
+      if (err instanceof OutOfEnergyError) {
+        res.status(402).json({ error: "out-of-energy" });
+        return;
+      }
+      throw err;
+    }
+  }
+
   // ── Cache lookup ──────────────────────────────────────────────────────────
   const { cacheKey, teamAIsTeam1 } = getCacheKey(team1Ids, team2Ids);
   let cachedResolution = null;
@@ -372,12 +405,20 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
   }
 
   // ── Energy gate (signed-in users only) ────────────────────────────────────
-  // Consume 1 energy before starting the fight. Guests are unaffected — the
-  // gate is per-user and guests have no profile row. We do this BEFORE
-  // opening the SSE stream so we can return a clean 402 the client can
-  // intercept and turn into the out-of-energy modal.
+  // Guests are unaffected — the gate is per-user and guests have no profile.
+  //
+  // For SOLO fights we consume up-front so we can return a clean 402 before
+  // opening the SSE stream.
+  //
+  // For CHALLENGE fights we defer the consume until we know this client is
+  // actually going to GENERATE the fight (i.e. wins the slot-claim race
+  // below). The other paths in challenge mode are pure replay of an
+  // already-generated saved fight — charging for them would violate the
+  // "don't deduct energy when viewing saved fights" + "only deduct once
+  // per fight" safeguards (otherwise both players would be charged).
   const gateUserId = getOptionalUserId(req);
-  if (gateUserId) {
+  const isChallengeFight = !!normalizedChallengeCode;
+  if (gateUserId && !isChallengeFight) {
     try {
       await consumeEnergy(gateUserId);
     } catch (err) {
@@ -486,39 +527,74 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         send("error", { message: "Both players must be ready before the fight can start." });
         return;
       }
-      // Try to atomically claim the generation slot. The WHERE clause means
-      // only one concurrent caller wins; staler-than-120s locks are reclaimable
-      // so a crashed/aborted generation doesn't deadlock the challenge.
-      const STALE_MS = 120_000;
-      const staleCutoff = new Date(Date.now() - STALE_MS);
-      const claimed = await db
-        .update(challengesTable)
-        .set({ generatingAt: new Date() })
-        .where(
-          and(
-            eq(challengesTable.code, normalizedChallengeCode),
-            isNull(challengesTable.fightId),
-            or(
-              isNull(challengesTable.generatingAt),
-              lt(challengesTable.generatingAt, staleCutoff),
-            ),
-          ),
-        )
-        .returning({ id: challengesTable.id });
 
-      if (claimed.length === 0) {
-        // Other player owns generation — wait for fightId, then replay it
-        const fightId = await waitForChallengeFightId(normalizedChallengeCode, STALE_MS, () => closed);
-        if (fightId === null) {
+      const STALE_MS = 120_000;
+
+      // Try to claim the generation slot. If we lose the race, wait for the
+      // winner's fightId — but if they release the slot (e.g. ran out of
+      // energy), retake it ourselves. We loop at most 3 times so a pair of
+      // out-of-energy players can't bounce the slot forever.
+      let attempts = 0;
+      while (attempts < 3 && !claimedChallenge) {
+        attempts++;
+        const staleCutoff = new Date(Date.now() - STALE_MS);
+        const claimed = await db
+          .update(challengesTable)
+          .set({ generatingAt: new Date() })
+          .where(
+            and(
+              eq(challengesTable.code, normalizedChallengeCode),
+              isNull(challengesTable.fightId),
+              or(
+                isNull(challengesTable.generatingAt),
+                lt(challengesTable.generatingAt, staleCutoff),
+              ),
+            ),
+          )
+          .returning({ id: challengesTable.id });
+
+        if (claimed.length > 0) {
+          claimedChallenge = true;
+          break;
+        }
+        // Other player owns generation — wait for fightId or for the slot
+        // to free up so we can take over.
+        const w = await waitForChallengeFightId(normalizedChallengeCode, STALE_MS, () => closed);
+        if (w.kind === "fightId") {
+          await replaySavedFight(w.fightId);
+          return;
+        }
+        if (w.kind === "timeout") {
           send("error", { message: "Other player's fight is taking too long. Try again." });
           return;
         }
-        await replaySavedFight(fightId);
+        // claimAvailable → fall through and re-attempt the claim.
+      }
+
+      if (!claimedChallenge) {
+        send("error", { message: "Could not start fight. Both players may be out of energy." });
         return;
       }
-      // We claimed it — fall through to fresh generation, will save fightId
-      // back to the challenge once the fight is persisted below.
-      claimedChallenge = true;
+
+      // Deferred energy gate (challenge fights). Now that we know we're the
+      // generator (not the replayer), charge the user. If they're empty,
+      // release the claim so the other player can take over instead of the
+      // challenge timing out at staleCutoff.
+      if (gateUserId) {
+        try {
+          await consumeEnergy(gateUserId);
+        } catch (err) {
+          if (err instanceof OutOfEnergyError) {
+            await db
+              .update(challengesTable)
+              .set({ generatingAt: null })
+              .where(eq(challengesTable.code, normalizedChallengeCode));
+            send("error", { message: "out-of-energy" });
+            return;
+          }
+          throw err;
+        }
+      }
     }
 
     // ── Cache lookup (same logic as POST /fights) ────────────────────────────

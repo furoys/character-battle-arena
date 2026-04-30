@@ -131,7 +131,8 @@ export function useEnergy(): UseEnergyResult {
   };
 }
 
-// Format milliseconds as "MM:SS" — used in the badge tooltip / sub-label.
+// Format milliseconds as "MM:SS" — used in the badge tooltip / sub-label
+// and the OUT OF ENERGY button countdown.
 export function formatRefillCountdown(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
   const mins = Math.floor(total / 60);
