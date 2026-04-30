@@ -116,29 +116,62 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-// Module-level flag — true on every fresh JS runtime load (= every real app launch).
-// Avoids sessionStorage, which can persist across TWA / Play Store app launches.
+// Module-level flag — resets on every fresh JS runtime load (= every real app launch).
+// Avoids sessionStorage which can persist across TWA / Play Store app launches.
 let _introPlayed = false;
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-  // Gate the intro on age mode being set — for new users the age-gate button
-  // click IS the user gesture we need to unlock browser audio autoplay.
-  // Returning users (ageMode already set) can see the intro immediately.
+// Orchestrates intro + age gate sequencing.
+// Must be rendered INSIDE <ClerkProvider> so it can call useAuth().
+//
+// New order (sign-in is now mandatory, so the sign-in click gives us sticky
+// user-activation for free):
+//   1. User signs in  →  sticky activation granted by the sign-in button click
+//   2. Intro plays immediately — AudioContext.resume() succeeds, no extra gesture
+//   3. Intro finishes → age gate appears (if not yet answered)
+//   4. User answers age gate → home page
+//
+// For returning users whose Clerk session is auto-restored (no sign-in click),
+// the AudioContext falls back to the one-shot unlock listener that starts
+// playback on the very first tap / click — still a big UX win vs. the old flow.
+function IntroOrchestrator({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
   const { mode: ageMode } = useAgeMode();
-  const [showIntro, setShowIntro] = useState(() => !_introPlayed && ageMode !== null);
+
+  // Start the intro as soon as we know the user is signed in.
+  // useState initializer handles the fast path (session already cached);
+  // useEffect handles the async path (Clerk resolves after render).
+  const [showIntro, setShowIntro] = useState(
+    () => isLoaded && !!isSignedIn && !_introPlayed,
+  );
+  const [introDone, setIntroDone] = useState(() => _introPlayed);
 
   useEffect(() => {
-    // When the user answers the age gate for the first time, kick off the intro.
-    if (ageMode !== null && !_introPlayed && !showIntro) {
+    if (isLoaded && isSignedIn && !_introPlayed && !showIntro) {
       setShowIntro(true);
     }
-  }, [ageMode]);
+  }, [isLoaded, isSignedIn, showIntro]);
 
   const handleIntroDone = () => {
     _introPlayed = true;
     setShowIntro(false);
+    setIntroDone(true);
   };
+
+  // Age gate is shown only after the intro has finished (or been skipped on
+  // subsequent visits) AND the user hasn't answered it yet.
+  const showAgeGate = introDone && ageMode === null;
+
+  return (
+    <>
+      {children}
+      {showIntro && <IntroSequence onDone={handleIntroDone} />}
+      {showAgeGate && <AgeGate />}
+    </>
+  );
+}
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
 
   return (
     <ClerkProvider
@@ -155,13 +188,13 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
-          <Layout>
-            <Router />
-          </Layout>
-          {showIntro && <IntroSequence onDone={handleIntroDone} />}
-          <AgeGate />
-          <RotatePrompt />
-          <Toaster />
+          <IntroOrchestrator>
+            <Layout>
+              <Router />
+            </Layout>
+            <RotatePrompt />
+            <Toaster />
+          </IntroOrchestrator>
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
