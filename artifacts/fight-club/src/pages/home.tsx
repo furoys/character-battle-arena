@@ -9,7 +9,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -780,19 +780,8 @@ export function Home() {
                 Upset
               </span>
             </button>
-            <Show when="signed-out">
-              <NavLink href="/sign-in">
-                <button
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border transition-all hover:border-primary/60 hover:text-primary"
-                  style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.12)" }}
-                >
-                  <LogIn className="h-3 w-3" />
-                  Sign in
-                </button>
-              </NavLink>
-            </Show>
-            <EnergyBadge />
             <Show when="signed-in">
+              <EnergyBadge />
               <HomeProfileButton />
             </Show>
           </div>

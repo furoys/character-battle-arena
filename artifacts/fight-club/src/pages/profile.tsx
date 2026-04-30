@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { useUser, useClerk, Show } from "@clerk/react";
+import { useUser, useClerk } from "@clerk/react";
 import { format } from "date-fns";
-import { Trophy, Swords, Star, LogOut, User as UserIcon, Pencil, Volume2 } from "lucide-react";
+import { Trophy, Swords, Star, LogOut, Pencil, Volume2 } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { CharacterPicker } from "@/components/character-picker";
 import { UsernameEditor } from "@/components/username-editor";
@@ -90,41 +90,9 @@ export function Profile() {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0 overflow-hidden">
-        <Show when="signed-out">
-          <SignedOutPrompt />
-        </Show>
-        <Show when="signed-in">
-          <SignedInProfile />
-        </Show>
+        <SignedInProfile />
       </div>
       <NarrationSettings />
-    </div>
-  );
-}
-
-function SignedOutPrompt() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-full px-6 py-16 text-center gap-6">
-      <UserIcon className="h-14 w-14 text-muted-foreground/30" />
-      <div>
-        <h1 className="font-display text-2xl uppercase tracking-widest text-primary mb-2">
-          Sign in for stats
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Track your personal fight history, win/loss record, and favorite
-          fighters when you sign in.
-        </p>
-      </div>
-      <Link href="/sign-in">
-        <button className="px-6 py-3 bg-primary text-white font-bold uppercase tracking-widest text-sm hover:bg-primary/90 transition-colors">
-          Sign in
-        </button>
-      </Link>
-      <Link href="/sign-up">
-        <button className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
-          Or create an account →
-        </button>
-      </Link>
     </div>
   );
 }

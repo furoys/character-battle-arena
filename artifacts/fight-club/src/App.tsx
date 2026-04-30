@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { ClerkProvider, useClerk } from "@clerk/react";
+import { ClerkProvider, useAuth, useClerk, RedirectToSignIn } from "@clerk/react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
@@ -53,21 +53,41 @@ function stripBase(path: string): string {
     : path;
 }
 
+// All authenticated routes are wrapped in this guard.
+// While Clerk is loading it renders nothing (avoids flash). Once loaded, if
+// the user is not signed in, Clerk's RedirectToSignIn sends them to the sign-in
+// page and — crucially — preserves the current URL so they land back here after
+// signing in (important for shared challenge links).
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <RedirectToSignIn />;
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/roster" component={Roster} />
-      <Route path="/new-character" component={NewCharacter} />
-      <Route path="/fights" component={Fights} />
-      <Route path="/suggest" component={Suggest} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/challenge/:code" component={Challenge} />
-      <Route path="/profile" component={Profile} />
+      {/* Public routes — no auth required */}
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/privacy" component={Privacy} />
-      <Route component={NotFound} />
+      {/* All other routes require sign-in */}
+      <Route>
+        <RequireAuth>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/roster" component={Roster} />
+            <Route path="/new-character" component={NewCharacter} />
+            <Route path="/fights" component={Fights} />
+            <Route path="/suggest" component={Suggest} />
+            <Route path="/admin" component={Admin} />
+            <Route path="/challenge/:code" component={Challenge} />
+            <Route path="/profile" component={Profile} />
+            <Route component={NotFound} />
+          </Switch>
+        </RequireAuth>
+      </Route>
     </Switch>
   );
 }
