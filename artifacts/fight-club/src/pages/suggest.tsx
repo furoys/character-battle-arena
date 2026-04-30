@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { useListCharacters } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
-import { Flame, Swords, MessageSquare, Zap, LogIn } from "lucide-react";
-import { Show, useUser } from "@clerk/react";
+import { Flame, Swords, MessageSquare, Zap } from "lucide-react";
+import { useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
 
 // ─── Matchup database ─────────────────────────────────────────────────────────
@@ -955,17 +955,7 @@ export function Suggest() {
               <Flame className="w-4 h-4" />
               <span className="font-bold">{hotCount} HOT</span>
             </div>
-            <Show when="signed-out">
-              <Link href="/sign-in">
-                <button className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold uppercase tracking-widest border" style={{ color: "rgba(255,255,255,0.4)", borderColor: "rgba(255,255,255,0.1)" }}>
-                  <LogIn className="h-3 w-3" />
-                  Sign in
-                </button>
-              </Link>
-            </Show>
-            <Show when="signed-in">
-              <DebateProfileButton />
-            </Show>
+            <DebateProfileButton />
           </div>
         </div>
 
