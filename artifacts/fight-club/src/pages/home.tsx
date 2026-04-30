@@ -791,8 +791,8 @@ export function Home() {
                 </button>
               </NavLink>
             </Show>
+            <EnergyBadge />
             <Show when="signed-in">
-              <EnergyBadge />
               <HomeProfileButton />
             </Show>
           </div>
