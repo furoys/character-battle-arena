@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useListCharacters } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useListCharacters, useListSavedTeams, useSaveTeam, useDeleteSavedTeam, SavedTeam, getListSavedTeamsQueryKey } from "@workspace/api-client-react";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { Character } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/character-card";
@@ -8,7 +9,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Mic, MicOff } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, LogIn, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -118,13 +119,14 @@ function TeamPortrait({ character, team, onRemove }: { character: Character; tea
 }
 
 // ─── Team slot ───────────────────────────────────────────────────────────────
-function TeamSlot({ team, members, active, flash, onActivate, onRemove }: {
+function TeamSlot({ team, members, active, flash, onActivate, onRemove, onSave }: {
   team: 1 | 2;
   members: Character[];
   active: boolean;
   flash: boolean;
   onActivate: () => void;
   onRemove: (id: number) => void;
+  onSave?: () => void;
 }) {
   const color = team === 1 ? "#00f0ff" : "#ff3b30";
   const dimColor = team === 1 ? "rgba(0,240,255,0.08)" : "rgba(255,59,48,0.08)";
@@ -163,6 +165,16 @@ function TeamSlot({ team, members, active, flash, onActivate, onRemove }: {
             <span className="font-display text-[9px]" style={{ color: `${color}90` }}>
               {totalPower >= 1_000_000 ? `${+(totalPower / 1_000_000).toFixed(1)}M` : totalPower >= 1_000 ? `${Math.round(totalPower / 1_000)}K` : totalPower} PWR
             </span>
+          )}
+          {onSave && members.length > 0 && (
+            <button
+              title="Save this team"
+              onClick={(e) => { e.stopPropagation(); onSave(); }}
+              className="flex items-center justify-center transition-opacity hover:opacity-100 opacity-50"
+              style={{ width: 18, height: 18 }}
+            >
+              <Bookmark className="h-3 w-3" style={{ color }} />
+            </button>
           )}
           <span
             className="text-[9px] font-bold px-1 py-0.5 leading-none"
@@ -303,6 +315,58 @@ export function Home() {
   const { data: characters, isLoading } = useListCharacters();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  // Saved teams
+  const { data: savedTeams } = useListSavedTeams({ query: { enabled: !!user, queryKey: getListSavedTeamsQueryKey() } });
+  const saveTeamMutation = useSaveTeam();
+  const deleteTeamMutation = useDeleteSavedTeam();
+  const [savingTeamSlot, setSavingTeamSlot] = useState<1 | 2 | null>(null);
+  const [saveTeamName, setSaveTeamName] = useState("");
+  const saveNameInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (savingTeamSlot !== null) {
+      setSaveTeamName("");
+      setTimeout(() => saveNameInputRef.current?.focus(), 50);
+    }
+  }, [savingTeamSlot]);
+
+  const handleSaveTeam = async () => {
+    if (!savingTeamSlot || !saveTeamName.trim()) return;
+    const members = savingTeamSlot === 1 ? team1 : team2;
+    if (members.length === 0) return;
+    try {
+      await saveTeamMutation.mutateAsync({ data: { name: saveTeamName.trim(), characterIds: members.map(c => c.id) } });
+      await queryClient.invalidateQueries({ queryKey: getListSavedTeamsQueryKey() });
+      toast({ title: "Team saved!", description: `"${saveTeamName.trim()}" added to My Teams` });
+      setSavingTeamSlot(null);
+    } catch {
+      toast({ title: "Error", description: "Couldn't save team", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteSavedTeam = async (id: number, name: string) => {
+    try {
+      await deleteTeamMutation.mutateAsync({ id });
+      await queryClient.invalidateQueries({ queryKey: getListSavedTeamsQueryKey() });
+      toast({ title: "Removed", description: `"${name}" deleted from My Teams` });
+    } catch {
+      toast({ title: "Error", description: "Couldn't delete team", variant: "destructive" });
+    }
+  };
+
+  const handleLoadSavedTeam = (savedTeam: SavedTeam) => {
+    if (!characters) return;
+    const members = savedTeam.characterIds
+      .map(id => characters.find(c => c.id === id))
+      .filter((c): c is Character => c !== undefined)
+      .slice(0, 5);
+    if (activeTeam === 1) setTeam1(members);
+    else setTeam2(members);
+    toast({ title: `Loaded "${savedTeam.name}"`, description: `Team ${activeTeam} updated` });
+  };
+
   const [team1, setTeam1] = useState<Character[]>([]);
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
@@ -1046,6 +1110,7 @@ export function Home() {
               flash={flashTeam === 1}
               onActivate={() => setActiveTeam(1)}
               onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
+              onSave={user ? () => setSavingTeamSlot(1) : undefined}
             />
             <div
               className="flex-shrink-0 flex items-center justify-center relative"
@@ -1080,8 +1145,98 @@ export function Home() {
               flash={flashTeam === 2}
               onActivate={() => setActiveTeam(2)}
               onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
+              onSave={user ? () => setSavingTeamSlot(2) : undefined}
             />
           </div>
+
+          {/* Save-team dialog — inline banner */}
+          {savingTeamSlot !== null && (
+            <div
+              className="mx-2 flex items-center gap-2"
+              style={{
+                background: "rgba(0,0,0,0.6)",
+                border: `1px solid ${savingTeamSlot === 1 ? "rgba(0,240,255,0.3)" : "rgba(255,59,48,0.3)"}`,
+                padding: "6px 8px",
+              }}
+            >
+              <span
+                className="font-display text-[9px] uppercase tracking-widest flex-shrink-0"
+                style={{ color: savingTeamSlot === 1 ? "#00f0ff" : "#ff3b30", opacity: 0.7 }}
+              >
+                T{savingTeamSlot} NAME
+              </span>
+              <input
+                ref={saveNameInputRef}
+                value={saveTeamName}
+                onChange={e => setSaveTeamName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSaveTeam(); if (e.key === "Escape") setSavingTeamSlot(null); }}
+                placeholder="e.g. Dream Squad"
+                maxLength={32}
+                className="flex-1 bg-transparent outline-none text-xs font-display uppercase tracking-wider text-white placeholder:text-white/20"
+                style={{ minWidth: 0 }}
+              />
+              <button
+                onClick={handleSaveTeam}
+                disabled={!saveTeamName.trim() || saveTeamMutation.isPending}
+                className="font-display text-[9px] uppercase tracking-widest px-2 py-1 border transition-opacity disabled:opacity-30"
+                style={{
+                  borderColor: savingTeamSlot === 1 ? "rgba(0,240,255,0.4)" : "rgba(255,59,48,0.4)",
+                  color: savingTeamSlot === 1 ? "#00f0ff" : "#ff3b30",
+                }}
+              >
+                {saveTeamMutation.isPending ? "…" : "SAVE"}
+              </button>
+              <button onClick={() => setSavingTeamSlot(null)} className="opacity-30 hover:opacity-60 transition-opacity">
+                <X className="h-3.5 w-3.5 text-white" />
+              </button>
+            </div>
+          )}
+
+          {/* MY TEAMS quick-load strip */}
+          {user && savedTeams && savedTeams.length > 0 && (
+            <div className="px-2">
+              <div
+                className="flex gap-1.5 overflow-x-auto items-center py-1"
+                style={{ scrollbarWidth: "none" }}
+              >
+                <span
+                  className="font-display text-[8px] uppercase tracking-[0.2em] flex-shrink-0"
+                  style={{ color: "rgba(255,255,255,0.25)" }}
+                >
+                  SAVED
+                </span>
+                {savedTeams.map(t => (
+                  <div
+                    key={t.id}
+                    className="flex-shrink-0 flex items-center gap-1"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 2,
+                      padding: "2px 6px 2px 7px",
+                    }}
+                  >
+                    <button
+                      onClick={() => handleLoadSavedTeam(t)}
+                      title={`Load "${t.name}" into Team ${activeTeam}`}
+                      className="font-display text-[9px] uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors"
+                      style={{ whiteSpace: "nowrap" }}
+                    >
+                      {t.name}
+                      <span className="ml-1 opacity-40">({t.characterIds.length})</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSavedTeam(t.id, t.name)}
+                      title="Remove"
+                      className="opacity-25 hover:opacity-60 transition-opacity ml-0.5"
+                    >
+                      <Trash2 className="h-2.5 w-2.5 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Power comparison bar */}
           <PowerComparison team1={team1} team2={team2} />

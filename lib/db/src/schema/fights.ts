@@ -120,3 +120,16 @@ export const pushSubscriptionsTable = pgTable("push_subscriptions", {
 }, (t) => [uniqueIndex("push_subscriptions_endpoint_idx").on(t.endpoint)]);
 
 export type PushSubscription = typeof pushSubscriptionsTable.$inferSelect;
+
+// ── Saved Teams ───────────────────────────────────────────────────────────────
+// Allows signed-in users to bookmark a team composition for quick re-use.
+// characterIds is an ordered list matching the order the user arranged the team.
+export const savedTeamsTable = pgTable("saved_teams", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  characterIds: jsonb("character_ids").notNull().$type<number[]>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SavedTeam = typeof savedTeamsTable.$inferSelect;

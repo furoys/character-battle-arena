@@ -14,6 +14,8 @@ tags:
     description: Character management
   - name: fights
     description: Fight simulation
+  - name: me
+    description: Signed-in user operations
 paths:
   /healthz:
     get:
@@ -212,6 +214,61 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /me/teams:
+    get:
+      operationId: listSavedTeams
+      tags: [me]
+      summary: List saved teams for the signed-in user
+      responses:
+        "200":
+          description: List of saved teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedTeam"
+        "401":
+          description: Not signed in
+    post:
+      operationId: saveTeam
+      tags: [me]
+      summary: Save a team composition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveTeamBody"
+      responses:
+        "200":
+          description: Saved team record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedTeam"
+        "401":
+          description: Not signed in
+
+  /me/teams/{id}:
+    delete:
+      operationId: deleteSavedTeam
+      tags: [me]
+      summary: Delete a saved team
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Team deleted
+        "401":
+          description: Not signed in
+        "404":
+          description: Team not found or not owned by user
 
 components:
   schemas:
@@ -546,3 +603,39 @@ components:
         - winner
         - summary
         - simulatedAt
+
+    SavedTeam:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        name:
+          type: string
+        characterIds:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - characterIds
+        - createdAt
+
+    SaveTeamBody:
+      type: object
+      properties:
+        name:
+          type: string
+        characterIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - characterIds

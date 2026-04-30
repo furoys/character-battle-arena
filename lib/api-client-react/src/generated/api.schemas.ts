@@ -169,3 +169,16 @@ export interface FightRecord {
   modifierId?: string | null;
   simulatedAt: string;
 }
+
+export interface SavedTeam {
+  id: number;
+  userId: string;
+  name: string;
+  characterIds: number[];
+  createdAt: string;
+}
+
+export interface SaveTeamBody {
+  name: string;
+  characterIds: number[];
+}

@@ -366,3 +366,38 @@ export const GetFightResponse = zod.object({
 export const DeleteFightParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary List saved teams for the signed-in user
+ */
+export const ListSavedTeamsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+  createdAt: zod.coerce.date(),
+});
+export const ListSavedTeamsResponse = zod.array(ListSavedTeamsResponseItem);
+
+/**
+ * @summary Save a team composition
+ */
+export const SaveTeamBody = zod.object({
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+});
+
+export const SaveTeamResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a saved team
+ */
+export const DeleteSavedTeamParams = zod.object({
+  id: zod.coerce.number(),
+});

@@ -25,6 +25,8 @@ import type {
   FightRecord,
   FightResult,
   HealthStatus,
+  SaveTeamBody,
+  SavedTeam,
   SimulateFightBody,
 } from "./api.schemas";
 
@@ -929,4 +931,249 @@ export const useDeleteFight = <
   TContext
 > => {
   return useMutation(getDeleteFightMutationOptions(options));
+};
+
+/**
+ * @summary List saved teams for the signed-in user
+ */
+export const getListSavedTeamsUrl = () => {
+  return `/api/me/teams`;
+};
+
+export const listSavedTeams = async (
+  options?: RequestInit,
+): Promise<SavedTeam[]> => {
+  return customFetch<SavedTeam[]>(getListSavedTeamsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSavedTeamsQueryKey = () => {
+  return [`/api/me/teams`] as const;
+};
+
+export const getListSavedTeamsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSavedTeams>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSavedTeams>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSavedTeamsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedTeams>>> = ({
+    signal,
+  }) => listSavedTeams({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSavedTeams>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSavedTeamsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSavedTeams>>
+>;
+export type ListSavedTeamsQueryError = ErrorType<void>;
+
+/**
+ * @summary List saved teams for the signed-in user
+ */
+
+export function useListSavedTeams<
+  TData = Awaited<ReturnType<typeof listSavedTeams>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSavedTeams>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSavedTeamsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save a team composition
+ */
+export const getSaveTeamUrl = () => {
+  return `/api/me/teams`;
+};
+
+export const saveTeam = async (
+  saveTeamBody: SaveTeamBody,
+  options?: RequestInit,
+): Promise<SavedTeam> => {
+  return customFetch<SavedTeam>(getSaveTeamUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(saveTeamBody),
+  });
+};
+
+export const getSaveTeamMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveTeam>>,
+    TError,
+    { data: BodyType<SaveTeamBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveTeam>>,
+  TError,
+  { data: BodyType<SaveTeamBody> },
+  TContext
+> => {
+  const mutationKey = ["saveTeam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveTeam>>,
+    { data: BodyType<SaveTeamBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return saveTeam(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveTeamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveTeam>>
+>;
+export type SaveTeamMutationBody = BodyType<SaveTeamBody>;
+export type SaveTeamMutationError = ErrorType<void>;
+
+/**
+ * @summary Save a team composition
+ */
+export const useSaveTeam = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveTeam>>,
+    TError,
+    { data: BodyType<SaveTeamBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveTeam>>,
+  TError,
+  { data: BodyType<SaveTeamBody> },
+  TContext
+> => {
+  return useMutation(getSaveTeamMutationOptions(options));
+};
+
+/**
+ * @summary Delete a saved team
+ */
+export const getDeleteSavedTeamUrl = (id: number) => {
+  return `/api/me/teams/${id}`;
+};
+
+export const deleteSavedTeam = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteSavedTeamUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteSavedTeamMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSavedTeam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSavedTeam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteSavedTeam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSavedTeam>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteSavedTeam(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteSavedTeamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSavedTeam>>
+>;
+
+export type DeleteSavedTeamMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a saved team
+ */
+export const useDeleteSavedTeam = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSavedTeam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteSavedTeam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteSavedTeamMutationOptions(options));
 };
