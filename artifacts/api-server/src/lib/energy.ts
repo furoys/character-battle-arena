@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db, userProfilesTable, type UserProfile } from "@workspace/db";
+import { db, userProfilesTable } from "@workspace/db";
 
 export const ENERGY_MAX = 10;
 export const ENERGY_REFILL_MS = 30 * 60 * 1000; // 30 minutes per +1
@@ -17,8 +17,9 @@ export interface EnergyState {
   serverNow: number;
 }
 
-// Pure: given a stored profile and a "now", compute the true current energy
-// and the lastRefillAt that should be persisted to keep the math idempotent.
+// Pure: given a stored energy value + lastRefillAt + "now", compute the true
+// current energy and the lastRefillAt that should be persisted to keep the
+// math idempotent across reads.
 function applyRefill(
   storedEnergy: number,
   storedLastRefillAt: Date,
@@ -71,50 +72,62 @@ function toState(profile: { energy: number; lastRefillAt: Date }, now: number): 
   };
 }
 
-// Load or lazily create the user's profile row. New users start at full energy.
-async function getOrCreateProfile(userId: string): Promise<UserProfile> {
-  const [existing] = await db
-    .select()
-    .from(userProfilesTable)
-    .where(eq(userProfilesTable.userId, userId))
-    .limit(1);
-  if (existing) return existing;
-
-  // INSERT ... ON CONFLICT DO NOTHING handles the race where two concurrent
-  // requests both try to create the row first.
-  const now = new Date();
-  await db
+// Lazy-create + lock the profile row inside an open transaction. Two concurrent
+// callers will serialize on the same row via SELECT ... FOR UPDATE so neither
+// can read-modify-write a stale value.
+async function lockOrCreateProfile(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+  now: number,
+): Promise<{ energy: number; lastRefillAt: Date }> {
+  // Insert default row if missing — idempotent under contention.
+  await tx
     .insert(userProfilesTable)
-    .values({ userId, energy: ENERGY_MAX, lastRefillAt: now, createdAt: now, updatedAt: now })
+    .values({
+      userId,
+      energy: ENERGY_MAX,
+      lastRefillAt: new Date(now),
+      createdAt: new Date(now),
+      updatedAt: new Date(now),
+    })
     .onConflictDoNothing();
-  const [row] = await db
-    .select()
+  // Now grab a row-level lock on the (now-guaranteed-to-exist) profile.
+  const [row] = await tx
+    .select({
+      energy: userProfilesTable.energy,
+      lastRefillAt: userProfilesTable.lastRefillAt,
+    })
     .from(userProfilesTable)
     .where(eq(userProfilesTable.userId, userId))
+    .for("update")
     .limit(1);
-  if (!row) throw new Error("Failed to create user profile");
+  if (!row) throw new Error("Failed to lock user profile");
   return row;
 }
 
 // Read the user's energy state, applying any pending refills and persisting
 // the new anchor if the value changed (so subsequent reads are idempotent).
+// Wrapped in a transaction so concurrent consumes can't be clobbered.
 export async function getEnergyState(userId: string): Promise<EnergyState> {
-  const profile = await getOrCreateProfile(userId);
   const now = Date.now();
-  const refilled = applyRefill(profile.energy, profile.lastRefillAt, now);
-  if (
-    refilled.energy !== profile.energy ||
-    refilled.lastRefillAt.getTime() !== profile.lastRefillAt.getTime()
-  ) {
-    await db
-      .update(userProfilesTable)
-      .set({
-        energy: refilled.energy,
-        lastRefillAt: refilled.lastRefillAt,
-        updatedAt: new Date(now),
-      })
-      .where(eq(userProfilesTable.userId, userId));
-  }
+  const refilled = await db.transaction(async (tx) => {
+    const locked = await lockOrCreateProfile(tx, userId, now);
+    const r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    if (
+      r.energy !== locked.energy ||
+      r.lastRefillAt.getTime() !== locked.lastRefillAt.getTime()
+    ) {
+      await tx
+        .update(userProfilesTable)
+        .set({
+          energy: r.energy,
+          lastRefillAt: r.lastRefillAt,
+          updatedAt: new Date(now),
+        })
+        .where(eq(userProfilesTable.userId, userId));
+    }
+    return r;
+  });
   return toState(refilled, now);
 }
 
@@ -126,39 +139,41 @@ export class OutOfEnergyError extends Error {
 }
 
 // Atomically refill, then consume 1 energy. Throws OutOfEnergyError if the
-// user has none. Returns the new state so callers can include it in their
-// response if useful.
+// user has none. Two concurrent /fights/stream calls for the same user will
+// serialize on the row lock so each independently observes the post-decrement
+// state — no double-spend, no under-charge.
 export async function consumeEnergy(userId: string): Promise<EnergyState> {
-  const profile = await getOrCreateProfile(userId);
   const now = Date.now();
-  const refilled = applyRefill(profile.energy, profile.lastRefillAt, now);
-
-  if (refilled.energy <= 0) {
-    // Persist the refill anyway so the read endpoint stays consistent.
-    if (refilled.lastRefillAt.getTime() !== profile.lastRefillAt.getTime()) {
-      await db
-        .update(userProfilesTable)
-        .set({ lastRefillAt: refilled.lastRefillAt, updatedAt: new Date(now) })
-        .where(eq(userProfilesTable.userId, userId));
+  const next = await db.transaction(async (tx) => {
+    const locked = await lockOrCreateProfile(tx, userId, now);
+    const r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    if (r.energy <= 0) {
+      // Still persist any anchor advancement so a subsequent read is consistent.
+      if (r.lastRefillAt.getTime() !== locked.lastRefillAt.getTime()) {
+        await tx
+          .update(userProfilesTable)
+          .set({ lastRefillAt: r.lastRefillAt, updatedAt: new Date(now) })
+          .where(eq(userProfilesTable.userId, userId));
+      }
+      throw new OutOfEnergyError();
     }
-    throw new OutOfEnergyError();
-  }
+    const wasAtCap = r.energy >= ENERGY_MAX;
+    const newEnergy = r.energy - 1;
+    // Going from full → less-than-full starts the 30-min refill countdown
+    // from now. Below cap, keep the existing anchor so partial progress is
+    // preserved across consumes.
+    const newLastRefillAt = wasAtCap ? new Date(now) : r.lastRefillAt;
 
-  const wasAtCap = refilled.energy >= ENERGY_MAX;
-  const newEnergy = refilled.energy - 1;
-  // Going from full → less-than-full starts the 30-min refill countdown
-  // from now. Below cap, keep the existing anchor so partial progress is
-  // preserved across consumes.
-  const newLastRefillAt = wasAtCap ? new Date(now) : refilled.lastRefillAt;
+    await tx
+      .update(userProfilesTable)
+      .set({
+        energy: newEnergy,
+        lastRefillAt: newLastRefillAt,
+        updatedAt: new Date(now),
+      })
+      .where(eq(userProfilesTable.userId, userId));
 
-  await db
-    .update(userProfilesTable)
-    .set({
-      energy: newEnergy,
-      lastRefillAt: newLastRefillAt,
-      updatedAt: new Date(now),
-    })
-    .where(eq(userProfilesTable.userId, userId));
-
-  return toState({ energy: newEnergy, lastRefillAt: newLastRefillAt }, now);
+    return { energy: newEnergy, lastRefillAt: newLastRefillAt };
+  });
+  return toState(next, now);
 }
