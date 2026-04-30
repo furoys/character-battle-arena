@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface EnergyState {
   energy: number;
@@ -23,85 +24,76 @@ interface UseEnergyResult {
 }
 
 const REFILL_MS = 30 * 60 * 1000;
+const ENERGY_QUERY_KEY = ["energy"] as const;
 
 // Hook that mirrors the server's energy state for the signed-in user.
-// Strategy: fetch on mount + focus + every 60s, run a 1Hz local timer that
-// decrements msUntilNextRefill, and refetch from the server the moment a
-// refill should have happened (server is the source of truth — we never
-// fabricate a +1 on the client).
+// All consumers share the same react-query cache (keyed by ["energy"]) so an
+// optimistic decrement made by one component (e.g. handleFight in Home) is
+// instantly visible to every other consumer (e.g. the badge in the header).
+//
+// Strategy: react-query handles the fetch + cache + focus refetch + 60s poll.
+// A 1Hz local timer just decrements msUntilNextRefill in cache so the
+// countdown looks live; when it hits 0 we let react-query refetch (server is
+// the authority for the actual energy value — we never fabricate a +1).
 export function useEnergy(): UseEnergyResult {
   const { isSignedIn, isLoaded } = useUser();
-  const [state, setState] = useState<EnergyState | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  // Tracks the offset between server clock and local clock at the time of
-  // the last fetch, so subsequent local ticks don't drift with system clock skew.
+  const queryClient = useQueryClient();
+  // Tracks the offset between server clock and local clock so the local
+  // 1Hz tick doesn't drift with system clock skew.
   const clockOffsetRef = useRef(0);
-  // Guard so the auto-refetch on countdown=0 doesn't fire repeatedly.
+  // Guard so the auto-refetch on countdown=0 fires once per cycle, not every
+  // tick after the timer hits 0.
   const refetchingForRefillRef = useRef(false);
 
-  const fetchEnergy = useCallback(async () => {
-    if (!isSignedIn) return;
-    setIsLoading(true);
-    try {
+  const query = useQuery<EnergyState | null>({
+    queryKey: ENERGY_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/me/energy", { credentials: "include" });
-      if (!res.ok) {
-        setIsLoading(false);
-        return;
-      }
+      if (!res.ok) return null;
       const json = (await res.json()) as EnergyState;
       clockOffsetRef.current = json.serverNow - Date.now();
       refetchingForRefillRef.current = false;
-      setState(json);
-    } catch {
-      // network blip — keep stale state
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isSignedIn]);
+      return json;
+    },
+    enabled: isLoaded && !!isSignedIn,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
+  });
 
-  // Initial fetch + refetch on focus / interval
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setState(null);
-      return;
-    }
-    void fetchEnergy();
-    const onFocus = () => { void fetchEnergy(); };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    const id = window.setInterval(() => { void fetchEnergy(); }, 60_000);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-      window.clearInterval(id);
-    };
-  }, [isLoaded, isSignedIn, fetchEnergy]);
+  const state = query.data ?? null;
 
-  // Local 1Hz tick: count down msUntilNextRefill. When it reaches 0, refetch
-  // from the server (which authoritatively decides the new energy value).
+  // Local 1Hz tick: count down msUntilNextRefill in cache. When it reaches 0,
+  // refetch from the server (which authoritatively decides the new value).
   useEffect(() => {
     if (!state) return;
     if (state.energy >= state.max) return;
     const id = window.setInterval(() => {
-      setState((prev) => {
+      queryClient.setQueryData<EnergyState | null>(ENERGY_QUERY_KEY, (prev) => {
         if (!prev) return prev;
         if (prev.energy >= prev.max) return prev;
         const elapsedSinceMeasured = Date.now() + clockOffsetRef.current - prev.serverNow;
         const newMsUntil = Math.max(0, prev.msUntilNextRefill - elapsedSinceMeasured);
         if (newMsUntil <= 0 && !refetchingForRefillRef.current) {
           refetchingForRefillRef.current = true;
-          // Refetch on the next tick — don't await inside setState.
-          void fetchEnergy();
+          void queryClient.invalidateQueries({ queryKey: ENERGY_QUERY_KEY });
         }
-        return { ...prev, msUntilNextRefill: newMsUntil, serverNow: Date.now() + clockOffsetRef.current };
+        return {
+          ...prev,
+          msUntilNextRefill: newMsUntil,
+          serverNow: Date.now() + clockOffsetRef.current,
+        };
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [state?.serverNow, state?.energy, state?.max, fetchEnergy]);
+  }, [state?.serverNow, state?.energy, state?.max, queryClient]);
+
+  const refetch = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ENERGY_QUERY_KEY });
+  }, [queryClient]);
 
   const applyOptimisticConsume = useCallback(() => {
-    setState((prev) => {
+    queryClient.setQueryData<EnergyState | null>(ENERGY_QUERY_KEY, (prev) => {
       if (!prev) return prev;
       if (prev.energy <= 0) return prev;
       const wasAtCap = prev.energy >= prev.max;
@@ -120,13 +112,21 @@ export function useEnergy(): UseEnergyResult {
       }
       return { ...prev, energy: newEnergy, serverNow };
     });
-  }, []);
+  }, [queryClient]);
+
+  // When the user signs out, drop the cached state so a new sign-in starts
+  // fresh and a stale value doesn't briefly leak into the next session.
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      queryClient.setQueryData(ENERGY_QUERY_KEY, null);
+    }
+  }, [isLoaded, isSignedIn, queryClient]);
 
   return {
     state,
-    isLoading,
+    isLoading: query.isLoading,
     isSignedIn: !!isSignedIn,
-    refetch: fetchEnergy,
+    refetch,
     applyOptimisticConsume,
   };
 }
