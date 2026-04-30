@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 
 // ── Cast — 15 characters from across every universe ───────────────────────────
 const CAST = [
@@ -506,25 +506,48 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
 
   const stage = useStage(finish);
 
+  // ── Eagerly create + resume AudioContext ─────────────────────────────────
+  // useLayoutEffect fires synchronously after React commits but before the
+  // browser paints — the earliest possible React hook. If the component
+  // mounts as a result of a user gesture (age-gate click), the browser's
+  // sticky activation flag is still set here, so ctx.resume() succeeds
+  // without needing a subsequent tap.  We also add a one-shot fallback
+  // listener for returning users (no age-gate) so the first tap anywhere
+  // resumes the context instead of waiting until the next full gesture.
+  useLayoutEffect(() => {
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    ctx.resume().catch(() => {});
+
+    const unlock = () => { if (ctx.state !== "running") ctx.resume().catch(() => {}); };
+    document.addEventListener("click",      unlock, { capture: true, once: true });
+    document.addEventListener("touchstart", unlock, { capture: true, once: true });
+
+    return () => {
+      document.removeEventListener("click",      unlock, { capture: true });
+      document.removeEventListener("touchstart", unlock, { capture: true });
+      ctx.close().catch(() => {});
+    };
+  }, []);
+
   // ── Voice audio engine ───────────────────────────────────────────────────
   // Fetches intro-speech.mp3, runs it through a British RP AI effect chain
   // (EQ + soft saturation + chorus + reverb), and starts playback timed to
   // the first character card (Darth Vader, stage 3 onset ≈ 4 700ms from mount).
+  // The AudioContext is already created and resumed above — we just decode
+  // and schedule. No need to create a new context or check suspended state.
   useEffect(() => {
     const base      = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     const mountTime = mountTimeRef.current;
-    let   ctx: AudioContext | null = null;
 
     fetch(`${base}/intro-speech.mp3`)
       .then(r => r.arrayBuffer())
       .then(buf => {
-        ctx = new AudioContext();
-        audioCtxRef.current = ctx;
-        return ctx.decodeAudioData(buf);
+        const ctx = audioCtxRef.current;
+        if (!ctx) return Promise.reject(new Error("no ctx"));
+        return ctx.decodeAudioData(buf).then(decoded => ({ ctx, decoded }));
       })
-      .then(decoded => {
-        if (!ctx) return;
-
+      .then(({ ctx, decoded }) => {
         // The speech file is exactly as long as the intro (33.802 s).
         // Start playback from the offset matching how much time has already
         // elapsed since mount (fetch + decode latency), so the words always
@@ -589,26 +612,19 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
 
         source.start(ctx.currentTime, audioOffset);
-
-        // If the browser hasn't had a user gesture yet the AudioContext is
-        // suspended and the speech won't play. Add a one-shot unlock listener
-        // so the very next tap/click resumes the context and audio starts.
-        if (ctx.state === "suspended") {
-          const unlockSpeech = () => {
-            ctx?.resume().catch(() => {});
-          };
-          document.addEventListener("click",      unlockSpeech, { once: true, capture: true });
-          document.addEventListener("touchstart", unlockSpeech, { once: true, capture: true });
-        }
       })
       .catch(() => {
+        // Web Audio API failed — fall back to a plain HTML audio element.
+        // This also ensures mobile Safari (which prefers HTMLAudioElement for
+        // MP3) gets a second attempt if the AudioContext path throws.
         const audio = new Audio(`${base}/intro-speech.mp3`);
         audio.play().catch(() => {});
       });
 
     return () => {
       try { sourceRef.current?.stop(); } catch { /**/ }
-      ctx?.close().catch(() => {});
+      // Do NOT close the AudioContext here — the useLayoutEffect above owns
+      // its lifetime and will close it on unmount.
     };
   }, []);
 
