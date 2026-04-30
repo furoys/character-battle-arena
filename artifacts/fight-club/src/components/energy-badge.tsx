@@ -1,12 +1,49 @@
 import { Zap } from "lucide-react";
 import { useEnergy, formatRefillCountdown } from "@/hooks/use-energy";
 
-// ⚡ Energy: X / 10 — sits in the top bar next to the profile button.
-// Only rendered for signed-in users (the gate is per-user). Shows a tooltip
-// with the time until the next +1 refill so the player knows when to come back.
+// ⚡ Energy badge — sits in the top bar.
+// Signed-in users: shows their current energy / max with a refill countdown.
+// Guests: shows ∞ (unlimited fights, no energy gate).
 export function EnergyBadge() {
-  const { state, isSignedIn } = useEnergy();
-  if (!isSignedIn || !state) return null;
+  const { state, isSignedIn, isLoading } = useEnergy();
+
+  // While Clerk is still loading, render nothing to avoid a flash.
+  if (isLoading) return null;
+
+  // Guest mode — unlimited fights, show a dimmed ∞ badge.
+  if (!isSignedIn) {
+    const color = "rgba(255,160,0,0.55)";
+    return (
+      <div
+        className="flex items-center gap-1"
+        style={{
+          height: 24,
+          padding: "0 7px",
+          background: "rgba(255,160,0,0.05)",
+          border: "1px solid rgba(255,160,0,0.2)",
+        }}
+        title="Guest mode — unlimited fights"
+        data-testid="energy-badge"
+      >
+        <Zap className="h-3 w-3" style={{ color }} fill={color} />
+        <span
+          style={{
+            fontSize: 9,
+            fontFamily: "var(--font-display, monospace)",
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            fontWeight: 700,
+            color,
+          }}
+        >
+          <span data-testid="energy-value">∞</span>
+        </span>
+      </div>
+    );
+  }
+
+  // Still fetching energy state after sign-in.
+  if (!state) return null;
 
   const { energy, max, msUntilNextRefill } = state;
   const isFull = energy >= max;
