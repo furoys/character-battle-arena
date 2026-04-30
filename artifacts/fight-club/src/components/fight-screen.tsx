@@ -891,10 +891,11 @@ export function FightScreen({
   const closingSectionsDone = !!result
     && (result.whyWon?.length ?? 0) > 0
     && !!result.summary?.trim();
-  // When skipped, bypass the per-round wait and only require the closing
-  // summary sections to be present before showing the verdict screen.
+  // When skipped, show results immediately — the winner is known from the
+  // very first SSE init event so we never need to wait for closing sections.
+  // whyWon / summary will stream in and fill the VictoryScreen progressively.
   const canShowResults = skipped
-    ? (matchBegun && closingSectionsDone)
+    ? matchBegun
     : (matchBegun && allRoundsRevealed && lastVisibleRoundDone && closingSectionsDone);
   const canShowNextRound = !skipped && matchBegun && !allRoundsRevealed && lastVisibleRoundDone;
 
@@ -932,17 +933,19 @@ export function FightScreen({
     onRematch?.();
   };
 
-  // Skip: jump straight to the verdict. Sets a large sentinel so
-  // allRoundsRevealed is always true (clamped for index lookups), marks
-  // matchBegun, stops TTS, and bypasses the per-round completion checks.
-  // canShowResults will unlock as soon as the closing sections finish
-  // streaming (whyWon + summary), even if the AI is still mid-fight.
+  // Skip: jump straight to the verdict immediately.
+  // - Sets a large sentinel so allRoundsRevealed is always true.
+  // - matchBegun = true so canShowResults flips instantly.
+  // - setShowVictory(true) opens the result overlay right now — the winner
+  //   is already known from the SSE init event; whyWon / summary stream in
+  //   progressively once the AI finishes generating them.
   const handleSkip = () => {
     if (!result) return;
     stopTts();
     setMatchBegun(true);
     setSkipped(true);
     setVisibleCount(9999);
+    setShowVictory(true);
   };
 
   // Scroll behavior:
