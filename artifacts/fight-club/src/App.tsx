@@ -10,6 +10,7 @@ import { IntroSequence } from "@/components/intro-sequence";
 import { RotatePrompt } from "@/components/rotate-prompt";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { MusicProvider } from "@/contexts/music-context";
+import { useAgeMode } from "@/hooks/use-age-mode";
 
 // Pages
 import { Home } from "@/pages/home";
@@ -101,7 +102,18 @@ let _introPlayed = false;
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
-  const [showIntro, setShowIntro] = useState(!_introPlayed);
+  // Gate the intro on age mode being set — for new users the age-gate button
+  // click IS the user gesture we need to unlock browser audio autoplay.
+  // Returning users (ageMode already set) can see the intro immediately.
+  const { mode: ageMode } = useAgeMode();
+  const [showIntro, setShowIntro] = useState(() => !_introPlayed && ageMode !== null);
+
+  useEffect(() => {
+    // When the user answers the age gate for the first time, kick off the intro.
+    if (ageMode !== null && !_introPlayed && !showIntro) {
+      setShowIntro(true);
+    }
+  }, [ageMode]);
 
   const handleIntroDone = () => {
     _introPlayed = true;
