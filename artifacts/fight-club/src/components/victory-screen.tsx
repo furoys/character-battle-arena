@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Character, FightResult, FightRound } from "@workspace/api-client-react";
 import { Swords, RotateCcw, Copy, Check, Share2 } from "lucide-react";
 import { AvaLogo } from "@/components/ava-logo";
+import { computeSynergy } from "@/lib/synergies";
 
 interface VictoryScreenProps {
   result: FightResult;
@@ -126,6 +127,64 @@ function attackBadge(type: string | undefined): { label: string; color: string }
   if (type === "betrayal")       return { label: "BETRAYAL", color: "#9b59b6" };
   if (type === "gang-up")        return { label: "GANG UP",  color: "#f1c40f" };
   return null;
+}
+
+function SynergyBadges({ result }: { result: FightResult }) {
+  const t1 = result.team1 ?? [];
+  const t2 = result.team2 ?? [];
+  const syn1 = computeSynergy(t1);
+  const syn2 = computeSynergy(t2);
+  const all1 = syn1.active;
+  const all2 = syn2.active;
+  if (all1.length === 0 && all2.length === 0) return null;
+
+  const renderBadge = (s: { label: string; bonus: number; positive: boolean }, teamColor: string, key: string) => {
+    const pct = Math.round(Math.abs(s.bonus) * 100);
+    const color = s.positive ? "#00e87a" : "#ff3b30";
+    return (
+      <span
+        key={key}
+        title={s.positive ? `+${pct}% synergy bonus` : `-${pct}% penalty`}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: 8,
+          fontFamily: "var(--font-display, monospace)",
+          fontWeight: 700,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color,
+          background: `${color}10`,
+          border: `1px solid ${color}30`,
+          borderRadius: 2,
+          padding: "2px 6px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span style={{ color: teamColor, opacity: 0.6, fontSize: 7 }}>◆</span>
+        {s.label}
+        <span style={{ opacity: 0.7 }}>{s.positive ? `+${pct}%` : `-${pct}%`}</span>
+      </span>
+    );
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-1.5">
+      {all1.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span style={{ fontSize: 8, fontFamily: "var(--font-display, monospace)", letterSpacing: "0.18em", color: "rgba(0,240,255,0.4)", fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>T1</span>
+          {all1.map((s, i) => renderBadge(s, "#00f0ff", `t1-${i}`))}
+        </div>
+      )}
+      {all2.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span style={{ fontSize: 8, fontFamily: "var(--font-display, monospace)", letterSpacing: "0.18em", color: "rgba(255,59,48,0.4)", fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>T2</span>
+          {all2.map((s, i) => renderBadge(s, "#ff3b30", `t2-${i}`))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function RoundBreakdown({ result }: { result: FightResult }) {
@@ -497,6 +556,13 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Synergy / weakness badges */}
+        {phase >= 5 && (
+          <div className="victory-fade-up w-full" style={{ animationDelay: "0ms" }}>
+            <SynergyBadges result={result} />
           </div>
         )}
 
