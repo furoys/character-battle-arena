@@ -70,6 +70,3 @@ externalPort = 6000
 
 [userenv.shared]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_c2F2aW5nLXRhZHBvbGUtNjIuY2xlcmsuYWNjb3VudHMuZGV2JA"
-VAPID_PUBLIC_KEY = "BMgy07d9tRqV65JbI25_GsePk43JEeRMQPcySW1MVAEanWPvtM-GIjtd8CEsfL28vB1xXVvkKKIK8hi6E1Xh2_0"
-VAPID_PRIVATE_KEY = "a8Su68vnow4-ll0XF92_KtXkR74awAsvlS5edhHvE3Q"
-VAPID_SUBJECT = "mailto:noreply@anyonevsanyone.replit.app"
