@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { simulateFight, type SimulateFightProgress } from "../lib/fightSimulator";
 import { getOptionalUserId, requireAuth } from "../lib/auth";
+import { consumeEnergy, OutOfEnergyError } from "../lib/energy";
 
 // Helper for the challenge wait branch — poll the DB for the OTHER player's
 // fightId to appear, then return it. Returns null on timeout or close.
@@ -368,6 +369,24 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
   if (team1.length === 0 || team2.length === 0) {
     res.status(400).json({ error: "One or both teams have no valid characters" });
     return;
+  }
+
+  // ── Energy gate (signed-in users only) ────────────────────────────────────
+  // Consume 1 energy before starting the fight. Guests are unaffected — the
+  // gate is per-user and guests have no profile row. We do this BEFORE
+  // opening the SSE stream so we can return a clean 402 the client can
+  // intercept and turn into the out-of-energy modal.
+  const gateUserId = getOptionalUserId(req);
+  if (gateUserId) {
+    try {
+      await consumeEnergy(gateUserId);
+    } catch (err) {
+      if (err instanceof OutOfEnergyError) {
+        res.status(402).json({ error: "out-of-energy" });
+        return;
+      }
+      throw err;
+    }
   }
 
   // Open the SSE stream
