@@ -5387,3 +5387,9 @@ id = "KIHa_j_QgsLZgaRkOHqPU"
 uri = "file://ava-roster.pdf"
 type = "pdf"
 title = "A.v.A Full Roster — 955 Fighters (PDF)"
+
+[[outputs]]
+id = "2rlEddgXjf0Ywc0ernceG"
+uri = "file://character-roster.pdf"
+type = "pdf"
+title = "A.v.A — Full Character Roster (953 characters)"
