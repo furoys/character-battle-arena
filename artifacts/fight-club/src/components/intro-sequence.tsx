@@ -589,6 +589,17 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
 
         source.start(ctx.currentTime, audioOffset);
+
+        // If the browser hasn't had a user gesture yet the AudioContext is
+        // suspended and the speech won't play. Add a one-shot unlock listener
+        // so the very next tap/click resumes the context and audio starts.
+        if (ctx.state === "suspended") {
+          const unlockSpeech = () => {
+            ctx?.resume().catch(() => {});
+          };
+          document.addEventListener("click",      unlockSpeech, { once: true, capture: true });
+          document.addEventListener("touchstart", unlockSpeech, { once: true, capture: true });
+        }
       })
       .catch(() => {
         const audio = new Audio(`${base}/intro-speech.mp3`);
@@ -608,7 +619,16 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     el.volume = 0.32;
     el.preload = "auto";
     musicRef.current = el;
-    el.play().catch(() => {});
+
+    // Attempt immediate playback; if the browser's autoplay policy blocks it
+    // (DOMException: NotAllowedError), retry on the very next user gesture.
+    // This handles returning users where no age-gate click precedes the intro.
+    el.play().catch(() => {
+      const retry = () => { el.play().catch(() => {}); };
+      document.addEventListener("click",      retry, { once: true, capture: true });
+      document.addEventListener("touchstart", retry, { once: true, capture: true });
+    });
+
     return () => { el.pause(); el.src = ""; };
   }, []);
 
