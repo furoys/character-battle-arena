@@ -23,7 +23,7 @@ import { PendingChallengesBar } from "@/components/pending-challenges-bar";
 import { useMusic } from "@/contexts/music-context";
 import { MusicToggle } from "@/components/music-toggle";
 import { EnergyBadge } from "@/components/energy-badge";
-import { useEnergy } from "@/hooks/use-energy";
+import { useEnergy, formatRefillCountdown } from "@/hooks/use-energy";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -427,8 +427,15 @@ export function Home() {
     return pool.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
   }, [characters, searchQuery, activeFilter, favorites, recentPicks, tierFilter]);
 
+  // Synchronous in-flight lock. React's `simulateFight.isPending` flips via
+  // setState which is async — two clicks within the same render frame can
+  // both see isPending===false and both fire mutate(), double-charging
+  // energy. This ref flips synchronously inside the click handler so the
+  // second event in the same frame short-circuits before reaching mutate().
+  const fightInFlightRef = useRef(false);
   const simulateFight = useSimulateFightStream({
     onError: (error) => {
+      fightInFlightRef.current = false;
       // Server is the authority — if it 402'd because the user is out of
       // energy, show the dedicated modal instead of a generic error toast.
       if (error.message === "out-of-energy") {
@@ -445,6 +452,7 @@ export function Home() {
       if (energy.isSignedIn) void energy.refetch();
     },
     onComplete: () => {
+      fightInFlightRef.current = false;
       // Reconcile the optimistic decrement with the server's truth at fight-end.
       if (energy.isSignedIn) void energy.refetch();
     },
@@ -495,6 +503,10 @@ export function Home() {
   const DEVELOPER_IDS = [780, 781]; // Chris Henry, Troy Wilson
 
   const handleFight = () => {
+    // Synchronous lock — closes the same-frame race window that the React
+    // state-based check (simulateFight.isPending) leaves open, since
+    // setIsPending only flips on the next render.
+    if (fightInFlightRef.current || simulateFight.isPending) return;
     if (team1.length === 0 || team2.length === 0) {
       toast({ title: "Teams Required", description: "Both teams need at least 1 fighter", variant: "destructive" });
       return;
@@ -515,6 +527,9 @@ export function Home() {
       return;
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
+    // Take the synchronous lock BEFORE any await/mutate so a second click in
+    // the same event-loop tick short-circuits at the guard above.
+    fightInFlightRef.current = true;
     setShowModal(true);
     // Optimistically decrement so the badge updates the moment FIGHT is hit.
     // After the fight call resolves, refetch from the server to reconcile.
@@ -960,30 +975,67 @@ export function Home() {
             <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
           )}
 
-          {/* Glowing FIGHT bar — only when both teams have fighters */}
-          {canFight && (
-            <button
-              onClick={handleFight}
-              disabled={simulateFight.isPending}
-              className="w-full flex items-center justify-center gap-3 font-display uppercase active:scale-[0.99] transition-transform"
-              style={{
-                height: 44,
-                borderTop: "1.5px solid #ff0055",
-                borderBottom: "1.5px solid rgba(255,0,85,0.3)",
-                background: "linear-gradient(180deg, rgba(255,0,85,0.18) 0%, rgba(255,0,85,0.32) 100%)",
-                color: "#fff",
-                fontSize: 15,
-                letterSpacing: "0.4em",
-                cursor: "pointer",
-                animation: "fightPulse 1.4s ease-in-out infinite",
-                textShadow: "0 0 16px rgba(255,0,85,0.95)",
-              }}
-            >
-              <Swords className="h-5 w-5" style={{ color: "#ff0055" }} />
-              <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
-              <Swords className="h-5 w-5 -scale-x-100" style={{ color: "#ff0055" }} />
-            </button>
-          )}
+          {/* Glowing FIGHT bar — only when both teams have fighters.
+              Switches to a greyed "OUT OF ENERGY" affordance when a signed-in
+              user has 0 energy: tapping it opens the same modal handleFight
+              would have, but the visual state makes it obvious WHY before
+              they tap. Guests / pre-load (no state yet) see the normal
+              FIGHT bar so the gate never blocks them. */}
+          {canFight && (() => {
+            const isOutOfEnergy =
+              energy.isSignedIn && !!energy.state && energy.state.energy <= 0;
+            if (isOutOfEnergy) {
+              return (
+                <button
+                  type="button"
+                  data-testid="button-out-of-energy"
+                  onClick={() => setShowOutOfEnergy(true)}
+                  className="w-full flex items-center justify-center gap-3 font-display uppercase"
+                  style={{
+                    height: 44,
+                    borderTop: "1.5px solid rgba(255,255,255,0.10)",
+                    borderBottom: "1.5px solid rgba(255,255,255,0.06)",
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 100%)",
+                    color: "rgba(255,255,255,0.55)",
+                    fontSize: 13,
+                    letterSpacing: "0.32em",
+                    cursor: "pointer",
+                    textShadow: "none",
+                  }}
+                >
+                  <Zap className="h-4 w-4" style={{ color: "rgba(255,255,255,0.45)" }} />
+                  <span>OUT OF ENERGY</span>
+                  <span style={{ opacity: 0.7, fontSize: 11, letterSpacing: "0.2em" }}>
+                    +1 in {formatRefillCountdown(energy.state!.msUntilNextRefill)}
+                  </span>
+                </button>
+              );
+            }
+            return (
+              <button
+                onClick={handleFight}
+                disabled={simulateFight.isPending}
+                data-testid="button-fight"
+                className="w-full flex items-center justify-center gap-3 font-display uppercase active:scale-[0.99] transition-transform disabled:opacity-70 disabled:cursor-wait"
+                style={{
+                  height: 44,
+                  borderTop: "1.5px solid #ff0055",
+                  borderBottom: "1.5px solid rgba(255,0,85,0.3)",
+                  background: "linear-gradient(180deg, rgba(255,0,85,0.18) 0%, rgba(255,0,85,0.32) 100%)",
+                  color: "#fff",
+                  fontSize: 15,
+                  letterSpacing: "0.4em",
+                  cursor: simulateFight.isPending ? "wait" : "pointer",
+                  animation: simulateFight.isPending ? "none" : "fightPulse 1.4s ease-in-out infinite",
+                  textShadow: "0 0 16px rgba(255,0,85,0.95)",
+                }}
+              >
+                <Swords className="h-5 w-5" style={{ color: "#ff0055" }} />
+                <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
+                <Swords className="h-5 w-5 -scale-x-100" style={{ color: "#ff0055" }} />
+              </button>
+            );
+          })()}
 
           {/* Team slots — compact horizontal */}
           <div className="flex items-stretch gap-2 px-2 pt-1.5">
