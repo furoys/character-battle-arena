@@ -464,6 +464,9 @@ export function FightScreen({
   const [matchBegun, setMatchBegun] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [attackingTeam, setAttackingTeam] = useState<0 | 1 | 2>(0);
+  // True once the user hits Skip — bypasses per-round gating and waits only
+  // for the closing sections (whyWon + summary) before showing the verdict.
+  const [skipped, setSkipped] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // ── Music wiring ──────────────────────────────────────────────────────────
@@ -853,6 +856,7 @@ export function FightScreen({
       setMatchBegun(false);
       setShowVictory(false);
       setAttackingTeam(0);
+      setSkipped(false);
     }
   }, [open]);
 
@@ -864,26 +868,35 @@ export function FightScreen({
       setMatchBegun(false);
       setShowVictory(false);
       setAttackingTeam(0);
+      setSkipped(false);
     }
   }, [isSimulating]);
 
   // Section name helpers — match the SSE event names the hook tracks.
   const settingDone = !!completedSections?.has("SETTING");
   const entranceDone = !!(completedSections?.has("ENTRANCE") || completedSections?.has("COMBATANT ENTRANCE"));
-  const lastVisibleRoundNumber = visibleCount > 0 && result?.rounds[visibleCount - 1]
-    ? result.rounds[visibleCount - 1]!.round
+  // Clamp visibleCount to the actual number of rounds so that the large
+  // sentinel (9999) set by handleSkip doesn't make the round-index lookup
+  // return undefined and break lastVisibleRoundDone.
+  const clampedVisibleCount = result ? Math.min(visibleCount, result.rounds.length) : visibleCount;
+  const lastVisibleRoundNumber = clampedVisibleCount > 0 && result?.rounds[clampedVisibleCount - 1]
+    ? result.rounds[clampedVisibleCount - 1]!.round
     : null;
   const lastVisibleRoundDone = lastVisibleRoundNumber !== null
     && !!completedSections?.has(`ROUND ${lastVisibleRoundNumber}`);
 
   // Gating flags
   const canBeginMatch = !!result && !matchBegun && settingDone && entranceDone;
-  const allRoundsRevealed = !!result && visibleCount >= (result.rounds.length || 0);
+  const allRoundsRevealed = !!result && clampedVisibleCount >= (result.rounds.length || 0);
   const closingSectionsDone = !!result
     && (result.whyWon?.length ?? 0) > 0
     && !!result.summary?.trim();
-  const canShowResults = matchBegun && allRoundsRevealed && lastVisibleRoundDone && closingSectionsDone;
-  const canShowNextRound = matchBegun && !allRoundsRevealed && lastVisibleRoundDone;
+  // When skipped, bypass the per-round wait and only require the closing
+  // summary sections to be present before showing the verdict screen.
+  const canShowResults = skipped
+    ? (matchBegun && closingSectionsDone)
+    : (matchBegun && allRoundsRevealed && lastVisibleRoundDone && closingSectionsDone);
+  const canShowNextRound = !skipped && matchBegun && !allRoundsRevealed && lastVisibleRoundDone;
 
   // Reveal handlers
   const beginMatch = () => {
@@ -919,11 +932,17 @@ export function FightScreen({
     onRematch?.();
   };
 
-  // Skip: jump straight to all rounds + results button
+  // Skip: jump straight to the verdict. Sets a large sentinel so
+  // allRoundsRevealed is always true (clamped for index lookups), marks
+  // matchBegun, stops TTS, and bypasses the per-round completion checks.
+  // canShowResults will unlock as soon as the closing sections finish
+  // streaming (whyWon + summary), even if the AI is still mid-fight.
   const handleSkip = () => {
     if (!result) return;
+    stopTts();
     setMatchBegun(true);
-    setVisibleCount(result.rounds.length);
+    setSkipped(true);
+    setVisibleCount(9999);
   };
 
   // Scroll behavior:
