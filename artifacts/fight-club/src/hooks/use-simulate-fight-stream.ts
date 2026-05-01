@@ -285,6 +285,10 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
           }
           buffer = next.value;
         }
+        // Safety: stream closed without an explicit `complete` or `error` event
+        // (e.g. server dropped the connection). Ensure pending is cleared so the
+        // button never stays locked.
+        setIsPending(false);
       } catch (err) {
         if ((err as Error)?.name === "AbortError") {
           setIsPending(false);

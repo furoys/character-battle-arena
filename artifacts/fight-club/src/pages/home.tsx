@@ -1370,7 +1370,7 @@ export function Home() {
 
         <FightScreen
           open={showModal}
-          onClose={() => { setShowModal(false); simulateFight.reset(); }}
+          onClose={() => { fightInFlightRef.current = false; setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
           }}
