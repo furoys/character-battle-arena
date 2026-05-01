@@ -159,9 +159,10 @@ export function computeSynergy(team: { name: string; universe: string }[]): Syne
   const names = new Set(team.map(c => c.name));
   const active: ActiveSynergy[] = [];
 
-  const allSameUniverse = team.every(c => c.universe === team[0]!.universe);
+  const firstUniverse = team[0]!.universe;
+  const allSameUniverse = !!firstUniverse && team.every(c => c.universe === firstUniverse);
   if (allSameUniverse) {
-    active.push({ label: `${team[0]!.universe.toUpperCase()} UNITY`, bonus: 0.08, positive: true });
+    active.push({ label: `${firstUniverse.toUpperCase()} UNITY`, bonus: 0.08, positive: true });
   }
 
   for (const syn of POSITIVE_SYNERGIES) {
