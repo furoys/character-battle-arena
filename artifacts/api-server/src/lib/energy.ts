@@ -146,16 +146,10 @@ export async function consumeEnergy(userId: string): Promise<EnergyState> {
   const now = Date.now();
   const next = await db.transaction(async (tx) => {
     const locked = await lockOrCreateProfile(tx, userId, now);
-    const r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    let r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    // Auto-refill: if the user is empty, reset to full so they're never blocked.
     if (r.energy <= 0) {
-      // Still persist any anchor advancement so a subsequent read is consistent.
-      if (r.lastRefillAt.getTime() !== locked.lastRefillAt.getTime()) {
-        await tx
-          .update(userProfilesTable)
-          .set({ lastRefillAt: r.lastRefillAt, updatedAt: new Date(now) })
-          .where(eq(userProfilesTable.userId, userId));
-      }
-      throw new OutOfEnergyError();
+      r = { energy: ENERGY_MAX, lastRefillAt: new Date(now) };
     }
     const wasAtCap = r.energy >= ENERGY_MAX;
     const newEnergy = r.energy - 1;

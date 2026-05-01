@@ -334,7 +334,6 @@ export function Challenge() {
   // Hooks MUST live above the early-return guards below; testingPush is used
   // by the optional "TEST PING" button further down the render.
   const [testingPush, setTestingPush] = useState(false);
-  const [showOutOfEnergy, setShowOutOfEnergy] = useState(false);
 
   const { isMinor } = useAgeMode();
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -505,12 +504,6 @@ export function Challenge() {
   const [readyPending, setReadyPending] = useState(false);
   const handleReady = async () => {
     if (!challenge || !ownToken || readyPending || ownReady) return;
-    // Mirror the energy gate from home.tsx — server will 402 anyway, but
-    // showing the modal here gives a clear explanation rather than a toast.
-    if (energy.isSignedIn && energy.state && energy.state.energy <= 0) {
-      setShowOutOfEnergy(true);
-      return;
-    }
     setReadyPending(true);
     try {
       const r = await fetch(`/api/challenges/${challenge.code}/ready`, {
@@ -1174,55 +1167,6 @@ export function Challenge() {
         modifierId={challenge.modifierId}
       />
 
-      {/* ── Out-of-energy modal ───────────────────────────────────── */}
-      {showOutOfEnergy && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center px-6"
-          style={{ background: "rgba(0,0,0,0.78)", backdropFilter: "blur(4px)" }}
-          onClick={() => setShowOutOfEnergy(false)}
-          data-testid="out-of-energy-modal"
-        >
-          <div
-            className="relative max-w-sm w-full p-6 flex flex-col items-center gap-5 text-center"
-            style={{
-              background: "linear-gradient(180deg, #0a0a14 0%, #050508 100%)",
-              border: "1.5px solid rgba(255,160,0,0.5)",
-              boxShadow: "0 0 32px rgba(255,160,0,0.18)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Zap className="h-12 w-12" style={{ color: "rgba(255,160,0,0.9)" }} fill="rgba(255,160,0,0.9)" />
-            <h2 className="font-display uppercase" style={{ fontSize: 18, letterSpacing: "0.18em", color: "#ffffff" }}>
-              You are out of energy.
-            </h2>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-              Energy refills over time. Come back when your ⚡ bar has recharged.
-            </p>
-            {energy.state && energy.state.energy < energy.state.max && (
-              <p className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: "rgba(255,160,0,0.85)" }}>
-                Next +1 in {Math.max(0, Math.ceil(energy.state.msUntilNextRefill / 60000))} min
-              </p>
-            )}
-            <button
-              onClick={() => setShowOutOfEnergy(false)}
-              className="w-full font-display uppercase tracking-widest"
-              style={{
-                marginTop: 4,
-                padding: "12px 24px",
-                fontSize: 11,
-                letterSpacing: "0.25em",
-                background: "rgba(255,160,0,0.10)",
-                border: "1.5px solid rgba(255,160,0,0.5)",
-                color: "rgba(255,200,0,0.95)",
-                cursor: "pointer",
-              }}
-              data-testid="button-ooe-dismiss"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

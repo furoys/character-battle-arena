@@ -24,7 +24,7 @@ import { PendingChallengesBar } from "@/components/pending-challenges-bar";
 import { useMusic } from "@/contexts/music-context";
 import { MusicToggle } from "@/components/music-toggle";
 import { EnergyBadge } from "@/components/energy-badge";
-import { useEnergy, formatRefillCountdown } from "@/hooks/use-energy";
+import { useEnergy } from "@/hooks/use-energy";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -380,7 +380,6 @@ export function Home() {
   };
   const [showModal, setShowModal] = useState(false);
   const [showRefusal, setShowRefusal] = useState(false);
-  const [showOutOfEnergy, setShowOutOfEnergy] = useState(false);
   const energy = useEnergy();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
@@ -500,15 +499,6 @@ export function Home() {
   const simulateFight = useSimulateFightStream({
     onError: (error) => {
       fightInFlightRef.current = false;
-      // Server is the authority — if it 402'd because the user is out of
-      // energy, show the dedicated modal instead of a generic error toast.
-      if (error.message === "out-of-energy") {
-        setShowModal(false);
-        setShowOutOfEnergy(true);
-        // Reconcile the optimistic decrement with the truth.
-        if (energy.isSignedIn) void energy.refetch();
-        return;
-      }
       toast({ title: "Simulation Failed", description: error.message || "Unknown error", variant: "destructive" });
       setShowModal(false);
       // The server may or may not have consumed energy (depends where it
@@ -581,13 +571,6 @@ export function Home() {
     const devsOnOpposingSides = t1HasDev && t2HasDev;
     if (devsOnOpposingSides) {
       setShowRefusal(true);
-      return;
-    }
-    // Energy gate (signed-in users only). Server is source of truth — this
-    // client-side check is just an instant UX block. The server independently
-    // returns 402 if the user is empty (caught below in the stream hook).
-    if (energy.isSignedIn && energy.state && energy.state.energy <= 0) {
-      setShowOutOfEnergy(true);
       return;
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
@@ -1035,35 +1018,6 @@ export function Home() {
               they tap. Guests / pre-load (no state yet) see the normal
               FIGHT bar so the gate never blocks them. */}
           {canFight && (() => {
-            const isOutOfEnergy =
-              energy.isSignedIn && !!energy.state && energy.state.energy <= 0;
-            if (isOutOfEnergy) {
-              return (
-                <button
-                  type="button"
-                  data-testid="button-out-of-energy"
-                  onClick={() => setShowOutOfEnergy(true)}
-                  className="w-full flex items-center justify-center gap-3 font-display uppercase"
-                  style={{
-                    height: 44,
-                    borderTop: "1.5px solid rgba(255,255,255,0.10)",
-                    borderBottom: "1.5px solid rgba(255,255,255,0.06)",
-                    background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 100%)",
-                    color: "rgba(255,255,255,0.55)",
-                    fontSize: 13,
-                    letterSpacing: "0.32em",
-                    cursor: "pointer",
-                    textShadow: "none",
-                  }}
-                >
-                  <Zap className="h-4 w-4" style={{ color: "rgba(255,255,255,0.45)" }} />
-                  <span>OUT OF ENERGY</span>
-                  <span style={{ opacity: 0.7, fontSize: 11, letterSpacing: "0.2em" }}>
-                    +1 in {formatRefillCountdown(energy.state!.msUntilNextRefill)}
-                  </span>
-                </button>
-              );
-            }
             return (
               <button
                 onClick={handleFight}
@@ -1476,77 +1430,6 @@ export function Home() {
               }}
             >
               ⚔ NEW FIGHT
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── OUT-OF-ENERGY MODAL ─────────────────────────────────────────── */}
-      {showOutOfEnergy && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center px-6"
-          style={{
-            background: "rgba(0,0,0,0.78)",
-            backdropFilter: "blur(4px)",
-            animation: "refusalFadeIn 0.2s ease-out",
-          }}
-          onClick={() => setShowOutOfEnergy(false)}
-          data-testid="out-of-energy-modal"
-        >
-          <div
-            className="relative max-w-sm w-full p-6 flex flex-col items-center gap-5 text-center"
-            style={{
-              background: "linear-gradient(180deg, #0a0a14 0%, #050508 100%)",
-              border: "1.5px solid rgba(255,160,0,0.5)",
-              boxShadow: "0 0 32px rgba(255,160,0,0.18)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Zap
-              className="h-12 w-12"
-              style={{ color: "rgba(255,160,0,0.9)" }}
-              fill="rgba(255,160,0,0.9)"
-            />
-            <h2
-              className="font-display uppercase"
-              style={{
-                fontSize: 18,
-                letterSpacing: "0.18em",
-                color: "#ffffff",
-              }}
-            >
-              You are out of energy.
-            </h2>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-              Energy refills over time.
-            </p>
-            {energy.state && energy.state.energy < energy.state.max && (
-              <p
-                className="font-display uppercase"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.2em",
-                  color: "rgba(255,160,0,0.85)",
-                }}
-              >
-                Next +1 in {Math.max(0, Math.ceil(energy.state.msUntilNextRefill / 60000))} min
-              </p>
-            )}
-            <button
-              onClick={() => setShowOutOfEnergy(false)}
-              className="w-full font-display uppercase tracking-widest transition-all duration-150 active:scale-95"
-              style={{
-                marginTop: 4,
-                padding: "12px 24px",
-                fontSize: 11,
-                letterSpacing: "0.25em",
-                background: "rgba(255,160,0,0.10)",
-                border: "1.5px solid rgba(255,160,0,0.5)",
-                color: "rgba(255,200,0,0.95)",
-              }}
-              data-testid="button-ooe-dismiss"
-            >
-              OK
             </button>
           </div>
         </div>
