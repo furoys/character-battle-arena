@@ -201,7 +201,41 @@ function ClerkProviderWithRoutes() {
   );
 }
 
+// Polls the service worker for updates so users always get the latest build.
+// Checks on mount, on every window-focus, and every 60 s. When a new SW
+// takes over (controllerchange) the page reloads automatically to serve the
+// fresh bundle — the user just sees a normal page refresh.
+function useSWAutoUpdate() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    let reg: ServiceWorkerRegistration | null = null;
+
+    const check = () => { reg?.update().catch(() => {}); };
+
+    navigator.serviceWorker.getRegistration().then((r) => {
+      if (!r) return;
+      reg = r;
+      check();
+    }).catch(() => {});
+
+    const interval = setInterval(check, 60_000);
+    window.addEventListener("focus", check);
+
+    // When a new SW takes control, reload once so the fresh bundle is served.
+    const onController = () => { window.location.reload(); };
+    navigator.serviceWorker.addEventListener("controllerchange", onController);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", check);
+      navigator.serviceWorker.removeEventListener("controllerchange", onController);
+    };
+  }, []);
+}
+
 function App() {
+  useSWAutoUpdate();
   return (
     <WouterRouter base={basePath}>
       <MusicProvider>
