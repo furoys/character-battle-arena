@@ -107,12 +107,19 @@ async function lockOrCreateProfile(
 
 // Read the user's energy state, applying any pending refills and persisting
 // the new anchor if the value changed (so subsequent reads are idempotent).
+// Also applies the same auto-refill-to-full logic as consumeEnergy so users
+// who were at 0 before energy limits were removed see their correct balance
+// immediately rather than sitting at 0 until a time-based tick fires.
 // Wrapped in a transaction so concurrent consumes can't be clobbered.
 export async function getEnergyState(userId: string): Promise<EnergyState> {
   const now = Date.now();
   const refilled = await db.transaction(async (tx) => {
     const locked = await lockOrCreateProfile(tx, userId, now);
-    const r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    let r = applyRefill(locked.energy, locked.lastRefillAt, now);
+    // Auto-refill: same rule as consumeEnergy — anyone at 0 gets reset to full.
+    if (r.energy <= 0) {
+      r = { energy: ENERGY_MAX, lastRefillAt: new Date(now) };
+    }
     if (
       r.energy !== locked.energy ||
       r.lastRefillAt.getTime() !== locked.lastRefillAt.getTime()
