@@ -939,8 +939,11 @@ export function FightScreen({
   // - setShowVictory(true) opens the result overlay right now — the winner
   //   is already known from the SSE init event; whyWon / summary stream in
   //   progressively once the AI finishes generating them.
+  // - Guard: do NOT skip while the stream is still loading (isSimulating=true).
+  //   At that point team1/team2 characters are stubs from the init event and
+  //   lack the `universe` field, which crashes computeSynergy in VictoryScreen.
   const handleSkip = () => {
-    if (!result) return;
+    if (!result || isSimulating) return;
     stopTts();
     setMatchBegun(true);
     setSkipped(true);
@@ -1323,9 +1326,12 @@ export function FightScreen({
           {/* Right side — context-sensitive */}
           {result && (
             <div className="flex items-center gap-3">
-              {/* Skip — jumps to the end of the fight, available as soon as
-                  at least one round has been generated. */}
-              {!canShowResults && result.rounds.length > 0 && (
+              {/* Skip — jumps to the end of the fight, available once the
+                  stream has finished loading (isSimulating=false) and at
+                  least one round has been generated. Blocked during loading
+                  because team stubs from the init event lack `universe`,
+                  which would crash computeSynergy in VictoryScreen. */}
+              {!canShowResults && !isSimulating && result.rounds.length > 0 && (
                 <button
                   onClick={handleSkip}
                   className="flex items-center gap-1.5 font-display uppercase transition-all active:scale-[0.97]"
