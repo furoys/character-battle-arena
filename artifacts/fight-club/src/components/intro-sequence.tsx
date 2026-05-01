@@ -668,12 +668,12 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     // (DOMException: NotAllowedError), retry on the very next user gesture.
     // This handles returning users where no age-gate click precedes the intro.
     el.play().then(() => {
-      // Cinematic fade-in: 0 → 0.85 over the full black-awakening window (1200ms)
-      rampVolume(el, 0.85, 1200, musicRampRef);
+      // Cinematic fade-in: 0 → 1.0 over the full black-awakening window (1200ms)
+      rampVolume(el, 1.0, 1200, musicRampRef);
     }).catch(() => {
       const retry = () => {
         el.play().then(() => {
-          rampVolume(el, 0.85, 1200, musicRampRef);
+          rampVolume(el, 1.0, 1200, musicRampRef);
         }).catch(() => {});
       };
       document.addEventListener("click",      retry, { once: true, capture: true });
@@ -695,12 +695,12 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const el = musicRef.current;
     if (!el) return;
-    if      (stage === 1) rampVolume(el, 0.55, 100,  musicRampRef); // reactive dip for opening flash
-    else if (stage === 2) rampVolume(el, 0.28, 350,  musicRampRef); // duck under A·v·A slam speech
-    else if (stage === 3) rampVolume(el, 0.62, 700,  musicRampRef); // ease up, music breathes under narration
-    else if (stage === 4) rampVolume(el, 0.15, 55,   musicRampRef); // sharp impact-flash punch
-    else if (stage === 5) rampVolume(el, 0.28, 280,  musicRampRef); // duck under "Anyone vs Anyone" speech
-    else if (stage === 6) rampVolume(el, 0.95, 900,  musicRampRef); // big cinematic swell for final logo
+    if      (stage === 1) rampVolume(el, 0.83, 100,  musicRampRef); // reactive dip for opening flash
+    else if (stage === 2) rampVolume(el, 0.42, 350,  musicRampRef); // duck under A·v·A slam speech
+    else if (stage === 3) rampVolume(el, 0.93, 700,  musicRampRef); // ease up, music breathes under narration
+    else if (stage === 4) rampVolume(el, 0.23, 55,   musicRampRef); // sharp impact-flash punch
+    else if (stage === 5) rampVolume(el, 0.42, 280,  musicRampRef); // duck under "Anyone vs Anyone" speech
+    else if (stage === 6) rampVolume(el, 1.0,  900,  musicRampRef); // big cinematic swell for final logo
   }, [stage]);
 
   // Preload character images + app icon (used in stages 2 & 6)
