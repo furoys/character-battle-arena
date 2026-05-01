@@ -205,6 +205,13 @@ function ClerkProviderWithRoutes() {
 // Checks on mount, on every window-focus, and every 60 s. When a new SW
 // takes over (controllerchange) the page reloads automatically to serve the
 // fresh bundle — the user just sees a normal page refresh.
+//
+// iOS Safari fix: we call navigator.serviceWorker.register() directly with
+// updateViaCache:'none' instead of just reading the existing registration.
+// iOS aggressively HTTP-caches sw.js, so a plain reg.update() always gets the
+// stale copy and never detects a new deployment. updateViaCache:'none' forces
+// the browser to bypass the HTTP cache every time it checks for a new SW —
+// which is exactly what we need after a Replit republish.
 function useSWAutoUpdate() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -213,11 +220,32 @@ function useSWAutoUpdate() {
 
     const check = () => { reg?.update().catch(() => {}); };
 
-    navigator.serviceWorker.getRegistration().then((r) => {
-      if (!r) return;
-      reg = r;
-      check();
-    }).catch(() => {});
+    // BASE_URL always has a trailing slash (e.g. "/" or "/fight-club/").
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`;
+
+    // Calling register() again with the same URL updates the registration's
+    // updateViaCache option in-place (per the SW spec). This means even if
+    // VitePWA already registered the SW without this flag, our call upgrades
+    // the existing registration to bypass iOS's HTTP cache going forward.
+    navigator.serviceWorker
+      .register(swUrl, {
+        scope: import.meta.env.BASE_URL,
+        updateViaCache: "none",
+      })
+      .then((r) => {
+        reg = r;
+        // If a new SW is already waiting (installed but not yet active —
+        // common on iOS after a reload), activate it immediately.
+        if (r.waiting) r.waiting.postMessage({ type: "SKIP_WAITING" });
+        check();
+      })
+      .catch(() => {
+        navigator.serviceWorker.getRegistration().then((r) => {
+          if (!r) return;
+          reg = r;
+          check();
+        }).catch(() => {});
+      });
 
     const interval = setInterval(check, 60_000);
     window.addEventListener("focus", check);

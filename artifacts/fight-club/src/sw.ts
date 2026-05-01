@@ -15,6 +15,16 @@ precacheAndRoute(self.__WB_MANIFEST);
 self.skipWaiting();
 clientsClaim();
 
+// If App.tsx sends SKIP_WAITING (e.g. for a SW that was already waiting when
+// the page loaded), honour it immediately. The unconditional skipWaiting()
+// above handles the normal install path; this covers the edge case where the
+// SW installed but got stuck in "waiting" without activating.
+self.addEventListener("message", (event: ExtendableMessageEvent) => {
+  if ((event.data as { type?: string } | null)?.type === "SKIP_WAITING") {
+    void self.skipWaiting();
+  }
+});
+
 interface PushPayload {
   title?: string;
   body?: string;
