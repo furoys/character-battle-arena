@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, type MutableRefObject } from "react";
 
 // ── Cast — 15 characters from across every universe ───────────────────────────
 const CAST = [
@@ -39,6 +39,29 @@ const STAGE_DURATIONS = [
 ];
 
 const NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`;
+
+// ── Smooth volume ramp for HTMLAudioElement ────────────────────────────────────
+// Cancels any in-progress ramp before starting a new one so stage transitions
+// never stack. Uses ease-out quadratic so the target level is reached crisply.
+function rampVolume(
+  el: HTMLAudioElement,
+  target: number,
+  durationMs: number,
+  rafRef: MutableRefObject<number | null>,
+) {
+  if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+  const startVol = el.volume;
+  const diff = target - startVol;
+  if (durationMs <= 16 || Math.abs(diff) < 0.004) { el.volume = Math.max(0, Math.min(1, target)); return; }
+  const t0 = performance.now();
+  const tick = () => {
+    const frac = Math.min((performance.now() - t0) / durationMs, 1);
+    const ease = 1 - Math.pow(1 - frac, 2); // ease-out quadratic
+    el.volume  = Math.max(0, Math.min(1, startVol + diff * ease));
+    rafRef.current = frac < 1 ? requestAnimationFrame(tick) : null;
+  };
+  rafRef.current = requestAnimationFrame(tick);
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function useStage(onFinish: () => void) {
@@ -479,7 +502,9 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const mountTimeRef = useRef(performance.now());
 
   // Background music — plain HTML audio element for simplicity
-  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef    = useRef<HTMLAudioElement | null>(null);
+  // Tracks any in-flight volume ramp so new transitions cancel old ones
+  const musicRampRef = useRef<number | null>(null);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -492,7 +517,8 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
       master.gain.setValueAtTime(master.gain.value, t);
       master.gain.linearRampToValueAtTime(0, t + 0.55);
     }
-    // Fade out background music in parallel
+    // Cancel any in-progress volume ramp, then linear fade to silence
+    if (musicRampRef.current !== null) { cancelAnimationFrame(musicRampRef.current); musicRampRef.current = null; }
     const music = musicRef.current;
     if (music) {
       const fade = setInterval(() => {
@@ -632,39 +658,49 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     const el = new Audio(`${base}/intro-music.mp3`);
-    el.volume = 0.85;
+    // Start silent — rampVolume will fade in over the black awakening (stage 0).
+    // This prevents the music from popping on at full blast.
+    el.volume = 0;
     el.preload = "auto";
     musicRef.current = el;
 
     // Attempt immediate playback; if the browser's autoplay policy blocks it
     // (DOMException: NotAllowedError), retry on the very next user gesture.
     // This handles returning users where no age-gate click precedes the intro.
-    el.play().catch(() => {
-      const retry = () => { el.play().catch(() => {}); };
+    el.play().then(() => {
+      // Cinematic fade-in: 0 → 0.85 over the full black-awakening window (1200ms)
+      rampVolume(el, 0.85, 1200, musicRampRef);
+    }).catch(() => {
+      const retry = () => {
+        el.play().then(() => {
+          rampVolume(el, 0.85, 1200, musicRampRef);
+        }).catch(() => {});
+      };
       document.addEventListener("click",      retry, { once: true, capture: true });
       document.addEventListener("touchstart", retry, { once: true, capture: true });
     });
 
-    return () => { el.pause(); el.src = ""; };
+    return () => {
+      // Cancel any pending volume ramp before tearing down the element
+      if (musicRampRef.current !== null) { cancelAnimationFrame(musicRampRef.current); musicRampRef.current = null; }
+      el.pause(); el.src = "";
+    };
   }, []);
 
-  // Duck / restore music volume on stage transitions so speech stays clear
+  // ── Music volume sculpting — smooth ramps on every stage transition ───────
+  // Each ramp cancels any in-flight one (via musicRampRef) so transitions
+  // never pile up. Durations are tuned to each stage's dramatic weight:
+  //   fast ducks (stages 1, 4) respond to sharp visual hits;
+  //   slow swells (stages 3, 6) breathe with the cinematic build.
   useEffect(() => {
     const el = musicRef.current;
     if (!el) return;
-    // stage 2 (A·v·A slam) and stage 5 (ANYONE VS ANYONE) — heavy duck
-    if (stage === 2 || stage === 5) {
-      el.volume = 0.40;
-    // stage 4 (impact flash) — deepest duck
-    } else if (stage === 4) {
-      el.volume = 0.24;
-    // stage 6 (final logo) — swell back up
-    } else if (stage === 6) {
-      el.volume = 0.90;
-    // stage 3 (character showcase) — keep moderate, music supports the montage
-    } else if (stage === 3) {
-      el.volume = 0.70;
-    }
+    if      (stage === 1) rampVolume(el, 0.55, 100,  musicRampRef); // reactive dip for opening flash
+    else if (stage === 2) rampVolume(el, 0.28, 350,  musicRampRef); // duck under A·v·A slam speech
+    else if (stage === 3) rampVolume(el, 0.62, 700,  musicRampRef); // ease up, music breathes under narration
+    else if (stage === 4) rampVolume(el, 0.15, 55,   musicRampRef); // sharp impact-flash punch
+    else if (stage === 5) rampVolume(el, 0.28, 280,  musicRampRef); // duck under "Anyone vs Anyone" speech
+    else if (stage === 6) rampVolume(el, 0.95, 900,  musicRampRef); // big cinematic swell for final logo
   }, [stage]);
 
   // Preload character images + app icon (used in stages 2 & 6)
