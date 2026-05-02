@@ -112,7 +112,7 @@ router.post("/push/test", async (req, res): Promise<void> => {
 
 // ── Create challenge ─────────────────────────────────────────────────────────
 router.post("/challenges", async (req, res): Promise<void> => {
-  const { team1Ids, mode = "cinematic", blind = false } = req.body;
+  const { team1Ids, mode = "cinematic" } = req.body;
   if (!Array.isArray(team1Ids) || team1Ids.length === 0 || team1Ids.length > 5) {
     res.status(400).json({ error: "team1Ids must be 1–5 character IDs" });
     return;
@@ -120,6 +120,10 @@ router.post("/challenges", async (req, res): Promise<void> => {
   // Optional chaos modifier picked at create time. Validated against the
   // server registry so junk strings can't reach the prompt builder.
   const modifierId = normalizeModifierId(req.body?.modifierId);
+  // Optional taunt — truncated server-side so clients can't store essays.
+  const rawTaunt = typeof req.body?.taunt === "string" ? req.body.taunt.trim() : "";
+  const taunt = rawTaunt.slice(0, 120) || null;
+
   let code = "";
   let attempts = 0;
   while (attempts < 10) {
@@ -132,12 +136,13 @@ router.post("/challenges", async (req, res): Promise<void> => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const creatorToken = randomUUID();
   await db.insert(challengesTable).values({
-    code, team1Ids, mode, blind, expiresAt,
+    code, team1Ids, mode, blind: false, expiresAt,
     creatorUserId: getOptionalUserId(req),
     creatorToken,
     modifierId,
+    taunt,
   });
-  res.json({ code, blind, mode, creatorToken, modifierId });
+  res.json({ code, mode, creatorToken, modifierId, taunt });
 });
 
 // ── Get challenge state (polled by both sides) ───────────────────────────────
@@ -147,20 +152,17 @@ router.get("/challenges/:code", async (req, res): Promise<void> => {
   if (!challenge) { res.status(404).json({ error: "Challenge not found" }); return; }
   if (new Date() > challenge.expiresAt) { res.status(410).json({ error: "Challenge expired" }); return; }
 
-  // Hide team1 in blind mode until the joiner has locked in a team.
-  const team1Hidden = challenge.blind && !challenge.team2Ids;
   res.json({
     code: challenge.code,
-    team1Ids: team1Hidden ? null : challenge.team1Ids,
+    team1Ids: challenge.team1Ids,
     team2Ids: challenge.team2Ids,
     mode: challenge.mode,
-    blind: challenge.blind,
     status: challenge.status,
-    team1Hidden,
     team1Ready: challenge.team1Ready,
     team2Ready: challenge.team2Ready,
     fightId: challenge.fightId,
     modifierId: challenge.modifierId,
+    taunt: challenge.taunt ?? null,
   });
 });
 
@@ -215,7 +217,6 @@ router.post("/challenges/:code/accept", async (req, res): Promise<void> => {
     team1Ids: challenge.team1Ids,
     team2Ids,
     mode: challenge.mode,
-    blind: challenge.blind,
     joinerToken,
   });
 });

@@ -99,6 +99,9 @@ export const challengesTable = pgTable("challenges", {
   // sees it in the lobby; the fight stream uses it to flavor the prompt.
   // Null = standard rules.
   modifierId: text("modifier_id"),
+  // Optional trash-talk / taunt the creator types when issuing the challenge.
+  // Shown prominently to the opponent on the acceptance screen.
+  taunt: text("taunt"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("challenges_code_idx").on(t.code)]);
