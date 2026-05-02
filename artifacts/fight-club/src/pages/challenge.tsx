@@ -6,7 +6,7 @@ import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { useToast } from "@/hooks/use-toast";
-import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2, X, BellOff, Check, Zap } from "lucide-react";
+import { Swords, Search, Eye, EyeOff, Copy, CheckCheck, Link, Share2, X, BellOff, Check } from "lucide-react";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
@@ -21,9 +21,7 @@ interface ChallengeData {
   team1Ids: number[] | null;
   team2Ids: number[] | null;
   mode: string;
-  blind: boolean;
   status: string;
-  team1Hidden: boolean;
   team1Ready: boolean;
   team2Ready: boolean;
   fightId: number | null;
@@ -31,6 +29,9 @@ interface ChallengeData {
   // at challenge-create time and shown in the lobby + fight HUD so both
   // players know the rules before they hit READY.
   modifierId: string | null;
+  // Optional battle cry typed by the creator. Shown to the opponent on the
+  // acceptance screen so the challenge feels personal.
+  taunt: string | null;
 }
 
 // Polls until the challenge is "settled" — i.e. both sides ready or fight
@@ -169,12 +170,12 @@ function TelegramIcon() {
   );
 }
 
-function ShareBox({ code, blind, team1Names }: { code: string; blind: boolean; team1Names: string[] }) {
+function ShareBox({ code, taunt, team1Names }: { code: string; taunt?: string | null; team1Names: string[] }) {
   const [copied, setCopied] = useState(false);
   const url = `${window.location.origin}${import.meta.env.BASE_URL}challenge/${code}`;
 
-  const shareText = blind
-    ? `⚔ I issued a BLIND PICK challenge on A.v.A — you can't see my team until you lock in yours. Think you can win? Pick your fighters!`
+  const shareText = taunt
+    ? `⚔ "${taunt}" — Accept my A.v.A challenge and prove it!`
     : `⚔ ${team1Names.length > 0 ? `I picked ${team1Names.slice(0, 2).join(" & ")}${team1Names.length > 2 ? ` +${team1Names.length - 2} more` : ""}` : "I've picked my team"} — can YOUR squad beat mine? Accept my A.v.A challenge!`;
 
   const encodedText = encodeURIComponent(shareText);
@@ -233,7 +234,7 @@ function ShareBox({ code, blind, team1Names }: { code: string; blind: boolean; t
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Share2 style={{ width: 11, height: 11, color: "#00f0ff" }} />
           <span style={{ fontSize: 9, letterSpacing: "0.22em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>
-            Share {blind ? "Blind Pick" : "Challenge"}
+            Share Challenge
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0,240,255,0.08)", border: "1px solid rgba(0,240,255,0.2)", padding: "2px 7px" }}>
@@ -302,7 +303,7 @@ function ShareBox({ code, blind, team1Names }: { code: string; blind: boolean; t
         </div>
 
         <p style={{ fontSize: 7.5, color: "rgba(255,255,255,0.2)", marginTop: 7, lineHeight: 1.5 }}>
-          {blind ? "Your team stays hidden until the opponent locks in." : "Opponent picks their team, then the fight starts."} Link expires in 7 days.
+          Opponent picks their team, then the fight starts. Link expires in 7 days.
         </p>
       </div>
     </div>
@@ -326,7 +327,6 @@ export function Challenge() {
   const [team2, setTeam2] = useState<Character[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [showFight, setShowFight] = useState(false);
   const [fightTeam1, setFightTeam1] = useState<number[]>([]);
@@ -429,14 +429,6 @@ export function Challenge() {
       },
     });
   };
-
-  // Reveal animation when blind challenge transitions from "no team2" to "team2".
-  // Used to be tied to auto-fight; now it just plays the reveal then drops the
-  // viewer into the lobby (where they hit READY).
-  useEffect(() => {
-    if (!challenge?.team2Ids || !challenge.blind || revealed) return;
-    setRevealed(true);
-  }, [challenge?.team2Ids, challenge?.blind, revealed]);
 
   // Both-ready trigger — once the server flips status to "ready" (both sides
   // hit the READY button) we kick off the fight stream. Race-safe: server is
@@ -559,7 +551,6 @@ export function Challenge() {
   // for them to do, so show the "already accepted" page.
   const challengeAlreadyAccepted = !!challenge?.team2Ids && !isCreatorView && !isJoinerView && !accepting;
   const canLockIn = team2.length === requiredTeamSize && requiredTeamSize > 0 && !accepting;
-  const blindHideTeam1 = challenge?.blind && !revealed && !challenge?.team2Ids;
 
   if (loading || charsLoading) {
     return (
@@ -624,17 +615,17 @@ export function Challenge() {
             </button>
             <span style={{
               fontSize: 7, letterSpacing: "0.3em", fontWeight: 800,
-              color: challenge.blind ? "rgba(0,240,255,0.5)" : "rgba(255,0,85,0.5)",
-              textTransform: "uppercase", background: challenge.blind ? "rgba(0,240,255,0.06)" : "rgba(255,0,85,0.06)",
-              border: `1px solid ${challenge.blind ? "rgba(0,240,255,0.2)" : "rgba(255,0,85,0.2)"}`,
+              color: "rgba(255,0,85,0.5)",
+              textTransform: "uppercase", background: "rgba(255,0,85,0.06)",
+              border: "1px solid rgba(255,0,85,0.2)",
               padding: "2px 7px",
             }}>
-              {challenge.blind ? "⚔ BLIND PICK" : "⚔ CHALLENGE"} · {challenge.code}
+              ⚔ CHALLENGE · {challenge.code}
             </span>
           </div>
 
           {/* "YOU'VE BEEN CHALLENGED" title */}
-          <div style={{ textAlign: "center", marginBottom: 12 }}>
+          <div style={{ textAlign: "center", marginBottom: challenge.taunt ? 10 : 12 }}>
             <div style={{
               fontSize: 16, fontWeight: 900, letterSpacing: "0.12em",
               color: "#fff", textTransform: "uppercase",
@@ -646,18 +637,34 @@ export function Challenge() {
             </div>
           </div>
 
+          {/* Creator's battle cry — shown below the title if set */}
+          {challenge.taunt && (
+            <div style={{
+              margin: "0 auto 10px",
+              padding: "8px 14px",
+              background: "rgba(255,0,85,0.06)",
+              border: "1px solid rgba(255,0,85,0.2)",
+              borderLeft: "3px solid rgba(255,0,85,0.55)",
+              maxWidth: 300, width: "100%",
+            }}>
+              <div style={{ fontSize: 7, letterSpacing: "0.22em", color: "rgba(255,0,85,0.5)", marginBottom: 5, textTransform: "uppercase" }}>
+                Their Battle Cry
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.88)", fontStyle: "italic", lineHeight: 1.45, letterSpacing: "0.01em" }}>
+                "{challenge.taunt}"
+              </div>
+            </div>
+          )}
+
           {/* Teams row */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
             {/* Challenger's team */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 7, letterSpacing: "0.22em", color: "rgba(0,240,255,0.6)", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
-                {blindHideTeam1 ? "Challenger" : "Their Team"}
+                Their Team
               </div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {blindHideTeam1
-                  ? Array.from({ length: 3 }).map((_, i) => <MiniPortrait key={i} char={undefined} team={1} />)
-                  : team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)
-                }
+                {team1Characters.map(c => <MiniPortrait key={c.id} char={c} team={1} />)}
               </div>
             </div>
 
@@ -711,12 +718,6 @@ export function Challenge() {
             </p>
           )}
 
-          {/* Blind reveal flash */}
-          {revealed && (
-            <div style={{ textAlign: "center", padding: "8px 0 0", fontSize: 11, letterSpacing: "0.2em", color: "#00f0ff", textShadow: "0 0 16px rgba(0,240,255,0.8)" }}>
-              ✦ TEAMS REVEALED — FIGHT STARTING… ✦
-            </div>
-          )}
         </div>
 
         {/* ── Character grid + scrollable search/filter ─── */}
@@ -820,7 +821,7 @@ export function Challenge() {
             }}
           >
             <Swords style={{ width: 14, height: 14 }} />
-            {accepting ? "STARTING FIGHT…" : challenge.blind ? "LOCK IN & REVEAL" : "ACCEPT & FIGHT"}
+            {accepting ? "STARTING FIGHT…" : "ACCEPT & FIGHT"}
             {!canLockIn && !accepting && (
               <span style={{ fontSize: 8, opacity: 0.6, marginLeft: 4 }}>— pick a fighter first</span>
             )}
@@ -850,7 +851,7 @@ export function Challenge() {
   //   1. team2Ids NOT set → creator's "waiting for opponent" screen (with
   //      share box + leave-and-wait button + push permission status).
   //   2. team2Ids set → both players see the LOBBY with READY buttons, both
-  //      teams revealed (modulo blind reveal animation).
+  //      teams revealed.
   const inLobby = !!challenge.team2Ids;
   const team2Characters: Character[] = (inLobby && allCharacters && challenge.team2Ids)
     ? challenge.team2Ids.map(id => allCharacters.find(c => c.id === id)!).filter(Boolean)
@@ -922,7 +923,7 @@ export function Challenge() {
             </button>
             <span style={{ color: "rgba(255,255,255,0.1)" }}>|</span>
             <span style={{ fontSize: 8, letterSpacing: "0.25em", color: "rgba(255,0,85,0.6)", fontWeight: 700 }}>
-              {challenge.blind ? "⚔ BLIND PICK" : "⚔ CHALLENGE"} · {challenge.code}
+              ⚔ CHALLENGE · {challenge.code}
             </span>
             <div style={{ marginLeft: "auto" }}>
               <EnergyBadge />
@@ -959,17 +960,10 @@ export function Challenge() {
             </div>
           </div>
 
-          {/* Blind reveal flash */}
-          {revealed && !showFight && (
-            <div style={{ textAlign: "center", padding: "6px 0 8px", fontSize: 11, letterSpacing: "0.2em", color: "#00f0ff", textShadow: "0 0 16px rgba(0,240,255,0.8)" }}>
-              ✦ TEAMS REVEALED ✦
-            </div>
-          )}
-
           {/* Share box — only useful while waiting for an opponent */}
           {!inLobby && (
             <div style={{ marginBottom: 10 }}>
-              <ShareBox code={challenge.code} blind={challenge.blind} team1Names={team1Characters.map(c => c.name)} />
+              <ShareBox code={challenge.code} taunt={challenge.taunt} team1Names={team1Characters.map(c => c.name)} />
             </div>
           )}
         </div>

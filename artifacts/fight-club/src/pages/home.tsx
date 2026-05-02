@@ -9,7 +9,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, EyeOff, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -384,7 +384,8 @@ export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [tierFilter, setTierFilter] = useState<string>("all");
-  const [showChallengeMenu, setShowChallengeMenu] = useState(false);
+  const [showTauntPanel, setShowTauntPanel] = useState(false);
+  const [tauntInput, setTauntInput] = useState("");
   const [creatingChallenge, setCreatingChallenge] = useState(false);
 
   const [ttsEnabled, setTtsEnabled] = useState(() => {
@@ -616,7 +617,7 @@ export function Home() {
     return null;
   };
 
-  const handleCreateChallenge = async (blind: boolean) => {
+  const handleCreateChallenge = async () => {
     if (team1.length === 0) {
       toast({ title: "Pick Your Team", description: "Add at least 1 fighter to Team 1 first", variant: "destructive" });
       return;
@@ -627,11 +628,17 @@ export function Home() {
     // result here; the subsequent subscribe call uses the resolved state.
     const permissionPromise = requestNotificationPermissionFromGesture();
     setCreatingChallenge(true);
+    setShowTauntPanel(false);
     try {
       const r = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team1Ids: team1.map(c => c.id), mode: "cinematic", blind, modifierId: modifierId ?? null }),
+        body: JSON.stringify({
+          team1Ids: team1.map(c => c.id),
+          mode: "cinematic",
+          modifierId: modifierId ?? null,
+          taunt: tauntInput.trim() || null,
+        }),
       });
       if (!r.ok) throw new Error("Failed to create challenge");
       const { code, creatorToken } = await r.json() as { code: string; creatorToken?: string };
@@ -643,12 +650,12 @@ export function Home() {
         // the resolved state. UI polls as a fallback regardless.
         void permissionPromise.then(() => subscribeForChallenge({ code, token: creatorToken, prompt: false }));
       }
+      setTauntInput("");
       navigate(`/challenge/${code}?creator=1`);
     } catch (e) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     } finally {
       setCreatingChallenge(false);
-      setShowChallengeMenu(false);
     }
   };
 
@@ -1242,7 +1249,7 @@ export function Home() {
             {/* CHALLENGE */}
             <div style={{ position: "relative", flex: 1 }}>
               <button
-                onClick={() => setShowChallengeMenu(m => !m)}
+                onClick={() => setShowTauntPanel(m => !m)}
                 disabled={creatingChallenge}
                 title="Send a PvP challenge link to a friend"
                 className="w-full"
@@ -1251,7 +1258,7 @@ export function Home() {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                   fontSize: 9, letterSpacing: "0.18em", fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase",
                   border: "1.5px solid rgba(0,240,255,0.35)",
-                  background: showChallengeMenu ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
+                  background: showTauntPanel ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
                   color: "rgba(0,240,255,0.85)",
                   cursor: creatingChallenge ? "not-allowed" : "pointer",
                 }}
@@ -1260,59 +1267,74 @@ export function Home() {
                 <span>{creatingChallenge ? "…" : "CHALLENGE"}</span>
               </button>
 
-              {showChallengeMenu && !creatingChallenge && (
+              {showTauntPanel && !creatingChallenge && (
                 <>
-                  <div onClick={() => setShowChallengeMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 59 }} />
+                  <div onClick={() => setShowTauntPanel(false)} style={{ position: "fixed", inset: 0, zIndex: 59 }} />
                   <div style={{
                     position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 60,
                     background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
-                    width: 220, boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                    width: 240, boxShadow: "0 0 28px rgba(0,0,0,0.9)",
+                    padding: "10px 12px 12px",
                   }}>
-                    <div style={{ padding: "6px 10px 4px", fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                      PvP MODE
+                    <div style={{ fontSize: 7.5, letterSpacing: "0.22em", color: "rgba(0,240,255,0.45)", marginBottom: 10 }}>
+                      ⚔ PvP CHALLENGE
                     </div>
-                    {/* Chaos modifier — challenge-only setting. Shown inline so
-                        the creator commits to it before generating the link
-                        (the chosen modifier is locked into the challenge row
-                        and applies once both sides ready up). */}
+
+                    {/* Chaos modifier row */}
                     {(() => {
                       const meta = getModifier(modifierId);
                       return (
                         <button
-                          onClick={() => { setShowChallengeMenu(false); setModifierPickerOpen(true); }}
-                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.02)", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)")}
+                          onClick={() => { setShowTauntPanel(false); setModifierPickerOpen(true); }}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 9px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", textAlign: "left", marginBottom: 10 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.06)")}
                           onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
                         >
                           <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{meta?.emoji ?? "⚙"}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 7.5, letterSpacing: "0.2em", color: "rgba(0,240,255,0.55)", fontWeight: 700 }}>CHAOS MODIFIER</div>
-                            <div style={{ fontSize: 9, color: meta ? (meta.color ?? "#00f0ff") : "rgba(255,255,255,0.5)", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {meta?.label ?? "None — tap to choose"}
+                            <div style={{ fontSize: 7, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", fontWeight: 700 }}>CHAOS MODIFIER</div>
+                            <div style={{ fontSize: 9, color: meta ? (meta.color ?? "#00f0ff") : "rgba(255,255,255,0.4)", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {meta?.label ?? "None — tap to pick"}
                             </div>
                           </div>
                         </button>
                       );
                     })()}
-                    <button onClick={() => handleCreateChallenge(false)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
-                      onMouseLeave={e => (e.currentTarget.style.background = "none") }
-                    >
-                      <Link style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
-                      <div>
-                        <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Challenge Link</div>
-                        <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Opponent sees your team, picks theirs</div>
+
+                    {/* Battle cry / taunt input */}
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 7, letterSpacing: "0.2em", color: "rgba(255,255,255,0.3)", marginBottom: 5, textTransform: "uppercase" }}>
+                        Battle Cry <span style={{ color: "rgba(255,255,255,0.18)" }}>(optional)</span>
                       </div>
-                    </button>
-                    <button onClick={() => handleCreateChallenge(true)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "none", border: "none", cursor: "pointer", textAlign: "left", borderTop: "1px solid rgba(255,255,255,0.04)" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.07)") }
-                      onMouseLeave={e => (e.currentTarget.style.background = "none") }
-                    >
-                      <EyeOff style={{ width: 11, height: 11, color: "#00f0ff", flexShrink: 0, marginTop: 1 }} />
-                      <div>
-                        <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#00f0ff", fontWeight: 700, textTransform: "uppercase" }}>Blind Pick</div>
-                        <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.3)", lineHeight: 1.4, marginTop: 2 }}>Teams hidden until both sides lock in</div>
+                      <textarea
+                        value={tauntInput}
+                        onChange={e => setTauntInput(e.target.value.slice(0, 100))}
+                        placeholder={`"My squad is unstoppable."`}
+                        rows={2}
+                        style={{
+                          width: "100%", resize: "none", boxSizing: "border-box",
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(0,240,255,0.18)",
+                          color: "#fff", fontSize: 11, padding: "6px 8px",
+                          fontFamily: "inherit", outline: "none", lineHeight: 1.4,
+                        }}
+                      />
+                      <div style={{ textAlign: "right", fontSize: 7, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>
+                        {tauntInput.length}/100
                       </div>
+                    </div>
+
+                    {/* Send button */}
+                    <button
+                      onClick={() => handleCreateChallenge()}
+                      style={{
+                        width: "100%", height: 36, fontFamily: "inherit",
+                        background: "rgba(0,240,255,0.1)", border: "1.5px solid rgba(0,240,255,0.55)",
+                        color: "#00f0ff", fontSize: 9, letterSpacing: "0.22em", fontWeight: 800,
+                        cursor: "pointer", textTransform: "uppercase",
+                      }}
+                    >
+                      SEND CHALLENGE →
                     </button>
                   </div>
                 </>
