@@ -64,11 +64,14 @@ function rampVolume(
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function useStage(onFinish: () => void) {
+// `enabled` gates the whole timeline so visuals never run ahead of audio
+// (critical on iOS where audio can be blocked until a user gesture).
+function useStage(onFinish: () => void, enabled: boolean) {
   const [stage, setStage] = useState(0);
   const cleanupRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
+    if (!enabled) return;
     let s = 0;
     const advance = () => {
       s++;
@@ -79,7 +82,7 @@ function useStage(onFinish: () => void) {
     const t0 = setTimeout(advance, STAGE_DURATIONS[0]);
     cleanupRef.current.push(t0);
     return () => cleanupRef.current.forEach(clearTimeout);
-  }, []);
+  }, [enabled]);
 
   return stage;
 }
@@ -494,12 +497,28 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   const [exiting, setExiting] = useState(false);
   const doneRef = useRef(false);
 
+  // ── Audio gating ──────────────────────────────────────────────────────────
+  // iOS Safari blocks audio until a user gesture happens INSIDE the same call
+  // stack — and the sticky activation from the sign-in button is lost during
+  // Clerk's redirect. So we never assume audio will start; we wait until both
+  // music.play() resolves AND AudioContext is running. Only then do visuals
+  // begin. If audio is blocked, we show a "TAP TO START" overlay whose click
+  // handler runs play() / resume() synchronously to satisfy iOS.
+  const [audioStarted, setAudioStarted] = useState(false);
+  // Flips true once the speech MP3 has finished decoding. Used together with
+  // `audioStarted` so the speech-start effect re-fires if the user taps BEFORE
+  // decode completes (otherwise the intro plays silently on slow networks).
+  const [decodedReady, setDecodedReady] = useState(false);
+
   // Web Audio refs for the AI voice effect chain
   const audioCtxRef   = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const sourceRef     = useRef<AudioBufferSourceNode | null>(null);
-  // Records wall-clock time at mount so we can compensate for decode latency
-  const mountTimeRef = useRef(performance.now());
+  const decodedRef    = useRef<AudioBuffer | null>(null);
+  const speechStartedRef = useRef(false);
+  // performance.now() at the moment the user tapped — i.e. when the visual
+  // timeline started. Used to compute audioOffset if decode lags behind tap.
+  const gateOpenedAtRef = useRef<number | null>(null);
 
   // Background music — plain HTML audio element for simplicity
   const musicRef    = useRef<HTMLAudioElement | null>(null);
@@ -530,7 +549,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     setTimeout(onDone, 650);
   }, [onDone]);
 
-  const stage = useStage(finish);
+  const stage = useStage(finish, audioStarted);
 
   // ── Eagerly create + resume AudioContext ─────────────────────────────────
   // useLayoutEffect fires synchronously after React commits but before the
@@ -557,102 +576,100 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   }, []);
 
   // ── Voice audio engine ───────────────────────────────────────────────────
-  // Fetches intro-speech.mp3, runs it through a British RP AI effect chain
-  // (EQ + soft saturation + chorus + reverb), and starts playback timed to
-  // the first character card (Darth Vader, stage 3 onset ≈ 4 700ms from mount).
-  // The AudioContext is already created and resumed above — we just decode
-  // and schedule. No need to create a new context or check suspended state.
+  // Fetch + decode the speech MP3 immediately, but stash the AudioBuffer in a
+  // ref instead of starting it. Actual `source.start()` happens in the
+  // start-on-gate effect below once `audioStarted` flips true. This lets us
+  // pre-warm the decode while waiting for the iOS tap.
   useEffect(() => {
-    const base      = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-    const mountTime = mountTimeRef.current;
-
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     fetch(`${base}/intro-speech.mp3`)
       .then(r => r.arrayBuffer())
       .then(buf => {
         const ctx = audioCtxRef.current;
-        if (!ctx) return Promise.reject(new Error("no ctx"));
-        return ctx.decodeAudioData(buf).then(decoded => ({ ctx, decoded }));
+        if (!ctx) return;
+        return ctx.decodeAudioData(buf).then(decoded => {
+          decodedRef.current = decoded;
+          // Trigger the start effect if the user has already tapped while we
+          // were still decoding — otherwise the speech would never play.
+          setDecodedReady(true);
+        });
       })
-      .then(({ ctx, decoded }) => {
-        // The speech file is exactly as long as the intro (33.802 s).
-        // Start playback from the offset matching how much time has already
-        // elapsed since mount (fetch + decode latency), so the words always
-        // land on the correct visual frame.
-        const decodeLatencySec = (performance.now() - mountTime) / 1000;
-        const audioOffset = Math.min(decodeLatencySec, decoded.duration - 0.1);
-
-        // ── Master gain — drives overall fade-out in finish() ─────────────
-        const master = ctx.createGain();
-        master.gain.value = 1.0;
-        masterGainRef.current = master;
-        master.connect(ctx.destination);
-
-        // ── Voice effect chain ────────────────────────────────────────────
-        const source = ctx.createBufferSource();
-        source.buffer = decoded;
-        sourceRef.current = source;
-
-        const lowShelf = ctx.createBiquadFilter();
-        lowShelf.type = "lowshelf"; lowShelf.frequency.value = 180; lowShelf.gain.value = 1.2;
-
-        const lowMid = ctx.createBiquadFilter();
-        lowMid.type = "peaking"; lowMid.frequency.value = 270; lowMid.Q.value = 1.4; lowMid.gain.value = -2.2;
-
-        const rpForward = ctx.createBiquadFilter();
-        rpForward.type = "peaking"; rpForward.frequency.value = 900; rpForward.Q.value = 2.8; rpForward.gain.value = 2.0;
-
-        const presence = ctx.createBiquadFilter();
-        presence.type = "peaking"; presence.frequency.value = 3200; presence.Q.value = 1.8; presence.gain.value = 2.2;
-
-        const highShelf = ctx.createBiquadFilter();
-        highShelf.type = "highshelf"; highShelf.frequency.value = 8000; highShelf.gain.value = 2.0;
-
-        const shaper = ctx.createWaveShaper();
-        {
-          const N = 512; const curve = new Float32Array(N);
-          for (let i = 0; i < N; i++) { const x = (i * 2) / N - 1; curve[i] = Math.tanh(x * 1.2) / Math.tanh(1.2); }
-          shaper.curve = curve; shaper.oversample = "2x";
-        }
-
-        const chorusDelay = ctx.createDelay(0.06); chorusDelay.delayTime.value = 0.024;
-        const chorusLfo = ctx.createOscillator(); const chorusLfoGain = ctx.createGain();
-        chorusLfo.type = "sine"; chorusLfo.frequency.value = 0.55; chorusLfoGain.gain.value = 0.0018;
-        chorusLfo.connect(chorusLfoGain); chorusLfoGain.connect(chorusDelay.delayTime); chorusLfo.start();
-        const chorusWet = ctx.createGain(); chorusWet.gain.value = 0.07;
-
-        const revSR = ctx.sampleRate; const revLen = Math.floor(revSR * 0.55);
-        const revIR = ctx.createBuffer(2, revLen, revSR);
-        for (let ch = 0; ch < 2; ch++) {
-          const d = revIR.getChannelData(ch);
-          for (let i = 0; i < revLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.14));
-        }
-        const reverb = ctx.createConvolver(); reverb.buffer = revIR;
-        const reverbWet = ctx.createGain(); reverbWet.gain.value = 0.14;
-        const dry = ctx.createGain(); dry.gain.value = 0.88;
-
-        // source → EQ → shaper → dry + chorus + reverb → master
-        source.connect(lowShelf); lowShelf.connect(lowMid); lowMid.connect(rpForward);
-        rpForward.connect(presence); presence.connect(highShelf); highShelf.connect(shaper);
-        shaper.connect(dry);         dry.connect(master);
-        shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
-        shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
-
-        source.start(ctx.currentTime, audioOffset);
-      })
-      .catch(() => {
-        // Web Audio API failed — fall back to a plain HTML audio element.
-        // This also ensures mobile Safari (which prefers HTMLAudioElement for
-        // MP3) gets a second attempt if the AudioContext path throws.
-        const audio = new Audio(`${base}/intro-speech.mp3`);
-        audio.play().catch(() => {});
-      });
+      .catch(() => {});
 
     return () => {
       try { sourceRef.current?.stop(); } catch { /**/ }
-      // Do NOT close the AudioContext here — the useLayoutEffect above owns
-      // its lifetime and will close it on unmount.
     };
   }, []);
+
+  // Schedule the speech buffer through the effect chain — only runs once the
+  // audio gate opens (audioStarted === true). On iOS, this fires inside the
+  // tap handler's react render commit, which is still within the activation
+  // window since the tap handler called setAudioStarted(true) synchronously.
+  useEffect(() => {
+    if (!audioStarted || !decodedReady || speechStartedRef.current) return;
+    const ctx = audioCtxRef.current;
+    const decoded = decodedRef.current;
+    if (!ctx || !decoded) return;
+    speechStartedRef.current = true;
+
+    const master = ctx.createGain();
+    master.gain.value = 1.0;
+    masterGainRef.current = master;
+    master.connect(ctx.destination);
+
+    const source = ctx.createBufferSource();
+    source.buffer = decoded;
+    sourceRef.current = source;
+
+    const lowShelf = ctx.createBiquadFilter();
+    lowShelf.type = "lowshelf"; lowShelf.frequency.value = 180; lowShelf.gain.value = 1.2;
+    const lowMid = ctx.createBiquadFilter();
+    lowMid.type = "peaking"; lowMid.frequency.value = 270; lowMid.Q.value = 1.4; lowMid.gain.value = -2.2;
+    const rpForward = ctx.createBiquadFilter();
+    rpForward.type = "peaking"; rpForward.frequency.value = 900; rpForward.Q.value = 2.8; rpForward.gain.value = 2.0;
+    const presence = ctx.createBiquadFilter();
+    presence.type = "peaking"; presence.frequency.value = 3200; presence.Q.value = 1.8; presence.gain.value = 2.2;
+    const highShelf = ctx.createBiquadFilter();
+    highShelf.type = "highshelf"; highShelf.frequency.value = 8000; highShelf.gain.value = 2.0;
+
+    const shaper = ctx.createWaveShaper();
+    {
+      const N = 512; const curve = new Float32Array(N);
+      for (let i = 0; i < N; i++) { const x = (i * 2) / N - 1; curve[i] = Math.tanh(x * 1.2) / Math.tanh(1.2); }
+      shaper.curve = curve; shaper.oversample = "2x";
+    }
+
+    const chorusDelay = ctx.createDelay(0.06); chorusDelay.delayTime.value = 0.024;
+    const chorusLfo = ctx.createOscillator(); const chorusLfoGain = ctx.createGain();
+    chorusLfo.type = "sine"; chorusLfo.frequency.value = 0.55; chorusLfoGain.gain.value = 0.0018;
+    chorusLfo.connect(chorusLfoGain); chorusLfoGain.connect(chorusDelay.delayTime); chorusLfo.start();
+    const chorusWet = ctx.createGain(); chorusWet.gain.value = 0.07;
+
+    const revSR = ctx.sampleRate; const revLen = Math.floor(revSR * 0.55);
+    const revIR = ctx.createBuffer(2, revLen, revSR);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = revIR.getChannelData(ch);
+      for (let i = 0; i < revLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (revSR * 0.14));
+    }
+    const reverb = ctx.createConvolver(); reverb.buffer = revIR;
+    const reverbWet = ctx.createGain(); reverbWet.gain.value = 0.14;
+    const dry = ctx.createGain(); dry.gain.value = 0.88;
+
+    source.connect(lowShelf); lowShelf.connect(lowMid); lowMid.connect(rpForward);
+    rpForward.connect(presence); presence.connect(highShelf); highShelf.connect(shaper);
+    shaper.connect(dry);         dry.connect(master);
+    shaper.connect(chorusDelay); chorusDelay.connect(chorusWet); chorusWet.connect(master);
+    shaper.connect(reverb);      reverb.connect(reverbWet);      reverbWet.connect(master);
+
+    // Start from the very beginning — visuals start in lockstep via useStage.
+    // If the tap happened before decode finished, skip into the buffer by the
+    // elapsed time since the gate opened so the speech still lands on the
+    // right visual frame.
+    const gateAt = gateOpenedAtRef.current;
+    const elapsedSec = gateAt != null ? (performance.now() - gateAt) / 1000 : 0;
+    const audioOffset = Math.max(0, Math.min(elapsedSec, decoded.duration - 0.1));
+    source.start(ctx.currentTime, audioOffset);
+  }, [audioStarted, decodedReady]);
 
   // ── Background music ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -664,21 +681,9 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
     el.preload = "auto";
     musicRef.current = el;
 
-    // Attempt immediate playback; if the browser's autoplay policy blocks it
-    // (DOMException: NotAllowedError), retry on the very next user gesture.
-    // This handles returning users where no age-gate click precedes the intro.
-    el.play().then(() => {
-      // Cinematic fade-in: 0 → 1.0 over the full black-awakening window (1200ms)
-      rampVolume(el, 1.0, 1200, musicRampRef);
-    }).catch(() => {
-      const retry = () => {
-        el.play().then(() => {
-          rampVolume(el, 1.0, 1200, musicRampRef);
-        }).catch(() => {});
-      };
-      document.addEventListener("click",      retry, { once: true, capture: true });
-      document.addEventListener("touchstart", retry, { once: true, capture: true });
-    });
+    // Don't auto-play — every browser allows it inconsistently, and iOS in
+    // particular needs the play() call inside a synchronous gesture handler.
+    // Playback is kicked off by the big "TAP TO START" button render below.
 
     return () => {
       // Cancel any pending volume ramp before tearing down the element
@@ -760,6 +765,86 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   }, [stage]);
 
   const isFlashing = stage === 1 || stage === 4 || flashFrame;
+
+  // ── Tap-to-start handler ─────────────────────────────────────────────────
+  // MUST be synchronous: ctx.resume() and audio.play() have to happen inside
+  // the same call stack as the user gesture or iOS Safari will block them.
+  const handleStart = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state !== "running") {
+      ctx.resume().catch(() => {});
+    }
+    const music = musicRef.current;
+    if (music) {
+      music.play()
+        .then(() => rampVolume(music, 1.0, 1200, musicRampRef))
+        .catch(() => {});
+    }
+    gateOpenedAtRef.current = performance.now();
+    setAudioStarted(true);
+  }, []);
+
+  // While waiting for tap, render only the start button — no visuals, no audio.
+  if (!audioStarted) {
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    return (
+      <div
+        style={{
+          position: "fixed", inset: 0, zIndex: 500,
+          background: "#000", overflow: "hidden",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          gap: 28,
+        }}
+      >
+        <Grain />
+        <Scanlines />
+        <button
+          onClick={handleStart}
+          aria-label="Start intro"
+          style={{
+            position: "relative",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            outline: "none",
+            animation: "start-pulse 2.4s ease-in-out infinite",
+            filter: [
+              "drop-shadow(0 0 28px rgba(0,150,255,0.7))",
+              "drop-shadow(0 0 60px rgba(0,100,255,0.4))",
+              "drop-shadow(0 0 100px rgba(0,60,220,0.25))",
+            ].join(" "),
+          }}
+        >
+          <img
+            src={`${base}/logo.svg`}
+            alt="A·v·A"
+            style={{ width: "clamp(240px, 70vw, 380px)", display: "block", pointerEvents: "none" }}
+          />
+        </button>
+        <div style={{
+          fontFamily: BRAND_FONT, fontSize: "clamp(11px, 3vw, 14px)",
+          letterSpacing: "0.5em", color: "rgba(255,255,255,0.55)",
+          textTransform: "uppercase", fontWeight: 700,
+          animation: "fade-up 0.6s 0.2s ease-out both",
+          pointerEvents: "none",
+        }}>
+          Tap to Begin
+        </div>
+        <style>{`
+          @keyframes start-pulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.06); }
+          }
+          @keyframes fade-up {
+            0%   { opacity:0; transform: translateY(10px); }
+            100% { opacity:1; transform: translateY(0); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div
