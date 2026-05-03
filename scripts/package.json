@@ -15,6 +15,7 @@
     "seed-pdf-batch": "tsx ./src/seed-pdf-batch.ts",
     "add-disney-50": "tsx ./src/add-disney-50.ts",
     "enrich-characters": "tsx ./src/enrich-characters.ts",
+    "enrich-new-chars": "tsx ./src/enrich-new-chars.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
