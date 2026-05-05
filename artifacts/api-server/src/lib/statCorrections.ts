@@ -165,6 +165,50 @@ export async function applyStatCorrections(): Promise<void> {
       // Cosmic top-tier
       ["Lucifer Morningstar", 9800000, 9800000, 9900000, 9900000],
       ["Living Tribunal",    10000000,10000000,10000000,10000000],
+
+      // ── COSMIC CAP — no character should exceed Living Tribunal's 10M cap ────
+      ["Bill Cipher",      9500000,  9500000, 9800000, 9500000],
+      ["Beerus (God)",     9500000,  9800000, 8000000, 9500000],
+      ["Moana's Te Fiti",  9000000,  2500000, 8000000, 9500000],
+
+      // ── STREET FIGHTER — world warriors, calibrate against Ken/Ryu/Akuma ─────
+      // Reference: Ken ~38K/42K/4K/12K, Ryu ~86K/29K/20K/86K, Akuma ~140K/86K
+      ["Fei Long",          50000,   45000,    8000,   30000], // movie-star kung-fu master
+      ["Blanka",            70000,   25000,    3000,   60000], // electric jungle beast
+      ["Sagat",            120000,   25000,   15000,   90000], // muay thai emperor (in case added)
+      ["Zangief",          150000,   18000,    8000,  120000], // red cyclone wrestler
+      ["Vega",              40000,  120000,   12000,   25000], // Spanish ninja-matador
+
+      // ── CARTOON KIDS — INT inflated way above their canon ────────────────────
+      ["Edd",                 300,     500,     800,     400], // smart kid, not genius-tier
+      ["Bart Simpson",        300,     500,     350,     400], // mischievous, not smart
+      ["Eddy",                120,     150,     250,     200], // schemer, average smarts
+      ["Cartman (Coon)",      150,     120,     400,     200], // dumb kid playing hero
+      ["Cartman",             150,     120,     400,     200], // base form
+      ["Courage",             150,     300,     250,     500], // brave dog, not genius
+
+      // ── REGULAR HUMANS WITH GENIUS-LEVEL INT ─────────────────────────────────
+      ["Han Solo",           1500,    1800,    1500,    1200], // street-smart smuggler
+      ["Poe Dameron",        1200,    1500,    1200,    1000], // ace pilot
+      ["Amanda Young",        800,     900,    1500,     700], // Saw survivor
+      ["Chucky",              800,     900,     800,     600], // killer doll, not genius
+      ["Billy",              1200,    1100,     900,    1000], // Saw puppet — physical proxy
+      ["Billy the Puppet",    300,     200,    1500,    1000], // possessed puppet
+
+      // ── HORROR / SLASHER CALIBRATION — supernatural killers should hit ───────
+      ["Deadite",            5000,    3000,     500,    8000], // possessed undead
+      ["Dead by Daylight Wraith", 3000, 4000,  500,    3000], // killer entity
+
+      // ── FAMILY GUY / ADULT CARTOONS — adult humans baseline ──────────────────
+      ["Cleveland Brown",    1200,     900,    1000,    1100],
+      ["Chris Griffin",      1100,     900,     700,    1000],
+      ["Chef",               1500,    1300,    1500,    1400], // South Park's Chef
+      ["Eustace Bagge",       900,     500,     800,    1100], // grumpy old man
+
+      // ── ALIEN / XENOMORPH SCALE — facehugger/chestburster shouldn't beat ─────
+      // adult xenomorph speed
+      ["Alien Facehugger",  1200,    1500,     200,     800],
+      ["Alien Chestburster", 800,    1200,     400,     600],
     ];
 
     if (corrections.length === 0) return;
