@@ -2413,6 +2413,37 @@ export function normalizeTone(input: string | undefined): FightTone {
   }
 }
 
+// Strict allowlist — only these characters may use profanity in narratives.
+// Anyone not on this list speaks without swears, regardless of universe,
+// behaviorTag, or v3Profile profanityStyle. Names compared case-insensitive.
+const PROFANITY_ALLOWLIST: ReadonlySet<string> = new Set([
+  "lobo",
+  "deadpool",
+  "billy butcher",
+  "homelander",
+  "soldier boy",
+  "rick sanchez",
+  "trevor philips",
+  "johnny silverhand",
+  "kratos",
+  "wolverine",
+  "john constantine",
+  "punisher",
+  "harley quinn",
+  "peacemaker",
+  "rocket raccoon",
+  "spawn",
+  "duke nukem",
+  "blade",
+  "ash williams",
+  "negan",
+  "han solo",
+  "star-lord",
+  "red hood",
+  "venom",
+  "omni-man",
+]);
+
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
   cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching. Rated R. Trash-talk heavy.
 • Every sentence must move the fight forward. No padding.
@@ -2489,7 +2520,6 @@ async function generateAINarrative(
     const specialRules = v3?.specialRules?.filter(Boolean).join("; ") || "";
     const mobility = v3?.mobilityType?.filter(Boolean).join(", ") || "";
     const weakness = v3?.weaknesses?.filter(Boolean).join(", ") || c.weaknesses?.slice(0, 100) || "";
-    const hasProfanity = c.behaviorTags?.includes("profanity");
     const profanityStyle: string | undefined = typeof v3?.profanityStyle === "string" ? v3.profanityStyle : undefined;
 
     // Pokémon and similar creatures that cannot form words. Detect by universe
@@ -2501,14 +2531,15 @@ async function generateAINarrative(
       universe.includes("pokemon") ||
       universe.includes("pokémon");
 
-    // Characters who would never swear — Disney/Pixar heroes, classic animated
-    // family characters, etc. Detectable by universe or explicit tag.
-    const hasFamilyLanguage =
-      !hasProfanity &&  // explicit profanity tag overrides family default
-      (c.behaviorTags?.includes("family_language") ||
-        universe.includes("disney") ||
-        universe.includes("pixar") ||
-        universe.includes("dreamworks"));
+    // Strict allowlist — only these characters are permitted to swear in
+    // narratives. Every other character speaks without profanity. The
+    // behaviorTag and universe-based heuristics that previously gated this
+    // are intentionally NOT consulted here.
+    const hasProfanity = PROFANITY_ALLOWLIST.has(c.name.toLowerCase());
+
+    // Everyone not in the allowlist gets the family-language treatment so
+    // the AI is explicitly told they do not swear.
+    const hasFamilyLanguage = !hasProfanity;
 
     return [
       `${c.name} (${c.universe} | Tier: ${tier}${pgi})`,
@@ -2523,7 +2554,7 @@ async function generateAINarrative(
       hasNoSpeech
         ? `  VOICE — SPEECH RESTRICTION: ${c.name} CANNOT SPEAK WORDS. They communicate only through cries, growls, body language, and physical action. They may vocalize their own name or wordless sounds of effort or pain. They may NEVER say a sentence, a word, or even a single human syllable. Do not give them dialogue lines. Express their emotion and intent entirely through physical description and sound.`
         : hasFamilyLanguage
-          ? `  VOICE — LANGUAGE: ${c.name} does NOT swear. Ever. They express frustration, pain, and defiance through character-appropriate exclamations — "No!", "Not a chance!", grunts of effort, determined silence — never profanity. The vulgarity mandate does NOT apply to this character.`
+          ? `  VOICE — LANGUAGE: ${c.name} does NOT swear. Ever. They express frustration, pain, and defiance through character-appropriate exclamations — "No!", "Not a chance!", grunts of effort, determined silence, sharp clean insults — never profanity. Do not write any swear words for this character.`
           : hasProfanity
             ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}`
             : null,
@@ -2747,9 +2778,9 @@ CHARACTER RULES
 - Cosmic beings feel vast and incomprehensible but must remain readable — no abstract cosmic spam.
 - Street-level fighters feel physical, tactical, grounded.
 - Dialogue must sound like THAT character, not generic hero-speak.
-- If a character has a VOICE note, honor it exactly — including profanity. Deadpool says fuck. Wolverine says goddamn. Billy Butcher says cunt. Do not sanitize characters who canonically swear. Their actual voice is part of who they are.
-- VULGARITY MANDATE — this is a mature, R-rated arena. Default assumption: every fighter swears under combat stress unless they are explicitly a child or a literal saint. Use real, uncensored profanity (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) where natural. Use vicious, character-specific insults every round. NEVER replace swears with asterisks, dashes, "bleep," "expletive," or polite synonyms. NEVER soften personality to be "appropriate." NEVER skip an insult to keep the prose dignified — dignity is not the goal here. If you find yourself reaching for "darn," "heck," "shoot," or "you fool," stop and use the real word.
-- VOICE RESTRICTION EXCEPTIONS — any character whose profile includes a "VOICE — SPEECH RESTRICTION" note CANNOT speak words. Period. Do not give them any dialogue, quoted speech, or human language. Cries, growls, their own name, and raw physical expression only. Characters with a "VOICE — LANGUAGE" note do not swear — honor that exactly, even surrounded by characters who do. These per-character rules override the vulgarity mandate for those specific fighters.
+- PROFANITY IS RESTRICTED BY CHARACTER. Only fighters whose profile includes a "VOICE: uses profanity..." note are allowed to swear. For those fighters, write authentic, uncensored profanity in their dialogue and internal monologue (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) — Deadpool says fuck, Wolverine says goddamn, Billy Butcher says cunt. Do not sanitize them. NEVER use asterisks, dashes, "bleep," or "expletive" placeholders for these characters.
+- EVERY OTHER FIGHTER DOES NOT SWEAR. Any character with a "VOICE — LANGUAGE" note (or no profanity note at all) speaks without profanity, period. They can still trash-talk, taunt, threaten, scream in pain, and deliver vicious character-specific insults — they just do it in clean language ("you piece of garbage," "you're done," "I'll end you," "pathetic," grunts, defiant silence). Insults remain mandatory every round; profanity is what's restricted, not aggression. Do NOT have these characters say fuck, shit, motherfucker, asshole, bitch, bastard, prick, cunt, or any other swear. This rule overrides any general "tone" instructions about profanity above.
+- VOICE — SPEECH RESTRICTION: any character with this note CANNOT speak words at all. Cries, growls, their own name, and raw physical expression only. No dialogue lines.
 
 ==================================================
 DO NOT
