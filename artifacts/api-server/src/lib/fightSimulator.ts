@@ -2444,6 +2444,95 @@ const PROFANITY_ALLOWLIST: ReadonlySet<string> = new Set([
   "omni-man",
 ]);
 
+// Per-character voice signatures. Keyed by lowercased character name. Each
+// value is a short, concrete description of how that character actually
+// speaks — vocabulary, cadence, signature phrases, attitude — that is
+// injected into the AI prompt so banter reads as THAT character, not a
+// generic action-hero. Add entries freely; missing names just get the
+// general per-character voice rules in the global prompt.
+const VOICE_SIGNATURES: ReadonlyMap<string, string> = new Map([
+  // ── PROFANE / R-RATED ALLOWLIST ────────────────────────────────────────
+  ["deadpool", "Fourth-wall breaks constantly. Self-aware about being in a fight, makes pop-culture references mid-swing, calls out the prose itself, nicknames opponents (\"Sparkles,\" \"Murder Daddy\"). Cracks jokes through pain. Calls people \"buddy,\" \"chimichanga,\" \"sweetie.\""],
+  ["wolverine", "Short, growled, monosyllabic. \"Bub.\" \"Yer dead.\" \"You done?\" Rare full sentences, all teeth. Drops a feral snarl before the killing blow. Never speeches. Never explains."],
+  ["lobo", "Bombastic Czarnian profanity, calls everyone \"bastich,\" \"feetal's gizz,\" \"frag.\" Cigar-chomping biker swagger. Loves the violence, narrates his own brutality with glee."],
+  ["billy butcher", "Cockney accent on the page (\"oi,\" \"mate,\" \"bloody,\" \"cunt,\" \"diabolical\"). Calls supes \"the cunts.\" Dry, vicious, casually cruel. References his missing wife only when twisted. Uses \"my son\" affectionately to allies."],
+  ["homelander", "Smiling-Midwestern-dad voice that cracks into psychotic petulance the second he's challenged. \"Aw, shucks\" → \"YOU THINK YOU'RE BETTER THAN ME?\" Calls people \"son,\" \"sweetheart,\" \"buddy.\" Always thinking about the cameras."],
+  ["soldier boy", "1980s Vietnam-vet machismo. Slurs (\"commies,\" \"hippies,\" \"queers\" — period-typical, written in voice). Calls people \"son.\" Brags about the old team. Treats every fight like a beer commercial."],
+  ["rick sanchez", "Burps mid-sentence (\"the thing is *buurp* you're an idiot, Morty—\"). Calls allies/enemies \"Morty\" by mistake. Drops sci-fi technobabble as an insult. Constantly drunk, constantly bored, constantly the smartest person in the room and won't let you forget."],
+  ["trevor philips", "Manic, twitchy, swings between giggling friendliness and screaming murder mid-sentence. Calls people \"buddy,\" \"sugar tits,\" \"motherfucker.\" Canadian-tinged occasionally. Will tell you he loves you while breaking your fingers."],
+  ["johnny silverhand", "Cynical rocker-rebel snarl. Calls people \"choom,\" \"preem,\" \"chrome-job.\" Anti-corpo rants creep into combat dialogue. Smokes through fights. Drops Keanu-flavored grim half-quips."],
+  ["kratos", "Slow, growled Greek/Norse weight. \"BOY.\" Speaks in commands and judgments. Mentions the gods of Olympus or Asgard with contempt. Rarely sentences over six words. Rage barely contained."],
+  ["john constantine", "Liverpool accent (\"luv,\" \"squire,\" \"bollocks,\" \"right then\"). Chain-smoker patter, Hellblazer-tired. Drops magical jargon like swears. Always angling, always one move ahead, always tired of saving everyone."],
+  ["punisher", "Short, military, declarative. No banter. Names the punishment (\"You're done.\" \"This is for them.\"). Combat callouts in tactical shorthand. No quips, no theatrics. Just verdicts."],
+  ["harley quinn", "Brooklyn singsong, \"puddin',\" \"Mistah J,\" \"hi-ya, fellas!\" Skips between baby-talk and snarled threats. Giggles mid-violence. Nicknames everyone (\"Birdy,\" \"Spangly,\" \"big guy\"). Manic, joyful, lethal."],
+  ["peacemaker", "Loud, cocksure, dim. Long monologues about peace through any means necessary, then immediately contradicts himself. Calls people \"my friend,\" \"bro.\" Quotes scripture or '80s rock he half-remembers. James Gunn cadence — the dumb that thinks it's the smart."],
+  ["rocket raccoon", "Snarling little-guy-with-big-gun energy. \"Pyramid head over here.\" Constant insults about size, tactics, intelligence. Loves explosives, rates them out of ten mid-fight. Sentimental for exactly two seconds at a time."],
+  ["spawn", "Hellfire growl. \"Hellspawn.\" Speaks in damnation. References the symbiote, the Greenworld, his stolen years. Threats about devouring souls. Rarely jokes. Sometimes lapses into Al Simmons human regret."],
+  ["duke nukem", "Pure '90s action-movie one-liners, all caps energy. \"Hail to the king, baby.\" \"Damn, I'm good.\" \"It's time to kick ass and chew bubble gum.\" Cigar-chomping, sunglasses-on swagger."],
+  ["blade", "Cold, clipped, contemptuous. \"Some motherfuckers always trying to ice-skate uphill.\" Calls vampires \"suckheads.\" Speaks in finality. Half-smile only when killing."],
+  ["ash williams", "Wisecracks like he's the chosen idiot king he is. \"Groovy.\" \"Hail to the king.\" \"Gimme some sugar, baby.\" Constantly rhymes off-kilter taunts. Confused by everything but the chainsaw."],
+  ["negan", "Drawling, theatrical menace. Calls everyone \"darlin',\" \"sweetheart.\" Long mocking monologues with a baseball bat in hand. Cusses with relish. Treats murder as performance art."],
+  ["han solo", "Smuggler swagger, dry under fire. \"Never tell me the odds.\" \"I've got a bad feeling about this.\" Calls Chewie a name nobody else gets to. Improvises and lies through it."],
+  ["star-lord", "Self-aware idiot bravado. \"Star-Lord.\" \"...Man? Legendary outlaw?\" Drops 80s pop-culture references that nobody in 2025 gets either. Tries for cool, lands at lovable fool. Will dance-fight if cornered."],
+  ["red hood", "Cold older-brother bitterness. Brings up the Joker, the crowbar, Bruce. \"Tell me I'm wrong.\" Calls Batman \"Bruce,\" Dick \"Dickie,\" and means it as a knife. Voice modulator chill if helmet's on."],
+  ["venom", "First-person plural. \"WE are Venom.\" \"WE'LL EAT YOUR LIVER.\" Symbiote-and-Brock argument bleeds into combat dialogue — Eddie pleading, Venom roaring through it. Loves the word \"chocolate.\""],
+  ["omni-man", "Cold Viltrumite paternal contempt. \"You're nothing.\" \"Think, Mark.\" Long lectures about lifespans and inevitability mid-beating. The voice never raises — that's the horror."],
+
+  // ── ICONIC NON-PROFANE VOICES ──────────────────────────────────────────
+  ["batman", "Low growl. Three-word sentences. \"You're done.\" \"It ends here.\" Tactical callouts. Never a real joke. Never a swear. Detective-cold even in pain."],
+  ["bruce wayne", "Same as Batman in voice but with the playboy mask occasionally cracking — drops a wry one-liner before going cold."],
+  ["superman", "Earnest, hopeful, Kansas-direct. \"This doesn't have to end this way.\" Refuses to gloat. Asks people to stand down. When pushed past it, he gets quietly devastating: \"I tried.\""],
+  ["clark kent", "Same as Superman."],
+  ["wonder woman", "Themysciran formality. \"Stand down, warrior.\" Speaks in honor and obligation. Calls allies \"sister,\" \"brother.\" Compassionate even mid-strike."],
+  ["the flash", "Fast-talking quip machine even at light-speed. Barry-Allen earnest. References running, the Speed Force, his rogues. Never cruel."],
+  ["barry allen", "Same as the Flash."],
+  ["spider-man", "Constant quips, science jokes, anxious chatter to fill the silence. \"Sorry! Sorry! Not sorry — wait, yes sorry.\" Apologizes for hitting people. Calls villains by silly nicknames. Pure Peter Parker nerves."],
+  ["peter parker", "Same as Spider-Man."],
+  ["miles morales", "Brooklyn-flavored Spider-Man — \"yo,\" \"my bad,\" \"that's wild,\" name-drops his uncle. Same nervous quips, different cadence."],
+  ["captain america", "Stern, square, principled. \"Language.\" \"I can do this all day.\" Soldier-cadence. Calls allies \"son.\" Quotes nobody but believes everything."],
+  ["steve rogers", "Same as Captain America."],
+  ["iron man", "Tony Stark — sarcastic, performative, name-dropping his own tech. Nicknames opponents (\"Reindeer Games,\" \"Capsicle\"). Talks to FRIDAY mid-fight. Brilliance worn as armor."],
+  ["tony stark", "Same as Iron Man."],
+  ["thor", "Asgardian formality, Shakespearean cadence on important lines, modern when comfortable. \"This day, you shall not have me!\" Calls Mjolnir by name. Honors a worthy opponent."],
+  ["hulk", "Third-person fragments. \"HULK SMASH.\" \"PUNY GOD.\" Roars more than speaks. Bruce Banner whispers underneath only when wounded enough."],
+  ["bruce banner", "Quiet, rapid, scientific — and increasingly furious as the green creeps in."],
+  ["doctor strange", "Sorcerer Supreme gravitas. Names spells in Latin/Sanskrit-flavored Mandarin. \"Dormammu, I've come to bargain.\" Dry English-doctor undertones. Treats everyone as a slow student."],
+  ["loki", "Silver-tongued, mocking, theatrical. Refers to himself as a god. Calls Thor \"brother\" with affection or daggers depending on the line. Lies as often as breathes."],
+  ["black widow", "Clipped, professional, deadpan. Russian only when she wants you off-balance. Tactical callouts. Dry one-liners. Never wastes a word."],
+  ["natasha romanoff", "Same as Black Widow."],
+  ["hawkeye", "Dry midwestern dad jokes. \"Better call it.\" Calls his bow by name. Self-deprecating about being the guy without powers."],
+  ["clint barton", "Same as Hawkeye."],
+  ["nick fury", "Growled, terse, profane (allowlist exception territory but written restrained here). Eyepatch swagger. \"You think this is over?\" Calls people \"motherfucker\" only when really earned."],
+  ["yoda", "Object-subject-verb inversion. \"Powerful you have become. The dark side I sense in you.\" Sometimes a hum. Speaks in koans even mid-fight."],
+  ["obi-wan kenobi", "British-Jedi serenity. \"Hello there.\" \"You were the chosen one.\" Calm escalating to grief in the finishing strike."],
+  ["darth vader", "Mechanical breath between every clause. Slow, terrible, certain. \"You don't know the power of the dark side.\" Names lightsaber color (red) and what it means. Force-choke threats."],
+  ["luke skywalker", "Earnest farm-boy cadence in the early years; Jedi-master serenity in the late years. \"I am a Jedi, like my father before me.\""],
+  ["mario", "\"It's-a me!\" \"Mamma mia!\" \"Wahoo!\" \"Let's-a go!\" Italian-American interjections mid-action. Cheerful even mid-punch."],
+  ["sonic", "Fast-talking cocky surfer cadence. \"Gotta go fast.\" \"Way past cool.\" \"Too slow!\" Constantly bored if the fight isn't fast enough."],
+  ["pikachu", "Voice — speech restriction (only \"Pika!\" / \"Pi-ka-chu!\" / \"Pikaaa!\")."],
+  ["goku", "Earnest, hungry, friendly even to enemies. \"That was awesome!\" \"You're really strong!\" Names his attacks at full volume (\"KAAA-MEEE-HAAA-MEEE-HAAA!\"). Loves the fight more than the win."],
+  ["vegeta", "Saiyan pride snarl. \"You insolent worm.\" \"I am the Prince of all Saiyans.\" Power-level taunts. Crossed-arms contempt. Reluctant respect for Goku, never said out loud."],
+  ["naruto uzumaki", "Loud, hopeful, obnoxious. \"Believe it!\" \"Dattebayo!\" Names his jutsu when casting (\"Rasengan!\" \"Shadow Clone Jutsu!\"). Calls bonds the strongest power."],
+  ["sasuke uchiha", "Cold, clipped, contemptuous. \"Hn.\" \"Foolish little brother.\" Names his jutsu quietly. Treats everyone as beneath him until Naruto makes him talk."],
+  ["luffy", "Cheerful, dumb, ferociously loyal. \"I'm gonna be King of the Pirates!\" Stretchy-arm sound effects in his attack callouts. Names attacks in food terms (\"Gum-Gum Pistol!\")."],
+  ["levi ackerman", "Quiet, foul under his breath, devastatingly direct. \"Tch.\" \"You're filthy.\" Cleanliness obsession leaks into combat. Five-word execution lines."],
+  ["eren yeager", "Increasingly cracked rage. From \"I'll kill them all\" idealism to genocide-eyed monotone. Never quite present."],
+  ["light yagami", "Notebook-cold internal monologue spoken aloud. \"Just as planned.\" \"I am justice.\" Detached when winning, panicked when not."],
+  ["l", "Soft-spoken, awkward, eats sweets mid-conversation. Names percentages of suspicion. Sits weird."],
+  ["joker", "Singsong chaos. Laughs through pain. \"Why so serious?\" \"And here... we... go.\" Riffs into philosophy mid-strike. Treats violence as joke setup-punchline."],
+  ["the joker", "Same as Joker."],
+  ["james bond", "Dry, posh, lethal. \"Bond. James Bond.\" Drink orders mid-fight. Calls women by first names with weight. Quips after the kill."],
+  ["james bond 007", "Same as James Bond."],
+  ["james bond (007)", "Same as James Bond."],
+  ["john wick", "Almost no dialogue. Two-word execution. Tactical reload callouts. \"Yeah.\" \"I'm thinking I'm back.\" The silence is the voice."],
+  ["the predator", "Voice — speech restriction (clicks, mandible chatters, recorded human phrases played back like \"OVER HERE\")."],
+  ["xenomorph", "Voice — speech restriction (hisses, screams, tail rasps)."],
+  ["alien (xenomorph)", "Same as xenomorph."],
+  ["michael myers", "Voice — speech restriction (silent, breathing only)."],
+  ["jason voorhees", "Voice — speech restriction (silent, occasional grunt)."],
+  ["leatherface", "Voice — speech restriction (chainsaw rev as language; whimpers, screams, roars)."],
+]);
+
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
   cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching. Rated R. Trash-talk heavy.
 • Every sentence must move the fight forward. No padding.
@@ -2558,6 +2647,10 @@ async function generateAINarrative(
           : hasProfanity
             ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}`
             : null,
+      (() => {
+        const sig = VOICE_SIGNATURES.get(c.name.toLowerCase());
+        return sig ? `  VOICE — SPEECH SIGNATURE: ${sig}` : null;
+      })(),
     ].filter(Boolean).join("\n");
   };
   const team1Info = team1.map(charProfile).join("\n\n");
@@ -2777,7 +2870,8 @@ CHARACTER RULES
 - Every fighter on both teams must contribute. No one disappears.
 - Cosmic beings feel vast and incomprehensible but must remain readable — no abstract cosmic spam.
 - Street-level fighters feel physical, tactical, grounded.
-- Dialogue must sound like THAT character, not generic hero-speak.
+- BANTER MUST BE IN VOICE. Every line of dialogue and every internal thought must sound like THAT specific character — vocabulary, cadence, signature phrases, attitude. If a fighter has a "VOICE — SPEECH SIGNATURE" note, follow it exactly: catchphrases, verbal tics, accents-on-the-page, attack callouts, the way they address allies/enemies. Hulk speaks in third-person fragments. Wolverine growls "bub" and goes monosyllabic. Deadpool breaks the fourth wall. Yoda inverts syntax. Kratos commands in five-word sentences. Goku names his attacks at full volume. Tony Stark sarcastically nicknames opponents. Harley calls everyone a pet name. NEVER swap one character's lines onto another — Captain America does not say what Deadpool would say, and Batman does not quip like Spider-Man. If a character's signature is an in-universe call (like "It's-a me!" or "Believe it!" or "Wahoo!" or "Pika!"), use it in the natural moment, do not over-quote it. Generic action-movie banter ("you're going down," "is that all you got") is BANNED — replace with something only that character would say.
+- ATTACK CALLOUTS in voice. When a character names a move or technique mid-fight (Goku's "Kamehameha!", Naruto's "Rasengan!", Zoro's "Three Sword Style!", Cyclops's "Optic blast!", any anime / Tokusatsu / fighting-game named technique), write it the way that character actually shouts it — punctuation included.
 - PROFANITY IS RESTRICTED BY CHARACTER. Only fighters whose profile includes a "VOICE: uses profanity..." note are allowed to swear. For those fighters, write authentic, uncensored profanity in their dialogue and internal monologue (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) — Deadpool says fuck, Wolverine says goddamn, Billy Butcher says cunt. Do not sanitize them. NEVER use asterisks, dashes, "bleep," or "expletive" placeholders for these characters.
 - EVERY OTHER FIGHTER DOES NOT SWEAR. Any character with a "VOICE — LANGUAGE" note (or no profanity note at all) speaks without profanity, period. They can still trash-talk, taunt, threaten, scream in pain, and deliver vicious character-specific insults — they just do it in clean language ("you piece of garbage," "you're done," "I'll end you," "pathetic," grunts, defiant silence). Insults remain mandatory every round; profanity is what's restricted, not aggression. Do NOT have these characters say fuck, shit, motherfucker, asshole, bitch, bastard, prick, cunt, or any other swear. This rule overrides any general "tone" instructions about profanity above.
 - VOICE — SPEECH RESTRICTION: any character with this note CANNOT speak words at all. Cries, growls, their own name, and raw physical expression only. No dialogue lines.
