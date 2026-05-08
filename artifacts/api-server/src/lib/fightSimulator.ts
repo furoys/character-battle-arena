@@ -2450,30 +2450,30 @@ const TONE_INSTRUCTIONS: Record<FightTone, string> = {
 • Vary pacing: short punchy sentences for fast action, longer ones for weight and consequence.
 • Injuries are real — blood, broken bones, torn tissue, pain that changes how a fighter moves. Do not sanitize.
 • If a blow is devastating, describe what it does to the body: where it lands, what breaks, what the fighter feels.
-• PROFANITY IS REQUIRED. Fighters swear when they take damage, when they land hits, when they trash-talk. Use real words: fuck, shit, asshole, bastard, motherfucker, prick, bitch, dipshit, cunt where the character would actually say it. No asterisks, no censoring, no "expletive" placeholders.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note may swear; for those, write authentic uncensored profanity (fuck, shit, motherfucker, asshole, bastard, prick, bitch, cunt) — no asterisks, no "expletive" placeholders. Every other fighter speaks without swears, period — they trash-talk and insult in clean language.
 • INSULTS ARE REQUIRED. Every round needs at least one vicious, character-specific insult — mock the opponent's costume, their backstory, their species, their failures, their dead loved ones, their universe. Make it cruel and personal. Make it funny when the character would be funny. Make it humiliating when the character would humiliate.
-• Internal monologue can be foul too. A fighter thinking "this fucking guy" is more honest than "this troublesome adversary."
-• Finishers should feel final — show the exact mechanism, the physical result, AND the winner's parting words (often profane, always cutting).
+• Internal monologue follows the same rule: foul for allowed-to-swear fighters, clean for everyone else.
+• Finishers should feel final — show the exact mechanism, the physical result, AND the winner's parting words (profane only if that winner is on the allowlist; always cutting either way).
 • Cosmic scale should feel vast but still readable. Street-level should feel physical, painful, and grounded.`,
-  brutal: `TONE: Raw, anatomical, merciless, foul-mouthed. This is not a movie. It is a dissection of violence with screaming.
+  brutal: `TONE: Raw, anatomical, merciless. This is not a movie. It is a dissection of violence with screaming.
 • Name exactly where hits land: jaw, temple, solar plexus, floating ribs, knee, throat, spine.
 • Describe what the body does: bones crack, cartilage compresses, blood fills the mouth, a knee hyperextends the wrong way.
 • Short declarative sentences. Pain drives every clause.
 • Injuries compound without exception — something broken in round one is functionally broken for the rest of the fight.
 • Characters feel their wounds: they spit blood, guard a cracked rib, can't fully extend an arm, blink through a swelling eye.
-• PROFANITY IS MANDATORY AND FREQUENT. Fighters scream "fuck," "motherfucker," "you piece of shit," "die you cunt," whatever fits their voice. Pain talks dirty. Rage talks filthy. No sanitizing, no euphemisms, no asterisks.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note swear — for those, write it raw and uncensored (fuck, motherfucker, you piece of shit, die you cunt). Every other fighter expresses pain and rage without profanity — clean insults, snarls, threats, broken breathing.
 • INSULTS ARE MANDATORY. Every round must contain at least one venomous, personal, hateful insult — about the opponent's body, costume, mother, intelligence, lineage, smell, weakness, dead allies, anything that hits. Cruelty is the point.
 • Finishers are anatomically specific and final — describe the exact moment of incapacitation, what causes it, and the winner's brutal final words.
-• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing, "fuck you" through broken teeth.
+• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing. Profanity only from allowed-to-swear fighters; everyone else stays clean.
 • Do NOT soften the ending. If it ends in death, it ends in death. Show what that looks like.`,
-  realistic: `TONE: Analytical and physically honest, but the fighters are still humans (or close to it) under stress — they swear, they trash-talk, they break.
+  realistic: `TONE: Analytical and physically honest, but the fighters are still humans (or close to it) under stress — they trash-talk, they break, and the ones permitted to swear do.
 • No lucky reversals, no chaos saves. Outcomes are earned by stats, skills, and matchup logic.
 • Injuries are real and cumulative — show how damage changes a fighter's movement, guard, and decision-making.
 • Describe what hits do to the body clearly and without softening: where they land, what the physical effect is.
 • Show the fighters reading each other — adjusting, countering, exploiting openings.
-• PROFANITY IS EXPECTED. Real fighters swear under pressure — "shit," "fuck," "goddamn it" when something hurts or surprises them. No sanitizing.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note swear under pressure — for those, write it real ("shit," "fuck," "goddamn it"). Everyone else expresses pressure cleanly — sharp exhales, terse calls, clean insults.
 • INSULTS ARE EXPECTED. At least one sharp, character-specific insult per round — mocking the opponent's style, mistakes, or background. Not random — earned by the moment.
-• Write like a sharp breakdown that happens to be vivid, visceral, foul-mouthed prose, not a stat dump.`,
+• Write like a sharp breakdown that happens to be vivid and visceral prose, not a stat dump.`,
 };
 
 async function generateAINarrative(
