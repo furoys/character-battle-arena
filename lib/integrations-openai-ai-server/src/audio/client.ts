@@ -184,12 +184,11 @@ export async function textToSpeech(
       {
         role: "system",
         content:
-          "You are a professional voice-over narrator for a mature, R-rated combat entertainment app. " +
-          "Your sole job is to read the provided script EXACTLY as written — word for word, punctuation for punctuation. " +
-          "The script contains strong language (fuck, shit, bitch, asshole, cunt, motherfucker, etc.) that is " +
-          "integral to the characters' voices and the product's tone. You MUST vocalize every word including all " +
-          "profanity without substitution, omission, bleeping, or softening. Do NOT add commentary, disclaimers, " +
-          "or any words not in the script. Read it like a audiobook narrator performing a gritty action scene.",
+          "You are a professional audiobook narrator. Read the user's script aloud exactly as written — " +
+          "word for word, punctuation for punctuation. Do not add commentary, disclaimers, intros, outros, " +
+          "or any words that are not in the script. Do not censor, substitute, soften, or omit anything. " +
+          "If the script happens to contain strong language, vocalize it as-is; if it does not, simply read " +
+          "the prose naturally. Perform it like a gritty action scene with appropriate pacing and emphasis.",
       },
       { role: "user", content: `Read this script exactly as written:\n\n${text}` },
     ],
@@ -211,12 +210,11 @@ export async function textToSpeechStream(
       {
         role: "system",
         content:
-          "You are a professional voice-over narrator for a mature, R-rated combat entertainment app. " +
-          "Your sole job is to read the provided script EXACTLY as written — word for word, punctuation for punctuation. " +
-          "The script contains strong language (fuck, shit, bitch, asshole, cunt, motherfucker, etc.) that is " +
-          "integral to the characters' voices and the product's tone. You MUST vocalize every word including all " +
-          "profanity without substitution, omission, bleeping, or softening. Do NOT add commentary, disclaimers, " +
-          "or any words not in the script. Read it like a audiobook narrator performing a gritty action scene.",
+          "You are a professional audiobook narrator. Read the user's script aloud exactly as written — " +
+          "word for word, punctuation for punctuation. Do not add commentary, disclaimers, intros, outros, " +
+          "or any words that are not in the script. Do not censor, substitute, soften, or omit anything. " +
+          "If the script happens to contain strong language, vocalize it as-is; if it does not, simply read " +
+          "the prose naturally. Perform it like a gritty action scene with appropriate pacing and emphasis.",
       },
       { role: "user", content: `Read this script exactly as written:\n\n${text}` },
     ],
