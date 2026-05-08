@@ -2806,7 +2806,17 @@ ${arena.flavor.join(" ")}
 ${(() => {
   const mod = getModifier(modifierId);
   return mod
-    ? `\n==================================================\nCHAOS MODIFIER ACTIVE — ${mod.label.toUpperCase()}\n==================================================\n${mod.promptBlock}\nWeave this rule into EVERY round. The modifier is the texture of the fight, not a one-line mention.\n`
+    ? `\n==================================================\nCHAOS MODIFIER ACTIVE — ${mod.label.toUpperCase()}
+==================================================
+This modifier overrides ARENA flavor and overrides any tone instruction it contradicts. It does NOT override the locked winner.
+${mod.promptBlock}
+
+ENFORCEMENT — this is a hard rule, not a suggestion:
+• EVERY round narrative must visibly carry this modifier. If a round could read identically with the modifier removed, that round has FAILED the prompt — rewrite it.
+• The opening SETTING / ENTRANCE section must establish the modifier on screen so the audience sees it from the start.
+• The FINISH must use the modifier as part of how the loser goes down whenever the modifier provides a finish hook.
+• Do NOT explain the modifier in narrator voice ("the rules of this fight stated…"). Show it through environment, action, dialogue, and consequence.
+`
     : "";
 })()}
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
