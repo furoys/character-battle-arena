@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">A.V.A</string>
+    <string name="title_activity_main">A.V.A</string>
+    <string name="package_name">com.furoys.ava</string>
+    <string name="custom_url_scheme">com.furoys.ava</string>
+</resources>
