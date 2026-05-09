@@ -29,6 +29,8 @@ export interface Character {
   weaknesses: string;
   description: string;
   imageUrl?: string | null;
+  /** Tags describing the character's combat behavior / archetype */
+  behaviorTags?: string[] | null;
   createdAt: string;
 }
 
@@ -100,8 +102,12 @@ export interface SimulateFightBody {
   team2: number[];
   /** Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.) */
   mode?: SimulateFightBodyMode;
-  /** If true, bypasses the verdict cache and runs a full fresh simulation. Result is not stored. */
+  /** Override the cached verdict and let the underdog win. Bypasses verdict cache. */
   upset?: boolean;
+  /** When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text. */
+  challengeCode?: string;
+  /** Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins. */
+  modifierId?: string | null;
 }
 
 export interface FightRound {
@@ -128,12 +134,14 @@ export interface FightResult {
   intro?: string;
   /** AI-generated array of reasons why the winner won (5 sentences) */
   whyWon?: string[];
-  /** True if the verdict came from the cache — same winner guaranteed on rematch */
+  /** True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase) */
   settled?: boolean;
-  /** Winner's estimated win rate 50–100. Only shown for close matchups (≤65). */
+  /** Estimated win rate (50-100) of the winning team in this matchup */
   winRate?: number;
-  /** How many times this matchup has been run before */
+  /** How many times this exact matchup has been simulated */
   rematchCount?: number;
+  /** Chaos modifier active for this fight, if any (e.g. 'lava_floor') */
+  modifierId?: string | null;
   simulatedAt: string;
 }
 
@@ -146,6 +154,8 @@ export interface FightDetail {
   summary: string;
   arenaIntro?: string;
   intro?: string;
+  /** Chaos modifier active for this fight, if any */
+  modifierId?: string | null;
   simulatedAt: string;
 }
 
@@ -155,5 +165,20 @@ export interface FightRecord {
   team2Names: string[];
   winner: number;
   summary: string;
+  /** Chaos modifier active for this fight, if any */
+  modifierId?: string | null;
   simulatedAt: string;
+}
+
+export interface SavedTeam {
+  id: number;
+  userId: string;
+  name: string;
+  characterIds: number[];
+  createdAt: string;
+}
+
+export interface SaveTeamBody {
+  name: string;
+  characterIds: number[];
 }

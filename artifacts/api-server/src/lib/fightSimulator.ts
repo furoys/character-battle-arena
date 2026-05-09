@@ -2,6 +2,7 @@ import type { Character } from "@workspace/db";
 import { computeSynergy } from "./synergies";
 import { applyFightModifiers } from "./fightModifiers";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { getModifier, type ModifierId } from "./modifiers";
 
 export interface FightRound {
   round: number;
@@ -2234,30 +2235,73 @@ async function aiTextWithTimeout(
 
 // Build a section-boundary watcher. Each call to onDelta(accumulated) re-parses
 // the streaming text via parseSections; any section that has a NEXT marker
-// after it is complete and gets emitted exactly once. Call onEnd at stream end
-// to flush the final (last) section.
-export function makeSectionStreamer(onSection: (name: string, content: string) => void) {
-  const emitted = new Set<string>();
+// after it is complete and gets emitted exactly once via onSection.
+//
+// If onSectionDelta is provided, the watcher ALSO emits per-chunk incremental
+// growth of the currently in-progress (last) section, so the consumer can
+// type-out text as the AI writes it instead of waiting for the next === marker
+// to commit the whole paragraph. Trailing partial markers (e.g. "=== ROU") are
+// stripped from deltas so the user never sees marker fragments.
+//
+// Call onEnd at stream end to flush the final (last) section to onSection.
+export function makeSectionStreamer(
+  onSection: (name: string, content: string) => void,
+  onSectionDelta?: (name: string, append: string) => void,
+) {
+  const completed = new Set<string>();
+  const lastEmittedLen = new Map<string, number>();
+
+  // Trim a trailing partial "=== ..." marker from in-progress section content.
+  const stripPartialMarker = (s: string) => s.replace(/\n*={1,3}[^\n]*$/g, "").replace(/\n*=+\s*$/g, "");
+
   return {
     onDelta(accumulated: string) {
       const sections = parseSections(accumulated);
       const entries = [...sections.entries()];
-      // All entries except the last are bounded by the next marker → complete.
+
+      // Bounded sections (all but last) → finalize once. Flush any unsent tail
+      // through onSectionDelta first so the typewriter ends on the full text,
+      // then emit the canonical onSection event.
       for (let i = 0; i < entries.length - 1; i++) {
         const [name, content] = entries[i]!;
-        if (!emitted.has(name) && content.trim()) {
-          emitted.add(name);
-          onSection(name, content);
+        if (completed.has(name) || !content.trim()) continue;
+        if (onSectionDelta) {
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+          }
+        }
+        lastEmittedLen.set(name, content.length);
+        completed.add(name);
+        onSection(name, content);
+      }
+
+      // In-progress (last) section → stream incremental growth.
+      if (onSectionDelta && entries.length > 0) {
+        const [name, raw] = entries[entries.length - 1]!;
+        if (!completed.has(name)) {
+          const content = stripPartialMarker(raw);
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+            lastEmittedLen.set(name, content.length);
+          }
         }
       }
     },
     onEnd(accumulated: string) {
       const sections = parseSections(accumulated);
       for (const [name, content] of sections.entries()) {
-        if (!emitted.has(name) && content.trim()) {
-          emitted.add(name);
-          onSection(name, content);
+        if (completed.has(name) || !content.trim()) continue;
+        if (onSectionDelta) {
+          const prevLen = lastEmittedLen.get(name) ?? 0;
+          if (content.length > prevLen) {
+            onSectionDelta(name, content.slice(prevLen));
+          }
         }
+        lastEmittedLen.set(name, content.length);
+        completed.add(name);
+        onSection(name, content);
       }
     },
   };
@@ -2369,36 +2413,156 @@ export function normalizeTone(input: string | undefined): FightTone {
   }
 }
 
+// Strict allowlist — only these characters may use profanity in narratives.
+// Anyone not on this list speaks without swears, regardless of universe,
+// behaviorTag, or v3Profile profanityStyle. Names compared case-insensitive.
+const PROFANITY_ALLOWLIST: ReadonlySet<string> = new Set([
+  "lobo",
+  "deadpool",
+  "billy butcher",
+  "homelander",
+  "soldier boy",
+  "rick sanchez",
+  "trevor philips",
+  "johnny silverhand",
+  "kratos",
+  "wolverine",
+  "john constantine",
+  "punisher",
+  "harley quinn",
+  "peacemaker",
+  "rocket raccoon",
+  "spawn",
+  "duke nukem",
+  "blade",
+  "ash williams",
+  "negan",
+  "han solo",
+  "star-lord",
+  "red hood",
+  "venom",
+  "omni-man",
+]);
+
+// Per-character voice signatures. Keyed by lowercased character name. Each
+// value is a short, concrete description of how that character actually
+// speaks — vocabulary, cadence, signature phrases, attitude — that is
+// injected into the AI prompt so banter reads as THAT character, not a
+// generic action-hero. Add entries freely; missing names just get the
+// general per-character voice rules in the global prompt.
+const VOICE_SIGNATURES: ReadonlyMap<string, string> = new Map([
+  // ── PROFANE / R-RATED ALLOWLIST ────────────────────────────────────────
+  ["deadpool", "Fourth-wall breaks constantly. Self-aware about being in a fight, makes pop-culture references mid-swing, calls out the prose itself, nicknames opponents (\"Sparkles,\" \"Murder Daddy\"). Cracks jokes through pain. Calls people \"buddy,\" \"chimichanga,\" \"sweetie.\""],
+  ["wolverine", "Short, growled, monosyllabic. \"Bub.\" \"Yer dead.\" \"You done?\" Rare full sentences, all teeth. Drops a feral snarl before the killing blow. Never speeches. Never explains."],
+  ["lobo", "Bombastic Czarnian profanity, calls everyone \"bastich,\" \"feetal's gizz,\" \"frag.\" Cigar-chomping biker swagger. Loves the violence, narrates his own brutality with glee."],
+  ["billy butcher", "Cockney accent on the page (\"oi,\" \"mate,\" \"bloody,\" \"cunt,\" \"diabolical\"). Calls supes \"the cunts.\" Dry, vicious, casually cruel. References his missing wife only when twisted. Uses \"my son\" affectionately to allies."],
+  ["homelander", "Smiling-Midwestern-dad voice that cracks into psychotic petulance the second he's challenged. \"Aw, shucks\" → \"YOU THINK YOU'RE BETTER THAN ME?\" Calls people \"son,\" \"sweetheart,\" \"buddy.\" Always thinking about the cameras."],
+  ["soldier boy", "1980s Vietnam-vet machismo. Slurs (\"commies,\" \"hippies,\" \"queers\" — period-typical, written in voice). Calls people \"son.\" Brags about the old team. Treats every fight like a beer commercial."],
+  ["rick sanchez", "Burps mid-sentence (\"the thing is *buurp* you're an idiot, Morty—\"). Calls allies/enemies \"Morty\" by mistake. Drops sci-fi technobabble as an insult. Constantly drunk, constantly bored, constantly the smartest person in the room and won't let you forget."],
+  ["trevor philips", "Manic, twitchy, swings between giggling friendliness and screaming murder mid-sentence. Calls people \"buddy,\" \"sugar tits,\" \"motherfucker.\" Canadian-tinged occasionally. Will tell you he loves you while breaking your fingers."],
+  ["johnny silverhand", "Cynical rocker-rebel snarl. Calls people \"choom,\" \"preem,\" \"chrome-job.\" Anti-corpo rants creep into combat dialogue. Smokes through fights. Drops Keanu-flavored grim half-quips."],
+  ["kratos", "Slow, growled Greek/Norse weight. \"BOY.\" Speaks in commands and judgments. Mentions the gods of Olympus or Asgard with contempt. Rarely sentences over six words. Rage barely contained."],
+  ["john constantine", "Liverpool accent (\"luv,\" \"squire,\" \"bollocks,\" \"right then\"). Chain-smoker patter, Hellblazer-tired. Drops magical jargon like swears. Always angling, always one move ahead, always tired of saving everyone."],
+  ["punisher", "Short, military, declarative. No banter. Names the punishment (\"You're done.\" \"This is for them.\"). Combat callouts in tactical shorthand. No quips, no theatrics. Just verdicts."],
+  ["harley quinn", "Brooklyn singsong, \"puddin',\" \"Mistah J,\" \"hi-ya, fellas!\" Skips between baby-talk and snarled threats. Giggles mid-violence. Nicknames everyone (\"Birdy,\" \"Spangly,\" \"big guy\"). Manic, joyful, lethal."],
+  ["peacemaker", "Loud, cocksure, dim. Long monologues about peace through any means necessary, then immediately contradicts himself. Calls people \"my friend,\" \"bro.\" Quotes scripture or '80s rock he half-remembers. James Gunn cadence — the dumb that thinks it's the smart."],
+  ["rocket raccoon", "Snarling little-guy-with-big-gun energy. \"Pyramid head over here.\" Constant insults about size, tactics, intelligence. Loves explosives, rates them out of ten mid-fight. Sentimental for exactly two seconds at a time."],
+  ["spawn", "Hellfire growl. \"Hellspawn.\" Speaks in damnation. References the symbiote, the Greenworld, his stolen years. Threats about devouring souls. Rarely jokes. Sometimes lapses into Al Simmons human regret."],
+  ["duke nukem", "Pure '90s action-movie one-liners, all caps energy. \"Hail to the king, baby.\" \"Damn, I'm good.\" \"It's time to kick ass and chew bubble gum.\" Cigar-chomping, sunglasses-on swagger."],
+  ["blade", "Cold, clipped, contemptuous. \"Some motherfuckers always trying to ice-skate uphill.\" Calls vampires \"suckheads.\" Speaks in finality. Half-smile only when killing."],
+  ["ash williams", "Wisecracks like he's the chosen idiot king he is. \"Groovy.\" \"Hail to the king.\" \"Gimme some sugar, baby.\" Constantly rhymes off-kilter taunts. Confused by everything but the chainsaw."],
+  ["negan", "Drawling, theatrical menace. Calls everyone \"darlin',\" \"sweetheart.\" Long mocking monologues with a baseball bat in hand. Cusses with relish. Treats murder as performance art."],
+  ["han solo", "Smuggler swagger, dry under fire. \"Never tell me the odds.\" \"I've got a bad feeling about this.\" Calls Chewie a name nobody else gets to. Improvises and lies through it."],
+  ["star-lord", "Self-aware idiot bravado. \"Star-Lord.\" \"...Man? Legendary outlaw?\" Drops 80s pop-culture references that nobody in 2025 gets either. Tries for cool, lands at lovable fool. Will dance-fight if cornered."],
+  ["red hood", "Cold older-brother bitterness. Brings up the Joker, the crowbar, Bruce. \"Tell me I'm wrong.\" Calls Batman \"Bruce,\" Dick \"Dickie,\" and means it as a knife. Voice modulator chill if helmet's on."],
+  ["venom", "First-person plural. \"WE are Venom.\" \"WE'LL EAT YOUR LIVER.\" Symbiote-and-Brock argument bleeds into combat dialogue — Eddie pleading, Venom roaring through it. Loves the word \"chocolate.\""],
+  ["omni-man", "Cold Viltrumite paternal contempt. \"You're nothing.\" \"Think, Mark.\" Long lectures about lifespans and inevitability mid-beating. The voice never raises — that's the horror."],
+
+  // ── ICONIC NON-PROFANE VOICES ──────────────────────────────────────────
+  ["batman", "Low growl. Three-word sentences. \"You're done.\" \"It ends here.\" Tactical callouts. Never a real joke. Never a swear. Detective-cold even in pain."],
+  ["bruce wayne", "Same as Batman in voice but with the playboy mask occasionally cracking — drops a wry one-liner before going cold."],
+  ["superman", "Earnest, hopeful, Kansas-direct. \"This doesn't have to end this way.\" Refuses to gloat. Asks people to stand down. When pushed past it, he gets quietly devastating: \"I tried.\""],
+  ["clark kent", "Same as Superman."],
+  ["wonder woman", "Themysciran formality. \"Stand down, warrior.\" Speaks in honor and obligation. Calls allies \"sister,\" \"brother.\" Compassionate even mid-strike."],
+  ["the flash", "Fast-talking quip machine even at light-speed. Barry-Allen earnest. References running, the Speed Force, his rogues. Never cruel."],
+  ["barry allen", "Same as the Flash."],
+  ["spider-man", "Constant quips, science jokes, anxious chatter to fill the silence. \"Sorry! Sorry! Not sorry — wait, yes sorry.\" Apologizes for hitting people. Calls villains by silly nicknames. Pure Peter Parker nerves."],
+  ["peter parker", "Same as Spider-Man."],
+  ["miles morales", "Brooklyn-flavored Spider-Man — \"yo,\" \"my bad,\" \"that's wild,\" name-drops his uncle. Same nervous quips, different cadence."],
+  ["captain america", "Stern, square, principled. \"Language.\" \"I can do this all day.\" Soldier-cadence. Calls allies \"son.\" Quotes nobody but believes everything."],
+  ["steve rogers", "Same as Captain America."],
+  ["iron man", "Tony Stark — sarcastic, performative, name-dropping his own tech. Nicknames opponents (\"Reindeer Games,\" \"Capsicle\"). Talks to FRIDAY mid-fight. Brilliance worn as armor."],
+  ["tony stark", "Same as Iron Man."],
+  ["thor", "Asgardian formality, Shakespearean cadence on important lines, modern when comfortable. \"This day, you shall not have me!\" Calls Mjolnir by name. Honors a worthy opponent."],
+  ["hulk", "Third-person fragments. \"HULK SMASH.\" \"PUNY GOD.\" Roars more than speaks. Bruce Banner whispers underneath only when wounded enough."],
+  ["bruce banner", "Quiet, rapid, scientific — and increasingly furious as the green creeps in."],
+  ["doctor strange", "Sorcerer Supreme gravitas. Names spells in Latin/Sanskrit-flavored Mandarin. \"Dormammu, I've come to bargain.\" Dry English-doctor undertones. Treats everyone as a slow student."],
+  ["loki", "Silver-tongued, mocking, theatrical. Refers to himself as a god. Calls Thor \"brother\" with affection or daggers depending on the line. Lies as often as breathes."],
+  ["black widow", "Clipped, professional, deadpan. Russian only when she wants you off-balance. Tactical callouts. Dry one-liners. Never wastes a word."],
+  ["natasha romanoff", "Same as Black Widow."],
+  ["hawkeye", "Dry midwestern dad jokes. \"Better call it.\" Calls his bow by name. Self-deprecating about being the guy without powers."],
+  ["clint barton", "Same as Hawkeye."],
+  ["nick fury", "Growled, terse, profane (allowlist exception territory but written restrained here). Eyepatch swagger. \"You think this is over?\" Calls people \"motherfucker\" only when really earned."],
+  ["yoda", "Object-subject-verb inversion. \"Powerful you have become. The dark side I sense in you.\" Sometimes a hum. Speaks in koans even mid-fight."],
+  ["obi-wan kenobi", "British-Jedi serenity. \"Hello there.\" \"You were the chosen one.\" Calm escalating to grief in the finishing strike."],
+  ["darth vader", "Mechanical breath between every clause. Slow, terrible, certain. \"You don't know the power of the dark side.\" Names lightsaber color (red) and what it means. Force-choke threats."],
+  ["luke skywalker", "Earnest farm-boy cadence in the early years; Jedi-master serenity in the late years. \"I am a Jedi, like my father before me.\""],
+  ["mario", "\"It's-a me!\" \"Mamma mia!\" \"Wahoo!\" \"Let's-a go!\" Italian-American interjections mid-action. Cheerful even mid-punch."],
+  ["sonic", "Fast-talking cocky surfer cadence. \"Gotta go fast.\" \"Way past cool.\" \"Too slow!\" Constantly bored if the fight isn't fast enough."],
+  ["pikachu", "Voice — speech restriction (only \"Pika!\" / \"Pi-ka-chu!\" / \"Pikaaa!\")."],
+  ["goku", "Earnest, hungry, friendly even to enemies. \"That was awesome!\" \"You're really strong!\" Names his attacks at full volume (\"KAAA-MEEE-HAAA-MEEE-HAAA!\"). Loves the fight more than the win."],
+  ["vegeta", "Saiyan pride snarl. \"You insolent worm.\" \"I am the Prince of all Saiyans.\" Power-level taunts. Crossed-arms contempt. Reluctant respect for Goku, never said out loud."],
+  ["naruto uzumaki", "Loud, hopeful, obnoxious. \"Believe it!\" \"Dattebayo!\" Names his jutsu when casting (\"Rasengan!\" \"Shadow Clone Jutsu!\"). Calls bonds the strongest power."],
+  ["sasuke uchiha", "Cold, clipped, contemptuous. \"Hn.\" \"Foolish little brother.\" Names his jutsu quietly. Treats everyone as beneath him until Naruto makes him talk."],
+  ["luffy", "Cheerful, dumb, ferociously loyal. \"I'm gonna be King of the Pirates!\" Stretchy-arm sound effects in his attack callouts. Names attacks in food terms (\"Gum-Gum Pistol!\")."],
+  ["levi ackerman", "Quiet, foul under his breath, devastatingly direct. \"Tch.\" \"You're filthy.\" Cleanliness obsession leaks into combat. Five-word execution lines."],
+  ["eren yeager", "Increasingly cracked rage. From \"I'll kill them all\" idealism to genocide-eyed monotone. Never quite present."],
+  ["light yagami", "Notebook-cold internal monologue spoken aloud. \"Just as planned.\" \"I am justice.\" Detached when winning, panicked when not."],
+  ["l", "Soft-spoken, awkward, eats sweets mid-conversation. Names percentages of suspicion. Sits weird."],
+  ["joker", "Singsong chaos. Laughs through pain. \"Why so serious?\" \"And here... we... go.\" Riffs into philosophy mid-strike. Treats violence as joke setup-punchline."],
+  ["the joker", "Same as Joker."],
+  ["james bond", "Dry, posh, lethal. \"Bond. James Bond.\" Drink orders mid-fight. Calls women by first names with weight. Quips after the kill."],
+  ["james bond 007", "Same as James Bond."],
+  ["james bond (007)", "Same as James Bond."],
+  ["john wick", "Almost no dialogue. Two-word execution. Tactical reload callouts. \"Yeah.\" \"I'm thinking I'm back.\" The silence is the voice."],
+  ["the predator", "Voice — speech restriction (clicks, mandible chatters, recorded human phrases played back like \"OVER HERE\")."],
+  ["xenomorph", "Voice — speech restriction (hisses, screams, tail rasps)."],
+  ["alien (xenomorph)", "Same as xenomorph."],
+  ["michael myers", "Voice — speech restriction (silent, breathing only)."],
+  ["jason voorhees", "Voice — speech restriction (silent, occasional grunt)."],
+  ["leatherface", "Voice — speech restriction (chainsaw rev as language; whimpers, screams, roars)."],
+]);
+
 const TONE_INSTRUCTIONS: Record<FightTone, string> = {
   cinematic: `TONE: Intense, dramatic, cinematic — and physically unflinching. Rated R. Trash-talk heavy.
 • Every sentence must move the fight forward. No padding.
 • Vary pacing: short punchy sentences for fast action, longer ones for weight and consequence.
 • Injuries are real — blood, broken bones, torn tissue, pain that changes how a fighter moves. Do not sanitize.
 • If a blow is devastating, describe what it does to the body: where it lands, what breaks, what the fighter feels.
-• PROFANITY IS REQUIRED. Fighters swear when they take damage, when they land hits, when they trash-talk. Use real words: fuck, shit, asshole, bastard, motherfucker, prick, bitch, dipshit, cunt where the character would actually say it. No asterisks, no censoring, no "expletive" placeholders.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note may swear; for those, write authentic uncensored profanity (fuck, shit, motherfucker, asshole, bastard, prick, bitch, cunt) — no asterisks, no "expletive" placeholders. Every other fighter speaks without swears, period — they trash-talk and insult in clean language.
 • INSULTS ARE REQUIRED. Every round needs at least one vicious, character-specific insult — mock the opponent's costume, their backstory, their species, their failures, their dead loved ones, their universe. Make it cruel and personal. Make it funny when the character would be funny. Make it humiliating when the character would humiliate.
-• Internal monologue can be foul too. A fighter thinking "this fucking guy" is more honest than "this troublesome adversary."
-• Finishers should feel final — show the exact mechanism, the physical result, AND the winner's parting words (often profane, always cutting).
+• Internal monologue follows the same rule: foul for allowed-to-swear fighters, clean for everyone else.
+• Finishers should feel final — show the exact mechanism, the physical result, AND the winner's parting words (profane only if that winner is on the allowlist; always cutting either way).
 • Cosmic scale should feel vast but still readable. Street-level should feel physical, painful, and grounded.`,
-  brutal: `TONE: Raw, anatomical, merciless, foul-mouthed. This is not a movie. It is a dissection of violence with screaming.
+  brutal: `TONE: Raw, anatomical, merciless. This is not a movie. It is a dissection of violence with screaming.
 • Name exactly where hits land: jaw, temple, solar plexus, floating ribs, knee, throat, spine.
 • Describe what the body does: bones crack, cartilage compresses, blood fills the mouth, a knee hyperextends the wrong way.
 • Short declarative sentences. Pain drives every clause.
 • Injuries compound without exception — something broken in round one is functionally broken for the rest of the fight.
 • Characters feel their wounds: they spit blood, guard a cracked rib, can't fully extend an arm, blink through a swelling eye.
-• PROFANITY IS MANDATORY AND FREQUENT. Fighters scream "fuck," "motherfucker," "you piece of shit," "die you cunt," whatever fits their voice. Pain talks dirty. Rage talks filthy. No sanitizing, no euphemisms, no asterisks.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note swear — for those, write it raw and uncensored (fuck, motherfucker, you piece of shit, die you cunt). Every other fighter expresses pain and rage without profanity — clean insults, snarls, threats, broken breathing.
 • INSULTS ARE MANDATORY. Every round must contain at least one venomous, personal, hateful insult — about the opponent's body, costume, mother, intelligence, lineage, smell, weakness, dead allies, anything that hits. Cruelty is the point.
 • Finishers are anatomically specific and final — describe the exact moment of incapacitation, what causes it, and the winner's brutal final words.
-• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing, "fuck you" through broken teeth.
+• Dialogue: taunts, threats, defiant last words, involuntary sounds of pain, ragged breathing. Profanity only from allowed-to-swear fighters; everyone else stays clean.
 • Do NOT soften the ending. If it ends in death, it ends in death. Show what that looks like.`,
-  realistic: `TONE: Analytical and physically honest, but the fighters are still humans (or close to it) under stress — they swear, they trash-talk, they break.
+  realistic: `TONE: Analytical and physically honest, but the fighters are still humans (or close to it) under stress — they trash-talk, they break, and the ones permitted to swear do.
 • No lucky reversals, no chaos saves. Outcomes are earned by stats, skills, and matchup logic.
 • Injuries are real and cumulative — show how damage changes a fighter's movement, guard, and decision-making.
 • Describe what hits do to the body clearly and without softening: where they land, what the physical effect is.
 • Show the fighters reading each other — adjusting, countering, exploiting openings.
-• PROFANITY IS EXPECTED. Real fighters swear under pressure — "shit," "fuck," "goddamn it" when something hurts or surprises them. No sanitizing.
+• PROFANITY IS CHARACTER-GATED. Only fighters whose profile carries a "VOICE: uses profanity..." note swear under pressure — for those, write it real ("shit," "fuck," "goddamn it"). Everyone else expresses pressure cleanly — sharp exhales, terse calls, clean insults.
 • INSULTS ARE EXPECTED. At least one sharp, character-specific insult per round — mocking the opponent's style, mistakes, or background. Not random — earned by the moment.
-• Write like a sharp breakdown that happens to be vivid, visceral, foul-mouthed prose, not a stat dump.`,
+• Write like a sharp breakdown that happens to be vivid and visceral prose, not a stat dump.`,
 };
 
 async function generateAINarrative(
@@ -2413,6 +2577,8 @@ async function generateAINarrative(
   resolution?: FightResolution,
   rematchCount = 0,
   onSection?: (name: string, content: string) => void,
+  onSectionDelta?: (name: string, append: string) => void,
+  modifierId?: ModifierId | null,
 ): Promise<{ arenaIntro: string; intro: string; roundNarratives: string[]; resultText: string; whyWon: string[] }> {
   const team1Names = team1.map(c => c.name).join(" & ");
   const team2Names = team2.map(c => c.name).join(" & ");
@@ -2443,8 +2609,26 @@ async function generateAINarrative(
     const specialRules = v3?.specialRules?.filter(Boolean).join("; ") || "";
     const mobility = v3?.mobilityType?.filter(Boolean).join(", ") || "";
     const weakness = v3?.weaknesses?.filter(Boolean).join(", ") || c.weaknesses?.slice(0, 100) || "";
-    const hasProfanity = c.behaviorTags?.includes("profanity");
     const profanityStyle: string | undefined = typeof v3?.profanityStyle === "string" ? v3.profanityStyle : undefined;
+
+    // Pokémon and similar creatures that cannot form words. Detect by universe
+    // name or an explicit tag so Mewtwo (who speaks telepathically in canon)
+    // can be individually overridden with a custom v3 profile note.
+    const universe = (c.universe ?? "").toLowerCase();
+    const hasNoSpeech =
+      c.behaviorTags?.includes("no_speech") ||
+      universe.includes("pokemon") ||
+      universe.includes("pokémon");
+
+    // Strict allowlist — only these characters are permitted to swear in
+    // narratives. Every other character speaks without profanity. The
+    // behaviorTag and universe-based heuristics that previously gated this
+    // are intentionally NOT consulted here.
+    const hasProfanity = PROFANITY_ALLOWLIST.has(c.name.toLowerCase());
+
+    // Everyone not in the allowlist gets the family-language treatment so
+    // the AI is explicitly told they do not swear.
+    const hasFamilyLanguage = !hasProfanity;
 
     return [
       `${c.name} (${c.universe} | Tier: ${tier}${pgi})`,
@@ -2456,7 +2640,17 @@ async function generateAINarrative(
       finishers    ? `  FINISHERS: ${finishers}` : null,
       specialRules ? `  SPECIAL RULES: ${specialRules}` : null,
       weakness     ? `  WEAKNESS: ${weakness}` : null,
-      hasProfanity ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}` : null,
+      hasNoSpeech
+        ? `  VOICE — SPEECH RESTRICTION: ${c.name} CANNOT SPEAK WORDS. They communicate only through cries, growls, body language, and physical action. They may vocalize their own name or wordless sounds of effort or pain. They may NEVER say a sentence, a word, or even a single human syllable. Do not give them dialogue lines. Express their emotion and intent entirely through physical description and sound.`
+        : hasFamilyLanguage
+          ? `  VOICE — LANGUAGE: ${c.name} does NOT swear. Ever. They express frustration, pain, and defiance through character-appropriate exclamations — "No!", "Not a chance!", grunts of effort, determined silence, sharp clean insults — never profanity. Do not write any swear words for this character.`
+          : hasProfanity
+            ? `  VOICE: ${profanityStyle ?? "uses profanity naturally — write their dialogue and internal monologue with authentic language, including swear words where they would genuinely use them"}`
+            : null,
+      (() => {
+        const sig = VOICE_SIGNATURES.get(c.name.toLowerCase());
+        return sig ? `  VOICE — SPEECH SIGNATURE: ${sig}` : null;
+      })(),
     ].filter(Boolean).join("\n");
   };
   const team1Info = team1.map(charProfile).join("\n\n");
@@ -2563,7 +2757,7 @@ async function generateAINarrative(
   };
 
   const buildRoundSection = (i: number) =>
-    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 3 to 6 paragraphs of vivid prose for this phase. Use names clearly — never let the reader lose track of who is acting. Include at least one line of dialogue or internal thought per key fighter. End with the physical state of every fighter clearly shown.`;
+    `=== ROUND ${i + 1} ===\n[${phaseLabel(i, roundCount)}]\n${directiveFor(i, roundCount)}\n\nWrite 4 to 6 rich paragraphs. Give each beat room to breathe — action, reaction, consequence, pain, psychology. Include at least one line of dialogue or internal thought per key fighter. Weave the physical and mental state of every fighter naturally into the prose — do NOT add a separate "State of Fighters" section or damage summary block.`;
   const roundSections = Array.from({ length: roundCount }, (_, i) => buildRoundSection(i)).join("\n\n");
 
   // Section builders — used to create either a single full prompt or two
@@ -2599,15 +2793,17 @@ ${resolution ? `1. ${resolution.keyFactors[0] ?? "The decisive advantage that cr
         ? "=== SETTING ==="
         : `=== ROUND ${opts.rounds[0]! + 1} ===`;
       const skipNote = opts.isSecondHalf
-        ? `IMPORTANT — PARTIAL OUTPUT MODE:
-- This is the SECOND HALF of the fight. The SETTING, ENTRANCE, and ROUNDS 1–${opts.rounds[0]} have ALREADY been written by another pass — DO NOT rewrite them.
+        ? `IMPORTANT — SPLIT WRITING (your assigned sections only):
+- The SETTING, ENTRANCE, and ROUNDS 1–${opts.rounds[0]} have ALREADY been written by another pass — DO NOT rewrite them.
 - Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no "continue", no "got it", no apology, no commentary of any kind.
 - Treat the fight state as if those earlier sections happened exactly as the BATTLE LOGIC BRIEF and DAMAGE STATE describe. The HP values you see at the start of YOUR rounds are the current state.
-- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Nothing else.`
-        : `IMPORTANT — PARTIAL OUTPUT MODE:
-- This is the FIRST HALF of the fight. Another pass will write the remaining rounds, RESULT, and WHY THEY WON.
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Nothing else.
+- Each assigned section must be written FULLY at its target length. Do NOT cut a section short. Do NOT add a "to be continued", "continue later", "partial", "(output limit)", or any other end-of-section marker. The reader sees this verbatim.`
+        : `IMPORTANT — SPLIT WRITING (your assigned sections only):
+- Another pass will write the remaining rounds, RESULT, and WHY THEY WON. You are not responsible for them and must not reference them.
 - Begin your response IMMEDIATELY with the literal text "${firstMarker}" on its own line. No preamble, no greeting, no commentary.
-- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Do NOT write RESULT or WHY THEY WON — those belong to the other pass. Do NOT add a closing remark.`;
+- Output ONLY the sections listed below, in order, using the EXACT === MARKER === delimiters. Do NOT write RESULT or WHY THEY WON — those belong to the other pass. Do NOT add a closing remark.
+- Each assigned section must be written FULLY at its target length. Do NOT cut a section short. Do NOT add a "to be continued", "continue later", "partial", "(output limit)", or any other end-of-section marker. The reader sees this verbatim.`;
       blocks.push(skipNote);
     }
     if (opts.intro) {
@@ -2674,9 +2870,11 @@ CHARACTER RULES
 - Every fighter on both teams must contribute. No one disappears.
 - Cosmic beings feel vast and incomprehensible but must remain readable — no abstract cosmic spam.
 - Street-level fighters feel physical, tactical, grounded.
-- Dialogue must sound like THAT character, not generic hero-speak.
-- If a character has a VOICE note, honor it exactly — including profanity. Deadpool says fuck. Wolverine says goddamn. Billy Butcher says cunt. Do not sanitize characters who canonically swear. Their actual voice is part of who they are.
-- VULGARITY MANDATE — this is a mature, R-rated arena. Default assumption: every fighter swears under combat stress unless they are explicitly a child or a literal saint. Use real, uncensored profanity (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) where natural. Use vicious, character-specific insults every round. NEVER replace swears with asterisks, dashes, "bleep," "expletive," or polite synonyms. NEVER soften personality to be "appropriate." NEVER skip an insult to keep the prose dignified — dignity is not the goal here. If you find yourself reaching for "darn," "heck," "shoot," or "you fool," stop and use the real word.
+- BANTER MUST BE IN VOICE. Every line of dialogue and every internal thought must sound like THAT specific character — vocabulary, cadence, signature phrases, attitude. If a fighter has a "VOICE — SPEECH SIGNATURE" note, follow it exactly: catchphrases, verbal tics, accents-on-the-page, attack callouts, the way they address allies/enemies. Hulk speaks in third-person fragments. Wolverine growls "bub" and goes monosyllabic. Deadpool breaks the fourth wall. Yoda inverts syntax. Kratos commands in five-word sentences. Goku names his attacks at full volume. Tony Stark sarcastically nicknames opponents. Harley calls everyone a pet name. NEVER swap one character's lines onto another — Captain America does not say what Deadpool would say, and Batman does not quip like Spider-Man. If a character's signature is an in-universe call (like "It's-a me!" or "Believe it!" or "Wahoo!" or "Pika!"), use it in the natural moment, do not over-quote it. Generic action-movie banter ("you're going down," "is that all you got") is BANNED — replace with something only that character would say.
+- ATTACK CALLOUTS in voice. When a character names a move or technique mid-fight (Goku's "Kamehameha!", Naruto's "Rasengan!", Zoro's "Three Sword Style!", Cyclops's "Optic blast!", any anime / Tokusatsu / fighting-game named technique), write it the way that character actually shouts it — punctuation included.
+- PROFANITY IS RESTRICTED BY CHARACTER. Only fighters whose profile includes a "VOICE: uses profanity..." note are allowed to swear. For those fighters, write authentic, uncensored profanity in their dialogue and internal monologue (fuck, shit, motherfucker, asshole, prick, bitch, bastard, cunt) — Deadpool says fuck, Wolverine says goddamn, Billy Butcher says cunt. Do not sanitize them. NEVER use asterisks, dashes, "bleep," or "expletive" placeholders for these characters.
+- EVERY OTHER FIGHTER DOES NOT SWEAR. Any character with a "VOICE — LANGUAGE" note (or no profanity note at all) speaks without profanity, period. They can still trash-talk, taunt, threaten, scream in pain, and deliver vicious character-specific insults — they just do it in clean language ("you piece of garbage," "you're done," "I'll end you," "pathetic," grunts, defiant silence). Insults remain mandatory every round; profanity is what's restricted, not aggression. Do NOT have these characters say fuck, shit, motherfucker, asshole, bitch, bastard, prick, cunt, or any other swear. This rule overrides any general "tone" instructions about profanity above.
+- VOICE — SPEECH RESTRICTION: any character with this note CANNOT speak words at all. Cries, growls, their own name, and raw physical expression only. No dialogue lines.
 
 ==================================================
 DO NOT
@@ -2699,8 +2897,25 @@ ${team2Info}
 
 ARENA: ${arena.name}
 ${arena.flavor.join(" ")}
+${(() => {
+  const mod = getModifier(modifierId);
+  return mod
+    ? `\n==================================================\nCHAOS MODIFIER ACTIVE — ${mod.label.toUpperCase()}
+==================================================
+This modifier overrides ARENA flavor and overrides any tone instruction it contradicts. It does NOT override the locked winner.
+${mod.promptBlock}
 
+ENFORCEMENT — this is a hard rule, not a suggestion:
+• EVERY round narrative must visibly carry this modifier. If a round could read identically with the modifier removed, that round has FAILED the prompt — rewrite it.
+• The opening SETTING / ENTRANCE section must establish the modifier on screen so the audience sees it from the start.
+• The FINISH must use the modifier as part of how the loser goes down whenever the modifier provides a finish hook.
+• Do NOT explain the modifier in narrator voice ("the rules of this fight stated…"). Show it through environment, action, dialogue, and consequence.
+`
+    : "";
+})()}
 DECLARED WINNER: ${winnerNames} defeats ${loserNames}${betrayalNote}
+CRITICAL — THE WINNER IS NON-NEGOTIABLE: ${winnerNames} WINS. ${loserNames} LOSES AND GOES DOWN.
+Every round must trend toward this outcome. The final round MUST end with ${loserNames} going down / out / eliminated — NOT ${winnerNames}. Never write a sentence where ${winnerNames} is "going down," "falling," "eliminated," or "losing." If you accidentally write that, you have failed the prompt. The loser is ${loserNames}. Say it to yourself before writing the finale: ${loserNames} loses.
 ${specialNotes ? `SPECIAL EVENTS: ${specialNotes}` : ""}
 ${verdictBlock}
 ${rematchCount > 0 ? `
@@ -2731,13 +2946,14 @@ __OUTPUT_FORMAT_BLOCK__
 FORMAT RULES:
 - SETTING = 3 to 5 sentences. No padding. Arena feels like a real place.
 - ENTRANCE = 2 to 3 sentences per fighter. Distinct, specific, in character.
-- Each ROUND/PHASE = 2 to 4 tight paragraphs. Show action, reaction, consequence, damage, and at least one line of dialogue or internal thought per fighter. Stay vivid and specific — cut filler, keep impact.
+- Each ROUND/PHASE = 4 to 6 rich paragraphs. Action, reaction, consequence, psychology, damage. At least one line of dialogue or internal thought per fighter. Every round should feel like a full scene.
 - Blowouts = short and dominant, but still vivid and specific — never just "X won easily."
 - RESULT = clean and final. No flowery wrap-up.
 - WHY THEY WON = exactly 5 numbered sentences. Each of the 5 must cover a DIFFERENT point — never repeat the same factor across two numbered items.
 
 CRITICAL OUTPUT DISCIPLINE:
-- NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)". The output is the final reader-facing text. Stay in the scene.
+- NEVER add a "State of Fighters" block, damage summary, HP report, or any structured status section at the end of a round. Fighter conditions must be woven into the prose itself.
+- NEVER include meta-commentary, author notes, apologies, or self-references like "(due to space)", "(I'll keep this short)", "(you'd want more here)", "(continued later)", "Continue this scene later", "to be continued", "partial output", "output limit", "(more next pass)". The output is the final reader-facing text. Stay in the scene.
 - NEVER abbreviate or truncate a section because you're worried about length. Either write it fully or skip it cleanly — there is no third option.
 - NEVER restate the previous sentence with different words. If a beat is described, the next beat advances; it does not echo.${allianceTrigger ? `
 
@@ -2747,10 +2963,14 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
   const promptWithOutputBlock = (outputBlock: string) =>
     prompt.replace("__OUTPUT_FORMAT_BLOCK__", outputBlock);
 
-  // Per-section token estimates (gpt-4o):
-  //   SETTING + ENTRANCE ≈ 800 tokens
-  //   each ROUND          ≈ 900 tokens
-  //   RESULT + WHY THEY WON ≈ 1200 tokens
+  // Per-section token estimates (gpt-4o, observed):
+  //   SETTING + ENTRANCE ≈ 1200 tokens (multi-fighter teams push entrance long)
+  //   each ROUND          ≈ 1600 tokens  (4-6 rich paragraphs with dialogue)
+  //   RESULT + WHY THEY WON ≈ 1500 tokens
+  // Older budgets (800 / 1200) were tight enough that the LAST round in the
+  // first half got truncated mid-paragraph and the model would emit a
+  // "continue later" meta-marker. We give every section ~30% headroom now.
+  // The 10000 hard cap still keeps cost bounded for 7-round fights.
   // For fights with 3+ rounds we split the work across two AI calls that run
   // in parallel, halving the wall-clock time. Quality is unchanged because
   // both calls receive the identical character profiles, locked verdict,
@@ -2768,17 +2988,17 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const promptB = promptWithOutputBlock(
       buildOutputFormat({ intro: false, rounds: secondHalf, outro: true, isPartial: true, isSecondHalf: true }),
     );
-    const tokensA = Math.min(12000, 800 + firstHalf.length * 900);
-    const tokensB = Math.min(12000, 1200 + secondHalf.length * 900);
+    const tokensA = Math.min(12000, 1200 + firstHalf.length * 1600);
+    const tokensB = Math.min(12000, 1500 + secondHalf.length * 1600);
 
     // Per-call section streamers — each watches its own buffer for completed
     // === MARKER === blocks and forwards them to the SSE consumer in real time.
-    const streamerA = onSection ? makeSectionStreamer(onSection) : null;
-    const streamerB = onSection ? makeSectionStreamer(onSection) : null;
+    const streamerA = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
+    const streamerB = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
 
     const [rawA, rawB] = await Promise.all([
-      aiTextWithTimeout(promptA, tokensA, 75_000, streamerA?.onDelta),
-      aiTextWithTimeout(promptB, tokensB, 75_000, streamerB?.onDelta),
+      aiTextWithTimeout(promptA, tokensA, 45_000, streamerA?.onDelta),
+      aiTextWithTimeout(promptB, tokensB, 45_000, streamerB?.onDelta),
     ]);
     streamerA?.onEnd(rawA);
     streamerB?.onEnd(rawB);
@@ -2788,9 +3008,9 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
     const fullPrompt = promptWithOutputBlock(
       buildOutputFormat({ intro: true, rounds: allRoundIdx, outro: true }),
     );
-    const narrativeTokens = Math.min(12000, 2500 + roundCount * 900);
-    const streamer = onSection ? makeSectionStreamer(onSection) : null;
-    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 90_000, streamer?.onDelta);
+    const narrativeTokens = Math.min(12000, 2700 + roundCount * 1600);
+    const streamer = onSection ? makeSectionStreamer(onSection, onSectionDelta) : null;
+    raw = await aiTextWithTimeout(fullPrompt, narrativeTokens, 60_000, streamer?.onDelta);
     streamer?.onEnd(raw);
   }
 
@@ -3072,7 +3292,11 @@ async function aiAssessMatchup(
       ),
     ]);
 
-    const json = JSON.parse((raw as Awaited<ReturnType<typeof openai.chat.completions.create>>).choices[0]?.message?.content ?? "{}");
+    // We never pass stream:true to this call, so the SDK returns a
+    // ChatCompletion (not a Stream). Cast through the structural shape we
+    // need to defeat the SDK's union return type.
+    const completion = raw as { choices: Array<{ message?: { content?: string | null } }> };
+    const json = JSON.parse(completion.choices[0]?.message?.content ?? "{}");
     const verdict  = json.verdict ?? {};
     const rawWinner: string = verdict.winner ?? "";
     const aiWinner: 1 | 2 = rawWinner.toLowerCase().includes("team 2") ? 2 : 1;
@@ -3255,6 +3479,11 @@ export interface SimulateFightProgress {
   // Fired each time a === MARKER === bounded section finishes streaming from
   // the narrative AI (e.g. SETTING, ENTRANCE, ROUND 1, RESULT, WHY THEY WON).
   onSection?: (name: string, content: string) => void;
+  // Fired with incremental new characters of the currently in-progress
+  // section as the AI writes it. Lets the UI typewrite text live instead of
+  // waiting for the next === marker. The `append` is the new chars to
+  // concatenate to whatever the consumer already has for `name`.
+  onSectionDelta?: (name: string, append: string) => void;
 }
 
 export async function simulateFight(
@@ -3264,7 +3493,9 @@ export async function simulateFight(
   cachedResolution?: FightResolution | null,
   rematchCount = 0,
   progress?: SimulateFightProgress,
+  modifierId?: ModifierId | null,
 ): Promise<FightResult> {
+  const modifier = getModifier(modifierId);
   // ── Pre-fight modifiers: synergy bonuses + weakness penalties ─────────────
   // Applies temporary stat adjustments based on v3Profile archetype/combatStyle
   // pairings and matchup-aware weakness detection. Originals are never mutated.
@@ -3278,11 +3509,16 @@ export async function simulateFight(
   const base2 = teamPower(team2);
 
   // ── LOGICAL DECISION SYSTEM ────────────────────────────────────────────────
-  // Run math-based assessment first for instant fallback, then AI assessment
-  // in parallel with arena/setup work. The AI's lore knowledge overrides math
-  // if it returns in time; otherwise the math result is used transparently.
-  const mathAssessment = assessMatchup(team1, team2);
-  const assessmentPromise = aiAssessMatchup(team1, team2, mathAssessment);
+  // Math-based assessment is authoritative and instant. We previously also ran
+  // an AI matchup pass with up to a 12s timeout that could refine the verdict
+  // for lore-heavy matchups (e.g. Goku vs a high-stat human), but it gated
+  // EVERY fight behind that 12s wait — even cached/easy matchups — and pushed
+  // total time-to-first-content to 14-20s on the deployed proxy. Users
+  // consistently reported "fights aren't loading." Math is good enough for the
+  // overwhelming majority of matchups; if we want lore-aware verdicts back,
+  // do it as a background pre-compute keyed on the team composition cache,
+  // not a per-request blocker. See use-simulate-fight-stream.ts client hook.
+  const assessment = assessMatchup(team1, team2);
 
   // Power gap: 0 = equal, ~±0.35 at extreme mismatch
   const totalPower = base1 + base2;
@@ -3303,9 +3539,6 @@ export async function simulateFight(
   let hp2 = 100;
 
   const rounds: FightRound[] = [];
-
-  // Await the AI matchup assessment now (it was kicked off above in parallel with setup).
-  const assessment = await assessmentPromise;
 
   // Round count comes from the logical decision system — blowouts get 1-2 rounds,
   // close fights get the full 5. No more 5-round padding for mismatches.
@@ -3536,9 +3769,22 @@ export async function simulateFight(
   //   Tim outranks every mortal → his team always wins.
   // Cached rematches still respect their stored winner.
   const devOverride = cachedResolution ? null : devLegendWinner(team1, team2);
-  const winner: 1 | 2 = cachedResolution
+  let winner: 1 | 2 = cachedResolution
     ? (cachedResolution.winner === "Team 1" ? 1 : 2)
     : (devOverride ?? assessment.verdict);
+
+  // ── Chaos modifier: underdog flip ───────────────────────────────────────
+  // The "Underdog Buff" modifier inverts the verdict so the team the math
+  // predicted to lose walks away victorious. Done here — before HP curves
+  // and narrative are built — so the entire downstream pipeline (HP arc,
+  // resolution, narrative writer) is built around the new winner. The
+  // resolution we hand to the narrative writer must be cleared, otherwise
+  // its winnerProof / loserShowcase still describe the original favorite.
+  if (modifier?.flipUnderdog) {
+    winner = winner === 1 ? 2 : 1;
+    cachedResolution = null;
+  }
+
   const overrode = hpWinner !== winner;
 
   if (assessment.forceDominant) {
@@ -3757,7 +4003,12 @@ export async function simulateFight(
 
   // ── Stage 2: Narrative writer dramatizes the pre-decided result ───────────
   // rematchCount > 0 triggers "write a fresh different story arc" instruction.
-  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, assessment, allianceTrigger, fightResolution, rematchCount, progress?.onSection);
+  // When an underdog flip happened, suppress assessment + resolution so the
+  // narrative prompt isn't whispering "Team A is favored" while we tell it
+  // "Team B wins." The chaos modifier prompt block carries the rationale.
+  const narrativeAssessment = modifier?.flipUnderdog ? undefined : assessment;
+  const narrativeResolution = modifier?.flipUnderdog ? undefined : fightResolution;
+  const aiResult = await generateAINarrative(team1, team2, arena, roundSimData, winner, tone, narrativeAssessment, allianceTrigger, narrativeResolution, rematchCount, progress?.onSection, progress?.onSectionDelta, modifier?.id ?? null);
 
   // Inject AI narratives — fall back to template narrative if AI returned empty for that round
   const finalRounds = rounds.map((r, idx) => ({

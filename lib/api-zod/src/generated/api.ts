@@ -30,6 +30,10 @@ export const ListCharactersResponseItem = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod
+    .array(zod.string())
+    .nullish()
+    .describe("Tags describing the character's combat behavior \/ archetype"),
   createdAt: zod.coerce.date(),
 });
 export const ListCharactersResponse = zod.array(ListCharactersResponseItem);
@@ -76,6 +80,10 @@ export const GetCharacterResponse = zod.object({
   weaknesses: zod.string(),
   description: zod.string(),
   imageUrl: zod.string().nullish(),
+  behaviorTags: zod
+    .array(zod.string())
+    .nullish()
+    .describe("Tags describing the character's combat behavior \/ archetype"),
   createdAt: zod.coerce.date(),
 });
 
@@ -104,6 +112,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -120,6 +134,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -136,6 +156,12 @@ export const GetCharacterStatsResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     })
     .optional(),
@@ -156,6 +182,10 @@ export const ListFightsResponseItem = zod.object({
   team2Names: zod.array(zod.string()),
   winner: zod.number(),
   summary: zod.string(),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe("Chaos modifier active for this fight, if any"),
   simulatedAt: zod.coerce.date(),
 });
 export const ListFightsResponse = zod.array(ListFightsResponseItem);
@@ -168,6 +198,7 @@ export const simulateFightBodyTeam1Max = 5;
 export const simulateFightBodyTeam2Max = 5;
 
 export const simulateFightBodyModeDefault = `realistic`;
+export const simulateFightBodyUpsetDefault = false;
 
 export const SimulateFightBody = zod.object({
   team1: zod.array(zod.number()).min(1).max(simulateFightBodyTeam1Max),
@@ -180,8 +211,22 @@ export const SimulateFightBody = zod.object({
     ),
   upset: zod
     .boolean()
+    .default(simulateFightBodyUpsetDefault)
+    .describe(
+      "Override the cached verdict and let the underdog win. Bypasses verdict cache.",
+    ),
+  challengeCode: zod
+    .string()
     .optional()
-    .describe("If true, bypasses the verdict cache and runs a full fresh simulation. Result is not stored."),
+    .describe(
+      "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text.",
+    ),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins.",
+    ),
 });
 
 export const SimulateFightResponse = zod.object({
@@ -199,6 +244,12 @@ export const SimulateFightResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -215,6 +266,12 @@ export const SimulateFightResponse = zod.object({
       weaknesses: zod.string(),
       description: zod.string(),
       imageUrl: zod.string().nullish(),
+      behaviorTags: zod
+        .array(zod.string())
+        .nullish()
+        .describe(
+          "Tags describing the character's combat behavior \/ archetype",
+        ),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -248,18 +305,31 @@ export const SimulateFightResponse = zod.object({
   settled: zod
     .boolean()
     .optional()
-    .describe("True if the verdict came from the cache (same winner guaranteed on rematch)."),
+    .describe(
+      "True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase)",
+    ),
   winRate: zod
     .number()
     .optional()
-    .describe("Winner's estimated win rate 50-100. Only shown when ≤65 (genuinely close matchup)."),
+    .describe(
+      "Estimated win rate (50-100) of the winning team in this matchup",
+    ),
   rematchCount: zod
     .number()
     .optional()
-    .describe("How many times this matchup has been run before."),
+    .describe("How many times this exact matchup has been simulated"),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe(
+      "Chaos modifier active for this fight, if any (e.g. 'lava_floor')",
+    ),
   simulatedAt: zod.coerce.date(),
 });
 
+/**
+ * @summary Get a single fight by id
+ */
 export const GetFightParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -283,6 +353,10 @@ export const GetFightResponse = zod.object({
   summary: zod.string(),
   arenaIntro: zod.string().optional(),
   intro: zod.string().optional(),
+  modifierId: zod
+    .string()
+    .nullish()
+    .describe("Chaos modifier active for this fight, if any"),
   simulatedAt: zod.coerce.date(),
 });
 
@@ -290,5 +364,40 @@ export const GetFightResponse = zod.object({
  * @summary Delete a single fight record by id
  */
 export const DeleteFightParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List saved teams for the signed-in user
+ */
+export const ListSavedTeamsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+  createdAt: zod.coerce.date(),
+});
+export const ListSavedTeamsResponse = zod.array(ListSavedTeamsResponseItem);
+
+/**
+ * @summary Save a team composition
+ */
+export const SaveTeamBody = zod.object({
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+});
+
+export const SaveTeamResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  name: zod.string(),
+  characterIds: zod.array(zod.number()),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a saved team
+ */
+export const DeleteSavedTeamParams = zod.object({
   id: zod.coerce.number(),
 });

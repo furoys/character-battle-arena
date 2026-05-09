@@ -100,7 +100,7 @@ export async function applyStatCorrections(): Promise<void> {
       // ── NARUTO ───────────────────────────────────────────────────────────────
       ["Naruto Uzumaki",   1500000, 3000000,   80000, 2000000],
       ["Sasuke Uchiha",    1000000, 3000000,  800000, 1000000],
-      ["Itachi Uchiha",     200000, 2000000, 6816000,  300000],
+      // Itachi Uchiha — see canonical correction in NARUTO section below
       ["Kakashi Hatake",    100000,  500000, 1200000,  150000],
       ["Madara Uchiha",    3000000, 3000000, 2500000, 2000000],
       ["Minato Namikaze",   400000, 5000000, 1200000,  300000],
@@ -156,7 +156,7 @@ export async function applyStatCorrections(): Promise<void> {
       ["Gordon Freeman",      20000,  15000,  800000,   40000],
       ["Sun Tzu",              5000,   8000, 2000000,    6000],
       ["Lelouch vi Britannia", 1081,   1694, 4000000,    1081],
-      ["Light Yagami",         1081,   1510, 4000000,     774],
+      // Light Yagami — see canonical correction in DEATH NOTE section below
 
       // Broly / Doomsday — smarter than their original 790 INT
       ["Broly",           10000000, 2000000,    5000,10000000],
@@ -165,6 +165,181 @@ export async function applyStatCorrections(): Promise<void> {
       // Cosmic top-tier
       ["Lucifer Morningstar", 9800000, 9800000, 9900000, 9900000],
       ["Living Tribunal",    10000000,10000000,10000000,10000000],
+
+      // ── COSMIC CAP — no character should exceed Living Tribunal's 10M cap ────
+      ["Bill Cipher",      9500000,  9500000, 9800000, 9500000],
+      ["Beerus (God)",     9500000,  9800000, 8000000, 9500000],
+      ["Moana's Te Fiti",  9000000,  2500000, 8000000, 9500000],
+
+      // ── STREET FIGHTER — world warriors, calibrate against Ken/Ryu/Akuma ─────
+      // Reference: Ken ~38K/42K/4K/12K, Ryu ~86K/29K/20K/86K, Akuma ~140K/86K
+      ["Fei Long",          50000,   45000,    8000,   30000], // movie-star kung-fu master
+      ["Blanka",            70000,   25000,    3000,   60000], // electric jungle beast
+      ["Sagat",            120000,   25000,   15000,   90000], // muay thai emperor (in case added)
+      ["Zangief",          150000,   18000,    8000,  120000], // red cyclone wrestler
+      ["Vega",              40000,  120000,   12000,   25000], // Spanish ninja-matador
+
+      // ── CARTOON KIDS — INT inflated way above their canon ────────────────────
+      ["Edd",                 300,     500,     800,     400], // smart kid, not genius-tier
+      ["Bart Simpson",        300,     500,     350,     400], // mischievous, not smart
+      ["Eddy",                120,     150,     250,     200], // schemer, average smarts
+      ["Cartman (Coon)",      150,     120,     400,     200], // dumb kid playing hero
+      ["Cartman",             150,     120,     400,     200], // base form
+      ["Courage",             150,     300,     250,     500], // brave dog, not genius
+
+      // ── REGULAR HUMANS WITH GENIUS-LEVEL INT ─────────────────────────────────
+      ["Han Solo",           1500,    1800,    1500,    1200], // street-smart smuggler
+      ["Poe Dameron",        1200,    1500,    1200,    1000], // ace pilot
+      ["Amanda Young",        800,     900,    1500,     700], // Saw survivor
+      ["Chucky",              800,     900,     800,     600], // killer doll, not genius
+      ["Billy",              1200,    1100,     900,    1000], // Saw puppet — physical proxy
+      ["Billy the Puppet",    300,     200,    1500,    1000], // possessed puppet
+
+      // ── HORROR / SLASHER CALIBRATION — supernatural killers should hit ───────
+      ["Deadite",            5000,    3000,     500,    8000], // possessed undead
+      // Dead by Daylight Wraith — see canonical correction in DBD section below
+
+      // ── FAMILY GUY / ADULT CARTOONS — adult humans baseline ──────────────────
+      ["Cleveland Brown",    1200,     900,    1000,    1100],
+      ["Chris Griffin",      1100,     900,     700,    1000],
+      ["Chef",               1500,    1300,    1500,    1400], // South Park's Chef
+      ["Eustace Bagge",       900,     500,     800,    1100], // grumpy old man
+
+      // ── ALIEN / XENOMORPH SCALE — facehugger/chestburster shouldn't beat ─────
+      // adult xenomorph speed
+      ["Alien Facehugger",  1200,    1500,     200,     800],
+      ["Alien Chestburster", 800,    1200,     400,     600],
+      ["Xenomorph",         60000,  120000,    1402,   60000], // adult drone
+
+      // ── HARRY POTTER — wizard hierarchy: Voldemort > Hermione/Ron etc ────────
+      ["Voldemort",          2400,    8000, 6000000,    3000], // supreme dark wizard
+      ["Hermione Granger",    529,    1402,  600000,    1081], // brilliant student
+      ["Ron Weasley",         650,    1800,  150000,     800], // average wizard
+      ["Draco Malfoy",        400,    2000,  300000,     500], // mediocre student
+      ["Harry Potter",        900,    4000, 1100000,    1100], // chosen one
+
+      // ── LORD OF THE RINGS — Maiar > human stats ──────────────────────────────
+      ["Gandalf",          120000,   80000, 4000000,  140000], // Olorin the Maia
+      ["Saruman",           80000,   60000, 2500000,  100000], // Maia, white wizard
+      ["Aragorn",           50000,   18000,   80000,   45000], // king of men
+      ["Legolas",           20000,  140000,   40000,   15000], // elven marksman
+
+      // ── NARUTO — Itachi INT inflation, Mihawk/Zoro under-rated in OP ─────────
+      ["Itachi Uchiha",    300000, 2000000, 1500000,  400000], // tactical genius
+      ["Naruto",          1500000, 2500000,   80000, 2000000], // Hokage Naruto
+
+      // ── ONE PIECE — Mihawk and Zoro need Wano-era boost ──────────────────────
+      ["Dracule Mihawk",  2500000,  600000,  200000, 1500000], // strongest swordsman
+      ["Roronoa Zoro",     800000,  600000,   20000,  900000], // post-Wano Zoro
+
+      // ── STAR WARS — bounty hunters / Mandalorians / Leia ─────────────────────
+      ["Boba Fett",          8000,   12000,   20000,   15000], // beskar bounty hunter
+      ["The Mandalorian",    9000,   12000,   25000,   18000], // Din Djarin
+      ["Captain Rex",        7000,   10000,   18000,   12000], // ARC clone captain
+      ["Leia Organa",        1500,    4000,   50000,    2500], // Force-sensitive senator
+
+      // ── STREET FIGHTER — F.A.N.G the Shadaloo poison master ─────────────────
+      ["F.A.N.G",           25000,   45000,   80000,   25000],
+
+      // ── BREAKING BAD — Walt is Heisenberg the chemistry kingpin ─────────────
+      ["Walter White",       2600,    2400,  500000,    2100],
+
+      // ── MARVEL — Blade the Daywalker ────────────────────────────────────────
+      ["Blade (Daywalker)", 80000,  120000,   50000,   80000],
+
+      // ── SOLDIERS / SPIES with absurd "INT" — pull to elite-but-human range ──
+      ["Solid Snake",       29307,   20667,  500000,   38160],
+      ["Commander Shepard", 29307,   20667,  200000,   47227],
+      ["Lara Croft",        20667,   42667,  200000,   38160],
+
+      // ── NINTENDO — Mario canonically punches asteroids ──────────────────────
+      ["Mario",            200000,  120000,   40000,  300000],
+
+      // ── POKÉMON — Lucario / Pikachu actually fight legendaries ──────────────
+      ["Lucario",          120000,  140000,   80000,   80000],
+      ["Pikachu",          150000,  300000,   40000,   80000],
+
+      // ── DEAD BY DAYLIGHT — slasher killers should be dangerous ──────────────
+      ["Dead by Daylight Wraith",    30000,   40000,    8000,   30000],
+      ["Dead by Daylight Huntress",  80000,   60000,    8000,   90000],
+      ["Dead by Daylight Trapper",  200000,  120000,    7000,  220000],
+
+      // ── HORROR — Bride of Frankenstein is a supernatural creation ───────────
+      ["The Bride of Frankenstein", 200000,   60000,    8000,  300000],
+
+      // ── OVERWATCH — Doomfist's gauntlet levels city blocks ──────────────────
+      ["Doomfist",         1000000,  300000,   20000, 1000000],
+
+      // ── PREDATOR — apex hunter that kills xenomorphs ────────────────────────
+      ["Predator",          250000,  200000,  200000,  250000],
+
+      // ── BOXING — real humans, but Ali/Tyson are peak humans ─────────────────
+      ["Muhammad Ali",      18000,   95000,   15000,   18000],
+      ["Mike Tyson",        50000,   85000,   10000,   45000],
+
+      // ── ACTION HEROES — Duke Nukem is at least quippy-smart ─────────────────
+      ["Duke Nukem",       194600,   12240,   25000,  140000],
+
+      // ── FUTURAMA — Bender is a tough robot with attitude ────────────────────
+      ["Bender",            50000,    8000,  200000,   80000],
+      ["Bender (Bite My Shiny Metal)", 80000, 10000, 300000, 120000],
+
+      // ── PLACEHOLDER STAT TEMPLATES (3840/3840/4320/3840) — fix to canon ─────
+      ["Zero Two",         200000,  150000,  120000,  250000], // klaxosaur hybrid pilot
+      ["Yoshimura",        500000,  600000,  500000,  500000], // legendary Owl ghoul
+      ["Yusuke Urameshi", 1500000, 1500000,  500000, 1500000], // Mazoku descendant
+      ["Wrath",            500000,  500000,   80000,  300000], // FMA Bradley homunculus
+      ["Zeref Dragneel",  2000000, 1500000, 1500000, 1500000], // Black Wizard, immortal
+
+      // ── GREEK / GENERAL MYTHOLOGY ───────────────────────────────────────────
+      ["Zeus",            6000000, 2000000, 1000000, 6000000], // king of Olympians
+      ["Achilles",        1000000,  500000,    8500, 5000000], // near invulnerable
+      ["Hercules",       10000000,  100000,   50000, 8000000], // demigod, durable too
+
+      // ── SUPERNATURAL — Cas / Dean buffed ────────────────────────────────────
+      ["Castiel",         1500000, 2000000, 1000000, 2000000], // Angel of the Lord
+      ["Dean Winchester",   50000,   30000,   80000,   50000], // god-killer hunter
+
+      // ── TMNT — Mikey to match brothers ──────────────────────────────────────
+      ["Michelangelo",      29307,  140000,   12240,   38160],
+
+      // ── DOOM — Doomslayer rips and tears ────────────────────────────────────
+      ["Doomslayer",      2000000,  150000,   20000, 3000000],
+
+      // ── CONJURING — re-balance ──────────────────────────────────────────────
+      ["Bathsheba Sherman", 200000,  150000,  500000,  300000],
+      ["Annabelle",         400000,  300000, 2000000,  600000],
+
+      // ── UNIVERSAL MONSTERS — Gill-man is supernatural ───────────────────────
+      ["Creature from the Black Lagoon", 80000, 50000, 8000, 100000],
+
+      // ── FAIRLY ODDPARENTS — Cosmo is goofy but a magic fairy ────────────────
+      ["Cosmo",             80000,  150000,   12000,  100000],
+
+      // ── FINAL FANTASY — Cloud's base form is still a SOLDIER ────────────────
+      ["Cloud Strife",     200000,  120000,   30000,  150000],
+
+      // ── DC — Batman (Arkham) is peak Batman, Black Adam over cap ────────────
+      ["Batman (Arkham)",   38160,   20667,  468200,   42667],
+      ["Black Adam (Magic Form)", 9500000, 9500000, 900000, 9500000],
+
+      // ── SOUTH PARK — Cartman is manipulative, not a genius ──────────────────
+      ["Eric Cartman",       2500,    2500,    8000,    3500],
+
+      // ── GAME OF THRONES — political genius, not god-tier intellect ──────────
+      ["Tyrion Lannister",   1081,    1265,  200000,    1081],
+      ["Cersei Lannister",    774,     774,  100000,     774],
+
+      // ── DEATH NOTE — masterminds, but pull from 4-6M down to elite range ────
+      ["L",                  1265,    1387, 2000000,     897],
+      ["Light Yagami",       1081,    1510, 1800000,     774],
+
+      // ── BAYONETTA — Umbra Witch killing angels and demons ───────────────────
+      ["Bayonetta",        468200, 1488800,  140000,  468200],
+
+      // ── DUPLICATES IN BORUTO — both rows should match a real Karma user ─────
+      ["Boruto",          1000000, 1500000,  300000, 1000000],
+      ["Boruto Uzumaki",  1000000, 1500000,  300000, 1000000],
     ];
 
     if (corrections.length === 0) return;

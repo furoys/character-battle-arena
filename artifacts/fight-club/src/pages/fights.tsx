@@ -12,6 +12,7 @@ import { Trophy, Trash2, X, TrendingUp, Swords, Star, BookOpen, ChevronDown } fr
 import { useToast } from "@/hooks/use-toast";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
+import { ModifierBadge } from "@/components/modifier-badge";
 
 // ─── Compute character leaderboard from fight history ───────────────────────
 function buildLeaderboard(fights: Array<{
@@ -164,7 +165,7 @@ export function Fights() {
 
   const handleDeleteOne = async (id: number) => {
     try {
-      await deleteFight.mutateAsync(id);
+      await deleteFight.mutateAsync({ id });
       queryClient.invalidateQueries({ queryKey: getListFightsQueryKey() });
       if (expandedId === id) setExpandedId(null);
     } catch {
@@ -368,7 +369,7 @@ export function Fights() {
 
                   {/* Header */}
                   <div className="flex items-center justify-between pl-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">#{fight.id}</span>
                       <div
                         className="flex items-center gap-1 px-1.5 py-0.5"
@@ -379,6 +380,9 @@ export function Fights() {
                           Team {fight.winner}
                         </span>
                       </div>
+                      {/* Chaos modifier marker — shows the rules that were in
+                          effect for this match in the history list. */}
+                      <ModifierBadge modifierId={fight.modifierId} size="sm" />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] text-muted-foreground/50">

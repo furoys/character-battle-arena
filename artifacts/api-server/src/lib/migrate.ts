@@ -1,24 +1,20 @@
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function runMigrations(): Promise<void> {
-  const client = await pool.connect();
+  const db = drizzle(pool);
+  const migrationsFolder = path.resolve(__dirname, "../../../lib/db/drizzle");
   try {
-    await client.query(`
-      ALTER TABLE characters
-        ADD COLUMN IF NOT EXISTS behavior_tags text[],
-        ADD COLUMN IF NOT EXISTS skill integer,
-        ADD COLUMN IF NOT EXISTS energy_projection integer,
-        ADD COLUMN IF NOT EXISTS hax integer,
-        ADD COLUMN IF NOT EXISTS tier text,
-        ADD COLUMN IF NOT EXISTS power_gap_index integer,
-        ADD COLUMN IF NOT EXISTS v3_profile jsonb;
-    `);
+    await migrate(db, { migrationsFolder });
     logger.info("Migrations applied successfully");
   } catch (err) {
     logger.error({ err }, "Migration failed");
     throw err;
-  } finally {
-    client.release();
   }
 }

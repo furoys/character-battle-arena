@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "postgresql-16"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -20,47 +20,20 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+packages = ["zip"]
 
 [[ports]]
 localPort = 8080
-externalPort = 8080
-
-[[ports]]
-localPort = 8081
-externalPort = 8081
-
-[[ports]]
-localPort = 8082
-externalPort = 3001
-
-[[ports]]
-localPort = 8083
-externalPort = 3003
-
-[[ports]]
-localPort = 8084
-externalPort = 5000
-
-[[ports]]
-localPort = 8085
-externalPort = 6800
-
-[[ports]]
-localPort = 21528
 externalPort = 80
 
 [[ports]]
-localPort = 21529
+localPort = 21528
 externalPort = 3000
 
-[[ports]]
-localPort = 21530
-externalPort = 4200
+[userenv]
 
-[[ports]]
-localPort = 21531
-externalPort = 5173
-
-[[ports]]
-localPort = 21532
-externalPort = 6000
+[userenv.shared]
+VITE_CLERK_PUBLISHABLE_KEY = "pk_test_c2F2aW5nLXRhZHBvbGUtNjIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+VAPID_PUBLIC_KEY = "BNVCFrzkRpeaJr-6kFesf5KkjQnJg38VX91kPm2QVeCWhP7L_tuvENlRgTE2Qxs6tLRZ8Yh2itKEVtcLsNVyLxE"
+VAPID_PRIVATE_KEY = "k_mDxnZbT-WYxhVsh5-1LqNhB739-hsYq2hvuSbaxIg"
+VAPID_SUBJECT = "mailto:admin@ava-fight.app"

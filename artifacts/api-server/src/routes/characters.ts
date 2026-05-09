@@ -80,7 +80,6 @@ router.post("/characters", async (req, res): Promise<void> => {
       specialAbility: parsed.data.specialAbility,
       weaknesses: parsed.data.weaknesses,
       description: parsed.data.description,
-      imageUrl: parsed.data.imageUrl ?? null,
     })
     .returning();
 

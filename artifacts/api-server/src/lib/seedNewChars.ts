@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { charactersTable } from "@workspace/db/schema";
-import { eq, inArray, sql, like } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import charactersFullDump from "./charactersFullDump.json" with { type: "json" };
 
 const newChars = [
@@ -31,6 +31,16 @@ const newChars = [
     specialAbility: "Infinite liquidity — buys off opponents mid-fight, hires their families, owns the arena lease, the venue, and the broadcast rights; unleashes weaponized cash storms that disintegrate flesh and pride simultaneously; every punch he throws is paid for in advance; cannot be defeated by any fighter who can be bought, intimidated, or out-resourced",
     weaknesses: "Money has no leverage over the architects. Chris Henry and Troy Wilson built the system that prints his cash — they own him by default. Anyone else? They lose.",
     description: "The third Developer Legend. Tim doesn't fight — he transacts. His weapon is the unlimited bankroll, his style is total economic dominance. Every other fighter on the roster has a price tag, and Tim already paid it. The only two people he answers to are the ones who wrote the rules: Chris and Troy.",
+  },
+  // ── Full Bleed Studios ──────────────────────────────────────────────────────
+  {
+    name: "Pitt",
+    universe: "Full Bleed Studios",
+    imageUrl: "/characters/pitt.jpg",
+    strength: 9600, speed: 7400, intelligence: 6200, durability: 9400,
+    specialAbility: "Half-human, half-Creed war-beast physiology — possesses superhuman strength surpassing most cosmic-tier fighters; regenerative healing factor that knits catastrophic wounds within seconds; retractable adamantium-dense alien claws that shred reinforced steel; rage escalation that multiplies output the more damage he sustains; symbiotic protective bond with Timmy that removes all mental limiters when the child is in danger",
+    weaknesses: "Berserker rage state impairs tactical thinking and makes him susceptible to environmental traps; the bond with Timmy can be exploited as an emotional lever; certain high-frequency energy attacks interfere with his alien physiology; his Creed half surfaces under extreme stress, reducing self-control",
+    description: "Created as the ultimate biological weapon by the alien Creed race, Pitt escaped his makers and crashed to Earth — a seven-foot-tall wall of grey muscle, claws, and barely-contained fury. Beneath the monster is the echo of a human soul, expressed almost entirely through his fierce, wordless protection of a young boy named Timmy. Pitt doesn't fight to win. He fights until nothing is standing.",
   },
   // ── existing entries (kept for idempotency) ─────────────────────────────────
   {
@@ -107,7 +117,7 @@ const newChars = [
   },
   {
     name: "Doctor Fate",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: null,
     strength: 7500, speed: 8200, intelligence: 9200, durability: 8800,
     specialAbility: "Helm of Nabu channels the Lord of Order; supreme sorcery — mystic blasts, force fields, binding chains; flight; teleportation; fate manipulation; anti-magic nullification",
@@ -1365,7 +1375,7 @@ const newChars = [
   // ── MARVEL COSMIC (new) ──────────────────────────────────────────────────
   {
     name: "The One Above All",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/the-one-above-all.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute omnipotence; author of all reality; exists beyond all concepts of power",
@@ -1375,7 +1385,7 @@ const newChars = [
   },
   {
     name: "The One Below All",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/the-one-below-all.jpg",
     strength: 9000000, speed: 8000000, intelligence: 7000000, durability: 9000000,
     specialAbility: "Gamma-powered destruction on universal scale; antithesis of all creation; devours entire realities",
@@ -1551,7 +1561,7 @@ const newChars = [
   // ── Missing Marvel / DC core roster ─────────────────────────────────────────
   {
     name: "Black Panther",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/black-panther.jpg",
     strength: 400000, speed: 200000, intelligence: 800000, durability: 300000,
     specialAbility: "Vibranium suit redistributes kinetic energy; anti-metal claws phase through metal; Panther God blessing enhances all senses and strength; master of every martial art on Earth; Wakandan technology arsenal",
@@ -1561,7 +1571,7 @@ const newChars = [
   },
   {
     name: "Punisher",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/punisher.jpg",
     strength: 3500, speed: 3200, intelligence: 7200, durability: 3200,
     specialAbility: "Master of every conventional firearm, explosive, and bladed weapon; military special forces training; expert tactician and tracker; will kill without hesitation; near-supernatural pain tolerance",
@@ -1571,7 +1581,7 @@ const newChars = [
   },
   {
     name: "Iceman",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/iceman.jpg",
     strength: 600000, speed: 900000, intelligence: 350000, durability: 1500000,
     specialAbility: "Omega-level cryokinesis; can become living ice; freeze all atmospheric moisture; create ice constructs; lower temperature to absolute zero; exist as ambient water molecules; internal moisture freeze of targets",
@@ -1581,7 +1591,7 @@ const newChars = [
   },
   {
     name: "Emma Frost",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/emma-frost.jpg",
     strength: 400000, speed: 180000, intelligence: 3000000, durability: 1200000,
     specialAbility: "Omega-level telepathy; psychic blasts; complete mind control and memory alteration; diamond form near-invulnerability; astral projection; split consciousness to control multiple minds simultaneously",
@@ -1591,7 +1601,7 @@ const newChars = [
   },
   {
     name: "Mystique",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/mystique.jpg",
     strength: 18000, speed: 22000, intelligence: 200000, durability: 18000,
     specialAbility: "Perfect shapeshifting — copies voice, fingerprints, retinal patterns, and body chemistry exactly; slowed aging; toxin resistance; peak human fighter and markswoman in any form",
@@ -1601,7 +1611,7 @@ const newChars = [
   },
   {
     name: "Mr Fantastic",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/mr-fantastic.jpg",
     strength: 500000, speed: 300000, intelligence: 3500000, durability: 700000,
     specialAbility: "Elastic body with theoretically unlimited stretch; molecular density alteration; force field generation; gadget creation in real-time; access to the Ultimate Nullifier; IQ beyond any unaugmented human",
@@ -1611,7 +1621,7 @@ const newChars = [
   },
   {
     name: "Thing",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/thing.jpg",
     strength: 2000000, speed: 120000, intelligence: 150000, durability: 2500000,
     specialAbility: "Organic orange stone body — resists bullets, fire, explosions, moderate energy; Class 100+ physical strength; near-unlimited stamina; seismic ground slams; decades of brawling experience",
@@ -1621,7 +1631,7 @@ const newChars = [
   },
   {
     name: "Flash",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/flash.jpg",
     strength: 1000000, speed: 30000000, intelligence: 600000, durability: 900000,
     specialAbility: "Speed Force connection — near-light-speed movement; infinite mass punch; time travel; intangible phasing through matter; lightning generation; tornado creation; molecular acceleration of targets; speed lending and theft",
@@ -1631,7 +1641,7 @@ const newChars = [
   },
   {
     name: "Joker",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/joker.jpg",
     strength: 3500, speed: 3800, intelligence: 9200, durability: 3000,
     specialAbility: "Joker venom in dozens of lethal variants; acid flower; razor playing cards; electrified joy buzzer; psychotropic laughing gas; toxin immunity from self-exposure; genius-level tactical chaos engineering; complete psychological unpredictability",
@@ -1641,7 +1651,7 @@ const newChars = [
   },
   {
     name: "Hawkgirl",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/hawkgirl.jpg",
     strength: 650000, speed: 500000, intelligence: 350000, durability: 550000,
     specialAbility: "Nth metal wings for flight; nth metal mace completely nullifies magic; nth metal absorption enhances strength and durability; millennia of combat memories across reincarnations; Thanagarian warrior elite training",
@@ -1651,7 +1661,7 @@ const newChars = [
   },
   {
     name: "Lucifer Morningstar",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/lucifer-morningstar.jpg",
     strength: 9800000, speed: 9800000, intelligence: 9900000, durability: 9900000,
     specialAbility: "Nigh-omnipotent reality manipulation; can erase anything from existence; infinite energy projection; total control of divine light (the Morningstar Flame); immortality; absorb and redirect the power of the Presence; create or unmake universes; absolute authority in his own creation",
@@ -1661,7 +1671,7 @@ const newChars = [
   },
   {
     name: "Living Tribunal",
-    universe: "Marvel Comics",
+    universe: "Multiverse Comics",
     imageUrl: "/characters/the-living-tribunal.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute authority over the entire Marvel multiverse; can instantly nullify the power of any being including Infinity Stones; reality restructuring on cosmic scale; omniscience across all timelines and dimensions; can erase entire universes; his three faces represent equity, vengeance, and necessity and must agree before he acts",
@@ -1671,7 +1681,7 @@ const newChars = [
   },
   {
     name: "Doctor Manhattan",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/dr-manhattan.jpg",
     strength: 9500000, speed: 9800000, intelligence: 9700000, durability: 9900000,
     specialAbility: "Absolute matter and energy manipulation at the subatomic level; simultaneous existence across all points in time; teleportation; size alteration up to miles tall; disintegration and reassembly of anything; can create and destroy life; sees all possible timelines; restructured the entire DC multiverse during Doomsday Clock",
@@ -1681,7 +1691,7 @@ const newChars = [
   },
   {
     name: "Mr. Mxyzptlk",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/mr-mxyzptlk.jpg",
     strength: 9000000, speed: 9500000, intelligence: 9000000, durability: 9200000,
     specialAbility: "5th-dimensional magic that operates completely outside 3D physical laws; can rewrite reality on a whim; transmutation of matter and energy; immune to all 3D-universe attacks; has powered Superman to near-omnipotence; once assisted against the Presence; reality erasure; unlimited wish-granting",
@@ -1691,7 +1701,7 @@ const newChars = [
   },
   {
     name: "The Presence",
-    universe: "DC Comics",
+    universe: "Legacy Comics",
     imageUrl: "/characters/the-presence.jpg",
     strength: 10000000, speed: 10000000, intelligence: 10000000, durability: 10000000,
     specialAbility: "Absolute omnipotence — the source and sustainer of all DC existence; created the multiverse, the angels, the New Gods, and every cosmic hierarchy beneath him; wields the Word of Creation (a single utterance unmakes or remakes reality); his Spectre is the extension of his wrath; can appear in any form or none; exists above time, space, and metaphysics; no being in DC continuity surpasses him",
@@ -1762,15 +1772,42 @@ export async function seedNewChars(): Promise<void> {
     console.log(`[seed] Synced ${dumpInserted} character(s) from full roster dump`);
   }
 
-  // One-time migration: rewrite legacy .png image URLs to .jpg (portraits were
-  // re-encoded to JPEG for ~19x bandwidth reduction; old .png files no longer
-  // exist on disk so the .png URLs would 404).
-  const pngFix = await db
-    .update(charactersTable)
-    .set({ imageUrl: sql`REPLACE(${charactersTable.imageUrl}, '.png', '.jpg')` })
-    .where(like(charactersTable.imageUrl, '/characters/%.png'))
+  // One-off renames — safe to run repeatedly, no-ops once done.
+  await db.execute(sql`UPDATE characters SET universe = 'Multiverse Comics' WHERE universe = 'Marvel Comics'`);
+  await db.execute(sql`UPDATE characters SET universe = 'Legacy Comics' WHERE universe = 'DC Comics'`);
+  await db.execute(sql`UPDATE characters SET universe = 'Kingdom' WHERE universe = 'Disney'`);
+
+  // One-off cleanup: remove the legacy "Dr. Manhattan" duplicate (the
+  // canonical entry is "Doctor Manhattan"). Safe to run repeatedly — no-op
+  // once the row is gone.
+  const removed = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "Dr. Manhattan"))
     .returning({ id: charactersTable.id });
-  if (pngFix.length > 0) {
-    console.log(`[seed] Migrated ${pngFix.length} character image_url(s) from .png to .jpg`);
+  if (removed.length > 0) {
+    console.log(`[seed] Removed ${removed.length} duplicate "Dr. Manhattan" row(s)`);
   }
+
+  // One-off cleanup: remove the legacy "The Joker" duplicate (the canonical
+  // entry is "Joker"). Safe to run repeatedly — no-op once the row is gone.
+  const removedJoker = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "The Joker"))
+    .returning({ id: charactersTable.id });
+  if (removedJoker.length > 0) {
+    console.log(`[seed] Removed ${removedJoker.length} duplicate "The Joker" row(s)`);
+  }
+
+  // One-off cleanup: remove the legacy weaker "The Flash" duplicate (the
+  // canonical entry is "Flash" — same Barry Allen, but stronger stats and
+  // the proper /characters/flash.jpg image). The dump entry has already been
+  // stripped so this only runs once per DB.
+  const removedFlash = await db
+    .delete(charactersTable)
+    .where(eq(charactersTable.name, "The Flash"))
+    .returning({ id: charactersTable.id });
+  if (removedFlash.length > 0) {
+    console.log(`[seed] Removed ${removedFlash.length} duplicate "The Flash" row(s)`);
+  }
+
 }

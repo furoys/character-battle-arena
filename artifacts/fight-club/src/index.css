@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap');
+@layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* Clerk sign-in/up form input placeholder visibility */
+.cl-formFieldInput::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+  opacity: 1 !important;
+}
 
 /* ===== AVA POWER AURA ANIMATIONS ===== */
 @keyframes ava-particle-rise {
@@ -236,6 +243,75 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* ── Character portrait motion (Ken Burns drift) ── */
+@keyframes ava-ken-burns {
+  0%   { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  50%  { transform: scale(1.10) translate3d( 1.5%,  1%, 0); }
+  100% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+}
+.ava-portrait-motion {
+  animation: ava-ken-burns 14s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center 30%;
+}
+.ava-portrait-motion.is-hover {
+  animation-duration: 6s;
+}
+
+/* ── Ambient tier-colored breathing glow at card base ── */
+@keyframes ava-tier-breathe {
+  0%, 100% { opacity: 0.35; transform: translate3d(-50%, 30%, 0) scale(1); }
+  50%      { opacity: 0.75; transform: translate3d(-50%, 25%, 0) scale(1.15); }
+}
+.ava-tier-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 140%;
+  height: 70%;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  animation: ava-tier-breathe 7s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* ── Slow diagonal shimmer sweep across each card ── */
+@keyframes ava-shimmer-pass {
+  0%   { transform: translateX(-150%) skewX(-18deg); opacity: 0; }
+  8%   { opacity: 0.55; }
+  20%  { opacity: 0.55; }
+  28%  { transform: translateX(180%) skewX(-18deg); opacity: 0; }
+  100% { transform: translateX(180%) skewX(-18deg); opacity: 0; }
+}
+.ava-shimmer-pass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+  mix-blend-mode: screen;
+  animation: ava-shimmer-pass 11s linear infinite;
+  will-change: transform, opacity;
+}
+
+/* ── Edge-rim pulse on selected/hovered cards ── */
+@keyframes ava-rim-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.ava-rim-pulse {
+  animation: ava-rim-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ava-card-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ava-card-rise {
+  animation: ava-card-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ── Arena character card flip ── */

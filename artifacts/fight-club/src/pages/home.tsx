@@ -1,18 +1,30 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useListCharacters } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useListCharacters, useListSavedTeams, useSaveTeam, useDeleteSavedTeam, SavedTeam, getListSavedTeamsQueryKey } from "@workspace/api-client-react";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
-import { Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Character } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
-import { AgeGate } from "@/components/age-gate";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
+import { Link as NavLink, useLocation } from "wouter";
+import { Show, useUser } from "@clerk/react";
+import { CharacterAvatar } from "@/components/character-avatar";
 import { computeSynergy } from "@/lib/synergies";
 import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
+import { setCreatorToken } from "@/lib/challenge-tokens";
+import { subscribeForChallenge, requestNotificationPermissionFromGesture } from "@/lib/push-subscribe";
+import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
+import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
+import { PendingChallengesBar } from "@/components/pending-challenges-bar";
+import { useMusic } from "@/contexts/music-context";
+import { MusicToggle } from "@/components/music-toggle";
+import { EnergyBadge } from "@/components/energy-badge";
+import { useEnergy } from "@/hooks/use-energy";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -24,6 +36,39 @@ function writeLS(key: string, value: unknown) {
 }
 
 type ActiveFilter = null | "__faves__" | "__recent__" | string;
+
+// ─── Narration toggle (controlled — state lives in Home) ─────────────────────
+// Pre-fight narration chip — sits above the FIGHT bar so players make the
+// audio choice at the moment of commitment rather than digging through a
+// top-bar icon. Wider + labeled so the state is unmistakable.
+function NarrationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-pressed={on}
+      aria-label={on ? "Turn AI narration off" : "Turn AI narration on"}
+      title={on ? "AI Narration ON — tap to turn off" : "AI Narration OFF — tap to enable"}
+      className="w-full flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+      style={{
+        height: 30,
+        background: on
+          ? "linear-gradient(180deg, rgba(0,240,255,0.10) 0%, rgba(0,240,255,0.18) 100%)"
+          : "rgba(255,255,255,0.025)",
+        borderTop: `1px solid ${on ? "rgba(0,240,255,0.45)" : "rgba(255,255,255,0.10)"}`,
+        borderBottom: `1px solid ${on ? "rgba(0,240,255,0.20)" : "rgba(255,255,255,0.06)"}`,
+        color: on ? "#00f0ff" : "rgba(255,255,255,0.45)",
+        fontFamily: "var(--font-display, monospace)",
+        fontSize: 9,
+        letterSpacing: "0.28em",
+        fontWeight: 700,
+        textTransform: "uppercase",
+      }}
+    >
+      {on ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
+      <span>Narration: {on ? "On" : "Off"}</span>
+    </button>
+  );
+}
 
 // ─── Corner bracket decoration ──────────────────────────────────────────────
 function Brackets({ color, size = 10 }: { color: string; size?: number }) {
@@ -74,16 +119,19 @@ function TeamPortrait({ character, team, onRemove }: { character: Character; tea
 }
 
 // ─── Team slot ───────────────────────────────────────────────────────────────
-function TeamSlot({ team, members, active, onActivate, onRemove }: {
+function TeamSlot({ team, members, active, flash, onActivate, onRemove, onSave }: {
   team: 1 | 2;
   members: Character[];
   active: boolean;
+  flash: boolean;
   onActivate: () => void;
   onRemove: (id: number) => void;
+  onSave?: () => void;
 }) {
   const color = team === 1 ? "#00f0ff" : "#ff3b30";
   const dimColor = team === 1 ? "rgba(0,240,255,0.08)" : "rgba(255,59,48,0.08)";
   const glowColor = team === 1 ? "rgba(0,240,255,0.25)" : "rgba(255,59,48,0.25)";
+  const flashGlow = team === 1 ? "rgba(0,240,255,0.85)" : "rgba(255,59,48,0.85)";
   const totalPower = members.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
 
   return (
@@ -92,9 +140,12 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
       style={{
         background: active ? dimColor : "rgba(255,255,255,0.02)",
         border: `1px solid ${active ? color + "60" : "rgba(255,255,255,0.08)"}`,
-        boxShadow: active ? `0 0 24px ${glowColor}` : "none",
+        boxShadow: flash
+          ? `0 0 0 2px ${flashGlow}, 0 0 32px ${flashGlow}`
+          : active ? `0 0 24px ${glowColor}` : "none",
         padding: "6px 8px 4px",
         minWidth: 0,
+        animation: flash ? "slotPop 360ms ease-out" : undefined,
       }}
       onClick={onActivate}
     >
@@ -114,6 +165,16 @@ function TeamSlot({ team, members, active, onActivate, onRemove }: {
             <span className="font-display text-[9px]" style={{ color: `${color}90` }}>
               {totalPower >= 1_000_000 ? `${+(totalPower / 1_000_000).toFixed(1)}M` : totalPower >= 1_000 ? `${Math.round(totalPower / 1_000)}K` : totalPower} PWR
             </span>
+          )}
+          {onSave && members.length > 0 && (
+            <button
+              title="Save this team"
+              onClick={(e) => { e.stopPropagation(); onSave(); }}
+              className="flex items-center justify-center transition-opacity hover:opacity-100 opacity-50"
+              style={{ width: 18, height: 18 }}
+            >
+              <Bookmark className="h-3 w-3" style={{ color }} />
+            </button>
           )}
           <span
             className="text-[9px] font-bold px-1 py-0.5 leading-none"
@@ -220,18 +281,121 @@ function UniversePill({ label, count, active, onClick }: { label: string; count?
   );
 }
 
+// ─── Profile button used in the unified top bar ──────────────────────────────
+function HomeProfileButton() {
+  const { user } = useUser();
+  const name =
+    (user?.unsafeMetadata?.username as string) ||
+    user?.firstName ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "You";
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <NavLink href="/profile">
+      <button
+        className="flex items-center gap-2 px-1.5 py-0.5 transition-all hover:bg-primary/10 rounded"
+        title={`Signed in as ${name}`}
+      >
+        <span
+          className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          {name}
+        </span>
+        <CharacterAvatar size={28} fallbackInitial={initial} />
+      </button>
+    </NavLink>
+  );
+}
+
 // ─── Home page ───────────────────────────────────────────────────────────────
 export function Home() {
+  const { setTrack } = useMusic();
+  useEffect(() => { setTrack("lobby"); }, []);
   const { data: characters, isLoading } = useListCharacters();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  // Saved teams
+  const { data: savedTeams } = useListSavedTeams({ query: { enabled: !!user, queryKey: getListSavedTeamsQueryKey() } });
+  const saveTeamMutation = useSaveTeam();
+  const deleteTeamMutation = useDeleteSavedTeam();
+  const [savingTeamSlot, setSavingTeamSlot] = useState<1 | 2 | null>(null);
+  const [saveTeamName, setSaveTeamName] = useState("");
+  const saveNameInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (savingTeamSlot !== null) {
+      setSaveTeamName("");
+      setTimeout(() => saveNameInputRef.current?.focus(), 50);
+    }
+  }, [savingTeamSlot]);
+
+  const handleSaveTeam = async () => {
+    if (!savingTeamSlot || !saveTeamName.trim()) return;
+    const members = savingTeamSlot === 1 ? team1 : team2;
+    if (members.length === 0) return;
+    try {
+      await saveTeamMutation.mutateAsync({ data: { name: saveTeamName.trim(), characterIds: members.map(c => c.id) } });
+      await queryClient.invalidateQueries({ queryKey: getListSavedTeamsQueryKey() });
+      toast({ title: "Team saved!", description: `"${saveTeamName.trim()}" added to My Teams` });
+      setSavingTeamSlot(null);
+    } catch {
+      toast({ title: "Error", description: "Couldn't save team", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteSavedTeam = async (id: number, name: string) => {
+    try {
+      await deleteTeamMutation.mutateAsync({ id });
+      await queryClient.invalidateQueries({ queryKey: getListSavedTeamsQueryKey() });
+      toast({ title: "Removed", description: `"${name}" deleted from My Teams` });
+    } catch {
+      toast({ title: "Error", description: "Couldn't delete team", variant: "destructive" });
+    }
+  };
+
+  const handleLoadSavedTeam = (savedTeam: SavedTeam) => {
+    if (!characters) return;
+    const members = savedTeam.characterIds
+      .map(id => characters.find(c => c.id === id))
+      .filter((c): c is Character => c !== undefined)
+      .slice(0, 5);
+    if (activeTeam === 1) setTeam1(members);
+    else setTeam2(members);
+    toast({ title: `Loaded "${savedTeam.name}"`, description: `Team ${activeTeam} updated` });
+  };
+
   const [team1, setTeam1] = useState<Character[]>([]);
   const [team2, setTeam2] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
+  const [flashTeam, setFlashTeam] = useState<1 | 2 | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerFlash = (team: 1 | 2) => {
+    setFlashTeam(null);
+    requestAnimationFrame(() => setFlashTeam(team));
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashTeam(null), 380);
+  };
   const [showModal, setShowModal] = useState(false);
   const [showRefusal, setShowRefusal] = useState(false);
+  const energy = useEnergy();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>(null);
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [showTauntPanel, setShowTauntPanel] = useState(false);
+  const [tauntInput, setTauntInput] = useState("");
+  const [creatingChallenge, setCreatingChallenge] = useState(false);
+
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    try { return localStorage.getItem("ava:tts") === "1"; } catch { return false; }
+  });
+  const toggleTts = () => {
+    const next = !ttsEnabled;
+    try { localStorage.setItem("ava:tts", next ? "1" : "0"); } catch {}
+    setTtsEnabled(next);
+  };
 
   // Progressive rendering state — actual IntersectionObserver is wired AFTER filteredCharacters
   const INITIAL_VISIBLE = 80;
@@ -240,8 +404,13 @@ export function Home() {
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset visible count whenever the filter/search changes
-  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [searchQuery, activeFilter, tierFilter]);
+  // Reset visible count whenever the filter/search changes.
+  // When a specific universe is selected, show all its characters immediately.
+  // Only cap to INITIAL_VISIBLE when browsing "All" (955 chars) or special filters.
+  useEffect(() => {
+    const isSpecificUniverse = activeFilter !== null && activeFilter !== "__recent__" && activeFilter !== "__faves__";
+    setVisibleCount(isSpecificUniverse ? 9999 : INITIAL_VISIBLE);
+  }, [searchQuery, activeFilter, tierFilter]);
 
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
   useEffect(() => {
@@ -259,6 +428,10 @@ export function Home() {
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
   const [upsetMode, setUpsetMode] = useState(false);
+  // Chaos modifier — persisted so a player's last pick survives reloads but
+  // is NOT sticky across new sessions (cleared via the picker's "None" tile).
+  const [modifierId, setModifierId] = useStoredModifier(LS_LAST_MODIFIER);
+  const [modifierPickerOpen, setModifierPickerOpen] = useState(false);
   const toggleFavorite = (id: number) => {
     setFavorites(prev => {
       const next = new Set(prev);
@@ -318,10 +491,25 @@ export function Home() {
     return pool.filter(c => c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
   }, [characters, searchQuery, activeFilter, favorites, recentPicks, tierFilter]);
 
+  // Synchronous in-flight lock. React's `simulateFight.isPending` flips via
+  // setState which is async — two clicks within the same render frame can
+  // both see isPending===false and both fire mutate(), double-charging
+  // energy. This ref flips synchronously inside the click handler so the
+  // second event in the same frame short-circuits before reaching mutate().
+  const fightInFlightRef = useRef(false);
   const simulateFight = useSimulateFightStream({
     onError: (error) => {
+      fightInFlightRef.current = false;
       toast({ title: "Simulation Failed", description: error.message || "Unknown error", variant: "destructive" });
       setShowModal(false);
+      // The server may or may not have consumed energy (depends where it
+      // failed). Refetch to be honest with the user.
+      if (energy.isSignedIn) void energy.refetch();
+    },
+    onComplete: () => {
+      fightInFlightRef.current = false;
+      // Reconcile the optimistic decrement with the server's truth at fight-end.
+      if (energy.isSignedIn) void energy.refetch();
     },
   });
 
@@ -359,15 +547,21 @@ export function Home() {
     if (activeTeam === 1) {
       if (team1.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam1(t => [...t, character]);
+      triggerFlash(1);
     } else {
       if (team2.length >= 5) { toast({ title: "Team Full", description: "Max 5 per team", variant: "destructive" }); return; }
       setTeam2(t => [...t, character]);
+      triggerFlash(2);
     }
   };
 
   const DEVELOPER_IDS = [780, 781]; // Chris Henry, Troy Wilson
 
   const handleFight = () => {
+    // Synchronous lock — closes the same-frame race window that the React
+    // state-based check (simulateFight.isPending) leaves open, since
+    // setIsPending only flips on the next render.
+    if (fightInFlightRef.current || simulateFight.isPending) return;
     if (team1.length === 0 || team2.length === 0) {
       toast({ title: "Teams Required", description: "Both teams need at least 1 fighter", variant: "destructive" });
       return;
@@ -381,8 +575,14 @@ export function Home() {
       return;
     }
     pushRecentPicks([...team1.map(c => c.id), ...team2.map(c => c.id)]);
+    // Take the synchronous lock BEFORE any await/mutate so a second click in
+    // the same event-loop tick short-circuits at the guard above.
+    fightInFlightRef.current = true;
     setShowModal(true);
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
+    // Optimistically decrement so the badge updates the moment FIGHT is hit.
+    // After the fight call resolves, refetch from the server to reconcile.
+    if (energy.isSignedIn) energy.applyOptimisticConsume();
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
   };
 
   const handleRandomFight = () => {
@@ -417,8 +617,49 @@ export function Home() {
     return null;
   };
 
+  const handleCreateChallenge = async () => {
+    if (team1.length === 0) {
+      toast({ title: "Pick Your Team", description: "Add at least 1 fighter to Team 1 first", variant: "destructive" });
+      return;
+    }
+    // Ask for notification permission BEFORE any await — iOS Safari and
+    // Chrome Android suppress the prompt if it's requested after the
+    // user-gesture context is lost (i.e. across a fetch). We ignore the
+    // result here; the subsequent subscribe call uses the resolved state.
+    const permissionPromise = requestNotificationPermissionFromGesture();
+    setCreatingChallenge(true);
+    setShowTauntPanel(false);
+    try {
+      const r = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          team1Ids: team1.map(c => c.id),
+          mode: "cinematic",
+          modifierId: modifierId ?? null,
+          taunt: tauntInput.trim() || null,
+        }),
+      });
+      if (!r.ok) throw new Error("Failed to create challenge");
+      const { code, creatorToken } = await r.json() as { code: string; creatorToken?: string };
+      if (creatorToken) {
+        setCreatorToken(code, creatorToken);
+        // Fire-and-forget: register a push subscription so the creator can
+        // leave the screen and still be told when their friend accepts.
+        // Permission was already prompted above; prompt:false here just uses
+        // the resolved state. UI polls as a fallback regardless.
+        void permissionPromise.then(() => subscribeForChallenge({ code, token: creatorToken, prompt: false }));
+      }
+      setTauntInput("");
+      navigate(`/challenge/${code}?creator=1`);
+    } catch (e) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setCreatingChallenge(false);
+    }
+  };
+
   const canFight = team1.length > 0 && team2.length > 0;
-  const activeColor = activeTeam === 1 ? "#00f0ff" : "#ff3b30";
 
   // Synergy strip — computed for both teams to show in HUD
   const syn1 = useMemo(() => computeSynergy(team1), [team1]);
@@ -432,7 +673,6 @@ export function Home() {
 
   return (
     <>
-      <AgeGate />
       <style>{`
         @keyframes scanMove {
           from { transform: translateY(0); }
@@ -442,6 +682,22 @@ export function Home() {
           0%, 100% { box-shadow: 0 0 20px rgba(255,0,85,0.4), 0 0 40px rgba(255,0,85,0.15); }
           50% { box-shadow: 0 0 30px rgba(255,0,85,0.7), 0 0 60px rgba(255,0,85,0.3); }
         }
+        @keyframes vsPulse {
+          0%, 100% {
+            transform: scale(1) skewX(-4deg);
+            text-shadow: 0 0 14px rgba(255,0,85,0.95), 0 0 28px rgba(255,0,85,0.55), 0 0 50px rgba(255,0,85,0.25);
+          }
+          50% {
+            transform: scale(1.12) skewX(-4deg);
+            text-shadow: 0 0 22px rgba(255,0,85,1), 0 0 44px rgba(255,0,85,0.8), 0 0 80px rgba(255,0,85,0.4);
+          }
+        }
+        @keyframes vsHalo {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.3); }
+        }
+        .ava-vs-pulse { animation: vsPulse 1.4s ease-in-out infinite; transform-origin: center; display: inline-block; }
+        .ava-vs-halo  { animation: vsHalo 1.4s ease-in-out infinite; }
         @keyframes fingerBounce {
           0%, 100% { transform: translateY(0) rotate(-5deg) scale(1); }
           20% { transform: translateY(-18px) rotate(5deg) scale(1.15); }
@@ -457,326 +713,174 @@ export function Home() {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
         }
-        @keyframes pickingBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
         @keyframes hudGlow {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.7; }
         }
+        @keyframes slotPop {
+          0% { transform: scale(1); }
+          35% { transform: scale(1.04); }
+          100% { transform: scale(1); }
+        }
       `}</style>
 
       <div className="flex flex-col h-full min-h-0">
-        {/* ── ARENA HUD ─────────────────────────────────────────────────── */}
+        <PendingChallengesBar />
+        {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
         <div
-          className="flex-shrink-0 sticky top-0 z-30"
+          className="flex-shrink-0 sticky top-0 z-30 flex items-center justify-between px-3 py-2"
           style={{
             background: "linear-gradient(180deg, #000000 0%, #080810 100%)",
             borderBottom: "1px solid rgba(255,0,85,0.2)",
           }}
         >
-          {/* Scanline overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
-              zIndex: 1,
-            }}
-          />
-
-          {/* Content above scanlines */}
-          <div className="relative z-10">
-            {/* Logo strip */}
-            <div
-              className="flex items-center justify-center py-1 relative"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          <AvaLogo className="h-7 w-auto" />
+          <div className="flex items-center gap-2">
+            <MusicToggle />
+            {/* UPSET MODE — promoted to the top bar so the primary action row
+                stays focused on starting matches. Tap to toggle cached vs
+                fresh verdict generation. */}
+            <button
+              onClick={() => setUpsetMode(m => !m)}
+              className="flex items-center gap-1 transition-all duration-200 active:scale-[0.97]"
+              style={{
+                height: 24,
+                padding: "0 7px",
+                background: upsetMode ? "rgba(255,160,0,0.14)" : "transparent",
+                border: `1px solid ${upsetMode ? "rgba(255,160,0,0.6)" : "rgba(255,255,255,0.12)"}`,
+                cursor: "pointer",
+              }}
+              title={upsetMode ? "Upset Mode ON — bypasses cached verdict" : "Upset Mode OFF — uses cached verdict"}
             >
-              <div className="absolute left-3 flex items-center gap-1.5">
-                <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, rgba(0,240,255,0.5))" }} />
-                <div className="h-1 w-1 rotate-45" style={{ background: "#00f0ff60" }} />
-              </div>
-              <AvaLogo className="h-7 w-auto" />
-              <div className="absolute right-3 flex items-center gap-1.5">
-                <div className="h-1 w-1 rotate-45" style={{ background: "#ff3b3060" }} />
-                <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, rgba(255,59,48,0.5))" }} />
-              </div>
-            </div>
-
-            {/* Team builder */}
-            <div className="flex items-stretch gap-2 p-2">
-              <TeamSlot
-                team={1}
-                members={team1}
-                active={activeTeam === 1}
-                onActivate={() => setActiveTeam(1)}
-                onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
+              <Zap
+                className="h-3 w-3"
+                style={{ color: upsetMode ? "#ffa000" : "rgba(255,255,255,0.4)" }}
+                fill={upsetMode ? "#ffa000" : "none"}
               />
-
-              {/* CENTER: VS only — slim divider */}
-              <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 28 }}>
-                <div
-                  className="font-display text-xs uppercase tracking-[0.3em] leading-none"
-                  style={{ color: "rgba(255,0,85,0.5)", textShadow: "0 0 12px rgba(255,0,85,0.4)" }}
-                >
-                  vs
-                </div>
-              </div>
-
-              <TeamSlot
-                team={2}
-                members={team2}
-                active={activeTeam === 2}
-                onActivate={() => setActiveTeam(2)}
-                onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
-              />
-            </div>
-
-            {/* Power comparison bar */}
-            <PowerComparison team1={team1} team2={team2} />
-
-            {/* Synergy strip — scrollable single row, only when there are synergies */}
-            {synergyPills.length > 0 && (
-              <div
-                className="flex gap-1 overflow-x-auto px-2 pb-1"
-                style={{ scrollbarWidth: "none" }}
-              >
-                {synergyPills.map((p, i) => {
-                  const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
-                  const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
-                  return (
-                    <div
-                      key={i}
-                      className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5"
-                      style={{
-                        background: p.positive ? `${color}12` : "rgba(249,115,22,0.1)",
-                        border: `1px solid ${color}40`,
-                        fontSize: 7.5,
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      <span style={{ color: teamColor, opacity: 0.7 }}>T{p.team}</span>
-                      <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>·</span>
-                      <span style={{ color }}>{p.label}</span>
-                      <span style={{ color, opacity: 0.8, marginLeft: 2 }}>
-                        {p.bonus > 0 ? "+" : ""}{Math.round(p.bonus * 100)}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* FIGHT + RANDOM buttons */}
-            <div className="px-2 pb-2 flex gap-1.5">
-              <button
-                className="flex-1 flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
+              <span
                 style={{
-                  height: 34,
-                  border: canFight ? "1.5px solid #ff0055" : "1.5px solid rgba(255,255,255,0.1)",
-                  background: canFight ? "rgba(255,0,85,0.12)" : "rgba(255,255,255,0.03)",
-                  color: canFight ? "#ff0055" : "rgba(255,255,255,0.2)",
-                  fontSize: 11,
-                  letterSpacing: "0.25em",
-                  cursor: canFight ? "pointer" : "not-allowed",
-                  animation: canFight ? "fightPulse 2s ease-in-out infinite" : "none",
-                }}
-                onClick={handleFight}
-                disabled={!canFight || simulateFight.isPending}
-              >
-                <Swords className="h-4 w-4" />
-                <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
-                <div className="flex gap-0.5 ml-1">
-                  {[0,1,2,3,4].map(i => (
-                    <div
-                      key={i}
-                      className="w-1 h-1 rounded-full"
-                      style={{
-                        background: i < Math.max(team1.length, team2.length)
-                          ? "#ff005560"
-                          : "rgba(255,255,255,0.1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </button>
-
-              {/* RANDOM fight button */}
-              <button
-                className="flex items-center justify-center gap-1.5 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  height: 34,
-                  width: 90,
                   fontSize: 8,
+                  fontFamily: "var(--font-display, monospace)",
                   letterSpacing: "0.18em",
-                  border: "1.5px solid rgba(255,200,0,0.35)",
-                  background: "rgba(255,200,0,0.07)",
-                  color: "rgba(255,200,0,0.7)",
-                  cursor: simulateFight.isPending ? "not-allowed" : "pointer",
-                  flexShrink: 0,
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  color: upsetMode ? "rgba(255,160,0,0.95)" : "rgba(255,255,255,0.45)",
                 }}
-                onClick={handleRandomFight}
-                disabled={simulateFight.isPending || !characters?.length}
-                title="Random fight — fully randomized teams"
               >
-                <Shuffle className="h-3 w-3" />
-                <span>RANDOM</span>
-              </button>
-            </div>
+                Upset
+              </span>
+            </button>
+            <Show when="signed-in">
+              <EnergyBadge />
+              <HomeProfileButton />
+            </Show>
+          </div>
+        </div>
 
-            {/* Upset Mode toggle */}
-            <div className="px-2 pb-1.5 flex items-center justify-between">
-              <button
-                onClick={() => setUpsetMode(m => !m)}
-                className="flex items-center gap-1.5 transition-all duration-200 active:scale-[0.97]"
-                style={{ cursor: "pointer", background: "none", border: "none", padding: 0 }}
-                title={upsetMode ? "Upset Mode ON — bypasses cached verdict, runs a fresh sim" : "Upset Mode OFF — cached verdict used for consistency"}
-              >
+        {/* ── CHARACTER GRID ─────────────────────────────────────────────── */}
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map(i => (
                 <div
-                  style={{
-                    width: 28,
-                    height: 14,
-                    borderRadius: 7,
-                    background: upsetMode ? "rgba(255,160,0,0.8)" : "rgba(255,255,255,0.1)",
-                    border: upsetMode ? "1px solid rgba(255,160,0,0.9)" : "1px solid rgba(255,255,255,0.15)",
-                    position: "relative",
-                    transition: "background 0.2s, border 0.2s",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
+                  key={i}
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ background: "#ff0055", animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+            <p className="font-display text-lg uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Loading Roster...
+            </p>
+          </div>
+        ) : (
+          <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
+            {/* Search + filter — sticky so users can refilter without scrolling back up */}
+            <div
+              className="px-3 pt-1.5 pb-1.5 space-y-1 sticky top-0 z-20"
+              style={{
+                background: "rgba(3,3,8,0.92)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>
+              {/* Row 1: Search + tier icons + FAVES */}
+              <div className="flex gap-1.5 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "rgba(255,255,255,0.25)" }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search fighters..."
+                    className="w-full text-xs pl-7 pr-7 py-1.5 focus:outline-none transition-colors"
                     style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      background: upsetMode ? "#fff" : "rgba(255,255,255,0.35)",
-                      position: "absolute",
-                      top: 1,
-                      left: upsetMode ? 15 : 2,
-                      transition: "left 0.2s, background 0.2s",
+                      background: "rgba(255,255,255,0.04)",
+                      border: searchQuery ? "1px solid rgba(255,0,85,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.9)",
+                      fontSize: 11,
                     }}
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                      style={{ color: "rgba(255,255,255,0.4)" }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontFamily: "var(--font-display, monospace)",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: upsetMode ? "rgba(255,160,0,0.9)" : "rgba(255,255,255,0.3)",
-                    transition: "color 0.2s",
-                  }}
-                >
-                  UPSET MODE
-                </span>
-              </button>
-              {upsetMode && (
-                <span style={{ fontSize: 8, color: "rgba(255,160,0,0.6)", letterSpacing: "0.1em", fontFamily: "var(--font-display, monospace)" }}>
-                  BYPASSES VERDICT CACHE
-                </span>
-              )}
-            </div>
 
-            {/* Picking indicator */}
-            <div
-              className="text-center py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] whitespace-nowrap overflow-hidden"
-              style={{
-                color: canFight ? `${activeColor}99` : activeColor,
-                background: `${activeColor}08`,
-                borderTop: `1px solid ${activeColor}20`,
-                animation: canFight ? "none" : "pickingBlink 2.5s ease-in-out infinite",
-              }}
-            >
-              {canFight
-                ? `▸ Team ${activeTeam} — add more (optional) ◂`
-                : `▸ Team ${activeTeam} — pick a fighter ◂`}
-            </div>
+                {/* Tier filter — compact icon-only row */}
+                <div className="flex gap-0.5 flex-shrink-0">
+                  {[
+                    { key: "cosmic",   icon: "★", color: "#ff0055", label: "Cosmic"   },
+                    { key: "elite",    icon: "◆", color: "#c084fc", label: "Elite"    },
+                    { key: "standard", icon: "●", color: "#00f0ff", label: "Standard" },
+                    { key: "street",   icon: "○", color: "#94a3b8", label: "Street"   },
+                  ].map(t => {
+                    const active = tierFilter === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        onClick={() => setTierFilter(active ? "all" : t.key)}
+                        className="flex items-center justify-center transition-all duration-150"
+                        style={{
+                          width: 22, height: 26,
+                          fontSize: 12, fontWeight: 700, lineHeight: 1,
+                          background: active ? t.color : "transparent",
+                          border: `1px solid ${active ? t.color : t.color + "40"}`,
+                          color: active ? "#000" : t.color,
+                          opacity: tierFilter !== "all" && !active ? 0.35 : 1,
+                        }}
+                        title={`${t.label} tier`}
+                      >
+                        {t.icon}
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {/* Search + filter */}
-            <div
-              className="px-3 pt-1.5 pb-1.5 space-y-1"
-              style={{ background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
-            >
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "rgba(255,255,255,0.25)" }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search fighters..."
-                  className="w-full text-xs pl-7 pr-7 py-1.5 focus:outline-none transition-colors"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: searchQuery ? "1px solid rgba(255,0,85,0.4)" : "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.9)",
-                    fontSize: 11,
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* FAVES + RECENT quick filters (pinned row — never scrolls away) */}
-              <div className="flex gap-1 mb-0.5">
+                {/* FAVES button */}
                 <button
                   onClick={() => setActiveFilter(f => f === "__faves__" ? null : "__faves__")}
                   className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
                   style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                    padding: "3px 8px",
-                    background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "transparent",
-                    border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.10)"}`,
-                    color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.35)",
+                    padding: "5px 7px",
+                    background: activeFilter === "__faves__" ? "rgba(255,200,0,0.18)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${activeFilter === "__faves__" ? "rgba(255,200,0,0.6)" : "rgba(255,255,255,0.12)"}`,
+                    color: activeFilter === "__faves__" ? "#ffc800" : "rgba(255,255,255,0.4)",
+                    whiteSpace: "nowrap",
                   }}
+                  title="Favorites"
                 >
-                  ★ FAVES{favorites.size > 0 && <span style={{ opacity: 0.6 }}> {favorites.size}</span>}
+                  ★{favorites.size > 0 && <span style={{ opacity: 0.65 }}>{favorites.size}</span>}
                 </button>
-                {recentPicks.length > 0 && (
-                  <>
-                    <button
-                      onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
-                      className="flex-shrink-0 flex items-center gap-1 transition-all duration-150"
-                      style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-                        padding: "3px 8px",
-                        background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
-                        border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(255,255,255,0.10)"}`,
-                        color: activeFilter === "__recent__" ? "#a050ff" : "rgba(255,255,255,0.35)",
-                      }}
-                    >
-                      ⏱ RECENT
-                    </button>
-                    <button
-                      onClick={clearRecentPicks}
-                      title="Clear history"
-                      className="flex-shrink-0 flex items-center justify-center transition-all duration-150 hover:bg-white/10"
-                      style={{
-                        fontSize: 11, fontWeight: 700,
-                        width: 16, height: 16,
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        color: "rgba(255,255,255,0.35)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </>
-                )}
               </div>
 
-              {/* Category pills (consolidated from 100+ universes) */}
+              {/* Row 2: Universe pills (with RECENT inlined) */}
               <div
                 ref={pillsRef}
                 className="flex gap-1 overflow-x-auto pb-0.5"
@@ -787,6 +891,22 @@ export function Home() {
                   active={activeFilter === null}
                   onClick={() => setActiveFilter(null)}
                 />
+                {recentPicks.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter(f => f === "__recent__" ? null : "__recent__")}
+                    className="flex-shrink-0 flex items-center gap-1 transition-all duration-150 whitespace-nowrap"
+                    style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+                      padding: "3px 7px",
+                      background: activeFilter === "__recent__" ? "rgba(160,80,255,0.18)" : "transparent",
+                      border: `1px solid ${activeFilter === "__recent__" ? "rgba(160,80,255,0.6)" : "rgba(160,80,255,0.4)"}`,
+                      color: activeFilter === "__recent__" ? "#a050ff" : "rgba(160,80,255,0.7)",
+                    }}
+                    title="Recent picks"
+                  >
+                    ⏱ RECENT
+                  </button>
+                )}
                 {categoryCounts.map(({ category, count }) => {
                   const color = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
                   const active = activeFilter === category;
@@ -812,75 +932,27 @@ export function Home() {
                   );
                 })}
               </div>
-
-              {/* Tier filter pills */}
-              <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-                {[
-                  { key: "all",      label: "All",     color: "rgba(255,255,255,0.35)" },
-                  { key: "cosmic",   label: "★ Cosmic",   color: "#ff0055" },
-                  { key: "elite",    label: "◆ Elite",    color: "#c084fc" },
-                  { key: "standard", label: "● Standard", color: "#00f0ff" },
-                  { key: "street",   label: "○ Street",   color: "#94a3b8" },
-                ].map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTierFilter(t.key === tierFilter ? "all" : t.key)}
-                    className="flex-shrink-0 transition-all duration-150"
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 800,
-                      letterSpacing: "0.12em",
-                      padding: "3px 7px",
-                      color: tierFilter === t.key ? "#000" : t.color,
-                      background: tierFilter === t.key ? t.color : "transparent",
-                      border: `1px solid ${tierFilter === t.key ? t.color : t.color + "50"}`,
-                      opacity: tierFilter !== "all" && tierFilter !== t.key ? 0.4 : 1,
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
             </div>
-          </div>
-        </div>
 
-        {/* ── CHARACTER GRID ─────────────────────────────────────────────── */}
-        {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4">
-            <div className="flex gap-1.5">
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full animate-bounce"
-                  style={{ background: "#ff0055", animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
-            <p className="font-display text-lg uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
-              Loading Roster...
-            </p>
-          </div>
-        ) : (
-          <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
-            {/* Filter status bar */}
+            {/* Filter status bar — only shown when a filter/search is active */}
             {(activeFilter || searchQuery || tierFilter !== "all") && (
               <div
-                className="flex items-center justify-between px-3 py-1.5 sticky top-0 z-10"
-                style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
+                className="flex items-center justify-between px-3 py-1.5"
+                style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(255,0,85,0.15)" }}
               >
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  {filteredCharacters.length} fighter{filteredCharacters.length !== 1 ? "s" : ""}
-                  {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recently Used" : activeFilter ? ` — ${activeFilter}` : ""}
-                  {tierFilter !== "all" ? ` — ${tierFilter}` : ""}
-                  {searchQuery ? ` matching "${searchQuery}"` : ""}
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>{filteredCharacters.length}</span>
+                  {" "}fighter{filteredCharacters.length !== 1 ? "s" : ""} found
+                  {activeFilter === "__faves__" ? " — Favorites" : activeFilter === "__recent__" ? " — Recent" : activeFilter ? ` — ${activeFilter}` : ""}
+                  {tierFilter !== "all" ? ` · ${tierFilter}` : ""}
+                  {searchQuery ? ` · "${searchQuery}"` : ""}
                 </span>
                 <button
                   onClick={() => { setSearchQuery(""); setActiveFilter(null); setTierFilter("all"); }}
                   className="text-[10px] font-bold uppercase tracking-widest transition-colors"
                   style={{ color: "#ff0055" }}
                 >
-                  Clear
+                  Clear filters
                 </button>
               </div>
             )}
@@ -922,18 +994,371 @@ export function Home() {
           </div>
         )}
 
+        {/* ── BOTTOM DOCK — team builder + actions + sticky FIGHT bar ─ */}
+        <div
+          className="flex-shrink-0 relative"
+          style={{
+            background: "linear-gradient(0deg, #000000 0%, #080810 100%)",
+            borderTop: "1px solid rgba(255,0,85,0.25)",
+            boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
+          }}
+        >
+          {/* Narration toggle — appears alongside FIGHT so the user explicitly
+              opts in (or out) of AI narration at the moment of commitment.
+              Lives here (not the top bar) because the choice is per-fight. */}
+          {canFight && (
+            <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
+          )}
+
+          {/* Chaos modifier strip — sits directly above the FIGHT bar so the
+              modifier in play is visible at the moment of commitment. The same
+              picker is also reachable from the CHALLENGE dropdown so the
+              modifier choice is shared between arena and PvP. */}
+          {canFight && (
+            <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+          )}
+
+          {/* Glowing FIGHT bar — only when both teams have fighters.
+              Switches to a greyed "OUT OF ENERGY" affordance when a signed-in
+              user has 0 energy: tapping it opens the same modal handleFight
+              would have, but the visual state makes it obvious WHY before
+              they tap. Guests / pre-load (no state yet) see the normal
+              FIGHT bar so the gate never blocks them. */}
+          {canFight && (() => {
+            return (
+              <button
+                onClick={handleFight}
+                disabled={simulateFight.isPending}
+                data-testid="button-fight"
+                className="w-full flex items-center justify-center gap-3 font-display uppercase active:scale-[0.99] transition-transform disabled:opacity-70 disabled:cursor-wait"
+                style={{
+                  height: 44,
+                  borderTop: "1.5px solid #ff0055",
+                  borderBottom: "1.5px solid rgba(255,0,85,0.3)",
+                  background: "linear-gradient(180deg, rgba(255,0,85,0.18) 0%, rgba(255,0,85,0.32) 100%)",
+                  color: "#fff",
+                  fontSize: 15,
+                  letterSpacing: "0.4em",
+                  cursor: simulateFight.isPending ? "wait" : "pointer",
+                  animation: simulateFight.isPending ? "none" : "fightPulse 1.4s ease-in-out infinite",
+                  textShadow: "0 0 16px rgba(255,0,85,0.95)",
+                }}
+              >
+                <Swords className="h-5 w-5" style={{ color: "#ff0055" }} />
+                <span>{simulateFight.isPending ? "•  •  •" : "FIGHT"}</span>
+                <Swords className="h-5 w-5 -scale-x-100" style={{ color: "#ff0055" }} />
+              </button>
+            );
+          })()}
+
+          {/* Team slots — compact horizontal */}
+          <div className="flex items-stretch gap-2 px-2 pt-1.5">
+            <TeamSlot
+              team={1}
+              members={team1}
+              active={activeTeam === 1}
+              flash={flashTeam === 1}
+              onActivate={() => setActiveTeam(1)}
+              onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
+              onSave={user ? () => setSavingTeamSlot(1) : undefined}
+            />
+            <div
+              className="flex-shrink-0 flex items-center justify-center relative"
+              style={{ width: 46 }}
+            >
+              {/* Soft halo behind the VS */}
+              <div
+                className="absolute inset-0 ava-vs-halo"
+                style={{
+                  background: "radial-gradient(circle at center, rgba(255,0,85,0.35) 0%, transparent 65%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                className="ava-vs-pulse font-display font-black uppercase relative"
+                style={{
+                  fontSize: 30,
+                  color: "#fff",
+                  WebkitTextStroke: "1px #ff0055",
+                  textShadow: "0 0 14px rgba(255,0,85,0.95), 0 0 28px rgba(255,0,85,0.55), 0 0 50px rgba(255,0,85,0.25)",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1,
+                }}
+              >
+                VS
+              </div>
+            </div>
+            <TeamSlot
+              team={2}
+              members={team2}
+              active={activeTeam === 2}
+              flash={flashTeam === 2}
+              onActivate={() => setActiveTeam(2)}
+              onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
+              onSave={user ? () => setSavingTeamSlot(2) : undefined}
+            />
+          </div>
+
+          {/* Save-team dialog — inline banner */}
+          {savingTeamSlot !== null && (
+            <div
+              className="mx-2 flex items-center gap-2"
+              style={{
+                background: "rgba(0,0,0,0.6)",
+                border: `1px solid ${savingTeamSlot === 1 ? "rgba(0,240,255,0.3)" : "rgba(255,59,48,0.3)"}`,
+                padding: "6px 8px",
+              }}
+            >
+              <span
+                className="font-display text-[9px] uppercase tracking-widest flex-shrink-0"
+                style={{ color: savingTeamSlot === 1 ? "#00f0ff" : "#ff3b30", opacity: 0.7 }}
+              >
+                T{savingTeamSlot} NAME
+              </span>
+              <input
+                ref={saveNameInputRef}
+                value={saveTeamName}
+                onChange={e => setSaveTeamName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSaveTeam(); if (e.key === "Escape") setSavingTeamSlot(null); }}
+                placeholder="e.g. Dream Squad"
+                maxLength={32}
+                className="flex-1 bg-transparent outline-none text-xs font-display uppercase tracking-wider text-white placeholder:text-white/20"
+                style={{ minWidth: 0 }}
+              />
+              <button
+                onClick={handleSaveTeam}
+                disabled={!saveTeamName.trim() || saveTeamMutation.isPending}
+                className="font-display text-[9px] uppercase tracking-widest px-2 py-1 border transition-opacity disabled:opacity-30"
+                style={{
+                  borderColor: savingTeamSlot === 1 ? "rgba(0,240,255,0.4)" : "rgba(255,59,48,0.4)",
+                  color: savingTeamSlot === 1 ? "#00f0ff" : "#ff3b30",
+                }}
+              >
+                {saveTeamMutation.isPending ? "…" : "SAVE"}
+              </button>
+              <button onClick={() => setSavingTeamSlot(null)} className="opacity-30 hover:opacity-60 transition-opacity">
+                <X className="h-3.5 w-3.5 text-white" />
+              </button>
+            </div>
+          )}
+
+          {/* MY TEAMS quick-load strip */}
+          {user && savedTeams && savedTeams.length > 0 && (
+            <div className="px-2">
+              <div
+                className="flex gap-1.5 overflow-x-auto items-center py-1"
+                style={{ scrollbarWidth: "none" }}
+              >
+                <span
+                  className="font-display text-[8px] uppercase tracking-[0.2em] flex-shrink-0"
+                  style={{ color: "rgba(255,255,255,0.25)" }}
+                >
+                  SAVED
+                </span>
+                {savedTeams.map(t => (
+                  <div
+                    key={t.id}
+                    className="flex-shrink-0 flex items-center gap-1"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 2,
+                      padding: "2px 6px 2px 7px",
+                    }}
+                  >
+                    <button
+                      onClick={() => handleLoadSavedTeam(t)}
+                      title={`Load "${t.name}" into Team ${activeTeam}`}
+                      className="font-display text-[9px] uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors"
+                      style={{ whiteSpace: "nowrap" }}
+                    >
+                      {t.name}
+                      <span className="ml-1 opacity-40">({t.characterIds.length})</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSavedTeam(t.id, t.name)}
+                      title="Remove"
+                      className="opacity-25 hover:opacity-60 transition-opacity ml-0.5"
+                    >
+                      <Trash2 className="h-2.5 w-2.5 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Power comparison bar */}
+          <PowerComparison team1={team1} team2={team2} />
+
+          {/* Synergy strip — container always rendered to keep dock height
+              stable so the character grid above doesn't reflow as teams change. */}
+          <div
+            className="flex gap-1 overflow-x-auto px-2 pb-1"
+            style={{ scrollbarWidth: "none", minHeight: 18 }}
+          >
+            {synergyPills.length > 0 && synergyPills.map((p, i) => {
+                const teamColor = p.team === 1 ? "#00f0ff" : "#ff3b30";
+                const color = p.positive ? (p.team === 1 ? "#34d399" : "#f87171") : "#fb923c";
+                return (
+                  <div
+                    key={i}
+                    className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5"
+                    style={{
+                      background: p.positive ? `${color}12` : "rgba(249,115,22,0.1)",
+                      border: `1px solid ${color}40`,
+                      fontSize: 7.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <span style={{ color: teamColor, opacity: 0.7 }}>T{p.team}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>·</span>
+                    <span style={{ color }}>{p.label}</span>
+                    <span style={{ color, opacity: 0.8, marginLeft: 2 }}>
+                      {p.bonus > 0 ? "+" : ""}{Math.round(p.bonus * 100)}%
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+
+          {/* Secondary action row: RANDOM | CHALLENGE */}
+          <div className="px-2 pb-2 pt-1 flex gap-1.5 items-center">
+            {/* RANDOM */}
+            <button
+              className="flex items-center justify-center gap-1.5 font-display uppercase tracking-widest transition-all duration-200 active:scale-[0.97] flex-1"
+              style={{
+                height: 30,
+                fontSize: 9,
+                letterSpacing: "0.18em",
+                border: "1.5px solid rgba(255,200,0,0.35)",
+                background: "rgba(255,200,0,0.07)",
+                color: "rgba(255,200,0,0.8)",
+                cursor: simulateFight.isPending ? "not-allowed" : "pointer",
+              }}
+              onClick={handleRandomFight}
+              disabled={simulateFight.isPending || !characters?.length}
+              title="Random fight — fully randomized teams"
+            >
+              <Shuffle className="h-3 w-3" />
+              <span>RANDOM</span>
+            </button>
+
+            {/* CHALLENGE */}
+            <div style={{ position: "relative", flex: 1 }}>
+              <button
+                onClick={() => setShowTauntPanel(m => !m)}
+                disabled={creatingChallenge}
+                title="Send a PvP challenge link to a friend"
+                className="w-full"
+                style={{
+                  height: 30,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                  fontSize: 9, letterSpacing: "0.18em", fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase",
+                  border: "1.5px solid rgba(0,240,255,0.35)",
+                  background: showTauntPanel ? "rgba(0,240,255,0.12)" : "rgba(0,240,255,0.06)",
+                  color: "rgba(0,240,255,0.85)",
+                  cursor: creatingChallenge ? "not-allowed" : "pointer",
+                }}
+              >
+                <Link style={{ width: 11, height: 11 }} />
+                <span>{creatingChallenge ? "…" : "CHALLENGE"}</span>
+              </button>
+
+              {showTauntPanel && !creatingChallenge && (
+                <>
+                  <div onClick={() => setShowTauntPanel(false)} style={{ position: "fixed", inset: 0, zIndex: 59 }} />
+                  <div style={{
+                    position: "absolute", bottom: "calc(100% + 6px)", right: 0, zIndex: 60,
+                    background: "#080c14", border: "1px solid rgba(0,240,255,0.25)",
+                    width: 240, boxShadow: "0 0 28px rgba(0,0,0,0.9)",
+                    padding: "10px 12px 12px",
+                  }}>
+                    <div style={{ fontSize: 7.5, letterSpacing: "0.22em", color: "rgba(0,240,255,0.45)", marginBottom: 10 }}>
+                      ⚔ PvP CHALLENGE
+                    </div>
+
+                    {/* Chaos modifier row */}
+                    {(() => {
+                      const meta = getModifier(modifierId);
+                      return (
+                        <button
+                          onClick={() => { setShowTauntPanel(false); setModifierPickerOpen(true); }}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 9px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", textAlign: "left", marginBottom: 10 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,240,255,0.06)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                        >
+                          <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{meta?.emoji ?? "⚙"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 7, letterSpacing: "0.2em", color: "rgba(0,240,255,0.5)", fontWeight: 700 }}>CHAOS MODIFIER</div>
+                            <div style={{ fontSize: 9, color: meta ? (meta.color ?? "#00f0ff") : "rgba(255,255,255,0.4)", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {meta?.label ?? "None — tap to pick"}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Battle cry / taunt input */}
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 7, letterSpacing: "0.2em", color: "rgba(255,255,255,0.3)", marginBottom: 5, textTransform: "uppercase" }}>
+                        Battle Cry <span style={{ color: "rgba(255,255,255,0.18)" }}>(optional)</span>
+                      </div>
+                      <textarea
+                        value={tauntInput}
+                        onChange={e => setTauntInput(e.target.value.slice(0, 100))}
+                        placeholder={`"My squad is unstoppable."`}
+                        rows={2}
+                        style={{
+                          width: "100%", resize: "none", boxSizing: "border-box",
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(0,240,255,0.18)",
+                          color: "#fff", fontSize: 11, padding: "6px 8px",
+                          fontFamily: "inherit", outline: "none", lineHeight: 1.4,
+                        }}
+                      />
+                      <div style={{ textAlign: "right", fontSize: 7, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>
+                        {tauntInput.length}/100
+                      </div>
+                    </div>
+
+                    {/* Send button */}
+                    <button
+                      onClick={() => handleCreateChallenge()}
+                      style={{
+                        width: "100%", height: 36, fontFamily: "inherit",
+                        background: "rgba(0,240,255,0.1)", border: "1.5px solid rgba(0,240,255,0.55)",
+                        color: "#00f0ff", fontSize: 9, letterSpacing: "0.22em", fontWeight: 800,
+                        cursor: "pointer", textTransform: "uppercase",
+                      }}
+                    >
+                      SEND CHALLENGE →
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+          </div>
+        </div>
+
         <FightScreen
           open={showModal}
-          onClose={() => { setShowModal(false); simulateFight.reset(); }}
+          onClose={() => { fightInFlightRef.current = false; setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
           }}
           result={censoredResult}
-          isSimulating={simulateFight.isPending && !simulateFight.ready}
+          isSimulating={simulateFight.isPending && !simulateFight.streaming}
           team1Names={team1.map(c => c.name)}
           team2Names={team2.map(c => c.name)}
           team1Images={team1.map(c => c.imageUrl)}
           team2Images={team2.map(c => c.imageUrl)}
+          completedSections={simulateFight.completedSections}
+          ttsEnabled={ttsEnabled}
+          onToggleTts={toggleTts}
         />
       </div>
 
@@ -1031,6 +1456,15 @@ export function Home() {
           </div>
         </div>
       )}
+
+      {/* Chaos modifier picker — bottom sheet, mounted at root so it overlays
+          the FIGHT modal too if reopened mid-stream. */}
+      <ModifierPicker
+        open={modifierPickerOpen}
+        current={modifierId}
+        onClose={() => setModifierPickerOpen(false)}
+        onChange={setModifierId}
+      />
     </>
   );
 }

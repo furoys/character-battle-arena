@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.replit.anyonevsanyone.twa",
+    "sha256_cert_fingerprints": ["6C:E7:03:AF:35:EA:4C:55:1E:C4:26:E8:EA:89:C6:8A:74:31:16:5A:86:D9:1A:9D:61:9A:DF:BD:0C:6F:AD:1C"]
+  }
+}]

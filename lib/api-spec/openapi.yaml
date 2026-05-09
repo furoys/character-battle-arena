@@ -14,6 +14,8 @@ tags:
     description: Character management
   - name: fights
     description: Fight simulation
+  - name: me
+    description: Signed-in user operations
 paths:
   /healthz:
     get:
@@ -213,6 +215,61 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /me/teams:
+    get:
+      operationId: listSavedTeams
+      tags: [me]
+      summary: List saved teams for the signed-in user
+      responses:
+        "200":
+          description: List of saved teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedTeam"
+        "401":
+          description: Not signed in
+    post:
+      operationId: saveTeam
+      tags: [me]
+      summary: Save a team composition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveTeamBody"
+      responses:
+        "200":
+          description: Saved team record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedTeam"
+        "401":
+          description: Not signed in
+
+  /me/teams/{id}:
+    delete:
+      operationId: deleteSavedTeam
+      tags: [me]
+      summary: Delete a saved team
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Team deleted
+        "401":
+          description: Not signed in
+        "404":
+          description: Team not found or not owned by user
+
 components:
   schemas:
     HealthStatus:
@@ -261,6 +318,12 @@ components:
         imageUrl:
           type: string
           nullable: true
+        behaviorTags:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: "Tags describing the character's combat behavior / archetype"
         createdAt:
           type: string
           format: date-time
@@ -369,6 +432,17 @@ components:
             - debate
           default: realistic
           description: "Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.)"
+        upset:
+          type: boolean
+          default: false
+          description: "Override the cached verdict and let the underdog win. Bypasses verdict cache."
+        challengeCode:
+          type: string
+          description: "When set, this fight is part of a PvP challenge. The first caller generates the fight; subsequent callers (the other player) wait and replay the SAME saved narrative so both players see identical text."
+        modifierId:
+          type: string
+          nullable: true
+          description: "Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins."
       required:
         - team1
         - team2
@@ -432,6 +506,19 @@ components:
           items:
             type: string
           description: "AI-generated array of reasons why the winner won (5 sentences)"
+        settled:
+          type: boolean
+          description: "True once the Stage-1 winner verdict is locked in (used to gate the cinematic phase)"
+        winRate:
+          type: integer
+          description: "Estimated win rate (50-100) of the winning team in this matchup"
+        rematchCount:
+          type: integer
+          description: "How many times this exact matchup has been simulated"
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any (e.g. 'lava_floor')"
         simulatedAt:
           type: string
           format: date-time
@@ -469,6 +556,10 @@ components:
           type: string
         intro:
           type: string
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any"
         simulatedAt:
           type: string
           format: date-time
@@ -498,6 +589,10 @@ components:
           type: integer
         summary:
           type: string
+        modifierId:
+          type: string
+          nullable: true
+          description: "Chaos modifier active for this fight, if any"
         simulatedAt:
           type: string
           format: date-time
@@ -508,3 +603,39 @@ components:
         - winner
         - summary
         - simulatedAt
+
+    SavedTeam:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        name:
+          type: string
+        characterIds:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - characterIds
+        - createdAt
+
+    SaveTeamBody:
+      type: object
+      properties:
+        name:
+          type: string
+        characterIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - characterIds

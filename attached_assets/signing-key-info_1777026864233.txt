@@ -1,0 +1,10 @@
+Keep this file and signing.keystore in a safe place. You'll need these files if you want to upload future versions of your PWA to the Google Play Store.
+
+Key store file: signing.keystore
+Key store password: TO8o616ItqXx
+Key alias: my-key-alias
+Key password: TO8o616ItqXx
+Signer's full name: A.v.A Admin
+Signer's organization: A.v.A — Anyone vs Anyone
+Signer's organizational unit: Engineering
+Signer's country code: US

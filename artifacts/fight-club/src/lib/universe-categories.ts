@@ -1,7 +1,7 @@
 export type UniverseCategory =
-  | "Marvel"
-  | "DC"
-  | "Disney"
+  | "Multiverse"
+  | "Legacy"
+  | "Kingdom"
   | "Anime"
   | "Games"
   | "Movies & TV"
@@ -12,9 +12,9 @@ export type UniverseCategory =
   | "Other";
 
 export const CATEGORY_ORDER: UniverseCategory[] = [
-  "Marvel",
-  "DC",
-  "Disney",
+  "Multiverse",
+  "Legacy",
+  "Kingdom",
   "Anime",
   "Games",
   "Movies & TV",
@@ -26,9 +26,9 @@ export const CATEGORY_ORDER: UniverseCategory[] = [
 ];
 
 export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
-  "Marvel":          "#ed1d24",
-  "DC":              "#0476f2",
-  "Disney":          "#bf5af2",
+  "Multiverse":      "#ed1d24",
+  "Legacy":          "#0476f2",
+  "Kingdom":          "#bf5af2",
   "Anime":           "#ff6b9d",
   "Games":           "#30d158",
   "Movies & TV":     "#ff9f0a",
@@ -40,12 +40,15 @@ export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
 };
 
 const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
-  // Marvel
-  "Marvel Comics": "Marvel",
-  // DC
-  "DC Comics": "DC",
-  // Disney
-  "Disney": "Disney",
+  // Multiverse
+  "Multiverse Comics": "Multiverse",
+  "Marvel": "Multiverse",
+  // Legacy
+  "Legacy Comics": "Legacy",
+  "DC": "Legacy",
+  "Watchmen": "Legacy",
+  // Kingdom
+  "Kingdom": "Kingdom",
   // Anime / Manga
   "Naruto": "Anime",
   "Dragon Ball": "Anime",
@@ -82,8 +85,12 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Fist of the North Star": "Anime",
   "Overlord": "Anime",
   "Baki": "Anime",
+  "Baki the Grappler": "Anime",
   "Pokémon": "Anime",
   "Fate/Stay Night": "Anime",
+  "Boruto": "Anime",
+  "Alita": "Anime",
+  "Castlevania": "Anime",
   // Games
   "Mortal Kombat": "Games",
   "Street Fighter": "Games",
@@ -123,6 +130,10 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Sekiro: Shadows Die Twice": "Games",
   "Horizon": "Games",
   "Assassin's Creed": "Games",
+  "Dead by Daylight": "Games",
+  "Apex Legends": "Games",
+  "Super Mario": "Games",
+  "Overwatch": "Games",
   // Movies & TV
   "Action Heroes": "Movies & TV",
   "Action Villains": "Movies & TV",
@@ -137,6 +148,10 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "The Boys": "Movies & TV",
   "Invincible": "Movies & TV",
   "Kaiju": "Movies & TV",
+  "Supernatural": "Movies & TV",
+  "Doctor Who": "Movies & TV",
+  "Bourne": "Movies & TV",
+  "Dirty Harry": "Movies & TV",
   // Fantasy & Books
   "Harry Potter": "Fantasy & Books",
   "Lord of the Rings": "Fantasy & Books",
@@ -146,21 +161,55 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Demonata": "Fantasy & Books",
   "Victorian Fiction": "Fantasy & Books",
   "Journey to the West": "Fantasy & Books",
+  "Narnia": "Fantasy & Books",
   // Cartoons
   "Cartoon Network": "Cartoons",
   "TMNT": "Cartoons",
   "Adventure Time": "Cartoons",
   "Avatar: The Last Airbender": "Cartoons",
   "Transformers": "Cartoons",
+  "Ben 10": "Cartoons",
+  "South Park": "Cartoons",
+  "The Powerpuff Girls": "Cartoons",
+  "Family Guy": "Cartoons",
+  "Futurama": "Cartoons",
+  "Rick and Morty": "Cartoons",
+  "Johnny Test": "Cartoons",
+  "Courage the Cowardly Dog": "Cartoons",
+  "Ed, Edd n Eddy": "Cartoons",
+  "Samurai Jack": "Cartoons",
+  "The Simpsons": "Cartoons",
+  "Fairly OddParents": "Cartoons",
+  "Danny Phantom": "Cartoons",
+  "Detentionaire": "Cartoons",
+  "Dexter's Laboratory": "Cartoons",
+  "6teen": "Cartoons",
   // Myth & History
   "Mythology": "Myth & History",
   "Historical": "Myth & History",
   "Boxing": "Myth & History",
   "Martial Arts": "Myth & History",
+  "Greek Mythology": "Myth & History",
   // Horror
   "Horror": "Horror",
+  "Saw": "Horror",
+  "The Conjuring": "Horror",
+  "Evil Dead": "Horror",
+  "Cthulhu Mythos": "Horror",
+  "Terrifier": "Horror",
+  "Audition": "Horror",
+  "The Babadook": "Horror",
+  "Barbarian": "Horror",
+  "Candyman": "Horror",
+  "Hellraiser": "Horror",
+  "Child's Play": "Horror",
+  "Universal Monsters": "Horror",
+  "Wishmaster": "Horror",
+  "Doctor Sleep": "Horror",
+  "Dracula": "Horror",
   // Other
   "Image Comics": "Other",
+  "Full Bleed Studios": "Other",
   "Developer Legends": "Other",
   "Real World": "Other",
 };

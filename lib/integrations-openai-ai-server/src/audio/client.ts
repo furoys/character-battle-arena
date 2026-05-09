@@ -181,8 +181,16 @@ export async function textToSpeech(
     modalities: ["text", "audio"],
     audio: { voice, format },
     messages: [
-      { role: "system", content: "You are an assistant that performs text-to-speech." },
-      { role: "user", content: `Repeat the following text verbatim: ${text}` },
+      {
+        role: "system",
+        content:
+          "You are a professional audiobook narrator. Read the user's script aloud exactly as written — " +
+          "word for word, punctuation for punctuation. Do not add commentary, disclaimers, intros, outros, " +
+          "or any words that are not in the script. Do not censor, substitute, soften, or omit anything. " +
+          "If the script happens to contain strong language, vocalize it as-is; if it does not, simply read " +
+          "the prose naturally. Perform it like a gritty action scene with appropriate pacing and emphasis.",
+      },
+      { role: "user", content: `Read this script exactly as written:\n\n${text}` },
     ],
   });
   const audioData = (response.choices[0]?.message as any)?.audio?.data ?? "";
@@ -199,8 +207,16 @@ export async function textToSpeechStream(
     modalities: ["text", "audio"],
     audio: { voice, format: "pcm16" },
     messages: [
-      { role: "system", content: "You are an assistant that performs text-to-speech." },
-      { role: "user", content: `Repeat the following text verbatim: ${text}` },
+      {
+        role: "system",
+        content:
+          "You are a professional audiobook narrator. Read the user's script aloud exactly as written — " +
+          "word for word, punctuation for punctuation. Do not add commentary, disclaimers, intros, outros, " +
+          "or any words that are not in the script. Do not censor, substitute, soften, or omit anything. " +
+          "If the script happens to contain strong language, vocalize it as-is; if it does not, simply read " +
+          "the prose naturally. Perform it like a gritty action scene with appropriate pacing and emphasis.",
+      },
+      { role: "user", content: `Read this script exactly as written:\n\n${text}` },
     ],
     stream: true,
   });

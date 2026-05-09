@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { FightResult, FightRound, SimulateFightBody } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { FightResult, FightRound, SimulateFightBody } from "@workspace/api-client-react";
 
 // Mirror the API client's base URL resolution. The api-client-react package
 // uses applyBaseUrl() under the hood; we read the same config so the streaming
@@ -60,7 +60,9 @@ function* parseSseEvents(buffer: string): Generator<{ event: string; data: strin
 export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {}) {
   const [data, setData] = useState<FightResult | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [ready, setReady] = useState(false); // true once init arrived → UI can leave loading sequence
+  const [ready, setReady] = useState(false); // true once init arrived → arena/HP can render in background
+  const [streaming, setStreaming] = useState(false); // true once first text chunk landed → UI can leave loading sequence
+  const [completedSections, setCompletedSections] = useState<Set<string>>(() => new Set()); // section names (UPPERCASE) whose canonical content has finalized
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const optsRef = useRef(opts);
@@ -72,6 +74,8 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     setData(null);
     setIsPending(false);
     setReady(false);
+    setStreaming(false);
+    setCompletedSections(new Set());
     setError(null);
   }, []);
 
@@ -81,6 +85,8 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     abortRef.current = ac;
     setData(null);
     setReady(false);
+    setStreaming(false);
+    setCompletedSections(new Set());
     setError(null);
     setIsPending(true);
 
@@ -107,6 +113,58 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
 
         // Working copy of the result that we mutate as sections arrive.
         let working: FightResult | null = null;
+
+        // Per-section live buffers fed by `delta` events. We accumulate here
+        // and flush into React state at most once per animation frame so the
+        // typewriter effect renders smoothly even at 50+ chunks/sec.
+        const liveBuffers = new Map<string, string>();
+        let rafScheduled = false;
+        const scheduleFlush = () => {
+          if (rafScheduled || !working) return;
+          rafScheduled = true;
+          const raf = typeof requestAnimationFrame === "function"
+            ? requestAnimationFrame
+            : ((cb: () => void) => setTimeout(cb, 16));
+          raf(() => {
+            rafScheduled = false;
+            if (!working) return;
+            setData({ ...working, rounds: [...working.rounds] });
+          });
+        };
+
+        // Apply a name+content pair into the working result. Used by both
+        // delta-flush and the canonical `section` event.
+        const applyContent = (upper: string, content: string) => {
+          if (!working) return;
+          const trimmed = content.trim();
+          if (!trimmed) return;
+
+          const roundMatch = upper.match(/^ROUND\s+(\d+)$/);
+          if (roundMatch) {
+            const idx = Number(roundMatch[1]) - 1;
+            if (working.rounds[idx]) {
+              working.rounds[idx] = { ...working.rounds[idx], narrative: trimmed };
+            }
+            return;
+          }
+          if (upper === "SETTING") { working.arenaIntro = trimmed; return; }
+          if (upper === "ENTRANCE" || upper === "COMBATANT ENTRANCE") { working.intro = trimmed; return; }
+          if (upper === "RESULT") { working.summary = trimmed; return; }
+          if (upper === "WHY THEY WON") {
+            const lines: string[] = [];
+            const sentenceRe = /\d+\.\s*([\s\S]*?)(?=\d+\.|$)/g;
+            let m: RegExpExecArray | null;
+            while ((m = sentenceRe.exec(trimmed)) !== null) {
+              const s = m[1]?.trim();
+              if (s) lines.push(s);
+            }
+            if (lines.length === 0) {
+              trimmed.split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
+            }
+            working.whyWon = lines;
+            return;
+          }
+        };
 
         const handleEvent = (event: string, dataStr: string) => {
           let payload: unknown;
@@ -152,58 +210,57 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             return;
           }
 
+          if (event === "delta" && working) {
+            const { name, append } = payload as { name: string; append: string };
+            if (!append) return;
+            const upper = name.toUpperCase().trim();
+            // WHY THEY WON parses into a numbered list — only meaningful when
+            // complete, so we skip mid-stream typewriting for that one section.
+            if (upper === "WHY THEY WON") return;
+            const cur = (liveBuffers.get(upper) ?? "") + append;
+            liveBuffers.set(upper, cur);
+            applyContent(upper, cur);
+            // First real text chunk landed — let the UI leave the loader.
+            setStreaming(true);
+            scheduleFlush();
+            return;
+          }
+
           if (event === "section" && working) {
             const { name, content } = payload as { name: string; content: string };
             const upper = name.toUpperCase().trim();
-            const trimmed = content.trim();
-            if (!trimmed) return;
-
-            // Match ROUND N
-            const roundMatch = upper.match(/^ROUND\s+(\d+)$/);
-            if (roundMatch) {
-              const idx = Number(roundMatch[1]) - 1;
-              if (working.rounds[idx]) {
-                working.rounds[idx] = { ...working.rounds[idx], narrative: trimmed };
-                setData({ ...working, rounds: [...working.rounds] });
-              }
-              return;
-            }
-
-            if (upper === "SETTING") {
-              working.arenaIntro = trimmed;
-              setData({ ...working });
-              return;
-            }
-            if (upper === "ENTRANCE" || upper === "COMBATANT ENTRANCE") {
-              working.intro = trimmed;
-              setData({ ...working });
-              return;
-            }
-            if (upper === "RESULT") {
-              working.summary = trimmed;
-              setData({ ...working });
-              return;
-            }
-            if (upper === "WHY THEY WON") {
-              const lines: string[] = [];
-              const sentenceRe = /\d+\.\s*([\s\S]*?)(?=\d+\.|$)/g;
-              let m: RegExpExecArray | null;
-              while ((m = sentenceRe.exec(trimmed)) !== null) {
-                const s = m[1]?.trim();
-                if (s) lines.push(s);
-              }
-              if (lines.length === 0) {
-                trimmed.split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
-              }
-              working.whyWon = lines;
-              setData({ ...working });
-              return;
-            }
+            // Canonical final content for this section — overwrites any
+            // delta-built buffer and flushes immediately.
+            liveBuffers.set(upper, content);
+            applyContent(upper, content);
+            // Section landed (e.g. cache hit path with no preceding deltas).
+            setStreaming(true);
+            // Mark this section as canonically complete so the UI knows the
+            // typewriter is finished and can show the next gating button.
+            setCompletedSections(prev => {
+              if (prev.has(upper)) return prev;
+              const next = new Set(prev);
+              next.add(upper);
+              return next;
+            });
+            setData({ ...working, rounds: [...working.rounds] });
+            return;
           }
 
           if (event === "complete") {
             const full = payload as FightResult;
             setData(full);
+            // Cache-hit path may emit complete without ever sending a delta;
+            // make sure the UI exits the loader in that case too.
+            setStreaming(true);
+            // Mark every section complete so any UI gating ("BEGIN MATCH",
+            // "NEXT ROUND →") becomes immediately available — server payload
+            // is canonical at this point.
+            setCompletedSections(() => {
+              const all = new Set<string>(["SETTING", "ENTRANCE", "COMBATANT ENTRANCE", "RESULT", "WHY THEY WON"]);
+              full.rounds.forEach(r => all.add(`ROUND ${r.round}`));
+              return all;
+            });
             setIsPending(false);
             optsRef.current.onComplete?.(full);
           }
@@ -228,6 +285,10 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
           }
           buffer = next.value;
         }
+        // Safety: stream closed without an explicit `complete` or `error` event
+        // (e.g. server dropped the connection). Ensure pending is cleared so the
+        // button never stays locked.
+        setIsPending(false);
       } catch (err) {
         if ((err as Error)?.name === "AbortError") {
           setIsPending(false);
@@ -241,5 +302,5 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
     })();
   }, []);
 
-  return { data, isPending, ready, error, mutate, reset };
+  return { data, isPending, ready, streaming, completedSections, error, mutate, reset };
 }

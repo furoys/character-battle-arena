@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FightResult, FightRound, Character } from "@workspace/api-client-react/src/generated/api.schemas";
+import { FightResult, FightRound, Character } from "@workspace/api-client-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trophy } from "lucide-react";
 
@@ -63,6 +63,7 @@ export function FightResultModal({ open, onOpenChange, result, isSimulating }: F
       }, 1500);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [currentRoundIndex, result]);
 
   const isFinished = result && currentRoundIndex === result.rounds.length;
