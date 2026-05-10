@@ -26,7 +26,7 @@ export function CharacterPicker({ open, onClose }: CharacterPickerProps) {
   }, [open]);
 
   const universes = useMemo(() => {
-    if (!characters) return ["All"];
+    if (!Array.isArray(characters)) return ["All"];
     const set = new Set<string>();
     for (const c of characters) {
       if (c.universe) set.add(c.universe);
@@ -35,7 +35,7 @@ export function CharacterPicker({ open, onClose }: CharacterPickerProps) {
   }, [characters]);
 
   const filtered = useMemo(() => {
-    if (!characters) return [];
+    if (!Array.isArray(characters)) return [];
     const q = query.trim().toLowerCase();
     return characters.filter((c) => {
       if (universe !== "All" && c.universe !== universe) return false;

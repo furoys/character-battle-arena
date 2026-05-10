@@ -1,0 +1,104 @@
+We are preparing this React/Vite app for Capacitor Android. The web/Replit version works, but Android WebView keeps crashing after Clerk email-code login because API/query/localStorage payloads sometimes are objects/undefined instead of arrays.
+
+Recent Android console crashes:
+- Ht.slice(...).map is not a function
+- f.map is not a function
+- t.find is not a function
+- t.filter is not a function
+- StatusBar plugin is not implemented on android
+
+Please do a full production hardening pass, not a narrow patch.
+
+MAIN GOAL:
+No frontend render path should ever call array methods on non-arrays when data comes from API, React Query, localStorage, Clerk/user profile, saved teams, stats, fights, challenges, suggestions, character roster, fight result payloads, SSE stream events, or pending challenge storage.
+
+Create small helper functions if needed, for example:
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((x): x is string => typeof x === "string") : [];
+}
+
+Then use them consistently.
+
+SEARCH AND FIX:
+Search all src files for these methods:
+- .map(
+- .slice(
+- .filter(
+- .find(
+- .some(
+- .every(
+- .forEach(
+- .reduce(
+- .join(
+- .includes(
+- spread usage like [...value]
+- .length checks on values that may come from API/localStorage/query data
+
+For static local constants like navItems, TIER_OPTIONS, CATEGORY_ORDER, fixed arrays, etc., leave them alone.
+
+For anything that may be external/dynamic, guard it first.
+
+KNOWN HIGH-PRIORITY FILES:
+- src/pages/home.tsx
+- src/pages/challenge.tsx
+- src/pages/fights.tsx
+- src/pages/profile.tsx
+- src/pages/admin.tsx
+- src/pages/roster.tsx
+- src/pages/suggest.tsx
+- src/components/character-picker.tsx
+- src/components/character-avatar.tsx
+- src/components/fight-screen.tsx
+- src/components/fight-result-modal.tsx
+- src/components/pending-challenges-bar.tsx
+- src/components/victory-screen.tsx
+- src/hooks/use-simulate-fight-stream.ts
+- src/components/intro-screen.tsx
+
+SPECIFIC CURRENT CRASH:
+Android now crashes with:
+t.filter is not a function
+
+Please specifically harden:
+- characters.filter(...)
+- fights.filter(...)
+- pool.filter(...)
+- characters?.filter(...)
+- results.filter(...)
+- prev.filter(...)
+- any challenge/allCharacters/team arrays using .filter
+- any array methods chained after map/find/query results
+
+STATUSBAR:
+Also find the StatusBar initialization code. Android console says:
+"StatusBar" plugin is not implemented on android
+
+Make StatusBar usage fully safe:
+- Only import/use it if available
+- Wrap calls in try/catch
+- Do not throw if plugin is missing
+- Never block app render on StatusBar setup
+- If there is a capacitor-init.ts file, make it no-op safely on failure
+
+CLERK/CAPACITOR:
+Do not remove Clerk. Email-code sign-in works. Keep Clerk behavior intact.
+Do not change UI design.
+Do not change game logic.
+Do not remove routes.
+Do not disable music.
+Do not add placeholder/test screens.
+Only add defensive guards and safe fallbacks.
+
+AFTER FIXES:
+1. Run typecheck.
+2. Run/build if available.
+3. Report:
+   - files changed
+   - what unsafe sources were guarded
+   - whether any risky dynamic array methods remain
+   - whether StatusBar is now non-blocking

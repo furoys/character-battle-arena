@@ -469,7 +469,7 @@ export function Home() {
 
   // Consolidated category counts (11 broad buckets across all 100+ universes)
   const categoryCounts = useMemo(() => {
-    if (!characters) return [] as Array<{ category: string; count: number }>;
+    if (!Array.isArray(characters)) return [] as Array<{ category: string; count: number }>;
     const counts: Record<string, number> = {};
     for (const c of characters) {
       const cat = getUniverseCategory(c.universe);
@@ -481,7 +481,7 @@ export function Home() {
   }, [characters]);
 
   const filteredCharacters = useMemo(() => {
-    if (!characters) return [];
+    if (!Array.isArray(characters)) return [];
     let pool: Character[];
     if (activeFilter === "__faves__") {
       pool = characters.filter(c => favorites.has(c.id));
@@ -613,7 +613,7 @@ export function Home() {
     const total = size1 + size2;
 
     // Shuffle all characters and take the first (size1 + size2)
-    const shuffled = [...characters].sort(() => Math.random() - 0.5).slice(0, total);
+    const shuffled = [...(Array.isArray(characters) ? characters : [])].sort(() => Math.random() - 0.5).slice(0, total);
     const r1 = shuffled.slice(0, size1);
     const r2 = shuffled.slice(size1, size1 + size2);
 

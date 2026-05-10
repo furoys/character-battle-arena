@@ -130,8 +130,8 @@ function attackBadge(type: string | undefined): { label: string; color: string }
 }
 
 function SynergyBadges({ result }: { result: FightResult }) {
-  const t1 = result.team1 ?? [];
-  const t2 = result.team2 ?? [];
+  const t1 = Array.isArray(result.team1) ? result.team1 : [];
+  const t2 = Array.isArray(result.team2) ? result.team2 : [];
   const syn1 = computeSynergy(t1);
   const syn2 = computeSynergy(t2);
   const all1 = syn1.active;
@@ -188,8 +188,8 @@ function SynergyBadges({ result }: { result: FightResult }) {
 }
 
 function RoundBreakdown({ result }: { result: FightResult }) {
-  const rounds      = result.rounds ?? [];
-  const team1Names  = new Set((result.team1 ?? []).map(c => c.name));
+  const rounds      = Array.isArray(result.rounds) ? result.rounds : [];
+  const team1Names  = new Set((Array.isArray(result.team1) ? result.team1 : []).map(c => c.name));
   const winnerIsT1  = result.winner === 1;
   const t1Col = "#00f0ff";
   const t2Col = "#ff3b30";
@@ -302,9 +302,11 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
   const [copied, setCopied]   = useState(false);
   const [shared, setShared]   = useState(false);
 
-  const reasons = result.whyWon ?? [];
+  const reasons = Array.isArray(result.whyWon) ? result.whyWon : [];
 
-  const winnerTeam: Character[] = result.winner === 1 ? (result.team1 ?? []) : (result.team2 ?? []);
+  const winnerTeam: Character[] = result.winner === 1
+    ? (Array.isArray(result.team1) ? result.team1 : [])
+    : (Array.isArray(result.team2) ? result.team2 : []);
   const teamColor    = result.winner === 1 ? "team1" : "team2";
   const teamColorHex = result.winner === 1 ? "#00f0ff" : "#ff3b30";
   const particles    = useParticles(32, teamColor);
@@ -322,10 +324,10 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
   }, []);
 
   const buildShareText = (includeHashtags = false) => {
-    const t1Names   = (result.team1 ?? []).map(c => c.name).join(" & ");
-    const t2Names   = (result.team2 ?? []).map(c => c.name).join(" & ");
+    const t1Names   = (Array.isArray(result.team1) ? result.team1 : []).map(c => c.name).join(" & ");
+    const t2Names   = (Array.isArray(result.team2) ? result.team2 : []).map(c => c.name).join(" & ");
     const wNames    = winnerTeam.map(c => c.name).join(" & ");
-    const rounds    = (result.rounds ?? []).length;
+    const rounds    = (Array.isArray(result.rounds) ? result.rounds : []).length;
     const tags      = includeHashtags ? "\n\n#AvA #AnyoneVsAnyone" : "";
     return [
       `⚔️ A.v.A — Anyone vs Anyone`,
@@ -573,7 +575,7 @@ export function VictoryScreen({ result, onClose, onRematch }: VictoryScreenProps
               className="text-[9px] font-bold uppercase tracking-[0.3em] mb-2 text-center"
               style={{ color: "rgba(255,255,255,0.28)" }}
             >
-              {(result.rounds ?? []).length} rounds — breakdown
+              {(Array.isArray(result.rounds) ? result.rounds : []).length} rounds — breakdown
             </p>
             <RoundBreakdown result={result} />
           </div>

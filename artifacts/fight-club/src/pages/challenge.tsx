@@ -356,7 +356,7 @@ export function Challenge() {
   }, [allCharacters, challenge?.team1Ids]);
 
   const filteredChars = useMemo(() => {
-    if (!allCharacters) return [];
+    if (!Array.isArray(allCharacters)) return [];
     const q = searchQuery.trim().toLowerCase();
     const t1Ids = new Set(challenge?.team1Ids ?? []);
     return allCharacters
@@ -366,7 +366,7 @@ export function Challenge() {
   }, [allCharacters, searchQuery, challenge?.team1Ids, activeFilter]);
 
   const categoryCounts = useMemo(() => {
-    if (!allCharacters) return [];
+    if (!Array.isArray(allCharacters)) return [];
     const t1Ids = new Set(challenge?.team1Ids ?? []);
     const counts: Record<string, number> = {};
     for (const c of allCharacters) {

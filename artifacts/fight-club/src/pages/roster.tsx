@@ -96,8 +96,9 @@ export function Roster() {
     }
   };
 
-  const filtered = characters
-    ?.filter(c => {
+  const safeChars = Array.isArray(characters) ? characters : [];
+  const filtered = safeChars
+    .filter(c => {
       if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (universeFilter !== "all" && getUniverseCategory(c.universe) !== universeFilter) return false;
       if (tierFilter !== "all") {
@@ -153,7 +154,7 @@ export function Roster() {
       )}
 
       {/* Category quick tags (consolidated from 100+ universes) */}
-      {characters && characters.length > 0 && (
+      {safeChars.length > 0 && (
         <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-border/30 flex-nowrap scrollbar-none">
           <button
             onClick={() => setUniverse("all")}
@@ -164,10 +165,10 @@ export function Roster() {
               borderColor: "hsl(var(--muted-foreground) / 0.4)",
             }}
           >
-            ALL {characters.length}
+            ALL {safeChars.length}
           </button>
           {CATEGORY_ORDER.map(cat => {
-            const count = characters.filter(c => getUniverseCategory(c.universe) === cat).length;
+            const count = safeChars.filter(c => getUniverseCategory(c.universe) === cat).length;
             if (count === 0) return null;
             const color = CATEGORY_COLORS[cat];
             const active = universeFilter === cat;
