@@ -30,6 +30,16 @@ export function setBaseUrl(url: string | null): void {
 }
 
 /**
+ * Return the currently configured base URL, or null if none has been set.
+ * Useful for building absolute URLs in non-customFetch fetch() calls
+ * (e.g. SSE streams, direct fetch in hooks) so they hit the same origin as
+ * all other API requests on Capacitor / native builds.
+ */
+export function getBaseUrl(): string | null {
+  return _baseUrl;
+}
+
+/**
  * Register a getter that supplies a bearer auth token.  Before every fetch
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.

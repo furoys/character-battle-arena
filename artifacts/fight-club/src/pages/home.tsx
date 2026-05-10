@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useListCharacters, useListSavedTeams, useSaveTeam, useDeleteSavedTeam, SavedTeam, getListSavedTeamsQueryKey } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-fetch";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { Character } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/character-card";
@@ -640,7 +641,7 @@ export function Home() {
     setCreatingChallenge(true);
     setShowTauntPanel(false);
     try {
-      const r = await fetch("/api/challenges", {
+      const r = await fetch(resolveApiUrl("/api/challenges"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

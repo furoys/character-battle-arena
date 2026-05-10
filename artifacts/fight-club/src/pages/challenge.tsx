@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useLocation, useSearch } from "wouter";
 import { useListCharacters } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react";
+import { resolveApiUrl, getAppOrigin } from "@/lib/api-fetch";
 import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
@@ -48,7 +49,7 @@ function useChallenge(code: string, polling = true) {
     if (!code) return undefined;
     if (isInitial) setLoading(true);
     try {
-      const r = await fetch(`/api/challenges/${code.toUpperCase()}`);
+      const r = await fetch(resolveApiUrl(`/api/challenges/${code.toUpperCase()}`));
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
         throw new Error((j as { error?: string }).error ?? "Challenge not found");
@@ -172,7 +173,7 @@ function TelegramIcon() {
 
 function ShareBox({ code, taunt, team1Names }: { code: string; taunt?: string | null; team1Names: string[] }) {
   const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}${import.meta.env.BASE_URL}challenge/${code}`;
+  const url = `${getAppOrigin()}${import.meta.env.BASE_URL}challenge/${code}`;
 
   const shareText = taunt
     ? `⚔ "${taunt}" — Accept my A.v.A challenge and prove it!`
@@ -452,7 +453,7 @@ export function Challenge() {
     const permissionPromise = requestNotificationPermissionFromGesture();
     setAccepting(true);
     try {
-      const r = await fetch(`/api/challenges/${challenge.code}/accept`, {
+      const r = await fetch(resolveApiUrl(`/api/challenges/${challenge.code}/accept`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ team2Ids: team2.map(c => c.id) }),
@@ -499,7 +500,7 @@ export function Challenge() {
     if (!challenge || !ownToken || readyPending || ownReady) return;
     setReadyPending(true);
     try {
-      const r = await fetch(`/api/challenges/${challenge.code}/ready`, {
+      const r = await fetch(resolveApiUrl(`/api/challenges/${challenge.code}/ready`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: ownToken, ready: true }),
@@ -888,7 +889,7 @@ export function Challenge() {
     if (!challenge || !ownToken || testingPush) return;
     setTestingPush(true);
     try {
-      const r = await fetch("/api/push/test", {
+      const r = await fetch(resolveApiUrl("/api/push/test"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: challenge.code, token: ownToken }),

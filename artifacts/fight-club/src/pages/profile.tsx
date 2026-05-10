@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
+import { resolveApiUrl } from "@/lib/api-fetch";
 import { format } from "date-fns";
 import { Trophy, Swords, Star, LogOut, Pencil, Volume2 } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -84,7 +85,6 @@ type FightSummary = {
   simulatedAt: string;
 };
 
-const apiBase = import.meta.env.BASE_URL;
 
 export function Profile() {
   return (
@@ -109,10 +109,10 @@ function SignedInProfile() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch(`${apiBase}api/me/stats`, { credentials: "include" }).then((r) =>
+      fetch(resolveApiUrl("/api/me/stats"), { credentials: "include" }).then((r) =>
         r.ok ? r.json() : null,
       ),
-      fetch(`${apiBase}api/me/fights`, { credentials: "include" }).then((r) =>
+      fetch(resolveApiUrl("/api/me/fights"), { credentials: "include" }).then((r) =>
         r.ok ? r.json() : null,
       ),
     ])

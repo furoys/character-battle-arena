@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FightResult, FightRound } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-fetch";
 import { ChevronLeft, Swords, Zap, Trophy, FastForward, Mic } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
 import { ModifierBadge } from "@/components/modifier-badge";
@@ -504,7 +505,7 @@ export function FightScreen({
   // shouldn't silence the rest of the fight. Just return null for that
   // chunk; the drain loop skips nulls and the next sentence retries.
   const ttsFetch = useCallback((text: string, voice: TtsVoice): Promise<Blob | null> => {
-    return fetch("/api/tts", {
+    return fetch(resolveApiUrl("/api/tts"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice }),

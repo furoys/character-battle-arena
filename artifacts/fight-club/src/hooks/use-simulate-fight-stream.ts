@@ -1,14 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import type { FightResult, FightRound, SimulateFightBody } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-fetch";
 
 // Mirror the API client's base URL resolution. The api-client-react package
 // uses applyBaseUrl() under the hood; we read the same config so the streaming
-// fetch hits the same origin as every other API call.
+// fetch hits the same origin as every other API call — including Capacitor
+// native builds where relative URLs would silently resolve to localhost.
 function resolveStreamUrl(): string {
-  // Vite injects BASE_URL for the artifact prefix on the frontend; the API
-  // server is mounted at /api on the same origin, so a root-relative URL is
-  // correct in both dev and prod.
-  return "/api/fights/stream";
+  return resolveApiUrl("/api/fights/stream");
 }
 
 interface InitPayload {

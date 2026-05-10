@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Bell, Swords, Clock, Check, Eye, X } from "lucide-react";
 import { getAllStoredChallenges, forgetChallenge } from "@/lib/challenge-tokens";
+import { resolveApiUrl } from "@/lib/api-fetch";
 
 interface ChallengeStatus {
   code: string;
@@ -26,7 +27,7 @@ export function PendingChallengesBar() {
 
     const results = await Promise.all(stored.map(async (s) => {
       try {
-        const r = await fetch(`/api/challenges/${s.code}`);
+        const r = await fetch(resolveApiUrl(`/api/challenges/${s.code}`));
         if (r.status === 404 || r.status === 410) {
           forgetChallenge(s.code);
           return null;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { resolveApiUrl } from "@/lib/api-fetch";
 
 export interface EnergyState {
   energy: number;
@@ -48,7 +49,7 @@ export function useEnergy(): UseEnergyResult {
   const query = useQuery<EnergyState | null>({
     queryKey: ENERGY_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/me/energy", { credentials: "include" });
+      const res = await fetch(resolveApiUrl("/api/me/energy"), { credentials: "include" });
       if (!res.ok) return null;
       const json = (await res.json()) as EnergyState;
       clockOffsetRef.current = json.serverNow - Date.now();

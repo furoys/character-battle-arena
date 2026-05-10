@@ -1,4 +1,5 @@
 import { dark } from "@clerk/themes";
+import { getAppOrigin } from "@/lib/api-fetch";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -8,10 +9,9 @@ export const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl:
-      typeof window !== "undefined"
-        ? `${window.location.origin}${basePath}/logo.svg`
-        : `${basePath}/logo.svg`,
+    get logoImageUrl() {
+      return `${getAppOrigin()}${basePath}/logo.svg`;
+    },
     socialButtonsPlacement: "top" as const,
     socialButtonsVariant: "blockButton" as const,
   },

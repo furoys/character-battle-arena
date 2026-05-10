@@ -7,7 +7,7 @@
 // (permission denied, no SW, no PushManager, no VAPID) returns null silently
 // rather than throwing, so the caller can fall back to in-app polling.
 
-const BASE = import.meta.env.BASE_URL ?? "/";
+import { resolveApiUrl } from "@/lib/api-fetch";
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -64,7 +64,7 @@ async function getReg(): Promise<ServiceWorkerRegistration | null> {
 
 async function fetchVapidKey(): Promise<string | null> {
   try {
-    const r = await fetch(`${BASE}api/push/vapid-public-key`);
+    const r = await fetch(resolveApiUrl("/api/push/vapid-public-key"));
     if (!r.ok) return null;
     const j = await r.json() as { key?: string };
     return j.key ?? null;
@@ -117,7 +117,7 @@ export async function subscribeForChallenge(opts: SubscribeForChallengeOpts): Pr
   if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) return false;
 
   try {
-    const r = await fetch(`${BASE}api/push/subscribe`, {
+    const r = await fetch(resolveApiUrl("/api/push/subscribe"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: opts.code, token: opts.token, subscription: json }),
