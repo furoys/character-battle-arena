@@ -351,7 +351,8 @@ export function Challenge() {
 
   const team1Characters = useMemo(() => {
     if (!allCharacters || !challenge?.team1Ids) return [];
-    return challenge.team1Ids.map(id => allCharacters.find(c => c.id === id)!).filter(Boolean);
+    const ids = Array.isArray(challenge.team1Ids) ? challenge.team1Ids : [];
+    return ids.map(id => allCharacters.find(c => c.id === id)!).filter(Boolean);
   }, [allCharacters, challenge?.team1Ids]);
 
   const filteredChars = useMemo(() => {
@@ -853,7 +854,7 @@ export function Challenge() {
   //   2. team2Ids set → both players see the LOBBY with READY buttons, both
   //      teams revealed.
   const inLobby = !!challenge.team2Ids;
-  const team2Characters: Character[] = (inLobby && allCharacters && challenge.team2Ids)
+  const team2Characters: Character[] = (inLobby && allCharacters && Array.isArray(challenge.team2Ids) && challenge.team2Ids.length > 0)
     ? challenge.team2Ids.map(id => allCharacters.find(c => c.id === id)!).filter(Boolean)
     : [];
 

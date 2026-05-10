@@ -461,7 +461,7 @@ function runIntro(
   }));
 
   // ─── Character pool ──────────────────────────────────────────────────────────
-  const pool: IntroChar[] = rawChars
+  const pool: IntroChar[] = (Array.isArray(rawChars) ? rawChars : [])
     .filter(c => c.imageUrl)
     .map(c => ({ name: c.name, imageUrl: c.imageUrl, universe: c.universe || "",
       archetype: archetype(c.name), img: null }));

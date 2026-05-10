@@ -174,7 +174,7 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             const init = payload as InitPayload;
             // Build a stub FightResult. id/simulatedAt are placeholders until
             // the `complete` event arrives with the real saved record.
-            const rounds: FightRound[] = init.rounds.map((r) => {
+            const rounds: FightRound[] = (Array.isArray(init.rounds) ? init.rounds : []).map((r) => {
               const attackerName = r.attacker === 1
                 ? (init.team1[0]?.name ?? "Team 1")
                 : (init.team2[0]?.name ?? "Team 2");
@@ -258,7 +258,7 @@ export function useSimulateFightStream(opts: UseSimulateFightStreamOptions = {})
             // is canonical at this point.
             setCompletedSections(() => {
               const all = new Set<string>(["SETTING", "ENTRANCE", "COMBATANT ENTRANCE", "RESULT", "WHY THEY WON"]);
-              full.rounds.forEach(r => all.add(`ROUND ${r.round}`));
+              (Array.isArray(full.rounds) ? full.rounds : []).forEach(r => all.add(`ROUND ${r.round}`));
               return all;
             });
             setIsPending(false);

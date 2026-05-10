@@ -913,8 +913,8 @@ export function Suggest() {
   const hotCount = MATCHUPS.filter(m => m.hot).length;
 
   function handleLoad(matchup: Matchup) {
-    const team1 = matchup.team1Ids.map(id => characterMap.get(id)).filter(Boolean) as Character[];
-    const team2 = matchup.team2Ids.map(id => characterMap.get(id)).filter(Boolean) as Character[];
+    const team1 = (Array.isArray(matchup.team1Ids) ? matchup.team1Ids : []).map(id => characterMap.get(id)).filter(Boolean) as Character[];
+    const team2 = (Array.isArray(matchup.team2Ids) ? matchup.team2Ids : []).map(id => characterMap.get(id)).filter(Boolean) as Character[];
     try {
       localStorage.setItem("ava_pending_fight", JSON.stringify({
         team1,

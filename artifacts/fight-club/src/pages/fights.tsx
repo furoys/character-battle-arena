@@ -132,14 +132,16 @@ export function Fights() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const stats = useMemo(() => {
-    if (!fights || fights.length === 0) return null;
+    if (!Array.isArray(fights) || fights.length === 0) return null;
     const t1Wins = fights.filter(f => f.winner === 1).length;
     const t2Wins = fights.filter(f => f.winner === 2).length;
     const leaderboard = buildLeaderboard(fights);
     const streaks = detectStreaks([...fights].reverse());
     const usageCounts: Record<string, number> = {};
     for (const f of fights) {
-      for (const n of [...f.team1Names, ...f.team2Names]) {
+      const t1 = Array.isArray(f.team1Names) ? f.team1Names : [];
+      const t2 = Array.isArray(f.team2Names) ? f.team2Names : [];
+      for (const n of [...t1, ...t2]) {
         usageCounts[n] = (usageCounts[n] ?? 0) + 1;
       }
     }

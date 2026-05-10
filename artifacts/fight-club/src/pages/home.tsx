@@ -365,7 +365,8 @@ export function Home() {
 
   const handleLoadSavedTeam = (savedTeam: SavedTeam) => {
     if (!characters) return;
-    const members = savedTeam.characterIds
+    const ids = Array.isArray(savedTeam.characterIds) ? savedTeam.characterIds : [];
+    const members = ids
       .map(id => characters.find(c => c.id === id))
       .filter((c): c is Character => c !== undefined)
       .slice(0, 5);
@@ -1164,7 +1165,7 @@ export function Home() {
                 >
                   SAVED
                 </span>
-                {savedTeams.map(t => (
+                {(Array.isArray(savedTeams) ? savedTeams : []).map(t => (
                   <div
                     key={t.id}
                     className="flex-shrink-0 flex items-center gap-1"
