@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, useAuth, useClerk, RedirectToSignIn } from "@clerk/react";
@@ -28,12 +28,27 @@ import { SignUpPage } from "@/pages/sign-up";
 import { Privacy } from "@/pages/privacy";
 import NotFound from "@/pages/not-found";
 
+// Evaluated once at module load — Capacitor's isNativePlatform() is sync and
+// stable for the lifetime of the JS runtime.
+const isNative = Capacitor.isNativePlatform();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
       refetchOnWindowFocus: false,
+      // On native Capacitor: the auth token getter is wired via useLayoutEffect
+      // (runs before useEffect), but if the very first query fires before auth
+      // settles, retry once after a short delay so it picks up the token.
+      ...(isNative && {
+        retry: (count: number, err: unknown) =>
+          count < 1 &&
+          typeof err === "object" &&
+          err !== null &&
+          (err as { status?: number }).status === 401,
+        retryDelay: 400,
+      }),
     },
   },
 });
@@ -97,15 +112,42 @@ function Router() {
 // Wires Clerk's getToken() to the API client's auth token getter so that
 // customFetch (React Query hooks) AND apiFetch (direct fetch calls) both
 // attach a Bearer token on Capacitor native builds, where session cookies
-// are not propagated across origins.
-// No-ops entirely on web — cookie-based auth continues to work there.
+// are not propagated across origins. No-ops entirely on web.
+//
+// Implementation notes:
+// • useLayoutEffect is used instead of useEffect so the getter is registered
+//   synchronously before React Query's useEffect-based queries fire in the
+//   same commit cycle (all useLayoutEffects run before all useEffects).
+// • Empty deps [] + mutable ref pattern: we register one stable getter
+//   closure that always reads the latest auth state from the ref, avoiding
+//   the de-registration / re-registration churn that [getToken, isSignedIn]
+//   deps would cause — and avoiding setting getter to null during Clerk's
+//   async init window when isSignedIn is briefly false/undefined.
 function ClerkAuthBridge() {
   const { getToken, isSignedIn } = useAuth();
 
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-    setAuthTokenGetter(isSignedIn ? () => getToken() : null);
-  }, [getToken, isSignedIn]);
+  // Mutable ref kept in sync synchronously during every render — safe because
+  // updating a ref is not a side-effect that affects other components.
+  const authRef = useRef({ getToken, isSignedIn });
+  authRef.current.getToken = getToken;
+  authRef.current.isSignedIn = isSignedIn;
+
+  useLayoutEffect(() => {
+    if (!isNative) return;
+
+    // Register once. The closure reads authRef.current so it always gets the
+    // latest token / sign-in state without needing to re-register.
+    setAuthTokenGetter(async () => {
+      if (!authRef.current.isSignedIn) return null;
+      try {
+        return await authRef.current.getToken();
+      } catch {
+        return null;
+      }
+    });
+
+    return () => setAuthTokenGetter(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }

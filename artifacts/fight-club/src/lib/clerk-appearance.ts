@@ -9,11 +9,11 @@ export const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    get logoImageUrl() {
-      // On Capacitor native builds, Vite's BASE_URL is a relative path like "."
-      // which would produce a malformed URL (e.g. "https://example.com./logo.svg").
-      // Use the production absolute URL directly when on native.
-      if (isNativePlatform()) return `${getAppOrigin()}/logo.svg`;
+    get logoImageUrl(): string | undefined {
+      // On native Capacitor: the WebView origin is https://localhost, so loading
+      // an asset from https://anyonevsanyone.replit.app triggers a cross-origin
+      // block. Skip the custom logo entirely — Clerk shows a sensible fallback.
+      if (isNativePlatform()) return undefined;
       return `${getAppOrigin()}${basePath}/logo.svg`;
     },
     socialButtonsPlacement: "top" as const,
