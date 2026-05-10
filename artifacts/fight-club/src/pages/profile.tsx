@@ -143,7 +143,7 @@ function SignedInProfile() {
           ((stats.team1Wins + stats.team2Wins) / stats.totalFights) * 100,
         )
       : 0;
-  const topFighters = stats?.characters.slice(0, 6) ?? [];
+  const topFighters = Array.isArray(stats?.characters) ? stats.characters.slice(0, 6) : [];
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -339,7 +339,7 @@ function SignedInProfile() {
             )}
 
             {/* Recent fights */}
-            {fights && fights.length > 0 && (
+            {Array.isArray(fights) && fights.length > 0 && (
               <div>
                 <p
                   className="text-[9px] font-bold uppercase tracking-[0.3em] mb-2"
@@ -350,8 +350,11 @@ function SignedInProfile() {
                 <div className="flex flex-col divide-y divide-border/20 border border-white/5">
                   {fights.slice(0, 10).map((fight) => {
                     const winColor = fight.winner === 1 ? "#00f0ff" : "#ff3b30";
-                    const winNames =
+                    const rawWinNames =
                       fight.winner === 1 ? fight.team1Names : fight.team2Names;
+                    const winNames = Array.isArray(rawWinNames) ? rawWinNames : [];
+                    const team1NamesSafe = Array.isArray(fight.team1Names) ? fight.team1Names : [];
+                    const team2NamesSafe = Array.isArray(fight.team2Names) ? fight.team2Names : [];
                     return (
                       <div
                         key={fight.id}
@@ -377,14 +380,14 @@ function SignedInProfile() {
                         </div>
                         <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center pl-2">
                           <p className="text-[10px] text-muted-foreground/70 leading-tight truncate">
-                            {fight.team1Names.join(", ")}
+                            {team1NamesSafe.join(", ")}
                           </p>
                           <Swords
                             className="h-2.5 w-2.5"
                             style={{ color: "rgba(255,0,85,0.4)" }}
                           />
                           <p className="text-[10px] text-muted-foreground/70 leading-tight text-right truncate">
-                            {fight.team2Names.join(", ")}
+                            {team2NamesSafe.join(", ")}
                           </p>
                         </div>
                       </div>

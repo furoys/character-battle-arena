@@ -28,8 +28,15 @@ import { useEnergy } from "@/hooks/use-energy";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
-  try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? fallback; }
-  catch { return fallback; }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) ?? "null");
+    if (parsed === null || parsed === undefined) return fallback;
+    // Shape guard: when caller expects an array but storage holds a non-array
+    // (corrupted, legacy, or tampered value), fall back rather than letting
+    // downstream `.map` / `new Set(...)` crash on a mobile WebView.
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
+    return parsed as T;
+  } catch { return fallback; }
 }
 function writeLS(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
@@ -418,9 +425,11 @@ export function Home() {
       const raw = localStorage.getItem("ava_pending_fight");
       if (!raw) return;
       localStorage.removeItem("ava_pending_fight");
-      const { team1, team2 } = JSON.parse(raw) as { team1: Character[]; team2: Character[]; mode: string };
-      if (team1?.length) setTeam1(team1.slice(0, 5));
-      if (team2?.length) setTeam2(team2.slice(0, 5));
+      const parsed = JSON.parse(raw) as { team1?: unknown; team2?: unknown; mode?: string };
+      const team1 = Array.isArray(parsed?.team1) ? (parsed.team1 as Character[]) : [];
+      const team2 = Array.isArray(parsed?.team2) ? (parsed.team2 as Character[]) : [];
+      if (team1.length) setTeam1(team1.slice(0, 5));
+      if (team2.length) setTeam2(team2.slice(0, 5));
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

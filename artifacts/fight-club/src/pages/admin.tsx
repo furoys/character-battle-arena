@@ -143,8 +143,8 @@ export function Admin() {
         localStorage.removeItem(PIN_KEY);
         return;
       }
-      const data: Suggestion[] = await res.json();
-      setSuggestions(data);
+      const data = await res.json();
+      setSuggestions(Array.isArray(data) ? (data as Suggestion[]) : []);
     } catch {
       toast({ title: "Error loading suggestions", variant: "destructive" });
     } finally {

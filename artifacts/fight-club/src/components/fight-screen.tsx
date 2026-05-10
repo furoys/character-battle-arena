@@ -711,7 +711,8 @@ export function FightScreen({
   useEffect(() => {
     if (!ttsEnabled || !result) return;
 
-    result.rounds.forEach((round, roundIdx) => {
+    const safeRounds = Array.isArray(result.rounds) ? result.rounds : [];
+    safeRounds.forEach((round, roundIdx) => {
       // Only pre-fetch rounds that are ahead of the active one
       if (roundIdx <= activeRoundRef.current) return;
 
@@ -753,7 +754,7 @@ export function FightScreen({
     const roundIdx = visibleCount - 1;
     if (activeRoundRef.current !== roundIdx) return;
 
-    const narrative = result.rounds[roundIdx]?.narrative ?? "";
+    const narrative = (Array.isArray(result.rounds) ? result.rounds : [])[roundIdx]?.narrative ?? "";
     const fromPos = enqueuedUpToRef.current[roundIdx] ?? 0;
     if (narrative.length <= fromPos) return;
 
@@ -787,7 +788,7 @@ export function FightScreen({
     if (!ttsEnabled || visibleCount <= 0 || !result || !completedSections) return;
     const roundIdx = visibleCount - 1;
     if (activeRoundRef.current !== roundIdx) return;
-    const round = result.rounds[roundIdx];
+    const round = (Array.isArray(result.rounds) ? result.rounds : [])[roundIdx];
     if (!round || !completedSections.has(`ROUND ${round.round}`)) return;
 
     const narrative = round.narrative;
@@ -814,7 +815,8 @@ export function FightScreen({
   useEffect(() => {
     if (!ttsEnabled || !result || !completedSections) return;
 
-    result.rounds.forEach((round, roundIdx) => {
+    const safeRounds = Array.isArray(result.rounds) ? result.rounds : [];
+    safeRounds.forEach((round, roundIdx) => {
       const sectionKey = `ROUND ${round.round}`;
       if (!completedSections.has(sectionKey)) return;
       if (roundIdx <= activeRoundRef.current) return;
@@ -878,16 +880,17 @@ export function FightScreen({
   // Clamp visibleCount to the actual number of rounds so that the large
   // sentinel (9999) set by handleSkip doesn't make the round-index lookup
   // return undefined and break lastVisibleRoundDone.
-  const clampedVisibleCount = result ? Math.min(visibleCount, result.rounds.length) : visibleCount;
-  const lastVisibleRoundNumber = clampedVisibleCount > 0 && result?.rounds[clampedVisibleCount - 1]
-    ? result.rounds[clampedVisibleCount - 1]!.round
+  const safeRoundsList = result && Array.isArray(result.rounds) ? result.rounds : [];
+  const clampedVisibleCount = result ? Math.min(visibleCount, safeRoundsList.length) : visibleCount;
+  const lastVisibleRoundNumber = clampedVisibleCount > 0 && safeRoundsList[clampedVisibleCount - 1]
+    ? safeRoundsList[clampedVisibleCount - 1]!.round
     : null;
   const lastVisibleRoundDone = lastVisibleRoundNumber !== null
     && !!completedSections?.has(`ROUND ${lastVisibleRoundNumber}`);
 
   // Gating flags
   const canBeginMatch = !!result && !matchBegun && settingDone && entranceDone;
-  const allRoundsRevealed = !!result && clampedVisibleCount >= (result.rounds.length || 0);
+  const allRoundsRevealed = !!result && clampedVisibleCount >= (safeRoundsList.length || 0);
   const closingSectionsDone = !!result
     && (result.whyWon?.length ?? 0) > 0
     && !!result.summary?.trim();
@@ -918,7 +921,7 @@ export function FightScreen({
     // but kept here so pre-fetched blobs that start draining immediately
     // after this click are always within an unlocked audio context).
     unlockAudio();
-    const newCount = Math.min(visibleCount + 1, result.rounds.length);
+    const newCount = Math.min(visibleCount + 1, (Array.isArray(result.rounds) ? result.rounds : []).length);
     setVisibleCount(newCount);
     setAttackingTeam(((newCount - 1) % 2 === 0 ? 1 : 2) as 1 | 2);
     triggerRoundFlash();
@@ -982,7 +985,7 @@ export function FightScreen({
 
   let team1HpPct = 100;
   let team2HpPct = 100;
-  if (result && result.rounds.length > 0) {
+  if (result && Array.isArray(result.rounds) && result.rounds.length > 0) {
     const shownRounds = result.rounds.slice(0, visibleCount);
     if (shownRounds.length > 0) {
       const last = shownRounds[shownRounds.length - 1]!;
@@ -1132,7 +1135,7 @@ export function FightScreen({
                 )}
 
                 {/* 3+. ROUNDS — manually revealed via NEXT ROUND button */}
-                {result.rounds.slice(0, visibleCount).map((round, idx) => (
+                {(Array.isArray(result.rounds) ? result.rounds : []).slice(0, visibleCount).map((round, idx) => (
                   <div key={idx}>
                     <RoundBlock round={round} index={idx} />
                     {/* Play narration — only on the most recently revealed round,
@@ -1331,7 +1334,7 @@ export function FightScreen({
                   least one round has been generated. Blocked during loading
                   because team stubs from the init event lack `universe`,
                   which would crash computeSynergy in VictoryScreen. */}
-              {!canShowResults && !isSimulating && result.rounds.length > 0 && (
+              {!canShowResults && !isSimulating && Array.isArray(result.rounds) && result.rounds.length > 0 && (
                 <button
                   onClick={handleSkip}
                   className="flex items-center gap-1.5 font-display uppercase transition-all active:scale-[0.97]"
