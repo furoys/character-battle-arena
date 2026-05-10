@@ -968,7 +968,7 @@ export function Home() {
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {filteredCharacters.slice(0, visibleCount).map(character => (
+                {(Array.isArray(filteredCharacters) ? filteredCharacters : []).slice(0, visibleCount).map(character => (
                   <CharacterCard
                     key={character.id}
                     character={character}

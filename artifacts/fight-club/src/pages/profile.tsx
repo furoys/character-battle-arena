@@ -348,7 +348,7 @@ function SignedInProfile() {
                   Recent matches
                 </p>
                 <div className="flex flex-col divide-y divide-border/20 border border-white/5">
-                  {fights.slice(0, 10).map((fight) => {
+                  {(Array.isArray(fights) ? fights : []).slice(0, 10).map((fight) => {
                     const winColor = fight.winner === 1 ? "#00f0ff" : "#ff3b30";
                     const rawWinNames =
                       fight.winner === 1 ? fight.team1Names : fight.team2Names;

@@ -321,7 +321,7 @@ export function Roster() {
       ) : (
         <>
           <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {filtered?.slice(0, visibleCount).map(character => (
+            {(Array.isArray(filtered) ? filtered : []).slice(0, visibleCount).map(character => (
               <div key={character.id} className="group/card">
                 <RosterFlipCard
                   character={character}

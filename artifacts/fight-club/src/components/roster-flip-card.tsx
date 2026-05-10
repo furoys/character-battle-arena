@@ -146,7 +146,7 @@ export function RosterFlipCard({ character, onDelete }: RosterFlipCardProps) {
             <p className="text-[10px] text-primary font-medium line-clamp-2 pt-0.5 leading-relaxed">{character.specialAbility}</p>
             {character.behaviorTags && character.behaviorTags.length > 0 && (
               <div className="flex flex-wrap gap-1 pt-0.5">
-                {character.behaviorTags.slice(0, 4).map(tag => (
+                {(Array.isArray(character.behaviorTags) ? character.behaviorTags : []).slice(0, 4).map(tag => (
                   <span
                     key={tag}
                     className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 leading-none"

@@ -108,7 +108,7 @@ export function CharacterPicker({ open, onClose }: CharacterPickerProps) {
           </div>
           {/* Universe filter pills */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
-            {universes.slice(0, 30).map((u) => (
+            {(Array.isArray(universes) ? universes : []).slice(0, 30).map((u) => (
               <button
                 key={u}
                 onClick={() => setUniverse(u)}
@@ -138,7 +138,7 @@ export function CharacterPicker({ open, onClose }: CharacterPickerProps) {
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {filtered.slice(0, 200).map((c) => {
+              {(Array.isArray(filtered) ? filtered : []).slice(0, 200).map((c) => {
                 const isCurrent = c.id === currentId;
                 const initials = c.name
                   .split(" ")

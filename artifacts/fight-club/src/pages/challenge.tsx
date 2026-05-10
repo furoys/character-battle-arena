@@ -782,7 +782,7 @@ export function Challenge() {
             </div>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-            {filteredChars.slice(0, visibleCount).map(char => (
+            {(Array.isArray(filteredChars) ? filteredChars : []).slice(0, visibleCount).map(char => (
               <CharacterCard
                 key={char.id}
                 character={char}
