@@ -12,7 +12,7 @@ export function useAvatarCharacter(): Character | null {
   const { user } = useUser();
   const { data: characters } = useListCharacters();
   const id = getAvatarCharacterId(user);
-  if (!id || !characters) return null;
+  if (!id || !Array.isArray(characters)) return null;
   return characters.find((c) => c.id === id) ?? null;
 }
 

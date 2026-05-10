@@ -364,7 +364,7 @@ export function Home() {
   };
 
   const handleLoadSavedTeam = (savedTeam: SavedTeam) => {
-    if (!characters) return;
+    if (!Array.isArray(characters)) return;
     const ids = Array.isArray(savedTeam.characterIds) ? savedTeam.characterIds : [];
     const members = ids
       .map(id => characters.find(c => c.id === id))

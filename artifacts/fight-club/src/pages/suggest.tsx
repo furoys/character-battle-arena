@@ -897,13 +897,14 @@ export function Suggest() {
 
   const characterMap = useMemo(() => {
     const m = new Map<number, Character>();
-    characters?.forEach(c => m.set(c.id, c));
+    const safeChars = Array.isArray(characters) ? characters : [];
+    safeChars.forEach(c => m.set(c.id, c));
     return m;
   }, [characters]);
 
   // Find Developer Legends by name (IDs are dynamic)
-  const chris = useMemo(() => characters?.find(c => c.name === "Chris Henry"), [characters]);
-  const troy  = useMemo(() => characters?.find(c => c.name === "Troy Wilson"), [characters]);
+  const chris = useMemo(() => (Array.isArray(characters) ? characters : []).find(c => c.name === "Chris Henry"), [characters]);
+  const troy  = useMemo(() => (Array.isArray(characters) ? characters : []).find(c => c.name === "Troy Wilson"), [characters]);
 
   const filtered = useMemo(
     () => activeCategory === "All" ? MATCHUPS : activeCategory === "Developer Legends" ? [] : MATCHUPS.filter(m => m.category === activeCategory),
