@@ -500,18 +500,23 @@ export function FightScreen({
   });
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
   const [narrationStartedRound, setNarrationStartedRound] = useState(-1);
-  // The upstream gpt-audio proxy occasionally returns 503 (timeouts).
-  // Don't latch a session-wide "broken" flag — a single failed sentence
-  // shouldn't silence the rest of the fight. Just return null for that
-  // chunk; the drain loop skips nulls and the next sentence retries.
+  // The upstream gpt-audio proxy occasionally returns 503 (timeouts), and on
+  // Android it may be consistently unavailable. After TTS_MAX_CONSEC_FAILS
+  // consecutive failures we stop requesting so a broken proxy doesn't spam the
+  // network. The drain loop skips null blobs so fight progression is unaffected.
   const ttsFetch = useCallback((text: string, voice: TtsVoice): Promise<Blob | null> => {
+    if (ttsConsecFailsRef.current >= TTS_MAX_CONSEC_FAILS) return Promise.resolve(null);
     return fetch(resolveApiUrl("/api/tts"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice }),
     })
-      .then(r => (r.ok ? r.blob() : null))
-      .catch(() => null);
+      .then(r => {
+        if (r.ok) { ttsConsecFailsRef.current = 0; return r.blob(); }
+        ttsConsecFailsRef.current++;
+        return null;
+      })
+      .catch(() => { ttsConsecFailsRef.current++; return null; });
   }, []);
 
   // Tiny silent WAV — played synchronously inside click handlers to satisfy
@@ -537,6 +542,12 @@ export function FightScreen({
   const isDrainingRef      = useRef(false);
   const narrationActiveRef = useRef(false);      // true once user clicks Play
   const activeRoundRef     = useRef(-1);         // -1 = stopped
+  // Consecutive TTS fetch failures. After TTS_MAX_CONSEC_FAILS failures in a
+  // row we stop making requests so a consistently-down TTS proxy (e.g. a 503
+  // on Android) doesn't flood the network and spam the DevTools console.
+  // Reset to 0 at the start of every fight.
+  const ttsConsecFailsRef  = useRef(0);
+  const TTS_MAX_CONSEC_FAILS = 3;
   // Per-round: char position in narrative up to which we have already enqueued.
   const enqueuedUpToRef  = useRef<Record<number, number>>({});
   // Pre-fetched TTS blobs for rounds that are complete but not yet visible.
@@ -694,6 +705,7 @@ export function FightScreen({
       enqueuedUpToRef.current = {};
       preFetchRef.current.clear();
       preFetchSentenceUpToRef.current = {};
+      ttsConsecFailsRef.current = 0;
       stopTts();
     }
   }, [isSimulating, stopTts]);

@@ -1,5 +1,5 @@
 import { dark } from "@clerk/themes";
-import { getAppOrigin } from "@/lib/api-fetch";
+import { getAppOrigin, isNativePlatform } from "@/lib/api-fetch";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -10,6 +10,10 @@ export const clerkAppearance = {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
     get logoImageUrl() {
+      // On Capacitor native builds, Vite's BASE_URL is a relative path like "."
+      // which would produce a malformed URL (e.g. "https://example.com./logo.svg").
+      // Use the production absolute URL directly when on native.
+      if (isNativePlatform()) return `${getAppOrigin()}/logo.svg`;
       return `${getAppOrigin()}${basePath}/logo.svg`;
     },
     socialButtonsPlacement: "top" as const,

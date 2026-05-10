@@ -54,6 +54,15 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+/**
+ * Return the currently configured auth token getter, or null if none has been
+ * set. Used by apiFetch in the fight-club app so that direct fetch() calls
+ * (not going through customFetch) also attach the Bearer token on native.
+ */
+export function getAuthTokenGetter(): AuthTokenGetter | null {
+  return _authTokenGetter;
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }

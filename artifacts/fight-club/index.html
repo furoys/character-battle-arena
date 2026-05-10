@@ -14,10 +14,13 @@
     <meta name="application-name" content="A.v.A" />
     <meta name="msapplication-TileColor" content="#030308" />
 
-    <!-- Icons -->
-    <link rel="icon" type="image/png" href="/app-icon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- Icons — use absolute production URLs so that Capacitor's WebView
+         resolves them correctly regardless of the current page path.
+         (Vite transforms root-relative hrefs to relative during build;
+          relative hrefs on sub-paths like /sign-in/ would 404.) -->
+    <link rel="icon" type="image/png" href="https://anyonevsanyone.replit.app/app-icon.png" />
+    <link rel="apple-touch-icon" href="https://anyonevsanyone.replit.app/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://anyonevsanyone.replit.app/apple-touch-icon.png" />
 
     <!-- SEO / OG -->
     <meta name="description" content="A.v.A — Anyone vs Anyone. AI-powered character fight simulator with 950+ fighters from Marvel, DC, anime, video games, mythology, and more." />

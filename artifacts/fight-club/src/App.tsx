@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, useAuth, useClerk, RedirectToSignIn } from "@clerk/react";
+import { Capacitor } from "@capacitor/core";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
@@ -90,6 +92,22 @@ function Router() {
       </Route>
     </Switch>
   );
+}
+
+// Wires Clerk's getToken() to the API client's auth token getter so that
+// customFetch (React Query hooks) AND apiFetch (direct fetch calls) both
+// attach a Bearer token on Capacitor native builds, where session cookies
+// are not propagated across origins.
+// No-ops entirely on web — cookie-based auth continues to work there.
+function ClerkAuthBridge() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    setAuthTokenGetter(isSignedIn ? () => getToken() : null);
+  }, [getToken, isSignedIn]);
+
+  return null;
 }
 
 // Clerk's session changes (sign-in / sign-out) should invalidate query cache
@@ -187,6 +205,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ClerkAuthBridge />
         <TooltipProvider>
           <IntroOrchestrator>
             <Layout>

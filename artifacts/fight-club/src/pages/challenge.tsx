@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useLocation, useSearch } from "wouter";
 import { useListCharacters } from "@workspace/api-client-react";
 import { Character } from "@workspace/api-client-react";
-import { resolveApiUrl, getAppOrigin } from "@/lib/api-fetch";
+import { resolveApiUrl, getAppOrigin, isNativePlatform } from "@/lib/api-fetch";
 import { CharacterCard } from "@/components/character-card";
 import { FightScreen } from "@/components/fight-screen";
 import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
@@ -173,7 +173,11 @@ function TelegramIcon() {
 
 function ShareBox({ code, taunt, team1Names }: { code: string; taunt?: string | null; team1Names: string[] }) {
   const [copied, setCopied] = useState(false);
-  const url = `${getAppOrigin()}${import.meta.env.BASE_URL}challenge/${code}`;
+  // On native Capacitor, Vite's BASE_URL is a relative "." which would produce
+  // a malformed URL. Use the production absolute path directly instead.
+  const url = isNativePlatform()
+    ? `${getAppOrigin()}/challenge/${code}`
+    : `${window.location.origin}${import.meta.env.BASE_URL}challenge/${code}`;
 
   const shareText = taunt
     ? `⚔ "${taunt}" — Accept my A.v.A challenge and prove it!`

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
-import { resolveApiUrl } from "@/lib/api-fetch";
+import { apiFetch } from "@/lib/api-fetch";
 import { format } from "date-fns";
 import { Trophy, Swords, Star, LogOut, Pencil, Volume2 } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -109,12 +109,8 @@ function SignedInProfile() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch(resolveApiUrl("/api/me/stats"), { credentials: "include" }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
-      fetch(resolveApiUrl("/api/me/fights"), { credentials: "include" }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
+      apiFetch("/api/me/stats").then((r) => (r.ok ? r.json() : null)),
+      apiFetch("/api/me/fights").then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([s, f]) => {
         if (cancelled) return;
