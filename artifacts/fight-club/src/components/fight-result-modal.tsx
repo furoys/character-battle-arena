@@ -136,9 +136,11 @@ export function FightResultModal({ open, onOpenChange, result, isSimulating }: F
             {/* Narrative Scroll */}
             <ScrollArea className="flex-1 p-4 md:p-8">
               <div className="space-y-6 max-w-3xl mx-auto">
-                {displayedRounds.map((round, idx) => {
+                {(Array.isArray(displayedRounds) ? displayedRounds : []).map((round, idx) => {
+                  const t1 = Array.isArray(result.team1) ? result.team1 : [];
+                  const t2 = Array.isArray(result.team2) ? result.team2 : [];
                   const attackerChar =
-                    [...result.team1, ...result.team2].find((c) => c.name === round.attacker) ?? null;
+                    [...t1, ...t2].find((c) => c.name === round.attacker) ?? null;
                   return (
                     <div
                       key={idx}
@@ -175,7 +177,10 @@ export function FightResultModal({ open, onOpenChange, result, isSimulating }: F
                   <div className="mt-12 p-8 text-center animate-in zoom-in duration-1000 border-4 border-primary bg-primary/10 shadow-[0_0_30px_rgba(255,0,85,0.2)]">
                     {/* Winner portraits */}
                     <div className="flex justify-center gap-2 mb-6">
-                      {(result.winner === 1 ? result.team1 : result.team2).map((c) =>
+                      {(Array.isArray(result.team1) && Array.isArray(result.team2)
+                        ? (result.winner === 1 ? result.team1 : result.team2)
+                        : []
+                      ).map((c) =>
                         c.imageUrl ? (
                           <div key={c.id} className="relative w-16 h-20 overflow-hidden border-2 border-primary">
                             <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />

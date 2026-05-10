@@ -93,7 +93,7 @@ export function PendingChallengesBar() {
         <span>CHALLENGES</span>
       </div>
 
-      {items.map((c) => {
+      {(Array.isArray(items) ? items : []).map((c) => {
         const ownReady = c.side === "creator" ? c.team1Ready : c.team2Ready;
         const oppReady = c.side === "creator" ? c.team2Ready : c.team1Ready;
         let label: string;

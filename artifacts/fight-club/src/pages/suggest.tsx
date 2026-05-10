@@ -639,8 +639,8 @@ function MatchupCard({
   onLoad: (m: Matchup) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const team1 = matchup.team1Ids.map(id => characterMap.get(id));
-  const team2 = matchup.team2Ids.map(id => characterMap.get(id));
+  const team1 = (Array.isArray(matchup.team1Ids) ? matchup.team1Ids : []).map(id => characterMap.get(id));
+  const team2 = (Array.isArray(matchup.team2Ids) ? matchup.team2Ids : []).map(id => characterMap.get(id));
   const loaded = team1.every(Boolean) && team2.every(Boolean);
 
   return (
@@ -1003,7 +1003,7 @@ export function Suggest() {
           {showDevLegends && (
             <DevLegendsCard chris={chris} troy={troy} onLoad={handleDevLoad} />
           )}
-          {filtered.map(matchup => (
+          {(Array.isArray(filtered) ? filtered : []).map(matchup => (
             <MatchupCard
               key={matchup.id}
               matchup={matchup}

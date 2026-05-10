@@ -257,7 +257,7 @@ export function Admin() {
           </div>
         )}
 
-        {!loading && suggestions !== null && suggestions.map(s => (
+        {!loading && Array.isArray(suggestions) && suggestions.map(s => (
           <SuggestionCard key={s.id} s={s} pin={pin} onApprove={handleApprove} onReject={handleReject} />
         ))}
 

@@ -24,8 +24,8 @@ function buildLeaderboard(fights: Array<{
   const losses: Record<string, number> = {};
 
   for (const f of fights) {
-    const winNames = f.winner === 1 ? f.team1Names : f.team2Names;
-    const loseNames = f.winner === 1 ? f.team2Names : f.team1Names;
+    const winNames = Array.isArray(f.winner === 1 ? f.team1Names : f.team2Names) ? (f.winner === 1 ? f.team1Names : f.team2Names) : [];
+    const loseNames = Array.isArray(f.winner === 1 ? f.team2Names : f.team1Names) ? (f.winner === 1 ? f.team2Names : f.team1Names) : [];
     for (const n of winNames) { wins[n] = (wins[n] ?? 0) + 1; }
     for (const n of loseNames) { losses[n] = (losses[n] ?? 0) + 1; }
   }
@@ -67,7 +67,7 @@ function RereadPanel({ fightId, winner }: { fightId: number; winner: number }) {
 
   const arenaIntro = data.arenaIntro?.trim();
   const intro = data.intro?.trim();
-  const rounds = data.rounds ?? [];
+  const rounds = Array.isArray(data.rounds) ? data.rounds : [];
 
   return (
     <div
@@ -294,7 +294,7 @@ export function Fights() {
                   Character Leaderboard
                 </p>
                 <div className="space-y-1.5">
-                  {stats.leaderboard.map((c, i) => {
+                  {(Array.isArray(stats.leaderboard) ? stats.leaderboard : []).map((c, i) => {
                     const total = c.wins + c.losses;
                     const winPct = total > 0 ? Math.round((c.wins / total) * 100) : 0;
                     const medalColor = i === 0 ? "#ffd700" : i === 1 ? "#c0c0c0" : i === 2 ? "#cd7f32" : "rgba(255,255,255,0.2)";
@@ -343,7 +343,7 @@ export function Fights() {
                 Most used fighters
               </p>
               <div className="flex flex-wrap gap-1">
-                {stats.mostUsed.map(([name, count]) => (
+                {(Array.isArray(stats.mostUsed) ? stats.mostUsed : []).map(([name, count]) => (
                   <div
                     key={name}
                     className="flex items-center gap-1 px-2 py-1"
@@ -359,9 +359,12 @@ export function Fights() {
         ) : (
           /* History list */
           <div className="flex flex-col divide-y divide-border/20">
-            {fights?.map((fight) => {
+            {(Array.isArray(fights) ? fights : []).map((fight) => {
               const winColor = fight.winner === 1 ? "#00f0ff" : "#ff3b30";
-              const winNames = fight.winner === 1 ? fight.team1Names : fight.team2Names;
+              const rawWin = fight.winner === 1 ? fight.team1Names : fight.team2Names;
+              const winNames = Array.isArray(rawWin) ? rawWin : [];
+              const t1Names = Array.isArray(fight.team1Names) ? fight.team1Names : [];
+              const t2Names = Array.isArray(fight.team2Names) ? fight.team2Names : [];
               const isExpanded = expandedId === fight.id;
               return (
                 <div key={fight.id} className="relative px-4 py-3 flex flex-col gap-2 group">
@@ -403,14 +406,14 @@ export function Fights() {
                   <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center pl-2">
                     <div className={fight.winner === 1 ? "opacity-100" : "opacity-35"}>
                       <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "#00f0ff80" }}>T1</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{fight.team1Names.join(", ")}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">{t1Names.join(", ")}</p>
                     </div>
                     <div>
                       <Swords className="h-3 w-3" style={{ color: "rgba(255,0,85,0.4)" }} />
                     </div>
                     <div className={`text-right ${fight.winner === 2 ? "opacity-100" : "opacity-35"}`}>
                       <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "#ff3b3080" }}>T2</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{fight.team2Names.join(", ")}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">{t2Names.join(", ")}</p>
                     </div>
                   </div>
 
