@@ -9,7 +9,25 @@ interface RosterFlipCardProps {
   onDelete?: () => void;
 }
 
+/**
+ * Safely coerce a character stat field to a finite non-negative integer.
+ *
+ * Guards against null, undefined, NaN, Infinity, and string values that
+ * could arrive at runtime despite the TypeScript `number` type annotation
+ * (e.g. from an older API response format, a failed JSON parse, or a DB
+ * migration that temporarily allows nulls).  Returns 0 for any non-numeric
+ * or non-finite input so all downstream arithmetic stays finite and
+ * consistent across web and Android/Capacitor builds.
+ */
+export function statNum(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+}
+
 const formatStatNum = (v: number): string => {
+  // Guard NaN / Infinity before comparisons — comparisons against NaN always
+  // return false, so without this the function falls through to String(NaN).
+  if (!Number.isFinite(v) || v < 0) return "0";
   if (v >= 1_000_000) return `${+(v / 1_000_000).toFixed(1)}M`;
   if (v >= 10_000)    return `${Math.round(v / 1_000)}K`;
   if (v >= 1_000)     return `${+(v / 1_000).toFixed(1)}K`;
@@ -31,7 +49,11 @@ const TAG_COLORS: Record<string, string> = {
 };
 
 export function powerAvg(c: Character) {
-  return Math.round((c.strength + c.speed + c.intelligence + c.durability) / 4);
+  // Use statNum() so null / undefined / string fields never produce NaN.
+  // powerAvg is the single source of truth for all OVR and tier calculations.
+  return Math.round(
+    (statNum(c.strength) + statNum(c.speed) + statNum(c.intelligence) + statNum(c.durability)) / 4,
+  );
 }
 
 export function powerTier(avg: number): { label: string; color: string; bg: string } {
@@ -43,8 +65,11 @@ export function powerTier(avg: number): { label: string; color: string; bg: stri
 
 // Logarithmic bar scale: 100 (log10=2) → 0%, 10M (log10=7) → 100%
 function statBarPct(v: number): number {
-  if (v <= 0) return 0;
-  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, v)) - 2) / 5) * 100));
+  // Explicitly reject NaN/Infinity: `NaN <= 0` is false so the old guard
+  // did not protect against it and Math.log10(NaN) = NaN → bar width "NaN%".
+  const safe = statNum(v);
+  if (safe <= 0) return 0;
+  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, safe)) - 2) / 5) * 100));
 }
 
 function StatBar({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {

@@ -15,7 +15,7 @@ import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { computeSynergy } from "@/lib/synergies";
-import { powerAvg, powerTier } from "@/components/roster-flip-card";
+import { powerAvg, powerTier, statNum } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setCreatorToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge, requestNotificationPermissionFromGesture } from "@/lib/push-subscribe";
@@ -146,7 +146,12 @@ function TeamSlot({ team, members, active, flash, onActivate, onRemove, onSave }
   const dimColor = team === 1 ? "rgba(0,240,255,0.08)" : "rgba(255,59,48,0.08)";
   const glowColor = team === 1 ? "rgba(0,240,255,0.25)" : "rgba(255,59,48,0.25)";
   const flashGlow = team === 1 ? "rgba(0,240,255,0.85)" : "rgba(255,59,48,0.85)";
-  const totalPower = members.reduce((s, c) => s + c.strength + c.speed + c.intelligence + c.durability, 0);
+  // Use statNum() so null/undefined/string stat fields never produce NaN in
+  // the accumulator — the displayed "PWR" badge would otherwise show "NaN".
+  const totalPower = members.reduce(
+    (s, c) => s + statNum(c.strength) + statNum(c.speed) + statNum(c.intelligence) + statNum(c.durability),
+    0,
+  );
 
   return (
     <div
@@ -234,8 +239,11 @@ function TeamSlot({ team, members, active, flash, onActivate, onRemove, onSave }
 // Uses logarithmic scoring so a 10M-stat cosmic character properly dominates
 // a 1K-stat street fighter, instead of raw sums where one huge number swamps all.
 function logPowerScore(c: Character): number {
-  const stats = [c.strength, c.speed, c.intelligence, c.durability];
-  // Average the log10 of each stat (clamped to min 100 so log stays ≥ 2)
+  // statNum() coerces each field to a finite non-negative integer before the
+  // log10 call. Math.max(100, NaN) === NaN (NOT 100), so without coercion a
+  // single undefined stat would propagate NaN through the whole accumulator
+  // and collapse the power-comparison bar to 50/50.
+  const stats = [c.strength, c.speed, c.intelligence, c.durability].map(statNum);
   const logAvg = stats.reduce((s, v) => s + Math.log10(Math.max(100, v)), 0) / 4;
   return Math.pow(10, logAvg);
 }

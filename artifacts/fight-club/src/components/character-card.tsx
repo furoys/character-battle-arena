@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { Character } from "@workspace/api-client-react";
 import { PowerAura } from "./power-aura";
 import { Zap, Shield, Brain, Swords } from "lucide-react";
-import { powerAvg, powerTier } from "./roster-flip-card";
+import { powerAvg, powerTier, statNum } from "./roster-flip-card";
 import { getUniverseCategory, CATEGORY_COLORS } from "@/lib/universe-categories";
 
 interface CharacterCardProps {
@@ -20,8 +20,14 @@ const TEAM_COLORS = {
 };
 
 function computeOvr(c: Character): number {
+  // powerAvg() already uses statNum() internally so avg is always a finite
+  // non-negative integer here. The explicit clamp to ≥1 before log10 is
+  // kept as a belt-and-suspenders guard.
   const avg = powerAvg(c);
   if (avg <= 0) return 1;
+  // NOTE: Math.max(100, NaN) === NaN — NOT 100. Since avg is guaranteed
+  // finite by powerAvg's statNum coercion, this is now safe. We use
+  // Math.max(100, avg) only to establish a log10 floor of 2 (= 0 % bar).
   const pct = (Math.log10(Math.max(100, avg)) - 2) / 5;
   return Math.max(1, Math.min(99, Math.round(pct * 98 + 1)));
 }
@@ -34,6 +40,9 @@ const TIER_ICONS: Record<string, string> = {
 };
 
 const formatStat = (v: number): string => {
+  // Guard NaN/Infinity: comparisons against NaN are always false, causing
+  // fall-through to `String(NaN)` = "NaN" rendered in the DOM.
+  if (!Number.isFinite(v) || v < 0) return "0";
   if (v >= 1_000_000) return `${+(v / 1_000_000).toFixed(1)}M`;
   if (v >= 10_000)    return `${Math.round(v / 1_000)}K`;
   if (v >= 1_000)     return `${+(v / 1_000).toFixed(1)}K`;
@@ -41,9 +50,13 @@ const formatStat = (v: number): string => {
 };
 
 function statBarPct(v: number): number {
-  if (v <= 0) return 0;
+  // Use statNum() so NaN/null/undefined inputs produce 0 rather than a
+  // NaN bar-width that browsers silently render as 0 anyway — but with
+  // console noise. The old `v <= 0` guard did not catch NaN.
+  const safe = statNum(v);
+  if (safe <= 0) return 0;
   const MIN_LOG = 2, MAX_LOG = 7;
-  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, v)) - MIN_LOG) / (MAX_LOG - MIN_LOG)) * 100));
+  return Math.min(100, Math.max(0, ((Math.log10(Math.max(1, safe)) - MIN_LOG) / (MAX_LOG - MIN_LOG)) * 100));
 }
 
 function StatRow({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
