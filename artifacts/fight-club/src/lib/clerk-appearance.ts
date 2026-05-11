@@ -1,7 +1,15 @@
 import { dark } from "@clerk/themes";
-import { getAppOrigin, isNativePlatform } from "@/lib/api-fetch";
+import { Capacitor } from "@capacitor/core";
+import { getAppOrigin } from "@/lib/api-fetch";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Use Capacitor.isNativePlatform() directly — it is synchronous and stable for
+// the lifetime of the JS runtime. The alternative (isNativePlatform() from
+// api-fetch.ts, which checks getBaseUrl()) can return false if the appearance
+// object is evaluated before main.tsx calls setBaseUrl(), e.g. when Clerk
+// spreads the options prop during initial render.
+const _isNative = Capacitor.isNativePlatform();
 
 export const clerkAppearance = {
   theme: dark,
@@ -13,7 +21,7 @@ export const clerkAppearance = {
       // On native Capacitor: the WebView origin is https://localhost, so loading
       // an asset from https://anyonevsanyone.replit.app triggers a cross-origin
       // block. Skip the custom logo entirely — Clerk shows a sensible fallback.
-      if (isNativePlatform()) return undefined;
+      if (_isNative) return undefined;
       return `${getAppOrigin()}${basePath}/logo.svg`;
     },
     socialButtonsPlacement: "top" as const,

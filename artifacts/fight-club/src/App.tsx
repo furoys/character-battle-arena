@@ -326,7 +326,7 @@ function useSWAutoUpdate() {
 function App() {
   useSWAutoUpdate();
   return (
-    <WouterRouter base={basePath}>
+    <WouterRouter>
       <MusicProvider>
         <ClerkProviderWithRoutes />
       </MusicProvider>

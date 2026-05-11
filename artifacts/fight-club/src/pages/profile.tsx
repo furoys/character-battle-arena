@@ -108,11 +108,15 @@ function SignedInProfile() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [fights, setFights] = useState<FightSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [usernameOpen, setUsernameOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setFetchError(false);
     Promise.all([
       apiFetch("/api/me/stats").then((r) => (r.ok ? r.json() : null)),
       apiFetch("/api/me/fights").then((r) => (r.ok ? r.json() : null)),
@@ -125,12 +129,13 @@ function SignedInProfile() {
       })
       .catch(() => {
         if (cancelled) return;
+        setFetchError(true);
         setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
   const displayName =
     (user?.unsafeMetadata?.username as string) ||
@@ -210,6 +215,21 @@ function SignedInProfile() {
             <p className="font-display text-2xl uppercase animate-pulse text-muted-foreground">
               Loading...
             </p>
+          </div>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center justify-center p-16 gap-4 text-center">
+            <p className="font-display text-xl text-muted-foreground uppercase">
+              Couldn't load stats
+            </p>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Check your connection and try again.
+            </p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-2 px-5 py-2 bg-primary text-white font-bold uppercase tracking-widest text-xs hover:bg-primary/90 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : !stats || stats.totalFights === 0 ? (
           <div className="flex flex-col items-center justify-center p-16 gap-4 text-center">

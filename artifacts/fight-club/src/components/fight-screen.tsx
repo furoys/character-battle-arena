@@ -9,6 +9,12 @@ import { useMusic } from "@/contexts/music-context";
 const TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"] as const;
 type TtsVoice = (typeof TTS_VOICES)[number];
 
+// Module-level circuit breaker: once TTS fails enough times consecutively the
+// flag is set for the entire app session so we never spam a broken endpoint.
+// It deliberately does NOT reset between fights — if the Android TTS proxy is
+// down, every fight would still make 3 failing requests before going quiet.
+let _ttsSessionBlocked = false;
+
 function renderMarkdown(text: string): React.ReactNode[] {
   return text.split("\n").map((line, lineIdx) => {
     const isBullet = /^[\-\*]\s+/.test(line);
@@ -502,10 +508,11 @@ export function FightScreen({
   const [narrationStartedRound, setNarrationStartedRound] = useState(-1);
   // The upstream gpt-audio proxy occasionally returns 503 (timeouts), and on
   // Android it may be consistently unavailable. After TTS_MAX_CONSEC_FAILS
-  // consecutive failures we stop requesting so a broken proxy doesn't spam the
-  // network. The drain loop skips null blobs so fight progression is unaffected.
+  // consecutive failures we set a session-level flag so the endpoint is never
+  // called again for the rest of the app session — no more spam loops.
+  // The drain loop skips null blobs so fight progression is unaffected.
   const ttsFetch = useCallback((text: string, voice: TtsVoice): Promise<Blob | null> => {
-    if (ttsConsecFailsRef.current >= TTS_MAX_CONSEC_FAILS) return Promise.resolve(null);
+    if (_ttsSessionBlocked || ttsConsecFailsRef.current >= TTS_MAX_CONSEC_FAILS) return Promise.resolve(null);
     return fetch(resolveApiUrl("/api/tts"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -514,9 +521,14 @@ export function FightScreen({
       .then(r => {
         if (r.ok) { ttsConsecFailsRef.current = 0; return r.blob(); }
         ttsConsecFailsRef.current++;
+        if (ttsConsecFailsRef.current >= TTS_MAX_CONSEC_FAILS) _ttsSessionBlocked = true;
         return null;
       })
-      .catch(() => { ttsConsecFailsRef.current++; return null; });
+      .catch(() => {
+        ttsConsecFailsRef.current++;
+        if (ttsConsecFailsRef.current >= TTS_MAX_CONSEC_FAILS) _ttsSessionBlocked = true;
+        return null;
+      });
   }, []);
 
   // Tiny silent WAV — played synchronously inside click handlers to satisfy
