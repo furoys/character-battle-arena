@@ -10,7 +10,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
+import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2, Mail } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -19,6 +19,7 @@ import { powerAvg, powerTier } from "@/components/roster-flip-card";
 import { getUniverseCategory, CATEGORY_ORDER, CATEGORY_COLORS } from "@/lib/universe-categories";
 import { setCreatorToken } from "@/lib/challenge-tokens";
 import { subscribeForChallenge, requestNotificationPermissionFromGesture } from "@/lib/push-subscribe";
+
 import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
 import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 import { PendingChallengesBar } from "@/components/pending-challenges-bar";
@@ -26,6 +27,11 @@ import { useMusic } from "@/contexts/music-context";
 import { MusicToggle } from "@/components/music-toggle";
 import { EnergyBadge } from "@/components/energy-badge";
 import { useEnergy } from "@/hooks/use-energy";
+
+const BUG_REPORT_URL = `mailto:furoys@gmail.com?subject=${encodeURIComponent("A.v.A Bug Report")}&body=${encodeURIComponent(
+  "Describe what happened:\n\n\nWhat were you doing when it happened?\n\n\nWhat fighter/mode were you using?\n\n\nWhat device are you on?\n\n\nCan you reproduce the issue?"
+)}`;
+const MATCHUP_URL = `mailto:furoys@gmail.com?subject=${encodeURIComponent("A.v.A Matchup Suggestion")}`;
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
@@ -1352,6 +1358,40 @@ export function Home() {
               )}
             </div>
 
+          </div>
+
+          {/* ── Feedback micro-row ─────────────────────────────────── */}
+          <div className="px-2 pb-3 pt-0.5 flex gap-1.5">
+            <button
+              onClick={() => window.open(BUG_REPORT_URL, "_system")}
+              className="flex-1 flex items-center justify-center gap-1 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+              style={{
+                height: 26,
+                fontSize: 8,
+                letterSpacing: "0.15em",
+                border: "1px solid rgba(255,0,85,0.2)",
+                background: "rgba(255,0,85,0.04)",
+                color: "rgba(255,0,85,0.5)",
+              }}
+            >
+              <Mail style={{ width: 9, height: 9 }} />
+              Report Issue
+            </button>
+            <button
+              onClick={() => window.open(MATCHUP_URL, "_system")}
+              className="flex-1 flex items-center justify-center gap-1 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+              style={{
+                height: 26,
+                fontSize: 8,
+                letterSpacing: "0.15em",
+                border: "1px solid rgba(255,200,0,0.15)",
+                background: "rgba(255,200,0,0.03)",
+                color: "rgba(255,200,0,0.45)",
+              }}
+            >
+              <Swords style={{ width: 9, height: 9 }} />
+              Suggest Matchup
+            </button>
           </div>
         </div>
 

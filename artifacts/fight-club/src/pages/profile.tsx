@@ -3,10 +3,15 @@ import { Link } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
 import { apiFetch } from "@/lib/api-fetch";
 import { format } from "date-fns";
-import { Trophy, Swords, Star, LogOut, Pencil, Volume2 } from "lucide-react";
+import { Trophy, Swords, Star, LogOut, Pencil, Volume2, Mail } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { CharacterPicker } from "@/components/character-picker";
 import { UsernameEditor } from "@/components/username-editor";
+
+const BUG_REPORT_URL = `mailto:furoys@gmail.com?subject=${encodeURIComponent("A.v.A Bug Report")}&body=${encodeURIComponent(
+  "Describe what happened:\n\n\nWhat were you doing when it happened?\n\n\nWhat fighter/mode were you using?\n\n\nWhat device are you on?\n\n\nCan you reproduce the issue?"
+)}`;
+const MATCHUP_URL = `mailto:furoys@gmail.com?subject=${encodeURIComponent("A.v.A Matchup Suggestion")}`;
 
 const TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"] as const;
 type TtsVoice = (typeof TTS_VOICES)[number];
@@ -394,6 +399,46 @@ function SignedInProfile() {
             )}
           </div>
         )}
+
+        {/* ── Feedback & contact ──────────────────────────────────── */}
+        <div className="px-4 pb-8 pt-5 flex flex-col gap-2">
+          <p
+            className="text-[9px] font-bold uppercase tracking-[0.25em] mb-1"
+            style={{ color: "rgba(255,255,255,0.25)" }}
+          >
+            Feedback
+          </p>
+          <button
+            onClick={() => window.open(BUG_REPORT_URL, "_system")}
+            className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+            style={{
+              height: 36,
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              border: "1px solid rgba(255,0,85,0.25)",
+              background: "rgba(255,0,85,0.06)",
+              color: "rgba(255,0,85,0.7)",
+            }}
+          >
+            <Mail className="h-3 w-3" />
+            Report Issue
+          </button>
+          <button
+            onClick={() => window.open(MATCHUP_URL, "_system")}
+            className="w-full flex items-center justify-center gap-2 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+            style={{
+              height: 36,
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              border: "1px solid rgba(255,200,0,0.2)",
+              background: "rgba(255,200,0,0.04)",
+              color: "rgba(255,200,0,0.6)",
+            }}
+          >
+            <Swords className="h-3 w-3" />
+            Suggest Matchup
+          </button>
+        </div>
       </div>
     </div>
   );
