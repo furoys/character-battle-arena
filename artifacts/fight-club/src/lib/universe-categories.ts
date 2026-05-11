@@ -207,11 +207,13 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Wishmaster": "Horror",
   "Doctor Sleep": "Horror",
   "Dracula": "Horror",
-  // Other
-  "Image Comics": "Other",
-  "Full Bleed Studios": "Other",
+  // Comics publishers that don't belong to the Marvel or DC families
+  "Image Comics": "Legacy",
+  "Full Bleed Studios": "Legacy",
+  // Real-world people sit alongside Historical / Boxing / Martial Arts
+  "Real World": "Myth & History",
+  // App-specific custom characters — genuinely no franchise home
   "Developer Legends": "Other",
-  "Real World": "Other",
 };
 
 export function getUniverseCategory(universe: string): UniverseCategory {
