@@ -334,7 +334,7 @@ function HomeProfileButton() {
 export function Home() {
   const { setTrack } = useMusic();
   useEffect(() => { setTrack("lobby"); }, []);
-  const { data: characters, isLoading } = useListCharacters();
+  const { data: characters, isLoading, isError: isCharactersError, refetch: refetchCharacters } = useListCharacters();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { user } = useUser();
@@ -817,6 +817,28 @@ export function Home() {
             <p className="font-display text-lg uppercase tracking-widest animate-pulse" style={{ color: "rgba(255,255,255,0.3)" }}>
               Loading Roster...
             </p>
+          </div>
+        ) : isCharactersError ? (
+          /* Network / server error loading the roster — show a retry so an
+             investor demo on Android never gets stuck on an empty screen. */
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
+            <p className="font-display text-xl uppercase tracking-widest text-center" style={{ color: "rgba(255,255,255,0.25)" }}>
+              Roster Unavailable
+            </p>
+            <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Couldn't reach the server. Check your connection and try again.
+            </p>
+            <button
+              onClick={() => void refetchCharacters()}
+              className="mt-2 px-6 py-2 font-display uppercase tracking-widest text-sm transition-all active:scale-[0.97]"
+              style={{
+                background: "rgba(255,0,85,0.12)",
+                border: "1px solid rgba(255,0,85,0.4)",
+                color: "#ff0055",
+              }}
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <div ref={gridScrollRef} className="flex-1 overflow-y-auto" style={{ background: "rgba(0,0,0,0.3)" }}>
