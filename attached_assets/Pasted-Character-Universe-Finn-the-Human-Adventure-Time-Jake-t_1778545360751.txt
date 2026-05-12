@@ -1,0 +1,1501 @@
+Character,Universe
+Finn the Human,Adventure Time
+Jake the Dog,Adventure Time
+The Lich,Adventure Time
+Tetsuo Shima,Akira
+Ellen Ripley,Alien
+Ellen Ripley (Power Loader),Alien
+Alita,Alita: Battle Angel
+Aizen (Final Form),Anime
+Akaza (Upper Moon 3),Anime
+Annie Leonhart,Anime
+Beerus (God),Anime
+Big Mom (Full Power),Anime
+Broly (Full Power),Anime
+Byakuya (Bankai),Anime
+Chrollo,Anime
+Eren (Attack Titan),Anime
+Garou (Monster),Anime
+Genos (Upgrade),Anime
+Goku (Ultra Instinct),Anime
+Gon (Adult Form),Anime
+Hisoka,Anime
+Ichigo (Bankai),Anime
+Jiren (Full Power),Anime
+Jogo,Anime
+Kaido (Hybrid),Anime
+Kakashi (DMS),Anime
+Kenpachi (Bankai),Anime
+Kokushibo (Upper Moon 1),Anime
+Kurapika,Anime
+Levi (Prime),Anime
+Luffy (Gear 5),Anime
+Madara (Ten Tails),Anime
+Mahito,Anime
+Megumi Fushiguro,Anime
+Mikasa (Ackerman),Anime
+Naruto (Six Paths),Anime
+Obito (Ten Tails),Anime
+Reiner Braun,Anime
+Saitama (Serious Punch),Anime
+Sanji (Ifrit Jambe),Anime
+Sasuke (Six Paths),Anime
+Shanks (Haki Master),Anime
+Tanjiro (Demon King),Anime
+Vegeta (Ultra Ego),Anime
+Whis (Angel),Anime
+Whitebeard (Prime),Anime
+Yuji Itadori,Anime
+Zeke Yeager,Anime
+Zoro (Enma),Anime
+Ezio Auditore da Firenze,Assassin's Creed
+Asura,Asura's Wrath
+Armin Arlert,Attack on Titan
+Eren Yeager,Attack on Titan
+Levi Ackerman,Attack on Titan
+Mikasa Ackerman,Attack on Titan
+Aang,Avatar: The Last Airbender
+Azula,Avatar: The Last Airbender
+Fire,Avatar: The Last Airbender
+Fire Lord Ozai,Avatar: The Last Airbender
+Katara,Avatar: The Last Airbender
+Toph Beifong,Avatar: The Last Airbender
+Zuko,Avatar: The Last Airbender
+Baki Hanma,Baki
+Jack Hanma,Baki
+Pickle,Baki
+Retsu Kaioh,Baki
+Yujiro Hanma,Baki
+Bayonetta,Bayonetta
+Axel Foley,Beverly Hills Cop
+Jack Burton,Big Trouble in Little China
+Asta,Black Clover
+Yuno,Black Clover
+Rick Deckard,Blade Runner
+Roy Batty,Blade Runner
+Byakuya Kuchiki,Bleach
+Genryusai Yamamoto,Bleach
+Ichibei Hyosube,Bleach
+Ichigo Kurosaki,Bleach
+Kenpachi Zaraki,Bleach
+Kisuke Urahara,Bleach
+Sosuke Aizen,Bleach
+Toshiro Hitsugaya,Bleach
+Ulquiorra Cifer,Bleach
+Yhwach,Bleach
+Yoruichi Shihoin,Bleach
+Yoshimura,Bleach / Anime
+Gehrman,Bloodborne
+Lady Maria,Bloodborne
+Moon Presence,Bloodborne
+The Hunter (Bloodborne),Bloodborne
+Boruto Uzumaki,Boruto
+Momoshiki,Boruto
+Jason Bourne,Bourne
+Canelo Alvarez,Boxing
+Evander Holyfield,Boxing
+Floyd Mayweather,Boxing
+George Foreman,Boxing
+Joe Frazier,Boxing
+Manny Pacquiao,Boxing
+Rocky Marciano,Boxing
+Tyson Fury,Boxing
+Walter White,Breaking Bad
+Ghost (Simon Riley),Call of Duty
+Aku (CN),Cartoon Network
+Alien X,Cartoon Network
+Ben Tennyson,Cartoon Network
+Billy,Cartoon Network
+Blossom,Cartoon Network
+Bubbles,Cartoon Network
+Buttercup,Cartoon Network
+Courage,Cartoon Network
+Dexter (Dexter's Lab),Cartoon Network
+Ed,Cartoon Network
+Edd,Cartoon Network
+Eddy,Cartoon Network
+Eustace Bagge,Cartoon Network
+Grim,Cartoon Network
+Gwen Tennyson,Cartoon Network
+HIM,Cartoon Network
+Kevin Levin,Cartoon Network
+Mandark,Cartoon Network
+Mandy,Cartoon Network
+Mojo Jojo,Cartoon Network
+Muriel Bagge,Cartoon Network
+Numbuh Five,Cartoon Network
+Numbuh One,Cartoon Network
+Powerpuff Girls,Cartoon Network
+Vilgax,Cartoon Network
+Denji,Chainsaw Man
+Denji (Chainsaw Devil),Chainsaw Man
+Makima,Chainsaw Man
+Pochita,Chainsaw Man
+Power,Chainsaw Man
+Lelouch vi Britannia,Code Geass
+Vincent (Collateral),Collateral
+Anti-Monitor (Crisis),Comics
+Batman (Hellbat Suit),Comics
+Black Adam (Magic Form),Comics
+Darkseid (True Form),Comics
+Death (Marvel),Comics
+Doctor Doom (God Emperor),Comics
+Doctor Manhattan (Watchmen),Comics
+Eternity,Comics
+Flash (Wally West Full Speed),Comics
+Galactus (Lifebringer),Comics
+Green Lantern (White Lantern),Comics
+Infinity,Comics
+Knull (King in Black),Comics
+Living Tribunal (Cosmic),Comics
+Lucifer Morningstar (DC),Comics
+Martian Manhunter (Full Power),Comics
+Michael Demiurgos (DC),Comics
+Scarlet Witch (House of M),Comics
+Sentry (Void),Comics
+Shazam (Full Power),Comics
+Silver Surfer (Power Cosmic),Comics
+Superman (Prime One Million),Comics
+Thanos (Astral Regulator),Comics
+The Beyonder (Secret Wars),Comics
+The Presence (DC),Comics
+The Spectre (Full Power),Comics
+Wonder Woman (God Mode),Comics
+John Matrix,Commando
+Courage the Cowardly Dog,Courage the Cowardly Dog
+Chris Henry,Custom / A.v.A
+Juni Swan,Custom / A.v.A
+Kernel Fleck,Custom / A.v.A
+Paris Skyle,Custom / A.v.A
+Tim Johnston,Custom / A.v.A
+Troy Wilson,Custom / A.v.A
+Zero Two,Darling in the Franxx
+Bec,Darren Shan Saga
+Beranabus,Darren Shan Saga
+Darren Shan,Darren Shan Saga
+Dervish Grady,Darren Shan Saga
+Grubbs Grady,Darren Shan Saga
+Harkat Mulds,Darren Shan Saga
+Kurda Smahlt,Darren Shan Saga
+Larten Crepsley,Darren Shan Saga
+Lord Loss,Darren Shan Saga
+Mr. Tiny,Darren Shan Saga
+Murlough,Darren Shan Saga
+Steve Leonard,Darren Shan Saga
+Vancha March,Darren Shan Saga
+Amazo,DC
+Animal Man,DC
+Anti-Monitor,DC
+Aqualad,DC
+Aquaman,DC
+Ares,DC
+Arm-Fall-Off-Boy,DC
+Arsenal,DC
+Atom Eve,DC
+Atrocitus,DC
+Azrael,DC
+Aztek,DC
+Batgirl,DC
+Batman,DC
+Batman (Arkham),DC
+Batwing,DC
+Batwoman,DC
+Beast Boy,DC
+Big Barda,DC
+Black Adam,DC
+Black Canary,DC
+Black Hand,DC
+Black Lightning,DC
+Black Manta,DC
+Black Racer,DC
+Blue Beetle,DC
+Blue Beetle (Ted Kord),DC
+Booster Gold,DC
+Booster Gold (Future),DC
+Brainiac,DC
+Bronze Tiger,DC
+Calendar Man,DC
+Captain Atom,DC
+Captain Cold,DC
+Cassandra Cain,DC
+Catwoman,DC
+Cheetah,DC
+Circe,DC
+Constantine,DC
+Crazy Quilt,DC
+Cyborg,DC
+Damage,DC
+Darkseid,DC
+Deadman,DC
+Deadman (Boston Brand),DC
+Deadshot,DC
+Deathstroke,DC
+Desaad,DC
+Doctor Fate,DC
+Doctor Fate (Kent Nelson),DC
+Doctor Manhattan,DC
+Dogwelder,DC
+Donna Troy,DC
+Doomsday,DC
+Dove,DC
+Dream (The Endless),DC
+Echo,DC
+Eclipso,DC
+Elaine Belloc,DC
+Elongated Man,DC
+Etrigan the Demon,DC
+Firehawk,DC
+Firestorm,DC
+Flash,DC
+General Zod,DC
+Gorilla Grodd,DC
+Granny Goodness,DC
+Green Arrow,DC
+Green Lantern,DC
+Guy Gardner,DC
+Harley Quinn,DC
+Hawk,DC
+Hawkgirl,DC
+Hawkman,DC
+Heat Wave,DC
+Huntress,DC
+Huntress (Helena),DC
+Ice,DC
+Jessica Cruz,DC
+John Stewart,DC
+Joker,DC
+Kalibak,DC
+Killer Croc,DC
+Killer Frost,DC
+Kite Man,DC
+Kyle Rayner,DC
+Lady Shiva,DC
+Larfleeze,DC
+Lex Luthor,DC
+Lightray,DC
+Lobo,DC
+Lucifer Morningstar,DC
+Martian Manhunter,DC
+Matter-Eater Lad,DC
+Mera,DC
+Metamorpho,DC
+Michael Demiurgos,DC
+Mister Miracle,DC
+Mongul,DC
+Mr. Freeze,DC
+Mr. Mxyzptlk,DC
+Mr. Terrific,DC
+Nekron,DC
+Nightwing,DC
+Nightwing (Dick Grayson),DC
+Orion,DC
+Parallax,DC
+Penguin,DC
+Perpetua,DC
+Phantom Stranger,DC
+Plastic Man,DC
+Poison Ivy,DC
+Polka-Dot Man,DC
+Power Girl,DC
+Ra's al Ghul,DC
+Raven,DC
+Raven (Teen Titans),DC
+Red Hood,DC
+Red Robin,DC
+Red Tornado,DC
+Reverse Flash,DC
+Reverse Flash (Eobard Thawne),DC
+Riddler,DC
+Saint Walker,DC
+Scarecrow,DC
+Shazam,DC
+Sinestro,DC
+Solomon Grundy,DC
+Spectre (Jim Corrigan),DC
+Starfire,DC
+Static Shock,DC
+Steel,DC
+Steppenwolf,DC
+Stilt-Man,DC
+Superboy,DC
+Superboy-Prime,DC
+Supergirl,DC
+Superman,DC
+Superman (Injustice),DC
+Swamp Thing,DC
+Talia al Ghul,DC
+The Atom,DC
+The Darkest Knight,DC
+The Presence,DC
+The Presence (True Form),DC
+The Question,DC
+The Question (Vic Sage),DC
+The Spectre,DC
+Thing,DC
+Trigon,DC
+Two-Face,DC
+Vandal Savage,DC
+Vibe,DC
+Wally West,DC
+Wildcat,DC
+Wonder Woman,DC
+Zatanna,DC
+Zatara,DC
+Zebediah Killgrave,DC
+Zoom,DC
+Isaac Clarke,Dead Space
+Light Yagami,Death Note
+Ryuk,Death Note
+Akaza,Demon Slayer
+Doma,Demon Slayer
+Gyutaro,Demon Slayer
+Inosuke Hashibira,Demon Slayer
+Kokushibo,Demon Slayer
+Muzan Kibutsuji,Demon Slayer
+Nezuko,Demon Slayer
+Rengoku,Demon Slayer
+Tanjiro Kamado,Demon Slayer
+Yoriichi Tsugikuni,Demon Slayer
+Zenitsu Agatsuma,Demon Slayer
+Dante,Devil May Cry
+Vergil,Devil May Cry
+Akira Fudo (Devilman),Devilman
+Diablo,Diablo
+Hans,Die Hard
+Hans Gruber,Die Hard
+John McClane,Die Hard
+Beelzemon,Digimon
+BlackWarGreymon,Digimon
+Gallantmon,Digimon
+MetalGarurumon,Digimon
+Omnimon,Digimon
+WarGreymon,Digimon
+Harry Callahan,Dirty Harry
+Aladdin,Disney
+Anna,Disney
+Ariel,Disney
+Baloo,Disney
+Baymax,Disney
+Bellwether,Disney
+Buzz Lightyear,Disney
+Captain Gantu,Disney
+Captain Hook,Disney
+Chernabog,Disney
+Cruella De Vil,Disney
+Darkwing Duck,Disney
+Donald Trump,Disney
+Dr. Facilier,Disney
+Elsa,Disney
+EVE,Disney
+Fix-It Felix Jr.,Disney
+Flynn Rider,Disney
+Frozone,Disney
+Gaston,Disney
+Genie,Disney
+Gizmoduck,Disney
+GoGo Tomago,Disney
+Hiro Hamada,Disney
+Jafar,Disney
+Jumba Jookiba,Disney
+Kida,Disney
+King Candy,Disney
+King Louie,Disney
+Kronk,Disney
+Little John,Disney
+Luisa Madrigal,Disney
+Madam Mim,Disney
+Magica De Spell,Disney
+Maleficent,Disney
+Maui,Disney
+Megara,Disney
+Merida,Disney
+Milo Thatch,Disney
+Moana,Disney
+Moana's Te Fiti,Disney
+Mother Gothel,Disney
+Mowgli,Disney
+Mufasa,Disney
+Mulan,Disney
+Mushu,Disney
+Nala,Disney
+Nick Wilde,Disney
+Pain and Panic,Disney
+Pete,Disney
+Philoctetes,Disney
+Pocahontas,Disney
+Queen of Hearts,Disney
+Rapunzel,Disney
+Ratigan,Disney
+Raya,Disney
+Robin,Disney
+Robin Hood,Disney
+Scar,Disney
+Scrooge McDuck,Disney
+Sergeant Calhoun,Disney
+Shan Yu,Disney
+Shang,Disney
+Shere Khan,Disney
+Simba,Disney
+Syndrome,Disney
+Tamatoa,Disney
+Tarzan,Disney
+Te K■■,Disney
+The Evil Queen,Disney
+The Horned King,Disney
+Ursula,Disney
+Vanellope von Schweetz,Disney
+Violet Parr,Disney
+Wasabi,Disney
+Wreck-It Ralph,Disney
+Yokai,Disney
+Yzma,Disney
+Zira,Disney
+Hades,Disney / Greek Mythology
+Hercules,Disney / Greek Mythology
+Dalek Emperor,Doctor Who
+The Doctor,Doctor Who
+The Master,Doctor Who
+The Silence,Doctor Who
+Doomslayer,Doom
+Android 17,Dragon Ball
+Android 18,Dragon Ball
+Beerus,Dragon Ball
+Broly,Dragon Ball
+Cell,Dragon Ball
+Frieza,Dragon Ball
+Future Trunks,Dragon Ball
+Gogeta,Dragon Ball
+Gohan,Dragon Ball
+Gohan Beast,Dragon Ball
+Goku,Dragon Ball
+Goku Black,Dragon Ball
+Jiren,Dragon Ball
+Piccolo,Dragon Ball
+Vegeta,Dragon Ball
+Vegito,Dragon Ball
+Whis,Dragon Ball
+Zamasu,Dragon Ball
+Zeno,Dragon Ball
+The Driver,Drive
+Duke Nukem,Duke Nukem
+Beast,Elden Ring
+Blade,Elden Ring
+Elden Beast,Elden Ring
+Godfrey First Elden Lord,Elden Ring
+Malenia Blade of Miquella,Elden Ring
+Maliketh the Black Blade,Elden Ring
+Mohg Lord of Blood,Elden Ring
+Starscourge Radahn,Elden Ring
+Snake Plissken,Escape from New York
+Erza Scarlet,Fairy Tail
+Gildarts Clive,Fairy Tail
+Natsu Dragneel,Fairy Tail
+Zeref Dragneel,Fairy Tail
+Brian Griffin,Family Guy
+Chris Griffin,Family Guy
+Cleveland Brown,Family Guy
+Herbert,Family Guy
+Joe Swanson,Family Guy
+Lois Griffin,Family Guy
+Meg Griffin,Family Guy
+Peter Griffin,Family Guy
+Quagmire,Family Guy
+Stewie Griffin,Family Guy
+Archer Gilgamesh,Fate
+Cuchulainn,Fate
+Gilgamesh,Fate
+Saber,Fate
+Cloud Strife,Final Fantasy
+Noctis Lucis Caelum,Final Fantasy
+Sephiroth,Final Fantasy
+Arthur Boyle,Fire Force
+Shinra Kusakabe,Fire Force
+Kenshiro,Fist of the North Star
+Edward Elric,Fullmetal Alchemist
+Father,Fullmetal Alchemist
+Olivier Mira Armstrong,Fullmetal Alchemist
+Pride,Fullmetal Alchemist
+Roy Mustang,Fullmetal Alchemist
+Wrath,Fullmetal Alchemist
+Bender,Futurama
+Fry,Futurama
+Leela,Futurama
+Professor Farnsworth,Futurama
+Zoidberg,Futurama
+Brienne of Tarth,Game of Thrones
+Cersei Lannister,Game of Thrones
+Daenerys Targaryen,Game of Thrones
+Gregor Clegane,Game of Thrones
+Jaime Lannister,Game of Thrones
+Jon Snow,Game of Thrones
+Khal Drogo,Game of Thrones
+Night King,Game of Thrones
+Oberyn Martell,Game of Thrones
+Sandor Clegane,Game of Thrones
+Stannis Baratheon,Game of Thrones
+Tyrion Lannister,Game of Thrones
+Jin Sakai,Ghost of Tsushima
+Maximus Decimus Meridius,Gladiator
+Kratos,God of War
+Kratos (Young),God of War
+Thor (God of War),God of War
+Godzilla,Godzilla
+King Ghidorah,Godzilla
+Mechagodzilla,Godzilla
+Bill Cipher,Gravity Falls
+Anti-Spiral,Gurren Lagann
+Kamina,Gurren Lagann
+Simon the Digger,Gurren Lagann
+Zagreus,Hades
+G-Man,Half-Life
+Gordon Freeman,Half-Life
+Arbiter,Halo
+Cortana,Halo
+Master Chief,Halo
+Sergeant Johnson,Halo
+The Didact,Halo
+Tequila,Hard Boiled
+Alastor Moody,Harry Potter
+Bellatrix Lestrange,Harry Potter
+Dobby,Harry Potter
+Draco Malfoy,Harry Potter
+Dumbledore,Harry Potter
+Fenrir Greyback,Harry Potter
+Filius Flitwick,Harry Potter
+Gellert Grindelwald,Harry Potter
+Harry Potter,Harry Potter
+Hermione Granger,Harry Potter
+Kingsley Shacklebolt,Harry Potter
+Luna Lovegood,Harry Potter
+Neville Longbottom,Harry Potter
+Nymphadora Tonks,Harry Potter
+Remus Lupin,Harry Potter
+Ron Weasley,Harry Potter
+Severus Snape,Harry Potter
+Sirius Black,Harry Potter
+Voldemort,Harry Potter
+Alucard,Hellsing
+Connor MacLeod,Highlander
+Abraham Lincoln,Historical / Real World
+Achilles,Historical / Real World
+Albert Einstein,Historical / Real World
+Alexander the Great,Historical / Real World
+Andrew Jackson,Historical / Real World
+Andrew Johnson,Historical / Real World
+Arnold Schwarzenegger,Historical / Real World
+Ashoka the Great,Historical / Real World
+Attila the Hun,Historical / Real World
+Babur,Historical / Real World
+Barack Obama,Historical / Real World
+Benjamin Harrison,Historical / Real World
+Beowulf,Historical / Real World
+Bill Clinton,Historical / Real World
+Boudicca,Historical / Real World
+Bruce Lee,Historical / Real World
+Calvin Coolidge,Historical / Real World
+Catherine the Great,Historical / Real World
+Charlemagne,Historical / Real World
+Charles Darwin,Historical / Real World
+Chester A. Arthur,Historical / Real World
+Christopher Columbus,Historical / Real World
+Chuck Norris,Historical / Real World
+Cleopatra,Historical / Real World
+Crazy Horse,Historical / Real World
+Dwight D. Eisenhower,Historical / Real World
+Ferdinand Magellan,Historical / Real World
+Florence Nightingale,Historical / Real World
+Frank Dux,Historical / Real World
+Franklin D. Roosevelt,Historical / Real World
+Franklin Pierce,Historical / Real World
+Frederick Douglass,Historical / Real World
+Galileo Galilei,Historical / Real World
+Genghis Khan,Historical / Real World
+George H.W. Bush,Historical / Real World
+George W. Bush,Historical / Real World
+George Washington,Historical / Real World
+Gerald Ford,Historical / Real World
+Geronimo,Historical / Real World
+Grover Cleveland,Historical / Real World
+Hannibal Barca,Historical / Real World
+Harriet Tubman,Historical / Real World
+Harry S. Truman,Historical / Real World
+Henry Rollins,Historical / Real World
+Herbert Hoover,Historical / Real World
+Hernán Cortés,Historical / Real World
+Ip Man,Historical / Real World
+Isaac Newton,Historical / Real World
+Ivan the Terrible,Historical / Real World
+Ivar the Boneless,Historical / Real World
+James A. Garfield,Historical / Real World
+James Buchanan,Historical / Real World
+James K. Polk,Historical / Real World
+James Madison,Historical / Real World
+James Monroe,Historical / Real World
+JFK,Historical / Real World
+Jimmy Carter,Historical / Real World
+Joan of Arc,Historical / Real World
+Joe Biden,Historical / Real World
+John Adams,Historical / Real World
+John Quincy Adams,Historical / Real World
+John Tyler,Historical / Real World
+Julius Caesar,Historical / Real World
+Karl Marx,Historical / Real World
+King Leonidas,Historical / Real World
+Leonardo,Historical / Real World
+Leonardo da Vinci,Historical / Real World
+Leonidas I,Historical / Real World
+Lyndon B. Johnson,Historical / Real World
+Mansa Musa,Historical / Real World
+Marco Polo,Historical / Real World
+Marie Curie,Historical / Real World
+Martin Van Buren,Historical / Real World
+Millard Fillmore,Historical / Real World
+Miyamoto Musashi,Historical / Real World
+Montezuma II,Historical / Real World
+Muhammad Ali,Historical / Real World
+Napoleon Bonaparte,Historical / Real World
+Nikola Tesla,Historical / Real World
+Oda Nobunaga,Historical / Real World
+Odysseus,Historical / Real World
+Oliver Cromwell,Historical / Real World
+Pachacuti,Historical / Real World
+Peter the Great,Historical / Real World
+Qin Shi Huang,Historical / Real World
+Queen Elizabeth I,Historical / Real World
+Ragnar Lothbrok,Historical / Real World
+Rama,Historical / Real World
+Ramesses II,Historical / Real World
+Richard Nixon,Historical / Real World
+Richard the Lionheart,Historical / Real World
+Ronald Reagan,Historical / Real World
+Rutherford B. Hayes,Historical / Real World
+Saladin,Historical / Real World
+Shaka Zulu,Historical / Real World
+Sitting Bull,Historical / Real World
+Spartacus,Historical / Real World
+Suleiman the Magnificent,Historical / Real World
+Sun Tzu,Historical / Real World
+Theodore Roosevelt,Historical / Real World
+Thomas Jefferson,Historical / Real World
+Tokugawa Ieyasu,Historical / Real World
+Ulysses S. Grant,Historical / Real World
+Vlad the Impaler,Historical / Real World
+Warren G. Harding,Historical / Real World
+William Henry Harrison,Historical / Real World
+William Howard Taft,Historical / Real World
+William McKinley,Historical / Real World
+William Wallace,Historical / Real World
+Woodrow Wilson,Historical / Real World
+Wu Zetian,Historical / Real World
+Xerxes,Historical / Real World
+Zachary Taylor,Historical / Real World
+Zeus,Historical / Real World
+Zhuge Liang,Historical / Real World
+Aloy,Horizon
+Alien Chestburster,Horror
+Alien Facehugger,Horror
+Alien Queen,Horror
+Amanda Young,Horror
+Annabelle,Horror
+Art the Clown,Horror
+Asami Yamazaki,Horror
+Ash Williams (Necronomicon),Horror
+Babadook,Horror
+Barbarian Mother,Horror
+Bathsheba Sherman,Horror
+Beetlejuice,Horror
+Billy the Puppet,Horror
+Blade Vampire,Horror
+Candyman,Horror
+Cenobite,Horror
+Chucky,Horror
+Count Dracula,Horror
+Creature from the Black Lagoon,Horror
+Dead by Daylight Blight,Horror
+Dead by Daylight Huntress,Horror
+Dead by Daylight Nemesis,Horror
+Dead by Daylight Nurse,Horror
+Dead by Daylight Oni,Horror
+Dead by Daylight Spirit,Horror
+Dead by Daylight Trapper,Horror
+Dead by Daylight Wraith,Horror
+Deadite,Horror
+Doctor Sleep Rose the Hat,Horror
+Dracula (Bram Stoker),Horror
+Five Nights Bonnie,Horror
+Five Nights Chica,Horror
+Five Nights Foxy,Horror
+Five Nights Freddy,Horror
+Frankenstein's Monster,Horror
+Freddy Krueger,Horror
+Freddy Krueger (Dream World),Horror
+Ghostface,Horror
+Gremlin (Stripe),Horror
+Hellboy (Demon Form),Horror
+Hereditary Demon (Paimon),Horror
+Hoffman (Saw),Horror
+Insidious Bride in Black,Horror
+Insidious Lipstick Demon,Horror
+Invisible Man,Horror
+It Follows Entity,Horror
+Jason Voorhees,Horror
+Jason Voorhees (Uber Jason),Horror
+Jigsaw,Horror
+Ju-On Spirit,Horror
+Kayako Saeki,Horror
+Krampus,Horror
+Leatherface,Horror
+Maxine (X),Horror
+Michael Myers,Horror
+Michael Myers (Halloween Kills),Horror
+Midsommar Cultist,Horror
+Nosferatu,Horror
+Pazuzu,Horror
+Pearl (X),Horror
+Pennywise,Horror
+Pennywise (IT 2017),Horror
+Pinhead,Horror
+Pinhead (Hell Priest),Horror
+Predalien,Horror
+Predator,Horror
+Predator (City Hunter),Horror
+Predator (Jungle Hunter),Horror
+Pumpkinhead,Horror
+Regan MacNeil,Horror
+Resident Evil Licker,Horror
+Resident Evil Nemesis (Mr. X),Horror
+Sadako (Ringu),Horror
+Samara Morgan,Horror
+Security Breach Glamrock Freddy,Horror
+Security Breach Vanny,Horror
+Silent Hill Nurse,Horror
+Silent Hill Pyramid Head,Horror
+Slender Man,Horror
+Smile Entity,Horror
+Spawn (Necroplasm),Horror
+Springtrap,Horror
+Terrifier,Horror
+The Autopsy of Jane Doe Entity,Horror
+The Black Phone Grabber,Horror
+The Blair Witch,Horror
+The Bride of Frankenstein,Horror
+The Collector (The Collector),Horror
+The Conjuring Crooked Man,Horror
+The Conjuring Demon,Horror
+The Creeper (Jeepers Creepers),Horror
+The Crooked Man,Horror
+The Descent Crawlers,Horror
+The Evil Dead Tree,Horror
+The Exorcist Believer Demon,Horror
+The Exorcist Demon,Horror
+The Fly (Brundlefly),Horror
+The Grudge (Onryo),Horror
+The Grudge House,Horror
+The Hills Have Eyes Mutant,Horror
+The Invisible Man (2020),Horror
+The Lich King (Horror Adjacent),Horror
+The Lighthouse Keeper (Psych),Horror
+The Menu Chef (Psych Horror),Horror
+The Mist Behemoth,Horror
+The Mist Creatures,Horror
+The Nun,Horror
+The Nun (Valak Form),Horror
+The Nun II Demon,Horror
+The Orphan (Esther),Horror
+The Predator,Horror
+The Predator (Upgrade),Horror
+The Ring Tape Spirit,Horror
+The Ring Well Spirit,Horror
+The Ritual Creature,Horror
+The Shining Jack Torrance,Horror
+The Shining Overlook,Horror
+The Strangers,Horror
+The Tall Man (Phantasm),Horror
+The Thing (John Carpenter),Horror
+The Thing Dog Creature,Horror
+The Witch (Black Phillip),Horror
+The Wolfman,Horror
+Tiffany Valentine,Horror
+Underworld Selene,Horror
+Underworld Viktor,Horror
+Valak,Horror
+Van Helsing Dracula,Horror
+Wrong Turn Cannibal,Horror
+Xenomorph,Horror
+Xenomorph Queen,Horror
+Adult Gon Freecss,Hunter x Hunter
+Isaac Netero,Hunter x Hunter
+Killua Zoldyck,Hunter x Hunter
+Meruem,Hunter x Hunter
+Indiana Jones,Indiana Jones
+Cole MacGrath,Infamous
+Delsin Rowe,Infamous
+Battle Beast,Invincible
+Invincible,Invincible
+Omni-Man,Invincible
+Jack Reacher,Jack Reacher
+James Bond,James Bond
+Silva (Skyfall),James Bond
+John Wick,John Wick
+Johnny Bravo,Johnny Bravo
+Dio Brando,JoJo's Bizarre Adventure
+Giorno Giovanna,JoJo's Bizarre Adventure
+Jotaro Kujo,JoJo's Bizarre Adventure
+Kars,JoJo's Bizarre Adventure
+Pucci,JoJo's Bizarre Adventure
+Yoshikage Kira,JoJo's Bizarre Adventure
+Judge Dredd,Judge Dredd
+Gojo Satoru,Jujutsu Kaisen
+Sukuna,Jujutsu Kaisen
+Toji Fushiguro,Jujutsu Kaisen
+Yuta Okkotsu,Jujutsu Kaisen
+Rampage Jackson,Kengan / MMA
+The Bride (Beatrix Kiddo),Kill Bill
+Kim Possible,Kim Possible
+Shego,Kim Possible
+Aurelion Sol,League of Legends
+Syndra,League of Legends
+Tryndamere,League of Legends
+Viego the Ruined King,League of Legends
+Yasuo,League of Legends
+Zed,League of Legends
+Stansfield,Leon: The Professional
+Lilo Pelekai,Lilo & Stitch
+Stitch,Lilo & Stitch
+Bugs Bunny,Looney Tunes
+Aragorn,Lord of the Rings
+Bane,Lord of the Rings
+Bilbo Baggins,Lord of the Rings
+Durin's Bane,Lord of the Rings
+Frodo Baggins,Lord of the Rings
+Gandalf,Lord of the Rings
+Gollum,Lord of the Rings
+Legolas,Lord of the Rings
+Samwise Gamgee,Lord of the Rings
+Saruman,Lord of the Rings
+Sauron,Lord of the Rings
+Smaug,Lord of the Rings
+Azathoth,Lovecraft Mythos
+Cthulhu,Lovecraft Mythos
+Nyarlathotep,Lovecraft Mythos
+Max Rockatansky,Mad Max
+Bowser,Mario
+Kirby,Mario
+Luigi,Mario
+Mario,Mario
+A-Bomb,Marvel
+Adam Warlock,Marvel
+Amadeus Cho Hulk,Marvel
+America Chavez,Marvel
+Annihilus,Marvel
+Ant-Man,Marvel
+Apocalypse,Marvel
+Beta Ray Bill,Marvel
+Bishop,Marvel
+Black Bolt,Marvel
+Black Panther,Marvel
+Black Widow,Marvel
+Blackheart,Marvel
+Blade (Daywalker),Marvel
+Blue Hulk,Marvel
+Blue Marvel,Marvel
+Cable,Marvel
+Captain America,Marvel
+Captain Marvel,Marvel
+Carnage,Marvel
+Colossus,Marvel
+Cyclops,Marvel
+Daredevil,Marvel
+Deadpool,Marvel
+Doctor Doom,Marvel
+Doctor Strange,Marvel
+Dormammu,Marvel
+Elektra,Marvel
+Elsa Bloodstone,Marvel
+Emma Frost,Marvel
+Falcon,Marvel
+Forbush Man,Marvel
+Forge,Marvel
+Franklin Richards,Marvel
+Frog-Man,Marvel
+Galactus,Marvel
+Gambit,Marvel
+Ghost Rider,Marvel
+Ghost-Spider,Marvel
+Gladiator,Marvel
+Gladiator (Kallark),Marvel
+Green Goblin,Marvel
+Groot,Marvel
+Gwenpool,Marvel
+Havok,Marvel
+Hawkeye,Marvel
+Hela,Marvel
+Hercules (Marvel),Marvel
+Hulk,Marvel
+Hulkling,Marvel
+Human Torch,Marvel
+Hyperion,Marvel
+Hyperion (Squadron Supreme),Marvel
+Hyperstorm,Marvel
+Iceman,Marvel
+Invisible Woman,Marvel
+Iron Fist,Marvel
+Iron Lad,Marvel
+Iron Man,Marvel
+Ironheart,Marvel
+Jean Grey,Marvel
+Jean Grey (Phoenix),Marvel
+Juggernaut,Marvel
+Kang Prime,Marvel
+Kang the Conqueror,Marvel
+Kate Bishop,Marvel
+Kingpin,Marvel
+Kitty Pryde,Marvel
+Klaw,Marvel
+Knull,Marvel
+Kraven the Hunter,Marvel
+Lady Deathstrike,Marvel
+Living Tribunal,Marvel
+Loki,Marvel
+Longshot,Marvel
+Luke Cage,Marvel
+Machine Man,Marvel
+Maggott,Marvel
+Magik,Marvel
+Magneto,Marvel
+Mephisto,Marvel
+Miles Morales,Marvel
+Mojo,Marvel
+Molecule Man,Marvel
+Monica Rambeau,Marvel
+Moon Girl,Marvel
+Moon Knight,Marvel
+Moondragon,Marvel
+Mr Fantastic,Marvel
+Mr. Immortal,Marvel
+Ms. Marvel,Marvel
+Mystique,Marvel
+Namor,Marvel
+Namora,Marvel
+Namorita,Marvel
+Nick Fury,Marvel
+Nightcrawler,Marvel
+Nova,Marvel
+Nova (Richard Rider),Marvel
+Nova (Sam Alexander),Marvel
+Nova Prime,Marvel
+Omega Red,Marvel
+Onslaught,Marvel
+Polaris,Marvel
+Professor X,Marvel
+Proteus,Marvel
+Psylocke,Marvel
+Punisher,Marvel
+Quasar,Marvel
+Quicksilver,Marvel
+Red Hulk,Marvel
+Red She-Hulk,Marvel
+Red Skull,Marvel
+Rocket Raccoon,Marvel
+Rogue,Marvel
+Sabretooth,Marvel
+Scarlet Witch,Marvel
+Sentry,Marvel
+Sentry Void,Marvel
+Shang-Chi,Marvel
+She-Hulk,Marvel
+Shuma-Gorath,Marvel
+Shuri,Marvel
+Silk,Marvel
+Silver Surfer,Marvel
+Skaar,Marvel
+Slapstick,Marvel
+Songbird,Marvel
+Spider-Ham,Marvel
+Spider-Man,Marvel
+Spider-Woman,Marvel
+Spiral,Marvel
+Squirrel Girl,Marvel
+Star-Lord,Marvel
+Stature,Marvel
+Storm,Marvel
+Storm (Ororo Munroe),Marvel
+T'Challa Black Panther,Marvel
+Terrax,Marvel
+Thanos,Marvel
+Thanos (Infinity Gauntlet),Marvel
+The Beyonder,Marvel
+The Collector,Marvel
+The Grandmaster,Marvel
+The One Above All,Marvel
+The One Above All (True Form),Marvel
+The One Below All,Marvel
+The Punisher,Marvel
+The Sentry,Marvel
+The Thing,Marvel
+Thor,Marvel
+Throg,Marvel
+Tigra,Marvel
+Ultron,Marvel
+Uncle Ben,Marvel
+US Agent,Marvel
+Valkyrie,Marvel
+Venom,Marvel
+Vision,Marvel
+Vulcan,Marvel
+War Machine,Marvel
+Warpath,Marvel
+Wasp,Marvel
+White Tiger,Marvel
+Wiccan,Marvel
+Wolverine,Marvel
+Wonder Man,Marvel
+Commander Shepard,Mass Effect
+Mega Man,Mega Man
+Solid Snake,Metal Gear
+Samus Aran,Metroid
+El Mariachi,Mexico Trilogy
+Talion,Middle-earth: Shadow of Mordor
+Ethan Hunt,Mission: Impossible
+Achilles (Myth),Mixed
+Alucard (Level 0),Mixed
+Ares (Myth),Mixed
+Ben 10 (Alien X Full),Mixed
+Bender (Bite My Shiny Metal),Mixed
+Cartman (Coon),Mixed
+Castlevania Dracula,Mixed
+Fry (Time Travel),Mixed
+Hades (Mythology),Mixed
+Hellboy (Full Power),Mixed
+Hercules (Myth),Mixed
+Homer (Treehouse of Horror),Mixed
+John Constantine (DC),Mixed
+Kratos vs Zeus (Composite),Mixed
+Morty (Evil Morty Prime),Mixed
+Patrick (Toon Force),Mixed
+Peter Griffin (Chicken Fight),Mixed
+Randy (Tegridy),Mixed
+Rick Sanchez (Prep),Mixed
+Spawn (God Form),Mixed
+SpongeBob (Toon Force),Mixed
+Stewie (Time Machine),Mixed
+Sypha Belnades,Mixed
+Trevor Belmont,Mixed
+Vilgax (Conqueror),Mixed
+Zeus (Mythology),Mixed
+Mob,Mob Psycho 100
+Reigen Arataka,Mob Psycho 100
+Ashrah,Mortal Kombat
+Baraka,Mortal Kombat
+Blaze,Mortal Kombat
+Bo Rai Cho,Mortal Kombat
+Cassie Cage,Mortal Kombat
+Cetrion,Mortal Kombat
+Chameleon,Mortal Kombat
+Cyber Sub-Zero,Mortal Kombat
+D'Vorah,Mortal Kombat
+Dairou,Mortal Kombat
+Darrius,Mortal Kombat
+Ermac,Mortal Kombat
+Ferra/Torr,Mortal Kombat
+Fujin,Mortal Kombat
+Geras,Mortal Kombat
+Goro,Mortal Kombat
+Havik,Mortal Kombat
+Hotaru,Mortal Kombat
+Hsu Hao,Mortal Kombat
+Jacqui Briggs,Mortal Kombat
+Jade,Mortal Kombat
+Jax Briggs,Mortal Kombat
+Johnny Cage,Mortal Kombat
+Kabal,Mortal Kombat
+Kano,Mortal Kombat
+Kenshi,Mortal Kombat
+Khameleon,Mortal Kombat
+Kintaro,Mortal Kombat
+Kira,Mortal Kombat
+Kitana,Mortal Kombat
+Kobra,Mortal Kombat
+Kollector,Mortal Kombat
+Kotal Kahn,Mortal Kombat
+Kronika,Mortal Kombat
+Kung Lao,Mortal Kombat
+Li Mei,Mortal Kombat
+Liu Kang,Mortal Kombat
+Mavado,Mortal Kombat
+Meat,Mortal Kombat
+Mileena,Mortal Kombat
+Mokap,Mortal Kombat
+Motaro,Mortal Kombat
+Nightwolf,Mortal Kombat
+Nitara,Mortal Kombat
+Noob Saibot,Mortal Kombat
+Onaga,Mortal Kombat
+Quan Chi,Mortal Kombat
+Raiden,Mortal Kombat
+Rain,Mortal Kombat
+Reptile,Mortal Kombat
+Scorpion,Mortal Kombat
+Shang Tsung,Mortal Kombat
+Shao Kahn,Mortal Kombat
+Sheeva,Mortal Kombat
+Shujinko,Mortal Kombat
+Sindel,Mortal Kombat
+Skarlet,Mortal Kombat
+Smoke,Mortal Kombat
+Sonya Blade,Mortal Kombat
+Stryker,Mortal Kombat
+Sub-Zero,Mortal Kombat
+Takeda,Mortal Kombat
+Tanya,Mortal Kombat
+Triborg,Mortal Kombat
+All For One,My Hero Academia
+All Might,My Hero Academia
+Dabi,My Hero Academia
+Endeavor,My Hero Academia
+Izuku Midoriya,My Hero Academia
+Tomura Shigaraki,My Hero Academia
+Aslan,Narnia
+The White Witch,Narnia
+Hagoromo Otsutsuki,Naruto
+Hashirama Senju,Naruto
+Isshiki Otsutsuki,Naruto
+Itachi Uchiha,Naruto
+Kaguya Otsutsuki,Naruto
+Kakashi Hatake,Naruto
+Killer Bee,Naruto
+Madara Uchiha,Naruto
+Minato Namikaze,Naruto
+Nagato (Pain),Naruto
+Naruto (Baryon Mode),Naruto
+Naruto Uzumaki,Naruto
+Obito Uchiha,Naruto
+Sasuke Uchiha,Naruto
+Arthur Morgan,Needs Review / Unknown
+Ash Williams,Needs Review / Unknown
+Celebrimbor,Needs Review / Unknown
+Cobra,Needs Review / Unknown
+Colonel Hans Landa,Needs Review / Unknown
+Commander Rourke,Needs Review / Unknown
+Conan the Barbarian,Needs Review / Unknown
+Condiment Man,Needs Review / Unknown
+Dash Parr,Needs Review / Unknown
+Frank Booth,Needs Review / Unknown
+Hannibal Lecter,Needs Review / Unknown
+Jack Skellington,Needs Review / Unknown
+Jack-Jack Parr,Needs Review / Unknown
+Judy Hopps,Needs Review / Unknown
+Keyser Soze,Needs Review / Unknown
+King Kong,Needs Review / Unknown
+Kovu,Needs Review / Unknown
+Martin Riggs,Needs Review / Unknown
+Merlin,Needs Review / Unknown
+Mike Tyson,Needs Review / Unknown
+Mor'du,Needs Review / Unknown
+Mr. Incredible,Needs Review / Unknown
+Nemesis,Needs Review / Unknown
+Odin,Needs Review / Unknown
+Spawn,Needs Review / Unknown
+Sun Wukong,Needs Review / Unknown
+The Beast,Needs Review / Unknown
+The Mask,Needs Review / Unknown
+Vecna,Needs Review / Unknown
+Winter Soldier,Needs Review / Unknown
+Aang (Nick),Nickelodeon
+Cosmo,Nickelodeon
+Danny Phantom,Nickelodeon
+Jimmy Neutron,Nickelodeon
+Korra,Nickelodeon
+Patrick Star,Nickelodeon
+Sheen Estevez,Nickelodeon
+SpongeBob,Nickelodeon
+Squidward,Nickelodeon
+Timmy Turner,Nickelodeon
+Wanda,Nickelodeon
+Nurse Ratched,One Flew Over the Cuckoo's Nest
+Charlotte Linlin,One Piece
+Dracule Mihawk,One Piece
+Gol D. Roger,One Piece
+Kaido,One Piece
+Marshall D. Teach,One Piece
+Monkey D. Dragon,One Piece
+Monkey D. Luffy,One Piece
+Roronoa Zoro,One Piece
+Shanks,One Piece
+Silvers Rayleigh,One Piece
+Whitebeard,One Piece
+Garou,One Punch Man
+Saitama,One Punch Man
+Saitama (Serious Mode),One Punch Man
+Ainz Ooal Gown,Overlord
+Dr. Doofenshmirtz,Phineas and Ferb
+Perry the Platypus,Phineas and Ferb
+Captain Barbossa,Pirates of the Caribbean
+Davy Jones,Pirates of the Caribbean
+Jack Sparrow,Pirates of the Caribbean
+Johnny Utah,Point Break
+Arceus,Pokemon
+Blastoise,Pokemon
+Charizard,Pokemon
+Gengar,Pokemon
+Lucario,Pokemon
+Mewtwo,Pokemon
+Pikachu,Pokemon
+Rayquaza,Pokemon
+Popeye,Popeye
+Dutch,Predator
+Alex Mercer,Prototype
+John Rambo,Rambo
+Reinhard van Astrea,Re:Zero
+Wiz Khalifa,Real World / Music
+Albert Wesker,Resident Evil
+Leon,Resident Evil
+Beth Smith,Rick and Morty
+Evil Morty,Rick and Morty
+Jerry Smith,Rick and Morty
+Morty Smith,Rick and Morty
+Rick Sanchez,Rick and Morty
+Summer Smith,Rick and Morty
+Riddick,Riddick
+Dalton,Road House
+Clarence Boddicker,RoboCop
+RoboCop,RoboCop
+Clubber Lang,Rocky
+Ivan Drago,Rocky
+Aku,Samurai Jack
+Samurai Jack,Samurai Jack
+SCP-096,SCP
+SCP-173,SCP
+SCP-682,SCP
+The Scarlet King,SCP
+Sekiro,Sekiro
+Ban,Seven Deadly Sins
+Escanor,Seven Deadly Sins
+Meliodas,Seven Deadly Sins
+John Shaft,Shaft
+Sherlock Holmes,Sherlock Holmes
+Shrek,Shrek
+Antares,Solo Leveling
+Sung Jin-Woo,Solo Leveling
+Knuckles,Sonic
+Shadow the Hedgehog,Sonic
+Sonic the Hedgehog,Sonic
+Butters Stotch,South Park
+Chef,South Park
+Eric Cartman,South Park
+Kenny McCormick,South Park
+Kyle Broflovski,South Park
+Mr Garrison,South Park
+Randy Marsh,South Park
+Stan Marsh,South Park
+SpongeBob SquarePants,SpongeBob SquarePants
+Ahsoka Tano,Star Wars
+Anakin Skywalker,Star Wars
+Asajj Ventress,Star Wars
+Boba Fett,Star Wars
+Captain Rex,Star Wars
+Count Dooku,Star Wars
+Darth Maul,Star Wars
+Darth Vader,Star Wars
+General Grievous,Star Wars
+Grand Admiral Thrawn,Star Wars
+Han Solo,Star Wars
+Kylo Ren,Star Wars
+Leia Organa,Star Wars
+Luke Skywalker,Star Wars
+Mace Windu,Star Wars
+Obi-Wan Kenobi,Star Wars
+Palpatine,Star Wars
+Poe Dameron,Star Wars
+Qui-Gon Jinn,Star Wars
+Rey,Star Wars
+Savage Opress,Star Wars
+The Mandalorian,Star Wars
+Yoda,Star Wars
+A.K.I,Street Fighter
+Abel,Street Fighter
+Akuma,Street Fighter
+Alex,Street Fighter
+Balrog,Street Fighter
+Blanka,Street Fighter
+C. Viper,Street Fighter
+Cammy,Street Fighter
+Chun-Li,Street Fighter
+Decapre,Street Fighter
+Dee Jay,Street Fighter
+Dhalsim,Street Fighter
+Dudley,Street Fighter
+E. Honda,Street Fighter
+Elena,Street Fighter
+F.A.N.G,Street Fighter
+Falke,Street Fighter
+Fei Long,Street Fighter
+G,Street Fighter
+Gill,Street Fighter
+Guile,Street Fighter
+Hakan,Street Fighter
+Hugo,Street Fighter
+Ibuki,Street Fighter
+Jamie,Street Fighter
+JP,Street Fighter
+Juri,Street Fighter
+Kage,Street Fighter
+Karin,Street Fighter
+Ken Masters,Street Fighter
+Kimberly,Street Fighter
+Laura,Street Fighter
+Lily,Street Fighter
+Luke,Street Fighter
+M. Bison,Street Fighter
+Makoto,Street Fighter
+Manon,Street Fighter
+Marisa,Street Fighter
+Menat,Street Fighter
+Necalli,Street Fighter
+Oro,Street Fighter
+Poison,Street Fighter
+Q,Street Fighter
+Rashid,Street Fighter
+Remy,Street Fighter
+Rolento,Street Fighter
+Rose,Street Fighter
+Rufus,Street Fighter
+Ryu,Street Fighter
+Sagat,Street Fighter
+Sean,Street Fighter
+Seth,Street Fighter
+T. Hawk,Street Fighter
+Urien,Street Fighter
+Vega,Street Fighter
+Zangief,Street Fighter
+Zeku,Street Fighter
+Bobby Singer,Supernatural
+Castiel,Supernatural
+Crowley,Supernatural
+Dean Winchester,Supernatural
+Jack Kline,Supernatural
+Lucifer (Supernatural),Supernatural
+Michael (Supernatural),Supernatural
+Rowena,Supernatural
+Sam Winchester,Supernatural
+Bryan Mills,Taken
+Casey Jones,Teenage Mutant Ninja Turtles
+Donatello,Teenage Mutant Ninja Turtles
+Krang,Teenage Mutant Ninja Turtles
+Master Splinter,Teenage Mutant Ninja Turtles
+Michelangelo,Teenage Mutant Ninja Turtles
+Raphael,Teenage Mutant Ninja Turtles
+Shredder,Teenage Mutant Ninja Turtles
+6teen Jonesy,Teletoon
+6teen Nikki,Teletoon
+Bling Bling Boy,Teletoon
+Detentionaire Lee Ping,Teletoon
+Dukey,Teletoon
+Johnny Test,Teletoon
+Total Drama Duncan,Teletoon
+Total Drama Gwen,Teletoon
+Total Drama Owen,Teletoon
+Sarah Connor,Terminator
+The Terminator,Terminator
+Rimuru Tempest,That Time I Got Reincarnated as a Slime
+Anton Chigurh,The Big Lebowski / Crime Film
+A-Train,The Boys
+Billy Butcher,The Boys
+Black Noir,The Boys
+Homelander,The Boys
+Homelander (TV),The Boys
+Queen Maeve,The Boys
+Soldier Boy,The Boys
+Soldier Boy (Comics),The Boys
+Starlight,The Boys
+Stormfront,The Boys
+Stormfront (Comics),The Boys
+The Deep,The Boys
+Translucent,The Boys
+Dovahkiin,The Elder Scrolls
+Ellie,The Last of Us
+Joel Miller,The Last of Us
+Ganondorf,The Legend of Zelda
+Link,The Legend of Zelda
+Agent Smith,The Matrix
+Neo,The Matrix
+Anos Voldigoad,The Misfit of Demon King Academy
+Scorpion King,The Mummy
+Bart Simpson,The Simpsons
+Homer Simpson,The Simpsons
+Krusty the Clown,The Simpsons
+Lisa Simpson,The Simpsons
+Marge Simpson,The Simpsons
+Milhouse,The Simpsons
+Moe Szyslak,The Simpsons
+Mr Burns,The Simpsons
+Ned Flanders,The Simpsons
+Sideshow Bob,The Simpsons
+Ciri,The Witcher
+Geralt of Rivia,The Witcher
+Yennefer of Vengerberg,The Witcher
+Lara Croft,Tomb Raider
+Bumblebee,Transformers
+Devastator,Transformers
+Grimlock,Transformers
+Megatron,Transformers
+Optimus Prime,Transformers
+Primus,Transformers
+Starscream,Transformers
+Unicron,Transformers
+Captain Amelia,Treasure Planet
+Jim Hawkins,Treasure Planet
+Long John Silver,Treasure Planet
+Harry Tasker,True Lies
+Nathan Drake,Uncharted
+Casey Ryback,Under Siege
+Apex Bloodhound,Video Game
+Apex Revenant,Video Game
+Apex Wraith,Video Game
+Arbiter (Elite),Video Game
+Atreus (Ragnarok),Video Game
+Bloodborne Hunter,Video Game
+Bowser (Giga),Video Game
+Ciri (Full Power),Video Game
+Cloud (Limit Break),Video Game
+Cortana (AI),Video Game
+Dark Samus,Video Game
+Diablo (Prime Evil),Video Game
+Doomfist,Video Game
+Elden Ring Tarnished,Video Game
+Fortnite Jonesy,Video Game
+Fortnite Midas,Video Game
+Fortnite Peely,Video Game
+Ganondorf (Demon King),Video Game
+Genji,Video Game
+Geralt (Master),Video Game
+Knuckles (Master Emerald),Video Game
+Kratos (Ragnarok),Video Game
+Lady Maria (Nightmare),Video Game
+Lilith,Video Game
+Link (TOTK),Video Game
+Luigi (Poltergust),Video Game
+Malenia (Goddess),Video Game
+Mario (Fire Flower),Video Game
+Master Chief (Mjolnir),Video Game
+Noctis (Armiger),Video Game
+Odin (Ragnarok),Video Game
+Overwatch Tracer,Video Game
+Radahn (Starscourge),Video Game
+Raiden (Cyborg),Video Game
+Reaper,Video Game
+Ridley,Video Game
+Samus (Power Suit),Video Game
+Sephiroth (Safer),Video Game
+Shadow (Chaos Control),Video Game
+Sigma,Video Game
+Solid Snake (Old Snake),Video Game
+Sonic (Super),Video Game
+Thor (Ragnarok),Video Game
+Tyrael,Video Game
+Yennefer (Mage),Video Game
+Zelda (Sage),Video Game
+Arthas Menethil,Warcraft
+Yusuke Urameshi,Yu Yu Hakusho
+Link (BOTW),Zelda
+Zelda (BOTW),Zelda
