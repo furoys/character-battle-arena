@@ -74,5 +74,24 @@ export const clerkAppearance = {
     main: "gap-3",
     logoBox: "justify-center mb-2",
     logoImage: "h-12 w-auto",
+    // On native Capacitor (Android/iOS), Google blocks OAuth flows inside
+    // WebViews per their security policy, so the Google/social buttons render
+    // a broken/blocked screen. Hide all social provider buttons and the
+    // "or continue with" divider on native — email-code stays as the
+    // supported login method. On web (browser) everything renders normally.
+    // These are placed at the end so they override the className strings
+    // above (Clerk merges later keys last).
+    ...(_isNative
+      ? {
+          socialButtons: { display: "none" },
+          socialButtonsBlockButton: { display: "none" },
+          socialButtonsIconButton: { display: "none" },
+          socialButtonsProviderIcon: { display: "none" },
+          dividerRow: { display: "none" },
+          dividerLine: { display: "none" },
+          dividerText: { display: "none" },
+          alternativeMethodsBlockButton: { display: "none" },
+        }
+      : {}),
   },
 };
