@@ -370,7 +370,8 @@ export async function customFetch<T = unknown>(
 
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
-  if (_authTokenGetter && !headers.has("authorization")) {
+  const callerProvidedAuth = headers.has("authorization");
+  if (_authTokenGetter && !callerProvidedAuth) {
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
@@ -379,7 +380,32 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  let response = await fetch(input, { ...init, method, headers });
+
+  // 401 retry with a fresh token — handles the window where the JWT expired
+  // mid-session, or where Clerk's getToken() returned null/stale on the first
+  // call before the session fully hydrated. Mirrors the apiFetch retry in
+  // the fight-club app so all generated mutations (saveTeam, etc.) recover
+  // automatically instead of bubbling a 401 up to the user.
+  //
+  // Only retry when the request body is safe to re-send: undefined or a string
+  // (every orval-generated mutation uses JSON.stringify). Streams / FormData /
+  // Blobs are single-consume and would throw on the second fetch — for those
+  // we skip the retry and surface the 401 unchanged.
+  const bodyIsRetryable = init.body == null || typeof init.body === "string";
+  if (
+    response.status === 401 &&
+    _authTokenGetter &&
+    !callerProvidedAuth &&
+    bodyIsRetryable
+  ) {
+    await new Promise((r) => setTimeout(r, 600));
+    const freshToken = await _authTokenGetter();
+    if (freshToken) {
+      headers.set("authorization", `Bearer ${freshToken}`);
+      response = await fetch(input, { ...init, method, headers });
+    }
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
