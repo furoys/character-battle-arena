@@ -9,6 +9,7 @@ export type UniverseCategory =
   | "Cartoons"
   | "Myth & History"
   | "Horror"
+  | "Variants"
   | "Other";
 
 export const CATEGORY_ORDER: UniverseCategory[] = [
@@ -22,6 +23,7 @@ export const CATEGORY_ORDER: UniverseCategory[] = [
   "Cartoons",
   "Myth & History",
   "Horror",
+  "Variants",
   "Other",
 ];
 
@@ -36,6 +38,7 @@ export const CATEGORY_COLORS: Record<UniverseCategory, string> = {
   "Cartoons":        "#ffe234",
   "Myth & History":  "#d4a574",
   "Horror":          "#8e1a3a",
+  "Variants":        "#22d3ee",
   "Other":           "#94a3b8",
 };
 
@@ -214,6 +217,9 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Real World": "Myth & History",
   // App-specific custom characters — genuinely no franchise home
   "Developer Legends": "Other",
+  // Power-up / alternate-form variants of canonical characters,
+  // grouped together so the main roster stays clean.
+  "Variants": "Variants",
 };
 
 export function getUniverseCategory(universe: string): UniverseCategory {

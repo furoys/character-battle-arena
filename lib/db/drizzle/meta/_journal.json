@@ -36,6 +36,13 @@
       "when": 1778631800000,
       "tag": "0004_archive_duplicate_characters",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778633500000,
+      "tag": "0005_archive_and_variants",
+      "breakpoints": true
     }
   ]
 }
