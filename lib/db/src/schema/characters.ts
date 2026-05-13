@@ -24,6 +24,9 @@ export const charactersTable = pgTable("characters", {
   powerGapIndex: integer("power_gap_index"),
   // v3Profile: rich structured combat data from the roster
   v3Profile: jsonb("v3_profile"),
+  // archived: hidden from the live roster but kept in the DB for review.
+  // Used to soft-remove duplicate / superseded entries without losing data.
+  archived: integer("archived").notNull().default(0),
 });
 
 export const insertCharacterSchema = createInsertSchema(charactersTable).omit({ id: true, createdAt: true });

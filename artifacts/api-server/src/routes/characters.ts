@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db, charactersTable } from "@workspace/db";
 import {
   CreateCharacterBody,
@@ -13,7 +13,10 @@ import {
 const router: IRouter = Router();
 
 router.get("/characters/stats/summary", async (req, res): Promise<void> => {
-  const all = await db.select().from(charactersTable);
+  const all = await db
+    .select()
+    .from(charactersTable)
+    .where(eq(charactersTable.archived, 0));
 
   if (all.length === 0) {
     res.json(
@@ -54,6 +57,7 @@ router.get("/characters", async (req, res): Promise<void> => {
   const characters = await db
     .select()
     .from(charactersTable)
+    .where(eq(charactersTable.archived, 0))
     .orderBy(charactersTable.name);
   // Characters change infrequently — cache at CDN/browser for 60 s,
   // allow serving stale up to 5 min while revalidating in the background.
