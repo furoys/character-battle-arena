@@ -43,6 +43,13 @@
       "when": 1778633500000,
       "tag": "0005_archive_and_variants",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778706400000,
+      "tag": "0006_fix_the_boys_portraits",
+      "breakpoints": true
     }
   ]
 }

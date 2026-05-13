@@ -3298,7 +3298,7 @@ title = "starscourge-radahn"
 id = "BwIhAjwTZmwJwC_0GgzJ0"
 uri = "file://artifacts/fight-club/public/characters/stormfront.png"
 type = "image"
-title = "stormfront"
+title = "generated_image"
 
 [[generated]]
 id = "NBDkiiHjhkWMTLb7HFONJ"
