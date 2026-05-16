@@ -21,6 +21,7 @@ import { NewCharacter } from "@/pages/new-character";
 import { Fights } from "@/pages/fights";
 import { Admin } from "@/pages/admin";
 import { Suggest } from "@/pages/suggest";
+import { Daily } from "@/pages/daily";
 import { Challenge } from "@/pages/challenge";
 import { Profile } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
@@ -98,6 +99,7 @@ function Router() {
             <Route path="/new-character" component={NewCharacter} />
             <Route path="/fights" component={Fights} />
             <Route path="/suggest" component={Suggest} />
+            <Route path="/daily" component={Daily} />
             <Route path="/admin" component={Admin} />
             <Route path="/challenge/:code" component={Challenge} />
             <Route path="/profile" component={Profile} />

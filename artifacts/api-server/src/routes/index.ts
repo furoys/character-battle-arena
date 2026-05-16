@@ -7,6 +7,7 @@ import challengesRouter from "./challenges";
 import ttsRouter from "./tts";
 import downloadsRouter from "./downloads";
 import meRouter from "./me";
+import dailyRouter from "./daily";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(challengesRouter);
 router.use(ttsRouter);
 router.use(downloadsRouter);
 router.use(meRouter);
+router.use(dailyRouter);
 
 export default router;

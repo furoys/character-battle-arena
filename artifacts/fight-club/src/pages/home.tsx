@@ -23,6 +23,7 @@ import { subscribeForChallenge, requestNotificationPermissionFromGesture } from 
 import { LS_LAST_MODIFIER, getModifier } from "@/lib/modifiers";
 import { ModifierPicker, ModifierTrigger, useStoredModifier } from "@/components/modifier-picker";
 import { PendingChallengesBar } from "@/components/pending-challenges-bar";
+import { DailyMatchupHomeTile } from "@/pages/daily";
 import { useMusic } from "@/contexts/music-context";
 import { MusicToggle } from "@/components/music-toggle";
 import { EnergyBadge } from "@/components/energy-badge";
@@ -750,6 +751,7 @@ export function Home() {
 
       <div className="flex flex-col h-full min-h-0">
         <PendingChallengesBar />
+        <DailyMatchupHomeTile />
         {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
         <div
           className="flex-shrink-0 sticky top-0 z-30 flex items-center justify-between px-3 py-2"
