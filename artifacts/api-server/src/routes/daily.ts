@@ -237,14 +237,24 @@ router.get("/daily", async (req, res): Promise<void> => {
     pickPoints,
     matchups: pairs.map((p, i) => {
       const split = splitMap.get(p.entry.id) ?? { t1: 0, t2: 0 };
+      const userPick = picksByMatchup.get(p.entry.id) ?? null;
+      const globalWinner = winners[i] ?? null;
+      // Per-user verdict visibility: only reveal `winnerSide` to a caller who
+      // has already locked in a pick (or to guests, who can't pick anyway).
+      // Without this, the first user to fight a matchup would set the global
+      // winnerSide and every OTHER user would (a) see the spoiler before
+      // picking and (b) be refused at POST time with "picks closed". Hiding
+      // the winner from un-picked users keeps the pick honest and keeps the
+      // matchup open for them until they lock in.
+      const winnerSide = userId === null || userPick !== null ? globalWinner : null;
       return {
         matchupId: p.entry.id,
         title: p.entry.title,
         hook: p.entry.hook,
         team1Ids: p.entry.team1Ids,
         team2Ids: p.entry.team2Ids,
-        userPick: picksByMatchup.get(p.entry.id) ?? null,
-        winnerSide: winners[i] ?? null,
+        userPick,
+        winnerSide,
         team1Count: split.t1,
         team2Count: split.t2,
       };
@@ -254,7 +264,10 @@ router.get("/daily", async (req, res): Promise<void> => {
 
 // ── POST /api/daily/pick ──────────────────────────────────────────────────────
 // Lock a pick for one of today's matchups. Requires sign-in. One pick per
-// (user, matchup, day) — picks are closed once a matchup's verdict resolves.
+// (user, matchup, day). Picks stay open for every user until the daily
+// lineup rolls over (ET 8pm) — another user simulating the fight does NOT
+// close it for anyone else (the winner is hidden per-user in GET /api/daily
+// until they themselves pick, so no spoiler advantage is possible).
 router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
   const userId = (req as typeof req & { userId: string }).userId;
   const { side, matchupId } = req.body as { side?: unknown; matchupId?: unknown };
@@ -277,23 +290,12 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
   }
   await ensureDailyRows(date);
 
-  // Hard-stop: once the verdict is known (pre-stored on the row or already
-  // in the fight cache), picks for this matchup are closed.
-  const [row] = await db
-    .select()
-    .from(dailyMatchupsTable)
-    .where(
-      and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, matchupId)),
-    )
-    .limit(1);
-  let winnerSide = row?.winnerSide ?? null;
-  if (winnerSide === null) {
-    winnerSide = await tryResolveWinner(date, matchupId, entry.team1Ids, entry.team2Ids, null);
-  }
-  if (winnerSide !== null) {
-    res.status(409).json({ error: "Picks closed — verdict already revealed" });
-    return;
-  }
+  // Note: we intentionally do NOT block picks here when the global verdict is
+  // already known. Picks are per-user — the user only sees `winnerSide` after
+  // they've picked (see GET /api/daily filtering), so they cannot peek at the
+  // outcome before locking in. Refusing here would cause "Picks closed" errors
+  // for everyone after the first user simulated the fight. Daily rollover
+  // (ET 8pm) is the only thing that actually closes the lineup.
 
   // ── Atomic pick-point spend + insert ──────────────────────────────────────
   // We need read-modify-write semantics on the user's daily pick budget so two
