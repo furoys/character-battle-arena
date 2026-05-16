@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, userProfilesTable } from "@workspace/db";
 
-export const ENERGY_MAX = 10;
+export const ENERGY_MAX = 5;
 export const ENERGY_REFILL_MS = 30 * 60 * 1000; // 30 minutes per +1
 
 export interface EnergyState {

@@ -10,7 +10,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, Zap, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2, Mail } from "lucide-react";
+import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2, Mail } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -452,7 +452,6 @@ export function Home() {
 
   // Favorites — persisted to localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(readLS<number[]>("ava_faves", [])));
-  const [upsetMode, setUpsetMode] = useState(false);
   // Chaos modifier — persisted so a player's last pick survives reloads but
   // is NOT sticky across new sessions (cleared via the picker's "None" tile).
   const [modifierId, setModifierId] = useStoredModifier(LS_LAST_MODIFIER);
@@ -607,7 +606,7 @@ export function Home() {
     // Optimistically decrement so the badge updates the moment FIGHT is hit.
     // After the fight call resolves, refetch from the server to reconcile.
     if (energy.isSignedIn) energy.applyOptimisticConsume();
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null } });
   };
 
   const handleRandomFight = () => {
@@ -762,39 +761,6 @@ export function Home() {
           <AvaLogo className="h-7 w-auto" />
           <div className="flex items-center gap-2">
             <MusicToggle />
-            {/* UPSET MODE — promoted to the top bar so the primary action row
-                stays focused on starting matches. Tap to toggle cached vs
-                fresh verdict generation. */}
-            <button
-              onClick={() => setUpsetMode(m => !m)}
-              className="flex items-center gap-1 transition-all duration-200 active:scale-[0.97]"
-              style={{
-                height: 24,
-                padding: "0 7px",
-                background: upsetMode ? "rgba(255,160,0,0.14)" : "transparent",
-                border: `1px solid ${upsetMode ? "rgba(255,160,0,0.6)" : "rgba(255,255,255,0.12)"}`,
-                cursor: "pointer",
-              }}
-              title={upsetMode ? "Upset Mode ON — bypasses cached verdict" : "Upset Mode OFF — uses cached verdict"}
-            >
-              <Zap
-                className="h-3 w-3"
-                style={{ color: upsetMode ? "#ffa000" : "rgba(255,255,255,0.4)" }}
-                fill={upsetMode ? "#ffa000" : "none"}
-              />
-              <span
-                style={{
-                  fontSize: 8,
-                  fontFamily: "var(--font-display, monospace)",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                  color: upsetMode ? "rgba(255,160,0,0.95)" : "rgba(255,255,255,0.45)",
-                }}
-              >
-                Upset
-              </span>
-            </button>
             <Show when="signed-in">
               <EnergyBadge />
               <HomeProfileButton />
@@ -1429,7 +1395,7 @@ export function Home() {
           open={showModal}
           onClose={() => { fightInFlightRef.current = false; setShowModal(false); simulateFight.reset(); }}
           onRematch={() => {
-            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: upsetMode, modifierId: modifierId ?? null } });
+            simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null } });
           }}
           result={censoredResult}
           isSimulating={simulateFight.isPending && !simulateFight.streaming}
