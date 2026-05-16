@@ -22,6 +22,7 @@ A mobile-friendly web app where users pick two teams of fictional characters and
 ## Features
 
 - Browse a roster of 956+ characters from 104+ universes (includes all 45 US presidents + 55 other Historical figures = 100 Historical characters)
+- **Daily lineup**: 10 curated matchups posted every day at **8:00 PM ET** (rolls over via `America/New_York`, DST-aware — see `artifacts/api-server/src/lib/dailyPool.ts` `getDailyDateString`). Pool now ~110 entries including team-vs-team marquee fights (Avengers vs X-Men, Justice League vs Legion of Doom, Bat-Family vs Rogues, Z-Fighters vs DBZ Villains, Sorcerers' Summit, etc.). Selection per day is a deterministic Fisher–Yates shuffle keyed by epoch days so every player worldwide sees the same 10 fights in the same order for that ET day.
 - Select up to 5 characters per team (Team 1 and Team 2)
 - Simulate fights with cinematic AI narratives — phase-based (opening/escalation/turning point/finish) driven by each character's v3Profile (abilities, weapons, gadgets, combatStyle, battleIQ, temperament, finishers)
 - Tier-calibrated outcomes (Cosmic → Street) using exponential 0-10M power stats; stronger always wins

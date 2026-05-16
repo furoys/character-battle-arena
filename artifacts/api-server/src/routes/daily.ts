@@ -38,29 +38,54 @@ function buildCacheKey(team1: number[], team2: number[]): {
   };
 }
 
-// Ensure all 10 daily_matchups rows exist for `date`. Idempotent — concurrent
-// requests at midnight race safely thanks to the unique (date, matchupId)
-// index + onConflictDoNothing.
+// Ensure daily_matchups rows exist for `date`. Idempotent — concurrent
+// requests at the rollover boundary race safely thanks to the unique
+// (date, matchupId) index + onConflictDoNothing.
+//
+// Lineup stability: once a date has ANY rows materialized in the DB, those
+// rows ARE the canonical lineup for that date — even if DAILY_POOL is later
+// edited (new entries appended, deterministic shuffle changes). This means
+// a mid-day deploy that grows the pool will NOT reshuffle today's visible
+// fights or orphan picks users already made.
 async function ensureDailyRows(date: string) {
-  const lineup = getDailyMatchupsForDate(date);
-  // Insert any missing rows in one round-trip.
-  await db
-    .insert(dailyMatchupsTable)
-    .values(lineup.map((entry) => ({ date, matchupId: entry.id })))
-    .onConflictDoNothing();
-  const rows = await db
+  let rows = await db
     .select()
     .from(dailyMatchupsTable)
     .where(eq(dailyMatchupsTable.date, date));
-  // Return in lineup order (DB order isn't guaranteed to match the deterministic
-  // shuffle), and filter to the canonical 10 so any stale rows from a previous
-  // pool revision don't leak into the response.
-  const byId = new Map(rows.map((r) => [r.matchupId, r]));
-  return lineup
-    .map((entry) => ({ entry, row: byId.get(entry.id) }))
-    .filter((x): x is { entry: typeof lineup[number]; row: typeof rows[number] } =>
-      x.row !== undefined,
-    );
+  if (rows.length === 0) {
+    // First materialization for this date — write the current canonical lineup.
+    const lineup = getDailyMatchupsForDate(date);
+    await db
+      .insert(dailyMatchupsTable)
+      .values(lineup.map((entry) => ({ date, matchupId: entry.id })))
+      .onConflictDoNothing();
+    rows = await db
+      .select()
+      .from(dailyMatchupsTable)
+      .where(eq(dailyMatchupsTable.date, date));
+  }
+  // Join rows back to current pool definitions by matchupId. Any row whose
+  // matchupId no longer exists in DAILY_POOL (entry was removed/renamed) is
+  // skipped — defensive, since the only supported pool mutation is APPEND.
+  const poolById = new Map(DAILY_POOL.map((entry) => [entry.id, entry]));
+  // Preserve a stable display order: use the canonical shuffle order for
+  // entries that are in today's canonical lineup, then append any extras at
+  // the end (handles the edge case where a future deploy alters per-date
+  // shuffle output but the DB still holds the originally-materialized rows).
+  const canonicalOrder = new Map(
+    getDailyMatchupsForDate(date).map((entry, idx) => [entry.id, idx]),
+  );
+  return rows
+    .map((row) => ({ entry: poolById.get(row.matchupId), row }))
+    .filter(
+      (x): x is { entry: NonNullable<typeof x.entry>; row: typeof rows[number] } =>
+        x.entry !== undefined,
+    )
+    .sort((a, b) => {
+      const ai = canonicalOrder.get(a.entry.id) ?? 999;
+      const bi = canonicalOrder.get(b.entry.id) ?? 999;
+      return ai - bi;
+    });
 }
 
 // Try to resolve winnerSide by reading the fight verdict cache. If the cache
