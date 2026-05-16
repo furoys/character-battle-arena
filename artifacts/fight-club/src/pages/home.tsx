@@ -1442,7 +1442,15 @@ export function Home() {
 
         <FightScreen
           open={showModal}
-          onClose={() => { fightInFlightRef.current = false; setShowModal(false); simulateFight.reset(); }}
+          onClose={() => {
+            // Reset everything so the next fight starts from a blank slate —
+            // teams cleared, mutate state torn down, in-flight lock released.
+            fightInFlightRef.current = false;
+            setShowModal(false);
+            simulateFight.reset();
+            setTeam1([]);
+            setTeam2([]);
+          }}
           onRematch={() => {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null } });
           }}
