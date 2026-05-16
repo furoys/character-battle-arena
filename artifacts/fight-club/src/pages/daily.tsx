@@ -907,15 +907,10 @@ export function Daily() {
             🛡 NEXT SHIELD: {new Date(me.streakShield.nextAvailableAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </div>
         )}
-        {/* Pick-points strip — only shown when signed in. Visualizes 3 base
-            pips + any bonus pips earned via ads, filled = remaining. */}
-        {isSignedIn && daily?.pickPoints && (
-          <PickPointsStrip
-            pickPoints={daily.pickPoints}
-            onWatchAd={() => startWatchAd()}
-            adBusy={adState.kind !== "idle"}
-          />
-        )}
+        {/* Pick-points strip removed — every signed-in user can now predict
+            on every fight in the daily lineup for free, so there's no budget
+            to visualize. The component is kept in this file for reference
+            but no longer rendered. */}
       </div>
 
       {/* Tabs */}
