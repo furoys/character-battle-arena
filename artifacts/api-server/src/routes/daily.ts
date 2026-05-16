@@ -487,12 +487,37 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
       streakBroken = true;
     }
   }
+  // Pick-streak: consecutive correct picks across all time, regardless of day.
+  // `currentPickStreak` walks rows newest-first (rows are already ordered desc
+  // by date then desc by createdAt) and counts correct picks until the first
+  // wrong one. Unresolved picks are skipped so they neither extend nor break it.
+  // `longestPickStreak` walks chronologically (oldest-first) tracking max run.
+  let currentPickStreak = 0;
+  for (const r of rows) {
+    if (r.winnerSide === null) continue;
+    if (r.pickedSide === r.winnerSide) currentPickStreak += 1;
+    else break;
+  }
+  let longestPickStreak = 0;
+  let runPick = 0;
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const r = rows[i]!;
+    if (r.winnerSide === null) continue;
+    if (r.pickedSide === r.winnerSide) {
+      runPick += 1;
+      if (runPick > longestPickStreak) longestPickStreak = runPick;
+    } else {
+      runPick = 0;
+    }
+  }
   res.json({
     totalPicks: rows.length,
     resolvedPicks: totalResolved,
     correct: totalCorrect,
     currentStreak,
     longestStreak,
+    currentPickStreak,
+    longestPickStreak,
     recent: rows.slice(0, 20).map((r) => ({
       date: r.date,
       matchupId: r.matchupId,

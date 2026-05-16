@@ -33,6 +33,8 @@ type MeDailyResponse = {
   correct: number;
   currentStreak: number;
   longestStreak: number;
+  currentPickStreak: number;
+  longestPickStreak: number;
   recent: { date: string; matchupId: string; pickedSide: number; winnerSide: number | null }[];
 };
 
@@ -520,7 +522,7 @@ export function Daily() {
                 <div className="flex items-center gap-1 justify-end">
                   <Flame className="w-3 h-3" style={{ color: "#ff6b35" }} />
                   <span className="font-display" style={{ fontSize: 16, color: "#ffc800", lineHeight: 1, fontWeight: 900 }}>
-                    {me.currentStreak}
+                    {me.currentPickStreak}
                   </span>
                 </div>
               </div>
@@ -596,12 +598,29 @@ export function Daily() {
 
             {/* Personal stats strip */}
             {me && me.totalPicks > 0 && (
-              <div className="grid grid-cols-4 gap-2">
-                <Stat label="TODAY" value={pickedCount} />
-                <Stat label="WINS NOW" value={`${correctToday}/${resolvedOwn.length}`} />
-                <Stat label="ALL-TIME" value={`${me.correct}/${me.resolvedPicks}`} />
-                <Stat label="BEST" value={me.longestStreak} />
-              </div>
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  <Stat label="TODAY" value={pickedCount} />
+                  <Stat label="WINS NOW" value={`${correctToday}/${resolvedOwn.length}`} />
+                  <Stat label="ALL-TIME" value={`${me.correct}/${me.resolvedPicks}`} />
+                  <Stat label="BEST" value={me.longestPickStreak} />
+                </div>
+                {/* Secondary stat: perfect-day streak (every resolved pick on
+                    a day correct). Header STREAK shows the pick-streak; this
+                    line surfaces the day-level streak for the completionists. */}
+                <div
+                  className="text-center"
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.4)",
+                    letterSpacing: "0.1em",
+                    marginTop: -4,
+                  }}
+                >
+                  Perfect days: <span style={{ color: "#ffc800", fontWeight: 800 }}>{me.currentStreak}</span>
+                  {" · "}Best: <span style={{ color: "#ffc800", fontWeight: 800 }}>{me.longestStreak}</span>
+                </div>
+              </>
             )}
 
             {/* Matchup list */}
