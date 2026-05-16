@@ -5,8 +5,13 @@ import {
   dailyMatchupsTable,
   dailyPicksTable,
   dailyAdBonusTable,
+  dailyStreakShieldsTable,
   fightCacheTable,
 } from "@workspace/db";
+
+// Shield cooldown — one shield per 7-day rolling window. Centralized so the
+// /me/daily readiness check and the POST /me/streak-shield enforcement agree.
+const STREAK_SHIELD_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 import { getOptionalUserId, requireAuth } from "../lib/auth";
 import {
   DAILY_POOL,
@@ -435,6 +440,7 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
   const userId = (req as typeof req & { userId: string }).userId;
   const rows = await db
     .select({
+      pickId: dailyPicksTable.id,
       date: dailyPicksTable.date,
       matchupId: dailyPicksTable.matchupId,
       pickedSide: dailyPicksTable.pickedSide,
@@ -490,12 +496,21 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
   // Pick-streak: consecutive correct picks across all time, regardless of day.
   // `currentPickStreak` walks rows newest-first (rows are already ordered desc
   // by date then desc by createdAt) and counts correct picks until the first
-  // wrong one. Unresolved picks are skipped so they neither extend nor break it.
+  // wrong one. Unresolved picks AND shielded wrong picks are skipped so they
+  // neither extend nor break the chain — shielded losses simply don't exist
+  // for the purposes of the streak.
   // `longestPickStreak` walks chronologically (oldest-first) tracking max run.
+  const shieldedRows = await db
+    .select({ pickId: dailyStreakShieldsTable.pickId })
+    .from(dailyStreakShieldsTable)
+    .where(eq(dailyStreakShieldsTable.userId, userId));
+  const shieldedPickIds = new Set(shieldedRows.map((s) => s.pickId));
+  const isShielded = (r: typeof rows[number]) => shieldedPickIds.has(r.pickId);
   let currentPickStreak = 0;
   for (const r of rows) {
     if (r.winnerSide === null) continue;
     if (r.pickedSide === r.winnerSide) currentPickStreak += 1;
+    else if (isShielded(r)) continue;
     else break;
   }
   let longestPickStreak = 0;
@@ -506,10 +521,66 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
     if (r.pickedSide === r.winnerSide) {
       runPick += 1;
       if (runPick > longestPickStreak) longestPickStreak = runPick;
+    } else if (isShielded(r)) {
+      // Shielded losses chain across (don't reset run).
+      continue;
     } else {
       runPick = 0;
     }
   }
+  // Streak-shield availability + the pick the user could rescue right now.
+  // "Recoverable" = the most recent unshielded wrong resolved pick. If they
+  // shield it, the chain re-links and currentPickStreak grows by the count of
+  // correct picks immediately before that wrong one.
+  let recoverablePickId: number | null = null;
+  let recoverableStreakLength = 0;
+  // Walk newest-first looking for the first wrong unshielded resolved pick.
+  // Count any correct picks BEFORE finding it (those are the user's current
+  // active streak — already included in currentPickStreak). After the wrong
+  // pick is found, continue counting correct picks until the NEXT unshielded
+  // wrong pick (which would still break the chain even after the shield).
+  let foundWrong = false;
+  let preWrongCorrect = 0;
+  let postWrongCorrect = 0;
+  for (const r of rows) {
+    if (r.winnerSide === null) continue;
+    const correct = r.pickedSide === r.winnerSide;
+    if (!foundWrong) {
+      if (correct) {
+        preWrongCorrect += 1;
+      } else if (isShielded(r)) {
+        // Already shielded — keep walking; doesn't break.
+        continue;
+      } else {
+        foundWrong = true;
+        recoverablePickId = r.pickId;
+      }
+    } else {
+      if (correct) {
+        postWrongCorrect += 1;
+      } else if (isShielded(r)) {
+        continue;
+      } else {
+        break;
+      }
+    }
+  }
+  if (recoverablePickId !== null) {
+    recoverableStreakLength = preWrongCorrect + postWrongCorrect;
+  }
+  // Cooldown: one shield per 7 days, based on the most recent usedAt.
+  const [latestShield] = await db
+    .select({ usedAt: dailyStreakShieldsTable.usedAt })
+    .from(dailyStreakShieldsTable)
+    .where(eq(dailyStreakShieldsTable.userId, userId))
+    .orderBy(desc(dailyStreakShieldsTable.usedAt))
+    .limit(1);
+  const lastUsedAt = latestShield?.usedAt ?? null;
+  const nextAvailableAt = lastUsedAt
+    ? new Date(lastUsedAt.getTime() + STREAK_SHIELD_COOLDOWN_MS)
+    : null;
+  const now = Date.now();
+  const cooldownReady = !nextAvailableAt || nextAvailableAt.getTime() <= now;
   res.json({
     totalPicks: rows.length,
     resolvedPicks: totalResolved,
@@ -518,6 +589,14 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
     longestStreak,
     currentPickStreak,
     longestPickStreak,
+    streakShield: {
+      available: cooldownReady && recoverablePickId !== null,
+      cooldownReady,
+      nextAvailableAt: nextAvailableAt && !cooldownReady ? nextAvailableAt.toISOString() : null,
+      lastUsedAt: lastUsedAt ? lastUsedAt.toISOString() : null,
+      recoverablePickId,
+      recoverableStreakLength,
+    },
     recent: rows.slice(0, 20).map((r) => ({
       date: r.date,
       matchupId: r.matchupId,
@@ -525,6 +604,107 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
       winnerSide: r.winnerSide,
     })),
   });
+});
+
+// ── POST /api/me/streak-shield ────────────────────────────────────────────────
+// Consume a weekly streak shield to nullify a single wrong resolved pick. The
+// pick stays in history (still counts toward all-time wins/losses ratio), but
+// is skipped by the pick-streak calculation in GET /api/me/daily. Enforces
+// the 7-day cooldown and prevents double-shielding the same pick.
+router.post("/me/streak-shield", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const { pickId } = req.body as { pickId?: unknown };
+  if (typeof pickId !== "number" || !Number.isInteger(pickId)) {
+    res.status(400).json({ error: "pickId is required (integer)" });
+    return;
+  }
+  // Atomic: lock check on cooldown, validate the pick belongs to the user and
+  // is a wrong resolved pick, ensure no existing shield row, then insert.
+  //
+  // Concurrency: cooldown is "at most 1 shield per 7d per user", which is a
+  // multi-row invariant that no single unique index can enforce. Two parallel
+  // requests on different pickIds could both read "cooldown ready" and both
+  // insert, bypassing the policy. To prevent that we take a Postgres advisory
+  // transaction lock keyed by a stable 64-bit hash of the userId — only one
+  // shield write per user can be in-flight at a time. The lock auto-releases
+  // when the transaction ends.
+  const outcome = await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${"shield:" + userId}, 0))`,
+    );
+    const [latest] = await tx
+      .select({ usedAt: dailyStreakShieldsTable.usedAt })
+      .from(dailyStreakShieldsTable)
+      .where(eq(dailyStreakShieldsTable.userId, userId))
+      .orderBy(desc(dailyStreakShieldsTable.usedAt))
+      .limit(1);
+    if (latest) {
+      const readyAt = latest.usedAt.getTime() + STREAK_SHIELD_COOLDOWN_MS;
+      if (readyAt > Date.now()) {
+        return { kind: "cooldown" as const, nextAvailableAt: new Date(readyAt).toISOString() };
+      }
+    }
+    // The pick must belong to this user, be resolved, and be wrong. Join the
+    // matchup row to get winnerSide in the same query.
+    const [pickRow] = await tx
+      .select({
+        id: dailyPicksTable.id,
+        userId: dailyPicksTable.userId,
+        pickedSide: dailyPicksTable.pickedSide,
+        winnerSide: dailyMatchupsTable.winnerSide,
+      })
+      .from(dailyPicksTable)
+      .innerJoin(
+        dailyMatchupsTable,
+        and(
+          eq(dailyPicksTable.date, dailyMatchupsTable.date),
+          eq(dailyPicksTable.matchupId, dailyMatchupsTable.matchupId),
+        ),
+      )
+      .where(eq(dailyPicksTable.id, pickId))
+      .limit(1);
+    if (!pickRow || pickRow.userId !== userId) {
+      return { kind: "not-found" as const };
+    }
+    if (pickRow.winnerSide === null) {
+      return { kind: "not-resolved" as const };
+    }
+    if (pickRow.pickedSide === pickRow.winnerSide) {
+      return { kind: "not-a-loss" as const };
+    }
+    // onConflictDoNothing handles the unique-on-pickId index; if a shield row
+    // already exists for this pick we treat it as a no-op rather than crash.
+    const inserted = await tx
+      .insert(dailyStreakShieldsTable)
+      .values({ userId, pickId })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length === 0) {
+      return { kind: "already-shielded" as const };
+    }
+    return { kind: "ok" as const };
+  });
+  if (outcome.kind === "cooldown") {
+    res.status(409).json({ error: "shield-on-cooldown", nextAvailableAt: outcome.nextAvailableAt });
+    return;
+  }
+  if (outcome.kind === "not-found") {
+    res.status(404).json({ error: "pick-not-found" });
+    return;
+  }
+  if (outcome.kind === "not-resolved") {
+    res.status(409).json({ error: "pick-not-resolved" });
+    return;
+  }
+  if (outcome.kind === "not-a-loss") {
+    res.status(409).json({ error: "pick-not-a-loss" });
+    return;
+  }
+  if (outcome.kind === "already-shielded") {
+    res.status(409).json({ error: "pick-already-shielded" });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 export default router;

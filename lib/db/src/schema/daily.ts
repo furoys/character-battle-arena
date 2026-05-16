@@ -45,3 +45,21 @@ export const dailyAdBonusTable = pgTable("daily_ad_bonus", {
 }, (t) => [uniqueIndex("daily_ad_bonus_date_user_idx").on(t.date, t.userId)]);
 
 export type DailyAdBonus = typeof dailyAdBonusTable.$inferSelect;
+
+// ── Daily Streak Shields ──────────────────────────────────────────────────────
+// One row per "save my streak" action. A shield consumes the user's weekly
+// shield allowance (1 per 7 days, enforced server-side by checking the most
+// recent usedAt) and marks a specific resolved-wrong pick as "shielded" so the
+// pick-streak calculation in GET /api/me/daily skips it (treated as if it
+// hadn't happened — the streak chains across the gap). pickId is the unique
+// key so the same wrong pick can never be shielded twice.
+export const dailyStreakShieldsTable = pgTable("daily_streak_shields", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  pickId: integer("pick_id").notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("daily_streak_shields_pick_idx").on(t.pickId),
+]);
+
+export type DailyStreakShield = typeof dailyStreakShieldsTable.$inferSelect;

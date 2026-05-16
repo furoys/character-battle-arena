@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle } from "lucide-react";
+import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Shield } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/react";
 import { useListCharacters, Character } from "@workspace/api-client-react";
 import { apiFetch } from "@/lib/api-fetch";
@@ -35,6 +35,18 @@ type MeDailyResponse = {
   longestStreak: number;
   currentPickStreak: number;
   longestPickStreak: number;
+  // Server-computed shield availability. `available` is true only when both
+  // (a) the 7-day cooldown is up and (b) there is an unshielded wrong pick
+  // worth rescuing. `recoverableStreakLength` is what currentPickStreak would
+  // become after using the shield — used to size the CTA copy.
+  streakShield: {
+    available: boolean;
+    cooldownReady: boolean;
+    nextAvailableAt: string | null;
+    lastUsedAt: string | null;
+    recoverablePickId: number | null;
+    recoverableStreakLength: number;
+  };
   recent: { date: string; matchupId: string; pickedSide: number; winnerSide: number | null }[];
 };
 
@@ -149,6 +161,246 @@ function TeamPortraits({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Pick review modal (preview before lock-in) ──────────────────────────────
+// Full-screen-ish overlay that shows both teams' fighters with their tier,
+// abilities, weapons, and combat style so the user can study before committing
+// a pick point. The user can switch sides inside the modal and then confirms
+// via "Lock In". Cancelling closes the modal without spending a pick point.
+function PickReviewModal({
+  matchup,
+  initialSide,
+  characterMap,
+  picking,
+  onCancel,
+  onConfirm,
+}: {
+  matchup: DailyMatchup;
+  initialSide: 1 | 2;
+  characterMap: Map<number, Character>;
+  picking: boolean;
+  onCancel: () => void;
+  onConfirm: (side: 1 | 2) => void;
+}) {
+  const [side, setSide] = useState<1 | 2>(initialSide);
+  const t1 = matchup.team1Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
+  const t2 = matchup.team2Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
+  const sideChars = side === 1 ? t1 : t2;
+  const otherChars = side === 1 ? t2 : t1;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "rgba(8,8,14,0.97)" }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between px-4 pt-4 pb-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex-1 min-w-0">
+          <div style={{ fontSize: 8, color: "rgba(255,200,0,0.7)", letterSpacing: "0.25em", fontWeight: 900 }}>
+            REVIEW BEFORE LOCK IN
+          </div>
+          <h2 className="font-display uppercase mt-1 truncate" style={{ fontSize: 16, color: "white", letterSpacing: "0.08em" }}>
+            {matchup.title}
+          </h2>
+          <p className="truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontStyle: "italic", marginTop: 2 }}>
+            {matchup.hook}
+          </p>
+        </div>
+        <button
+          onClick={onCancel}
+          className="ml-3 p-1 active:scale-90 transition-all flex-shrink-0"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Side toggle */}
+      <div className="grid grid-cols-2 gap-1 px-3 py-3 flex-shrink-0">
+        {([1, 2] as const).map((s) => {
+          const active = side === s;
+          const accent = s === 1 ? "#00f0ff" : "#ff3b30";
+          return (
+            <button
+              key={s}
+              onClick={() => setSide(s)}
+              className="py-2 active:scale-95 transition-all"
+              style={{
+                background: active ? `${accent}26` : "rgba(255,255,255,0.03)",
+                border: `1.5px solid ${active ? accent : "rgba(255,255,255,0.1)"}`,
+                color: active ? accent : "rgba(255,255,255,0.5)",
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: "0.18em",
+              }}
+            >
+              TEAM {s}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Scrollable fighter detail list */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        <div className="flex flex-col gap-3">
+          {sideChars.map((c) => (
+            <FighterDetailCard key={c.id} character={c} accent={side === 1 ? "#00f0ff" : "#ff3b30"} />
+          ))}
+        </div>
+        {/* Opposing side at a glance — small portrait strip so the user is
+            reminded of who they're betting against without scrolling. */}
+        <div className="mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", fontWeight: 800, marginBottom: 8 }}>
+            FACING
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {otherChars.map((c) => (
+              <div key={c.id} className="flex flex-col items-center" style={{ width: 56 }}>
+                <div style={{ width: 48, height: 56, border: "1px solid rgba(255,255,255,0.15)", overflow: "hidden" }}>
+                  {c.imageUrl && <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />}
+                </div>
+                <div className="truncate w-full text-center mt-1" style={{ fontSize: 8, color: "rgba(255,255,255,0.55)", fontWeight: 700 }}>
+                  {c.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky footer: cancel + confirm */}
+      <div className="grid grid-cols-2 gap-2 p-3 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <button
+          onClick={onCancel}
+          disabled={picking}
+          className="py-3 active:scale-95 transition-all"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: "0.2em",
+          }}
+        >
+          CANCEL
+        </button>
+        <button
+          onClick={() => onConfirm(side)}
+          disabled={picking}
+          className="py-3 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          style={{
+            background: side === 1
+              ? "linear-gradient(135deg, rgba(0,240,255,0.25), rgba(0,240,255,0.08))"
+              : "linear-gradient(135deg, rgba(255,59,48,0.25), rgba(255,59,48,0.08))",
+            border: `1.5px solid ${side === 1 ? "rgba(0,240,255,0.7)" : "rgba(255,59,48,0.7)"}`,
+            color: side === 1 ? "#00f0ff" : "#ff3b30",
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: "0.2em",
+          }}
+        >
+          {picking ? <Loader2 className="w-4 h-4 animate-spin" /> : `LOCK IN TEAM ${side}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Fighter detail card (used inside the pick-review modal) ─────────────────
+// Shows name, image, tier, and any v3Profile fields we've populated (abilities,
+// weapons, combatStyle, finishers). v3Profile is jsonb so we defensively check
+// shape on every field — characters without rich profiles still render cleanly.
+function FighterDetailCard({ character, accent }: { character: Character; accent: string }) {
+  const profile = (character as unknown as { v3Profile?: Record<string, unknown> | null }).v3Profile ?? null;
+  const tier = (character as unknown as { tier?: string | null }).tier ?? null;
+  const asStringList = (v: unknown): string[] => {
+    if (!Array.isArray(v)) return [];
+    return v.filter((x): x is string => typeof x === "string");
+  };
+  const abilities = profile ? asStringList(profile.abilities) : [];
+  const weapons = profile ? asStringList(profile.weapons) : [];
+  const finishers = profile ? asStringList(profile.finishers) : [];
+  const combatStyle = profile && typeof profile.combatStyle === "string" ? profile.combatStyle : null;
+  const temperament = profile && typeof profile.temperament === "string" ? profile.temperament : null;
+  return (
+    <div
+      className="flex gap-3 p-3"
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        border: `1px solid ${accent}33`,
+      }}
+    >
+      <div style={{ width: 72, height: 96, border: `1px solid ${accent}66`, overflow: "hidden", flexShrink: 0 }}>
+        {character.imageUrl && (
+          <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover object-top" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-display uppercase truncate" style={{ fontSize: 13, color: "white", letterSpacing: "0.06em" }}>
+            {character.name}
+          </h3>
+          {tier && (
+            <span
+              className="font-display uppercase flex-shrink-0"
+              style={{
+                fontSize: 8,
+                color: accent,
+                letterSpacing: "0.15em",
+                fontWeight: 900,
+                padding: "1px 5px",
+                border: `1px solid ${accent}66`,
+              }}
+            >
+              {tier}
+            </span>
+          )}
+        </div>
+        {combatStyle && (
+          <p className="mt-1 truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontStyle: "italic" }}>
+            {combatStyle}
+          </p>
+        )}
+        {temperament && (
+          <p className="truncate" style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>
+            {temperament}
+          </p>
+        )}
+        {abilities.length > 0 && (
+          <div className="mt-2">
+            <div style={{ fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", fontWeight: 800 }}>
+              ABILITIES
+            </div>
+            <div className="mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", lineHeight: 1.35 }}>
+              {abilities.slice(0, 4).join(" · ")}
+            </div>
+          </div>
+        )}
+        {weapons.length > 0 && (
+          <div className="mt-1.5">
+            <div style={{ fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", fontWeight: 800 }}>
+              WEAPONS
+            </div>
+            <div className="mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", lineHeight: 1.35 }}>
+              {weapons.slice(0, 3).join(" · ")}
+            </div>
+          </div>
+        )}
+        {finishers.length > 0 && (
+          <div className="mt-1.5">
+            <div style={{ fontSize: 7, color: accent, letterSpacing: "0.2em", fontWeight: 800 }}>
+              FINISHER
+            </div>
+            <div className="mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", lineHeight: 1.35 }}>
+              {finishers[0]}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -375,12 +627,24 @@ export function Daily() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
 
+  // Single ad-overlay state machine — `purpose` discriminates between the
+  // pick-point bonus ad (existing) and the streak-shield rescue ad (new).
+  // Keeping them on one overlay means only one fullscreen modal can be active
+  // and we reuse the same render/teardown plumbing.
+  type AdPurpose =
+    | { kind: "pick-point"; afterPick?: { matchupId: string; side: 1 | 2 } }
+    | { kind: "shield"; pickId: number };
   const [adState, setAdState] = useState<
     | { kind: "idle" }
-    | { kind: "watching"; secondsLeft: number; afterPick?: { matchupId: string; side: 1 | 2 } }
-    | { kind: "granting" }
+    | { kind: "watching"; secondsLeft: number; purpose: AdPurpose }
+    | { kind: "granting"; purpose: AdPurpose }
   >({ kind: "idle" });
   const [outOfPointsToast, setOutOfPointsToast] = useState(false);
+  // Pick review modal — tapping a fighter opens this with a preselected side;
+  // the user can switch sides inside the modal before confirming via "Lock In".
+  const [reviewMatchup, setReviewMatchup] = useState<
+    { matchup: DailyMatchup; preselectedSide: 1 | 2 } | null
+  >(null);
 
   async function pick(matchupId: string, side: 1 | 2) {
     if (!isSignedIn || pickingId) return;
@@ -423,10 +687,26 @@ export function Daily() {
     setAdState({
       kind: "watching",
       secondsLeft: AD_SECONDS,
-      afterPick:
-        opts?.afterPickMatchupId && opts?.afterPickSide
-          ? { matchupId: opts.afterPickMatchupId, side: opts.afterPickSide }
-          : undefined,
+      purpose: {
+        kind: "pick-point",
+        afterPick:
+          opts?.afterPickMatchupId && opts?.afterPickSide
+            ? { matchupId: opts.afterPickMatchupId, side: opts.afterPickSide }
+            : undefined,
+      },
+    });
+  }
+
+  // Streak-shield ad: 10s (longer than the pick-point ad, since the reward is
+  // bigger — rescuing a streak). On completion, POST /api/me/streak-shield
+  // with the recoverable pickId, then reload `me` so the streak number jumps.
+  function startShieldAd(pickId: number) {
+    if (!isSignedIn) return;
+    const AD_SECONDS = 10;
+    setAdState({
+      kind: "watching",
+      secondsLeft: AD_SECONDS,
+      purpose: { kind: "shield", pickId },
     });
   }
 
@@ -435,17 +715,40 @@ export function Daily() {
   useEffect(() => {
     if (adState.kind !== "watching") return;
     if (adState.secondsLeft <= 0) {
-      const afterPick = adState.afterPick;
-      setAdState({ kind: "granting" });
+      const purpose = adState.purpose;
+      setAdState({ kind: "granting", purpose });
       (async () => {
         try {
-          const r = await apiFetch("/api/daily/watch-ad", { method: "POST" });
-          const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
-          if (data?.pickPoints) {
-            setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
-          }
-          if (r.ok && afterPick) {
-            await pick(afterPick.matchupId, afterPick.side);
+          if (purpose.kind === "pick-point") {
+            const r = await apiFetch("/api/daily/watch-ad", { method: "POST" });
+            const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
+            if (data?.pickPoints) {
+              setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
+            }
+            if (r.ok && purpose.afterPick) {
+              await pick(purpose.afterPick.matchupId, purpose.afterPick.side);
+            }
+          } else {
+            // Shield: tell the server to consume the user's weekly shield
+            // against the previously-identified recoverable pick. Then refresh
+            // `me` so the streak number reflects the rescued chain. The
+            // server is the source of truth: on 409 (cooldown / already
+            // shielded) we silently let `reload()` re-pull the canonical
+            // shield state — the CTA will hide itself if no shield is
+            // available anymore, which is the correct UX.
+            const sr = await apiFetch("/api/me/streak-shield", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pickId: purpose.pickId }),
+            }).catch(() => null);
+            if (sr && !sr.ok && sr.status === 409) {
+              // Surface a brief notice via the existing out-of-points toast
+              // slot — repurposed as a generic "couldn't apply" hint. Cleared
+              // on the next interaction or after reload.
+              setOutOfPointsToast(true);
+              setTimeout(() => setOutOfPointsToast(false), 3000);
+            }
+            reload();
           }
         } finally {
           setAdState({ kind: "idle" });
@@ -529,6 +832,41 @@ export function Daily() {
             </div>
           )}
         </div>
+        {/* Streak shield CTA — surfaces only when the server says a shield is
+            ready AND there's an unshielded loss worth rescuing. Tapping fires
+            the 10-second ad flow, then the server-side endpoint nullifies the
+            loss for streak purposes. */}
+        {isSignedIn && me?.streakShield.available && me.streakShield.recoverablePickId !== null && (
+          <button
+            onClick={() => startShieldAd(me.streakShield.recoverablePickId!)}
+            disabled={adState.kind !== "idle"}
+            className="w-full mt-2 px-3 py-2 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(0,180,255,0.18), rgba(0,120,255,0.06))",
+              border: "1.5px solid rgba(0,180,255,0.55)",
+              color: "#5ec8ff",
+              fontSize: 10,
+              fontWeight: 900,
+              letterSpacing: "0.18em",
+            }}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            SAVE STREAK · {me.streakShield.recoverableStreakLength}
+            <span style={{ fontSize: 8, opacity: 0.7, letterSpacing: "0.12em" }}>
+              (10s AD)
+            </span>
+          </button>
+        )}
+        {/* Shield-on-cooldown caption — tells the user when their next free
+            shield will be available so they know the feature exists. */}
+        {isSignedIn && me && !me.streakShield.cooldownReady && me.streakShield.nextAvailableAt && (
+          <div
+            className="mt-2 text-center"
+            style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontWeight: 700 }}
+          >
+            🛡 NEXT SHIELD: {new Date(me.streakShield.nextAvailableAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </div>
+        )}
         {/* Pick-points strip — only shown when signed in. Visualizes 3 base
             pips + any bonus pips earned via ads, filled = remaining. */}
         {isSignedIn && daily?.pickPoints && (
@@ -636,7 +974,12 @@ export function Daily() {
                   characterMap={characterMap}
                   isSignedIn={!!isSignedIn}
                   picking={pickingId === m.matchupId}
-                  onPick={pick}
+                  // Tapping a pick button no longer locks immediately — it
+                  // opens the review modal with the tapped side preselected.
+                  onPick={(matchupId, side) => {
+                    const found = matchups.find((x) => x.matchupId === matchupId);
+                    if (found) setReviewMatchup({ matchup: found, preselectedSide: side });
+                  }}
                   onWatch={watchFight}
                 />
               ))
@@ -726,6 +1069,24 @@ export function Daily() {
           </button>
         </div>
       )}
+      {/* Pick review modal — opens when the user taps a pick button. Shows both
+          fighters' stats/abilities side-by-side and gates the actual lock-in
+          behind an explicit confirm so users can rethink without burning a
+          pick point on a misclick. */}
+      {reviewMatchup && (
+        <PickReviewModal
+          matchup={reviewMatchup.matchup}
+          initialSide={reviewMatchup.preselectedSide}
+          characterMap={characterMap}
+          picking={pickingId === reviewMatchup.matchup.matchupId}
+          onCancel={() => setReviewMatchup(null)}
+          onConfirm={async (side) => {
+            const mid = reviewMatchup.matchup.matchupId;
+            setReviewMatchup(null);
+            await pick(mid, side);
+          }}
+        />
+      )}
       {/* Ad-watching overlay */}
       {adState.kind !== "idle" && (
         <div
@@ -736,7 +1097,13 @@ export function Daily() {
             className="font-display uppercase mb-4"
             style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.3em", fontWeight: 800 }}
           >
-            {adState.kind === "watching" ? "Ad Playing" : "Granting Bonus…"}
+            {adState.kind === "watching"
+              ? adState.purpose.kind === "shield"
+                ? "Saving Your Streak"
+                : "Ad Playing"
+              : adState.purpose.kind === "shield"
+                ? "Applying Shield…"
+                : "Granting Bonus…"}
           </div>
           <div
             className="flex items-center justify-center mb-6"
@@ -763,8 +1130,12 @@ export function Daily() {
             style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em", textAlign: "center", maxWidth: 280 }}
           >
             {adState.kind === "watching"
-              ? "Thanks for supporting A.v.A — earning +1 pick point."
-              : "Crediting your account…"}
+              ? adState.purpose.kind === "shield"
+                ? "Watch the full ad to rescue your streak."
+                : "Thanks for supporting A.v.A — earning +1 pick point."
+              : adState.purpose.kind === "shield"
+                ? "Re-linking your streak…"
+                : "Crediting your account…"}
           </div>
         </div>
       )}
