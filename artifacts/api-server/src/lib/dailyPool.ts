@@ -76,14 +76,59 @@ export function getDailyDateString(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
-export function getDailyMatchupForDate(dateStr: string): DailyPoolEntry {
-  // Days since epoch from the date string — stable per date, independent of
-  // timezone of the server process.
-  const epochDays = Math.floor(Date.UTC(
+// How many matchups appear in the daily lineup. Players see this many fresh
+// fights every day to pick from.
+export const DAILY_LINEUP_SIZE = 10;
+
+function epochDaysFromDate(dateStr: string): number {
+  return Math.floor(Date.UTC(
     Number(dateStr.slice(0, 4)),
     Number(dateStr.slice(5, 7)) - 1,
     Number(dateStr.slice(8, 10)),
   ) / 86400000);
-  const idx = ((epochDays % DAILY_POOL.length) + DAILY_POOL.length) % DAILY_POOL.length;
-  return DAILY_POOL[idx]!;
+}
+
+// mulberry32 — a small, fast, well-distributed 32-bit PRNG. Identical seed
+// always produces an identical sequence, which is what makes the daily shuffle
+// reproducible across servers and clients.
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Deterministic, unbiased seeded shuffle keyed by the day index. Same date
+// everywhere in the world → same N matchups in the same order. Uses a
+// Fisher–Yates shuffle driven by mulberry32 seeded from epoch days so each
+// entry has equal long-run probability of appearing on any given day (unlike
+// the previous hash-and-sort approach, which biased some entries 2x).
+export function getDailyMatchupsForDate(
+  dateStr: string,
+  count: number = DAILY_LINEUP_SIZE,
+): DailyPoolEntry[] {
+  const day = epochDaysFromDate(dateStr);
+  // Mix the day with a large odd constant so neighbouring days produce very
+  // different PRNG streams (avoids near-identical lineups on consecutive days).
+  const rng = mulberry32(Math.imul(day + 1, 2654435761));
+  const arr = DAILY_POOL.slice();
+  // Fisher–Yates from the end. Swap each i with a random j in [0, i].
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = arr[i]!;
+    arr[i] = arr[j]!;
+    arr[j] = tmp;
+  }
+  return arr.slice(0, Math.min(count, arr.length));
+}
+
+// Single-matchup helper kept for backwards compatibility with any callers
+// that still expect today's "featured" pick — returns the first of the daily
+// lineup (deterministic per date).
+export function getDailyMatchupForDate(dateStr: string): DailyPoolEntry {
+  return getDailyMatchupsForDate(dateStr, 1)[0]!;
 }

@@ -5,8 +5,7 @@ import { useUser, SignInButton } from "@clerk/react";
 import { useListCharacters, Character } from "@workspace/api-client-react";
 import { apiFetch } from "@/lib/api-fetch";
 
-type DailyResponse = {
-  date: string;
+type DailyMatchup = {
   matchupId: string;
   title: string;
   hook: string;
@@ -18,13 +17,15 @@ type DailyResponse = {
   team2Count: number;
 };
 
+type DailyResponse = { date: string; matchups: DailyMatchup[] };
+
 type MeDailyResponse = {
   totalPicks: number;
   resolvedPicks: number;
   correct: number;
   currentStreak: number;
   longestStreak: number;
-  recent: { date: string; pickedSide: number; winnerSide: number | null }[];
+  recent: { date: string; matchupId: string; pickedSide: number; winnerSide: number | null }[];
 };
 
 type LeaderboardResponse = {
@@ -32,6 +33,8 @@ type LeaderboardResponse = {
 };
 
 // ── Tile shown on the home page (compact) ────────────────────────────────────
+// Shows how many of today's 10 matchups still need a pick. Becomes a result
+// summary ("3/10 correct") once enough verdicts are in.
 export function DailyMatchupHomeTile() {
   const [daily, setDaily] = useState<DailyResponse | null>(null);
   useEffect(() => {
@@ -47,10 +50,26 @@ export function DailyMatchupHomeTile() {
     };
   }, []);
 
-  if (!daily) return null;
-  const resolved = daily.winnerSide !== null;
-  const userPicked = daily.userPick !== null;
-  const userCorrect = resolved && userPicked && daily.userPick === daily.winnerSide;
+  if (!daily || daily.matchups.length === 0) return null;
+
+  const total = daily.matchups.length;
+  const picked = daily.matchups.filter((m) => m.userPick !== null).length;
+  const resolved = daily.matchups.filter(
+    (m) => m.userPick !== null && m.winnerSide !== null,
+  );
+  const wins = resolved.filter((m) => m.userPick === m.winnerSide).length;
+  const remaining = total - picked;
+
+  let label: string;
+  let color = "#ffc800";
+  if (resolved.length > 0 && remaining === 0) {
+    label = `${wins}/${resolved.length} CORRECT`;
+    color = wins >= resolved.length / 2 ? "#22c55e" : "#ff0055";
+  } else if (picked === 0) {
+    label = `${total} NEW FIGHTS`;
+  } else {
+    label = `${remaining} LEFT TO PICK`;
+  }
 
   return (
     <Link href="/daily">
@@ -63,42 +82,22 @@ export function DailyMatchupHomeTile() {
         }}
       >
         <Calendar className="w-3.5 h-3.5" style={{ color: "#ffc800" }} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.18em", color: "#ffc800" }}>
-              DAILY
-            </span>
-            <span className="truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>
-              {daily.title}
-            </span>
-          </div>
-        </div>
-        {userPicked ? (
-          resolved ? (
-            <span
-              className="flex items-center gap-0.5"
-              style={{ fontSize: 9, fontWeight: 800, color: userCorrect ? "#22c55e" : "#ff0055" }}
-            >
-              {userCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-              {userCorrect ? "WON" : "LOST"}
-            </span>
-          ) : (
-            <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>
-              LOCKED
-            </span>
-          )
-        ) : (
-          <span style={{ fontSize: 9, fontWeight: 900, color: "#ffc800", letterSpacing: "0.1em" }}>
-            PICK NOW →
-          </span>
-        )}
+        <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.18em", color: "#ffc800" }}>
+          DAILY
+        </span>
+        <span className="flex-1 truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 700 }}>
+          {daily.matchups[0]?.title}
+        </span>
+        <span style={{ fontSize: 9, fontWeight: 900, color, letterSpacing: "0.12em" }}>
+          {label}
+        </span>
       </div>
     </Link>
   );
 }
 
-// ── Fighter portrait stack ───────────────────────────────────────────────────
-function TeamSide({
+// ── Fighter portrait stack (compact, for list row) ──────────────────────────
+function TeamPortraits({
   characters,
   side,
   picked,
@@ -114,38 +113,214 @@ function TeamSide({
   const color = side === "left" ? "#00f0ff" : "#ff3b30";
   const accent = isWinner ? "#ffc800" : isLoser ? "rgba(255,255,255,0.2)" : color;
   return (
-    <div className="flex flex-col items-center gap-2 flex-1">
-      <div className="flex gap-1 flex-wrap justify-center">
-        {characters.map((c, i) => (
-          <div
-            key={i}
-            className="relative overflow-hidden"
+    <div className="flex gap-1 flex-wrap justify-center">
+      {characters.map((c, i) => (
+        <div
+          key={i}
+          className="relative overflow-hidden flex-shrink-0"
+          style={{
+            width: 48,
+            height: 60,
+            border: `1.5px solid ${accent}${picked || isWinner ? "" : "70"}`,
+            boxShadow: picked ? `0 0 12px ${accent}55` : "none",
+            opacity: isLoser ? 0.45 : 1,
+          }}
+        >
+          {c?.imageUrl ? (
+            <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />
+          ) : (
+            <div className="w-full h-full" style={{ background: `${color}15` }} />
+          )}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%)" }} />
+          <div className="absolute bottom-0.5 left-0 right-0 text-center">
+            <span style={{ fontSize: 6.5, fontWeight: 900, color: "white", letterSpacing: "0.04em" }}>
+              {c?.name?.split(" ").slice(0, 2).join(" ") ?? "?"}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Single matchup card (one row in the daily list) ─────────────────────────
+function MatchupCard({
+  matchup,
+  characterMap,
+  isSignedIn,
+  picking,
+  onPick,
+  onWatch,
+}: {
+  matchup: DailyMatchup;
+  characterMap: Map<number, Character>;
+  isSignedIn: boolean;
+  picking: boolean;
+  onPick: (matchupId: string, side: 1 | 2) => void;
+  onWatch: (m: DailyMatchup) => void;
+}) {
+  const t1 = matchup.team1Ids.map((id) => characterMap.get(id));
+  const t2 = matchup.team2Ids.map((id) => characterMap.get(id));
+  const totalVotes = matchup.team1Count + matchup.team2Count;
+  const t1Pct = totalVotes ? Math.round((matchup.team1Count / totalVotes) * 100) : 50;
+  const t2Pct = 100 - t1Pct;
+  const resolved = matchup.winnerSide !== null;
+  const userCorrect = resolved && matchup.userPick === matchup.winnerSide;
+  const picked = matchup.userPick !== null;
+
+  return (
+    <div
+      className="flex flex-col gap-3 p-3"
+      style={{
+        background: resolved
+          ? userCorrect
+            ? "rgba(34,197,94,0.05)"
+            : picked
+              ? "rgba(255,0,85,0.05)"
+              : "rgba(255,255,255,0.025)"
+          : "rgba(255,255,255,0.025)",
+        border: `1px solid ${
+          resolved
+            ? userCorrect
+              ? "rgba(34,197,94,0.35)"
+              : picked
+                ? "rgba(255,0,85,0.3)"
+                : "rgba(255,255,255,0.06)"
+            : picked
+              ? "rgba(255,200,0,0.3)"
+              : "rgba(255,255,255,0.06)"
+        }`,
+      }}
+    >
+      {/* Title */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display uppercase truncate" style={{ fontSize: 13, color: "white", letterSpacing: "0.08em", lineHeight: 1.2 }}>
+            {matchup.title}
+          </h3>
+          <p className="truncate" style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontStyle: "italic", marginTop: 2 }}>
+            {matchup.hook}
+          </p>
+        </div>
+        {resolved && picked && (
+          <span
+            className="flex items-center gap-0.5 flex-shrink-0"
             style={{
-              width: 60,
-              height: 76,
-              border: `2px solid ${accent}${isWinner ? "" : picked ? "" : "60"}`,
-              boxShadow: picked ? `0 0 18px ${accent}50` : `0 0 8px ${color}20`,
-              opacity: isLoser ? 0.5 : 1,
+              fontSize: 9,
+              fontWeight: 900,
+              color: userCorrect ? "#22c55e" : "#ff0055",
+              letterSpacing: "0.1em",
             }}
           >
-            {c?.imageUrl ? (
-              <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover object-top" />
-            ) : (
-              <div className="w-full h-full" style={{ background: `${color}15` }} />
-            )}
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%)" }} />
-            <div className="absolute bottom-1 left-0 right-0 text-center">
-              <span style={{ fontSize: 7, fontWeight: 900, color: "white", letterSpacing: "0.05em" }}>
-                {c?.name?.split(" ").slice(0, 2).join(" ") ?? "?"}
-              </span>
-            </div>
-          </div>
-        ))}
+            {userCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+            {userCorrect ? "WON" : "LOST"}
+          </span>
+        )}
+        {resolved && !picked && (
+          <span style={{ fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em" }}>
+            CLOSED
+          </span>
+        )}
+        {!resolved && picked && (
+          <span style={{ fontSize: 8, fontWeight: 900, color: "#ffc800", letterSpacing: "0.12em" }}>
+            LOCKED
+          </span>
+        )}
       </div>
-      {picked && (
-        <span style={{ fontSize: 8, fontWeight: 900, color: accent, letterSpacing: "0.15em" }}>
-          YOUR PICK
-        </span>
+
+      {/* Teams */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex justify-center">
+          <TeamPortraits
+            characters={t1}
+            side="left"
+            picked={matchup.userPick === 1}
+            isWinner={resolved && matchup.winnerSide === 1}
+            isLoser={resolved && matchup.winnerSide === 2}
+          />
+        </div>
+        <div className="font-display font-black italic" style={{ fontSize: 16, color: "rgba(255,255,255,0.2)" }}>
+          VS
+        </div>
+        <div className="flex-1 flex justify-center">
+          <TeamPortraits
+            characters={t2}
+            side="right"
+            picked={matchup.userPick === 2}
+            isWinner={resolved && matchup.winnerSide === 2}
+            isLoser={resolved && matchup.winnerSide === 1}
+          />
+        </div>
+      </div>
+
+      {/* Pick buttons / locked state */}
+      {isSignedIn && !picked && !resolved && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={picking}
+            onClick={() => onPick(matchup.matchupId, 1)}
+            className="py-2 active:scale-95 transition-all flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.04))",
+              border: "1px solid rgba(0,240,255,0.45)",
+              color: "#00f0ff",
+              fontSize: 10,
+              fontWeight: 900,
+              letterSpacing: "0.18em",
+            }}
+          >
+            {picking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "PICK T1"}
+          </button>
+          <button
+            disabled={picking}
+            onClick={() => onPick(matchup.matchupId, 2)}
+            className="py-2 active:scale-95 transition-all flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,59,48,0.15), rgba(255,59,48,0.04))",
+              border: "1px solid rgba(255,59,48,0.45)",
+              color: "#ff3b30",
+              fontSize: 10,
+              fontWeight: 900,
+              letterSpacing: "0.18em",
+            }}
+          >
+            {picking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "PICK T2"}
+          </button>
+        </div>
+      )}
+
+      {/* Community split — only shown when there are votes */}
+      {totalVotes > 0 && (
+        <div>
+          <div className="flex justify-between mb-1" style={{ fontSize: 8, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", fontWeight: 800 }}>
+            <span>T1 · {t1Pct}%</span>
+            <span>{totalVotes} VOTES</span>
+            <span>{t2Pct}% · T2</span>
+          </div>
+          <div className="h-1.5 overflow-hidden flex" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div style={{ width: `${t1Pct}%`, background: "#00f0ff" }} />
+            <div style={{ width: `${t2Pct}%`, background: "#ff3b30" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Watch fight CTA (only when user picked + not resolved) */}
+      {picked && !resolved && (
+        <button
+          onClick={() => onWatch(matchup)}
+          className="w-full py-2 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,0,85,0.18), rgba(255,0,85,0.06))",
+            border: "1px solid rgba(255,0,85,0.45)",
+            color: "#ff0055",
+            fontSize: 10,
+            fontWeight: 900,
+            letterSpacing: "0.18em",
+          }}
+        >
+          <Swords className="w-3.5 h-3.5" />
+          RUN THE FIGHT
+        </button>
       )}
     </div>
   );
@@ -165,7 +340,7 @@ export function Daily() {
   const [daily, setDaily] = useState<DailyResponse | null>(null);
   const [me, setMe] = useState<MeDailyResponse | null>(null);
   const [board, setBoard] = useState<LeaderboardResponse | null>(null);
-  const [picking, setPicking] = useState(false);
+  const [pickingId, setPickingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"matchup" | "leaderboard">("matchup");
 
   const reload = () => {
@@ -190,25 +365,24 @@ export function Daily() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
 
-  async function pick(side: 1 | 2) {
-    if (!isSignedIn || picking || daily?.userPick) return;
-    setPicking(true);
+  async function pick(matchupId: string, side: 1 | 2) {
+    if (!isSignedIn || pickingId) return;
+    setPickingId(matchupId);
     try {
       await apiFetch("/api/daily/pick", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ side }),
+        body: JSON.stringify({ matchupId, side }),
       });
       reload();
     } finally {
-      setPicking(false);
+      setPickingId(null);
     }
   }
 
-  function watchFight() {
-    if (!daily) return;
-    const team1 = daily.team1Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
-    const team2 = daily.team2Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
+  function watchFight(matchup: DailyMatchup) {
+    const team1 = matchup.team1Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
+    const team2 = matchup.team2Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
     if (team1.length === 0 || team2.length === 0) return;
     try {
       localStorage.setItem(
@@ -221,13 +395,10 @@ export function Daily() {
     navigate("/");
   }
 
-  const t1 = daily?.team1Ids.map((id) => characterMap.get(id)) ?? [];
-  const t2 = daily?.team2Ids.map((id) => characterMap.get(id)) ?? [];
-  const totalVotes = (daily?.team1Count ?? 0) + (daily?.team2Count ?? 0);
-  const t1Pct = totalVotes ? Math.round(((daily?.team1Count ?? 0) / totalVotes) * 100) : 50;
-  const t2Pct = 100 - t1Pct;
-  const resolved = daily?.winnerSide !== null && daily?.winnerSide !== undefined;
-  const userCorrect = resolved && daily?.userPick === daily?.winnerSide;
+  const matchups = daily?.matchups ?? [];
+  const pickedCount = matchups.filter((m) => m.userPick !== null).length;
+  const resolvedOwn = matchups.filter((m) => m.userPick !== null && m.winnerSide !== null);
+  const correctToday = resolvedOwn.filter((m) => m.userPick === m.winnerSide).length;
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: "#0a0a0f" }}>
@@ -236,21 +407,29 @@ export function Daily() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="font-display text-2xl uppercase tracking-[0.2em]" style={{ color: "#ffc800", lineHeight: 1 }}>
-              Daily Matchup
+              Daily Matchups
             </h1>
             <p className="mt-1" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
-              {daily?.date ?? "—"} · NEW FIGHT EVERY DAY
+              {daily?.date ?? "—"} · 10 NEW FIGHTS EVERY DAY
             </p>
           </div>
           {me && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", fontWeight: 800 }}>
+                  TODAY
+                </div>
+                <div className="font-display" style={{ fontSize: 16, color: "white", lineHeight: 1, fontWeight: 900 }}>
+                  {pickedCount}/{matchups.length || 10}
+                </div>
+              </div>
               <div className="text-right">
                 <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", fontWeight: 800 }}>
                   STREAK
                 </div>
                 <div className="flex items-center gap-1 justify-end">
                   <Flame className="w-3 h-3" style={{ color: "#ff6b35" }} />
-                  <span className="font-display" style={{ fontSize: 18, color: "#ffc800", lineHeight: 1, fontWeight: 900 }}>
+                  <span className="font-display" style={{ fontSize: 16, color: "#ffc800", lineHeight: 1, fontWeight: 900 }}>
                     {me.currentStreak}
                   </span>
                 </div>
@@ -283,55 +462,24 @@ export function Daily() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        {tab === "matchup" && daily && (
-          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-            {/* Title card */}
-            <div className="text-center">
-              <h2 className="font-display uppercase" style={{ fontSize: 18, color: "white", letterSpacing: "0.1em", lineHeight: 1.2 }}>
-                {daily.title}
-              </h2>
-              <p className="mt-2" style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, fontStyle: "italic" }}>
-                {daily.hook}
-              </p>
-            </div>
-
-            {/* Matchup */}
-            <div
-              className="flex items-center gap-3 py-4 px-3"
-              style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,200,0,0.15)",
-              }}
-            >
-              <TeamSide
-                characters={t1}
-                side="left"
-                picked={daily.userPick === 1}
-                isWinner={resolved && daily.winnerSide === 1}
-                isLoser={resolved && daily.winnerSide === 2}
-              />
-              <div className="font-display font-black italic" style={{ fontSize: 24, color: "rgba(255,255,255,0.2)" }}>
-                VS
-              </div>
-              <TeamSide
-                characters={t2}
-                side="right"
-                picked={daily.userPick === 2}
-                isWinner={resolved && daily.winnerSide === 2}
-                isLoser={resolved && daily.winnerSide === 1}
-              />
-            </div>
-
-            {/* Pick / result */}
-            {!isSignedIn ? (
-              <div className="text-center py-4">
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>
-                  Sign in to lock in your daily pick.
+      <div className="flex-1 overflow-y-auto p-3">
+        {tab === "matchup" && (
+          <div className="max-w-2xl mx-auto flex flex-col gap-3">
+            {/* Sign-in CTA for guests */}
+            {!isSignedIn && (
+              <div
+                className="text-center py-4 px-3"
+                style={{
+                  background: "rgba(255,200,0,0.06)",
+                  border: "1px solid rgba(255,200,0,0.3)",
+                }}
+              >
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 10 }}>
+                  Sign in to lock in your daily picks and climb the leaderboard.
                 </p>
                 <SignInButton mode="modal">
                   <button
-                    className="px-6 py-2.5 font-display uppercase tracking-widest active:scale-95 transition-all"
+                    className="px-6 py-2 font-display uppercase tracking-widest active:scale-95 transition-all"
                     style={{
                       background: "linear-gradient(135deg, rgba(255,200,0,0.2), rgba(255,200,0,0.08))",
                       border: "1.5px solid rgba(255,200,0,0.6)",
@@ -345,141 +493,35 @@ export function Daily() {
                   </button>
                 </SignInButton>
               </div>
-            ) : daily.userPick === null && resolved ? (
-              <div
-                className="text-center py-4 px-3"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                <div className="font-display uppercase" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", fontWeight: 900, letterSpacing: "0.18em" }}>
-                  Picks Closed
-                </div>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
-                  The verdict is already in for today. Come back tomorrow.
-                </p>
-              </div>
-            ) : daily.userPick === null ? (
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  disabled={picking}
-                  onClick={() => pick(1)}
-                  className="py-4 active:scale-95 transition-all flex flex-col items-center gap-1"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(0,240,255,0.18), rgba(0,240,255,0.05))",
-                    border: "1.5px solid rgba(0,240,255,0.5)",
-                    color: "#00f0ff",
-                    fontFamily: "var(--font-display, inherit)",
-                    fontSize: 11,
-                    fontWeight: 900,
-                    letterSpacing: "0.2em",
-                  }}
-                >
-                  {picking ? <Loader2 className="w-4 h-4 animate-spin" /> : "PICK TEAM 1"}
-                </button>
-                <button
-                  disabled={picking}
-                  onClick={() => pick(2)}
-                  className="py-4 active:scale-95 transition-all flex flex-col items-center gap-1"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255,59,48,0.18), rgba(255,59,48,0.05))",
-                    border: "1.5px solid rgba(255,59,48,0.5)",
-                    color: "#ff3b30",
-                    fontFamily: "var(--font-display, inherit)",
-                    fontSize: 11,
-                    fontWeight: 900,
-                    letterSpacing: "0.2em",
-                  }}
-                >
-                  {picking ? <Loader2 className="w-4 h-4 animate-spin" /> : "PICK TEAM 2"}
-                </button>
-              </div>
-            ) : (
-              <div
-                className="text-center py-4 px-3"
-                style={{
-                  background: resolved
-                    ? userCorrect
-                      ? "rgba(34,197,94,0.1)"
-                      : "rgba(255,0,85,0.1)"
-                    : "rgba(255,200,0,0.06)",
-                  border: `1.5px solid ${
-                    resolved ? (userCorrect ? "rgba(34,197,94,0.5)" : "rgba(255,0,85,0.5)") : "rgba(255,200,0,0.3)"
-                  }`,
-                }}
-              >
-                {resolved ? (
-                  <>
-                    <div
-                      className="font-display uppercase"
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 900,
-                        letterSpacing: "0.2em",
-                        color: userCorrect ? "#22c55e" : "#ff0055",
-                      }}
-                    >
-                      {userCorrect ? "✓ You called it" : "✗ Wrong pick"}
-                    </div>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 4, letterSpacing: "0.08em" }}>
-                      Come back tomorrow for a new matchup.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="font-display uppercase" style={{ fontSize: 14, color: "#ffc800", fontWeight: 900, letterSpacing: "0.18em" }}>
-                      Pick Locked
-                    </div>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
-                      Run the fight to reveal the verdict.
-                    </p>
-                  </>
-                )}
-              </div>
             )}
 
-            {/* Community split */}
-            {totalVotes > 0 && (
-              <div>
-                <div className="flex justify-between mb-1.5" style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", letterSpacing: "0.15em", fontWeight: 800 }}>
-                  <span>TEAM 1 · {t1Pct}%</span>
-                  <span>{totalVotes} VOTES</span>
-                  <span>{t2Pct}% · TEAM 2</span>
-                </div>
-                <div className="h-2 overflow-hidden flex" style={{ background: "rgba(255,255,255,0.05)" }}>
-                  <div style={{ width: `${t1Pct}%`, background: "#00f0ff" }} />
-                  <div style={{ width: `${t2Pct}%`, background: "#ff3b30" }} />
-                </div>
-              </div>
-            )}
-
-            {/* Watch fight */}
-            {daily.userPick !== null && !resolved && (
-              <button
-                onClick={watchFight}
-                className="w-full py-3 flex items-center justify-center gap-2 active:scale-95 transition-all"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,0,85,0.2), rgba(255,0,85,0.08))",
-                  border: "1.5px solid rgba(255,0,85,0.5)",
-                  color: "#ff0055",
-                  fontSize: 11,
-                  fontWeight: 900,
-                  letterSpacing: "0.2em",
-                }}
-              >
-                <Swords className="w-4 h-4" />
-                RUN THE FIGHT
-              </button>
-            )}
-
-            {/* User stats */}
+            {/* Personal stats strip */}
             {me && me.totalPicks > 0 && (
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                <Stat label="PICKED" value={me.totalPicks} />
-                <Stat label="CORRECT" value={`${me.correct}/${me.resolvedPicks}`} />
-                <Stat label="BEST STREAK" value={me.longestStreak} />
+              <div className="grid grid-cols-4 gap-2">
+                <Stat label="TODAY" value={pickedCount} />
+                <Stat label="WINS NOW" value={`${correctToday}/${resolvedOwn.length}`} />
+                <Stat label="ALL-TIME" value={`${me.correct}/${me.resolvedPicks}`} />
+                <Stat label="BEST" value={me.longestStreak} />
               </div>
+            )}
+
+            {/* Matchup list */}
+            {matchups.length === 0 ? (
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "32px 0" }}>
+                Loading today's fights…
+              </p>
+            ) : (
+              matchups.map((m) => (
+                <MatchupCard
+                  key={m.matchupId}
+                  matchup={m}
+                  characterMap={characterMap}
+                  isSignedIn={!!isSignedIn}
+                  picking={pickingId === m.matchupId}
+                  onPick={pick}
+                  onWatch={watchFight}
+                />
+              ))
             )}
           </div>
         )}
@@ -540,10 +582,10 @@ function Stat({ label, value }: { label: string; value: number | string }) {
         border: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div className="font-display" style={{ fontSize: 18, color: "#ffc800", fontWeight: 900, lineHeight: 1 }}>
+      <div className="font-display" style={{ fontSize: 16, color: "#ffc800", fontWeight: 900, lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)", marginTop: 4, letterSpacing: "0.15em", fontWeight: 800 }}>
+      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)", marginTop: 4, letterSpacing: "0.12em", fontWeight: 800 }}>
         {label}
       </div>
     </div>

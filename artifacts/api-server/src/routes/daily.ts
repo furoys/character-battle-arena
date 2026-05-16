@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import {
   db,
   dailyMatchupsTable,
@@ -10,7 +10,7 @@ import { getOptionalUserId, requireAuth } from "../lib/auth";
 import {
   DAILY_POOL,
   getDailyDateString,
-  getDailyMatchupForDate,
+  getDailyMatchupsForDate,
 } from "../lib/dailyPool";
 
 const router: IRouter = Router();
@@ -30,27 +30,29 @@ function buildCacheKey(team1: number[], team2: number[]): {
   };
 }
 
-// Ensure the daily_matchups row exists for `date`. Picks the deterministic
-// matchup from DAILY_POOL on the first call of the day.
-async function ensureDailyRow(date: string) {
-  const existing = await db
-    .select()
-    .from(dailyMatchupsTable)
-    .where(eq(dailyMatchupsTable.date, date))
-    .limit(1);
-  if (existing[0]) return existing[0];
-  const pick = getDailyMatchupForDate(date);
-  // Insert with ON CONFLICT DO NOTHING so racing requests at midnight don't
-  // both crash trying to create the row.
+// Ensure all 10 daily_matchups rows exist for `date`. Idempotent — concurrent
+// requests at midnight race safely thanks to the unique (date, matchupId)
+// index + onConflictDoNothing.
+async function ensureDailyRows(date: string) {
+  const lineup = getDailyMatchupsForDate(date);
+  // Insert any missing rows in one round-trip.
   await db
     .insert(dailyMatchupsTable)
-    .values({ date, matchupId: pick.id })
+    .values(lineup.map((entry) => ({ date, matchupId: entry.id })))
     .onConflictDoNothing();
-  const [row] = await db
+  const rows = await db
     .select()
     .from(dailyMatchupsTable)
     .where(eq(dailyMatchupsTable.date, date));
-  return row!;
+  // Return in lineup order (DB order isn't guaranteed to match the deterministic
+  // shuffle), and filter to the canonical 10 so any stale rows from a previous
+  // pool revision don't leak into the response.
+  const byId = new Map(rows.map((r) => [r.matchupId, r]));
+  return lineup
+    .map((entry) => ({ entry, row: byId.get(entry.id) }))
+    .filter((x): x is { entry: typeof lineup[number]; row: typeof rows[number] } =>
+      x.row !== undefined,
+    );
 }
 
 // Try to resolve winnerSide by reading the fight verdict cache. If the cache
@@ -58,6 +60,7 @@ async function ensureDailyRow(date: string) {
 // to call on every GET.
 async function tryResolveWinner(
   date: string,
+  matchupId: string,
   team1Ids: number[],
   team2Ids: number[],
   currentWinnerSide: number | null,
@@ -79,97 +82,129 @@ async function tryResolveWinner(
   await db
     .update(dailyMatchupsTable)
     .set({ winnerSide, resolvedAt: new Date() })
-    .where(eq(dailyMatchupsTable.date, date));
+    .where(
+      and(
+        eq(dailyMatchupsTable.date, date),
+        eq(dailyMatchupsTable.matchupId, matchupId),
+      ),
+    );
   return winnerSide;
 }
 
 // ── GET /api/daily ────────────────────────────────────────────────────────────
-// Returns today's matchup + the caller's pick (if signed in) + community split
-// + resolved winner (if any). Open to guests — they just don't get `userPick`.
+// Returns today's 10 matchups + the caller's picks (if signed in) + community
+// split per matchup + resolved winner per matchup. Open to guests — they just
+// don't get any `userPick` values.
 router.get("/daily", async (req, res): Promise<void> => {
   const date = getDailyDateString();
-  const row = await ensureDailyRow(date);
-  const pool = DAILY_POOL.find((p) => p.id === row.matchupId);
-  if (!pool) {
-    // Pool drifted — rare, but don't 500. Reset the row to the canonical
-    // pick for the date so the user sees the right matchup on next load.
-    const fallback = getDailyMatchupForDate(date);
-    await db
-      .update(dailyMatchupsTable)
-      .set({ matchupId: fallback.id, winnerSide: null, resolvedAt: null })
-      .where(eq(dailyMatchupsTable.date, date));
-    res.status(503).json({ error: "Daily matchup unavailable" });
-    return;
-  }
+  const pairs = await ensureDailyRows(date);
+  const matchupIds = pairs.map((p) => p.entry.id);
 
-  // Lazy verdict resolution from the fight cache.
-  const winnerSide = await tryResolveWinner(
-    date,
-    pool.team1Ids,
-    pool.team2Ids,
-    row.winnerSide,
+  // Lazy verdict resolution per matchup (parallel cache lookups).
+  const winners = await Promise.all(
+    pairs.map((p) =>
+      tryResolveWinner(date, p.entry.id, p.entry.team1Ids, p.entry.team2Ids, p.row.winnerSide),
+    ),
   );
 
-  // Caller's pick (only if signed in).
+  // Caller's picks across today's matchups (one query for all 10).
   const userId = getOptionalUserId(req);
-  let userPick: number | null = null;
-  if (userId) {
-    const [pick] = await db
+  let picksByMatchup = new Map<string, number>();
+  if (userId && matchupIds.length > 0) {
+    const picks = await db
       .select()
       .from(dailyPicksTable)
       .where(
-        and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
-      )
-      .limit(1);
-    if (pick) userPick = pick.pickedSide;
+        and(
+          eq(dailyPicksTable.date, date),
+          eq(dailyPicksTable.userId, userId),
+          inArray(dailyPicksTable.matchupId, matchupIds),
+        ),
+      );
+    picksByMatchup = new Map(picks.map((p) => [p.matchupId, p.pickedSide]));
   }
 
-  // Community split (counts only — no PII).
-  const splitRows = await db
-    .select({
-      side: dailyPicksTable.pickedSide,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(dailyPicksTable)
-    .where(eq(dailyPicksTable.date, date))
-    .groupBy(dailyPicksTable.pickedSide);
-  const team1Count = splitRows.find((r) => r.side === 1)?.count ?? 0;
-  const team2Count = splitRows.find((r) => r.side === 2)?.count ?? 0;
+  // Community splits per matchup in one query.
+  const splitRows = matchupIds.length === 0
+    ? []
+    : await db
+        .select({
+          matchupId: dailyPicksTable.matchupId,
+          side: dailyPicksTable.pickedSide,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(dailyPicksTable)
+        .where(
+          and(
+            eq(dailyPicksTable.date, date),
+            inArray(dailyPicksTable.matchupId, matchupIds),
+          ),
+        )
+        .groupBy(dailyPicksTable.matchupId, dailyPicksTable.pickedSide);
+  const splitMap = new Map<string, { t1: number; t2: number }>();
+  for (const r of splitRows) {
+    const cur = splitMap.get(r.matchupId) ?? { t1: 0, t2: 0 };
+    if (r.side === 1) cur.t1 = r.count;
+    else if (r.side === 2) cur.t2 = r.count;
+    splitMap.set(r.matchupId, cur);
+  }
 
   res.json({
     date,
-    matchupId: pool.id,
-    title: pool.title,
-    hook: pool.hook,
-    team1Ids: pool.team1Ids,
-    team2Ids: pool.team2Ids,
-    userPick,
-    winnerSide,
-    team1Count,
-    team2Count,
+    matchups: pairs.map((p, i) => {
+      const split = splitMap.get(p.entry.id) ?? { t1: 0, t2: 0 };
+      return {
+        matchupId: p.entry.id,
+        title: p.entry.title,
+        hook: p.entry.hook,
+        team1Ids: p.entry.team1Ids,
+        team2Ids: p.entry.team2Ids,
+        userPick: picksByMatchup.get(p.entry.id) ?? null,
+        winnerSide: winners[i] ?? null,
+        team1Count: split.t1,
+        team2Count: split.t2,
+      };
+    }),
   });
 });
 
 // ── POST /api/daily/pick ──────────────────────────────────────────────────────
-// Lock a pick for today. Requires sign-in. One pick per user per day.
+// Lock a pick for one of today's matchups. Requires sign-in. One pick per
+// (user, matchup, day) — picks are closed once a matchup's verdict resolves.
 router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
   const userId = (req as typeof req & { userId: string }).userId;
-  const { side } = req.body as { side?: unknown };
+  const { side, matchupId } = req.body as { side?: unknown; matchupId?: unknown };
   if (side !== 1 && side !== 2) {
     res.status(400).json({ error: "side must be 1 or 2" });
     return;
   }
+  if (typeof matchupId !== "string" || matchupId.length === 0) {
+    res.status(400).json({ error: "matchupId is required" });
+    return;
+  }
   const date = getDailyDateString();
-  const row = await ensureDailyRow(date);
+  const lineup = getDailyMatchupsForDate(date);
+  const entry = lineup.find((p) => p.id === matchupId);
+  if (!entry) {
+    // Either an unknown id or one that isn't in today's lineup — clients
+    // should only POST for matchups they got back from GET /api/daily.
+    res.status(404).json({ error: "Matchup not part of today's lineup" });
+    return;
+  }
+  await ensureDailyRows(date);
 
-  // Hard-stop: once the verdict is known (either pre-stored on the row, or
-  // already present in the fight cache), picks are closed. Otherwise users
-  // could wait for the result to publish via GET /api/daily and then submit
-  // a guaranteed-correct pick to inflate streaks and the leaderboard.
-  const pool = DAILY_POOL.find((p) => p.id === row.matchupId);
-  let winnerSide = row.winnerSide;
-  if (winnerSide === null && pool) {
-    winnerSide = await tryResolveWinner(date, pool.team1Ids, pool.team2Ids, null);
+  // Hard-stop: once the verdict is known (pre-stored on the row or already
+  // in the fight cache), picks for this matchup are closed.
+  const [row] = await db
+    .select()
+    .from(dailyMatchupsTable)
+    .where(
+      and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, matchupId)),
+    )
+    .limit(1);
+  let winnerSide = row?.winnerSide ?? null;
+  if (winnerSide === null) {
+    winnerSide = await tryResolveWinner(date, matchupId, entry.team1Ids, entry.team2Ids, null);
   }
   if (winnerSide !== null) {
     res.status(409).json({ error: "Picks closed — verdict already revealed" });
@@ -179,25 +214,26 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
   // Insert; ignore if a pick already exists (locked).
   await db
     .insert(dailyPicksTable)
-    .values({ date, userId, pickedSide: side })
+    .values({ date, matchupId, userId, pickedSide: side })
     .onConflictDoNothing();
 
   const [pick] = await db
     .select()
     .from(dailyPicksTable)
     .where(
-      and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
+      and(
+        eq(dailyPicksTable.date, date),
+        eq(dailyPicksTable.userId, userId),
+        eq(dailyPicksTable.matchupId, matchupId),
+      ),
     )
     .limit(1);
-  res.json({ pickedSide: pick?.pickedSide ?? side });
+  res.json({ matchupId, pickedSide: pick?.pickedSide ?? side });
 });
 
 // ── GET /api/daily/leaderboard ────────────────────────────────────────────────
-// Top users by total correct picks across all resolved daily matchups. Open
-// to everyone (just a list of userIds + counts — Clerk usernames are looked
-// up client-side or via /api/me).
+// Top users by total correct picks across all resolved daily matchups.
 router.get("/daily/leaderboard", async (_req, res): Promise<void> => {
-  // Join picks against resolved matchups, count where pickedSide === winnerSide.
   const rows = await db
     .select({
       userId: dailyPicksTable.userId,
@@ -207,14 +243,15 @@ router.get("/daily/leaderboard", async (_req, res): Promise<void> => {
     .from(dailyPicksTable)
     .innerJoin(
       dailyMatchupsTable,
-      eq(dailyPicksTable.date, dailyMatchupsTable.date),
+      and(
+        eq(dailyPicksTable.date, dailyMatchupsTable.date),
+        eq(dailyPicksTable.matchupId, dailyMatchupsTable.matchupId),
+      ),
     )
     .where(sql`${dailyMatchupsTable.winnerSide} IS NOT NULL`)
     .groupBy(dailyPicksTable.userId)
     .orderBy(
       // Deterministic tie-breakers: correct DESC → accuracy DESC → userId ASC.
-      // Without these, ranking among users tied on `correct` is nondeterministic
-      // across queries (Postgres can return them in any order).
       desc(
         sql`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)`,
       ),
@@ -229,39 +266,60 @@ router.get("/daily/leaderboard", async (_req, res): Promise<void> => {
 });
 
 // ── GET /api/me/daily ─────────────────────────────────────────────────────────
-// Personal daily history for the signed-in user. Used for the streak counter
-// + "Your Stats" tile on the daily page.
+// Personal daily history for the signed-in user. With 10 picks/day, "streak"
+// is a DAILY streak — number of consecutive days where the user went perfect
+// on all of their RESOLVED picks for that day. Days with no resolved picks
+// are skipped (don't extend or break the streak), so unresolved matchups
+// don't punish active players who picked while verdicts were still pending.
 router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
   const userId = (req as typeof req & { userId: string }).userId;
   const rows = await db
     .select({
       date: dailyPicksTable.date,
+      matchupId: dailyPicksTable.matchupId,
       pickedSide: dailyPicksTable.pickedSide,
       winnerSide: dailyMatchupsTable.winnerSide,
+      createdAt: dailyPicksTable.createdAt,
     })
     .from(dailyPicksTable)
     .innerJoin(
       dailyMatchupsTable,
-      eq(dailyPicksTable.date, dailyMatchupsTable.date),
+      and(
+        eq(dailyPicksTable.date, dailyMatchupsTable.date),
+        eq(dailyPicksTable.matchupId, dailyMatchupsTable.matchupId),
+      ),
     )
     .where(eq(dailyPicksTable.userId, userId))
-    .orderBy(desc(dailyPicksTable.date))
-    .limit(60);
+    .orderBy(desc(dailyPicksTable.date), desc(dailyPicksTable.createdAt))
+    .limit(500);
 
-  // Compute streak (consecutive correct from most-recent resolved entry).
+  // Aggregate per-day totals so a single bad pick on a day breaks that day's
+  // perfect run, but partial days (some picks not yet resolved) don't lie
+  // about how the user did.
+  const byDate = new Map<string, { resolvedPicks: number; correct: number }>();
+  let totalCorrect = 0;
+  let totalResolved = 0;
+  for (const r of rows) {
+    if (r.winnerSide === null) continue;
+    totalResolved += 1;
+    const isCorrect = r.pickedSide === r.winnerSide;
+    if (isCorrect) totalCorrect += 1;
+    const cur = byDate.get(r.date) ?? { resolvedPicks: 0, correct: 0 };
+    cur.resolvedPicks += 1;
+    if (isCorrect) cur.correct += 1;
+    byDate.set(r.date, cur);
+  }
+  const datesDesc = [...byDate.keys()].sort().reverse();
   let currentStreak = 0;
   let longestStreak = 0;
   let running = 0;
-  let correct = 0;
-  let resolved = 0;
   let streakBroken = false;
-  for (const r of rows) {
-    if (r.winnerSide === null) continue;
-    resolved += 1;
-    const isCorrect = r.pickedSide === r.winnerSide;
-    if (isCorrect) {
+  for (const date of datesDesc) {
+    const day = byDate.get(date)!;
+    if (day.resolvedPicks === 0) continue;
+    const perfect = day.correct === day.resolvedPicks;
+    if (perfect) {
       running += 1;
-      correct += 1;
       if (!streakBroken) currentStreak = running;
       longestStreak = Math.max(longestStreak, running);
     } else {
@@ -271,11 +329,16 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
   }
   res.json({
     totalPicks: rows.length,
-    resolvedPicks: resolved,
-    correct,
+    resolvedPicks: totalResolved,
+    correct: totalCorrect,
     currentStreak,
     longestStreak,
-    recent: rows.slice(0, 14),
+    recent: rows.slice(0, 20).map((r) => ({
+      date: r.date,
+      matchupId: r.matchupId,
+      pickedSide: r.pickedSide,
+      winnerSide: r.winnerSide,
+    })),
   });
 });
 
