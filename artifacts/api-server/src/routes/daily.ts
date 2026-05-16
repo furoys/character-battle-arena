@@ -239,14 +239,16 @@ router.get("/daily", async (req, res): Promise<void> => {
       const split = splitMap.get(p.entry.id) ?? { t1: 0, t2: 0 };
       const userPick = picksByMatchup.get(p.entry.id) ?? null;
       const globalWinner = winners[i] ?? null;
-      // Per-user verdict visibility: only reveal `winnerSide` to a caller who
-      // has already locked in a pick (or to guests, who can't pick anyway).
-      // Without this, the first user to fight a matchup would set the global
-      // winnerSide and every OTHER user would (a) see the spoiler before
-      // picking and (b) be refused at POST time with "picks closed". Hiding
-      // the winner from un-picked users keeps the pick honest and keeps the
-      // matchup open for them until they lock in.
-      const winnerSide = userId === null || userPick !== null ? globalWinner : null;
+      // Per-user verdict & vote visibility: hide `winnerSide` AND the
+      // community vote split from any signed-in caller who hasn't picked
+      // this matchup yet. Otherwise (a) the first user to fight a matchup
+      // would leak the winner to everyone, and (b) seeing how others voted
+      // is a strong hint that biases an honest prediction. Guests still see
+      // everything (they can't pick anyway, so there's nothing to bias).
+      const revealAll = userId === null || userPick !== null;
+      const winnerSide = revealAll ? globalWinner : null;
+      const team1Count = revealAll ? split.t1 : 0;
+      const team2Count = revealAll ? split.t2 : 0;
       return {
         matchupId: p.entry.id,
         title: p.entry.title,
@@ -255,8 +257,8 @@ router.get("/daily", async (req, res): Promise<void> => {
         team2Ids: p.entry.team2Ids,
         userPick,
         winnerSide,
-        team1Count: split.t1,
-        team2Count: split.t2,
+        team1Count,
+        team2Count,
       };
     }),
   });
@@ -406,20 +408,10 @@ router.post("/daily/watch-ad", requireAuth, async (req, res): Promise<void> => {
     if (current >= DAILY_AD_BONUS_CAP) {
       return { granted: false, reason: "cap" as const, adBonus: current };
     }
-    // Policy: only grant a bonus when the user has actually exhausted their
-    // current allowance (base + already-earned bonus). Stops users from
-    // pre-farming ad credits before they need them.
-    const [countRow] = await tx
-      .select({ count: sql<number>`count(*)::int` })
-      .from(dailyPicksTable)
-      .where(
-        and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
-      );
-    const used = countRow?.count ?? 0;
-    const allowance = DAILY_PICK_POINTS_BASE + current;
-    if (used < allowance) {
-      return { granted: false, reason: "not-exhausted" as const, adBonus: current };
-    }
+    // Always grant the bonus point when under the cap. Previously we only
+    // granted when the user had spent every existing point first, but that
+    // silently failed when users watched an ad pre-emptively or before all
+    // 3 free picks were spent — they got nothing for their 5 seconds.
     const next = current + 1;
     await tx
       .update(dailyAdBonusTable)
