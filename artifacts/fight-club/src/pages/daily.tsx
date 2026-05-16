@@ -466,9 +466,18 @@ export function Daily() {
       // dailyMatchupId tells home.tsx to (a) skip the optimistic energy
       // decrement and (b) include the id in the /fights/stream call so the
       // server's daily bypass kicks in and no energy is consumed.
+      // autoFight tells home.tsx to fire the fight automatically once the
+      // teams are loaded, so the user doesn't have to land on home and press
+      // FIGHT — they go straight from "Watch Fight" to the cinematic.
       localStorage.setItem(
         "ava_pending_fight",
-        JSON.stringify({ team1, team2, mode: "debate", dailyMatchupId: matchup.matchupId }),
+        JSON.stringify({
+          team1,
+          team2,
+          mode: "debate",
+          dailyMatchupId: matchup.matchupId,
+          autoFight: true,
+        }),
       );
     } catch {
       /* ignore */

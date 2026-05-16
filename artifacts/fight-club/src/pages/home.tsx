@@ -444,6 +444,10 @@ export function Home() {
   const [pendingDaily, setPendingDaily] = useState<
     { matchupId: string; signature: string } | null
   >(null);
+  // When true, the next effect tick fires handleFight once teams are populated.
+  // Used by the Daily page → "Watch Fight" flow so the user goes straight
+  // into the cinematic without an intermediate home-screen click.
+  const [autoFightArmed, setAutoFightArmed] = useState(false);
   const teamSignature = (a: Character[], b: Character[]) => {
     const norm = (cs: Character[]) => cs.map((c) => c.id).sort((x, y) => x - y).join(",");
     const ids = [norm(a), norm(b)].sort();
@@ -456,7 +460,7 @@ export function Home() {
       const raw = localStorage.getItem("ava_pending_fight");
       if (!raw) return;
       localStorage.removeItem("ava_pending_fight");
-      const parsed = JSON.parse(raw) as { team1?: unknown; team2?: unknown; mode?: string; dailyMatchupId?: unknown };
+      const parsed = JSON.parse(raw) as { team1?: unknown; team2?: unknown; mode?: string; dailyMatchupId?: unknown; autoFight?: unknown };
       const team1 = Array.isArray(parsed?.team1) ? (parsed.team1 as Character[]) : [];
       const team2 = Array.isArray(parsed?.team2) ? (parsed.team2 as Character[]) : [];
       const t1 = team1.slice(0, 5);
@@ -465,6 +469,11 @@ export function Home() {
       if (t2.length) setTeam2(t2);
       if (typeof parsed?.dailyMatchupId === "string" && parsed.dailyMatchupId && t1.length && t2.length) {
         setPendingDaily({ matchupId: parsed.dailyMatchupId, signature: teamSignature(t1, t2) });
+      }
+      // Auto-fire the fight after team state commits. Picked up by the
+      // effect below — we just arm the flag here.
+      if (parsed?.autoFight === true && t1.length && t2.length) {
+        setAutoFightArmed(true);
       }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -635,6 +644,18 @@ export function Home() {
     if (energy.isSignedIn && !dailyId) energy.applyOptimisticConsume();
     simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null, dailyMatchupId: dailyId ?? null } });
   };
+
+  // Auto-fire the fight when navigated in from Daily with autoFight=true.
+  // We wait one render after the pending payload commits so team1/team2
+  // state is up to date, then call handleFight exactly once. Disarming
+  // immediately prevents re-fires on re-render.
+  useEffect(() => {
+    if (!autoFightArmed) return;
+    if (team1.length === 0 || team2.length === 0) return;
+    setAutoFightArmed(false);
+    handleFight();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFightArmed, team1, team2]);
 
   const handleRandomFight = () => {
     if (!characters || characters.length < 2) return;
