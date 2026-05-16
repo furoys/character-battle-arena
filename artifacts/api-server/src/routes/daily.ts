@@ -23,6 +23,23 @@ import {
 
 const router: IRouter = Router();
 
+// Disable HTTP caching AND ETag generation for all daily routes. These
+// responses are volatile (vote counts, picks, verdicts change minute-by-
+// minute) and Express's default ETag handling was returning 304 Not
+// Modified on every repeat call from the same client. The browser then
+// delivered an empty body to the JS layer in the workspace iframe / some
+// webview contexts, breaking `r.json()` and leaving the page stuck on
+// "Loading today's fights...". Stripping `If-None-Match` before Express's
+// fresh() check sees it forces every response to be a fresh 200 with the
+// full JSON body — and we also send `Cache-Control: no-store` so browsers
+// don't try to revalidate from cache on their own.
+router.use((req, res, next) => {
+  delete req.headers["if-none-match"];
+  delete req.headers["if-modified-since"];
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 // Build canonical cache key (mirrors fights.ts getCacheKey logic) so we can
 // look up the verdict without re-importing the helper from a sibling route.
 function buildCacheKey(team1: number[], team2: number[]): {
