@@ -80,6 +80,12 @@ export function getDailyDateString(now: Date = new Date()): string {
 // fights every day to pick from.
 export const DAILY_LINEUP_SIZE = 10;
 
+// Pick point economy. Each daily pick costs 1 point. Users get DAILY_PICK_POINTS_BASE
+// free per day; once those are spent they can watch an ad to earn +1 point, up
+// to DAILY_AD_BONUS_CAP extra (so max picks/day = BASE + CAP = full lineup).
+export const DAILY_PICK_POINTS_BASE = 3;
+export const DAILY_AD_BONUS_CAP = DAILY_LINEUP_SIZE - DAILY_PICK_POINTS_BASE;
+
 function epochDaysFromDate(dateStr: string): number {
   return Math.floor(Date.UTC(
     Number(dateStr.slice(0, 4)),

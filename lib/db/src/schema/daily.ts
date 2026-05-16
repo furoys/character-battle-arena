@@ -29,3 +29,19 @@ export const dailyPicksTable = pgTable("daily_picks", {
 }, (t) => [uniqueIndex("daily_picks_date_user_matchup_idx").on(t.date, t.userId, t.matchupId)]);
 
 export type DailyPick = typeof dailyPicksTable.$inferSelect;
+
+// ── Daily Ad Bonus ────────────────────────────────────────────────────────────
+// Tracks how many bonus pick points a user has earned by watching ads on a
+// given day. Total daily pick allowance = DAILY_PICK_POINTS_BASE + adPointsEarned
+// (see api-server/src/lib/dailyPool.ts for the constants and cap). One row per
+// (user, day); created lazily the first time the user runs out of base points
+// and watches an ad.
+export const dailyAdBonusTable = pgTable("daily_ad_bonus", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull(),
+  userId: text("user_id").notNull(),
+  adPointsEarned: integer("ad_points_earned").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("daily_ad_bonus_date_user_idx").on(t.date, t.userId)]);
+
+export type DailyAdBonus = typeof dailyAdBonusTable.$inferSelect;

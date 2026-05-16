@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Swords, Check, X, Flame, Loader2 } from "lucide-react";
+import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/react";
 import { useListCharacters, Character } from "@workspace/api-client-react";
 import { apiFetch } from "@/lib/api-fetch";
@@ -17,7 +17,15 @@ type DailyMatchup = {
   team2Count: number;
 };
 
-type DailyResponse = { date: string; matchups: DailyMatchup[] };
+type PickPoints = {
+  base: number;
+  adBonus: number;
+  adBonusCap: number;
+  used: number;
+  remaining: number;
+};
+
+type DailyResponse = { date: string; pickPoints: PickPoints | null; matchups: DailyMatchup[] };
 
 type MeDailyResponse = {
   totalPicks: number;
@@ -365,29 +373,102 @@ export function Daily() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
 
+  const [adState, setAdState] = useState<
+    | { kind: "idle" }
+    | { kind: "watching"; secondsLeft: number; afterPick?: { matchupId: string; side: 1 | 2 } }
+    | { kind: "granting" }
+  >({ kind: "idle" });
+  const [outOfPointsToast, setOutOfPointsToast] = useState(false);
+
   async function pick(matchupId: string, side: 1 | 2) {
     if (!isSignedIn || pickingId) return;
     setPickingId(matchupId);
     try {
-      await apiFetch("/api/daily/pick", {
+      const r = await apiFetch("/api/daily/pick", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matchupId, side }),
       });
-      reload();
+      if (r.status === 403) {
+        // Out of pick points — show the watch-ad prompt and remember which
+        // matchup the user was trying to pick so we can auto-retry after the
+        // ad grants a point.
+        setOutOfPointsToast(true);
+        setAdState({ kind: "idle" });
+        const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
+        if (data?.pickPoints) {
+          setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
+        }
+      } else if (r.ok) {
+        const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
+        if (data?.pickPoints) {
+          setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
+        }
+        reload();
+      }
     } finally {
       setPickingId(null);
     }
   }
+
+  // Watch-ad flow: simulate a short ad countdown on the client, then ask the
+  // server to credit a bonus pick point. Pure UI gating — no real ad SDK yet,
+  // but the endpoint is rate-limited by DAILY_AD_BONUS_CAP on the server.
+  function startWatchAd(opts?: { afterPickMatchupId?: string; afterPickSide?: 1 | 2 }) {
+    if (!isSignedIn) return;
+    setOutOfPointsToast(false);
+    const AD_SECONDS = 5;
+    setAdState({
+      kind: "watching",
+      secondsLeft: AD_SECONDS,
+      afterPick:
+        opts?.afterPickMatchupId && opts?.afterPickSide
+          ? { matchupId: opts.afterPickMatchupId, side: opts.afterPickSide }
+          : undefined,
+    });
+  }
+
+  // Drive the ad countdown -> grant step. Lives in an effect so the user can
+  // navigate away cleanly (state resets) without leaking timers.
+  useEffect(() => {
+    if (adState.kind !== "watching") return;
+    if (adState.secondsLeft <= 0) {
+      const afterPick = adState.afterPick;
+      setAdState({ kind: "granting" });
+      (async () => {
+        try {
+          const r = await apiFetch("/api/daily/watch-ad", { method: "POST" });
+          const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
+          if (data?.pickPoints) {
+            setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
+          }
+          if (r.ok && afterPick) {
+            await pick(afterPick.matchupId, afterPick.side);
+          }
+        } finally {
+          setAdState({ kind: "idle" });
+        }
+      })();
+      return;
+    }
+    const t = setTimeout(() => {
+      setAdState((s) => (s.kind === "watching" ? { ...s, secondsLeft: s.secondsLeft - 1 } : s));
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adState]);
 
   function watchFight(matchup: DailyMatchup) {
     const team1 = matchup.team1Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
     const team2 = matchup.team2Ids.map((id) => characterMap.get(id)).filter(Boolean) as Character[];
     if (team1.length === 0 || team2.length === 0) return;
     try {
+      // dailyMatchupId tells home.tsx to (a) skip the optimistic energy
+      // decrement and (b) include the id in the /fights/stream call so the
+      // server's daily bypass kicks in and no energy is consumed.
       localStorage.setItem(
         "ava_pending_fight",
-        JSON.stringify({ team1, team2, mode: "debate" }),
+        JSON.stringify({ team1, team2, mode: "debate", dailyMatchupId: matchup.matchupId }),
       );
     } catch {
       /* ignore */
@@ -437,6 +518,15 @@ export function Daily() {
             </div>
           )}
         </div>
+        {/* Pick-points strip — only shown when signed in. Visualizes 3 base
+            pips + any bonus pips earned via ads, filled = remaining. */}
+        {isSignedIn && daily?.pickPoints && (
+          <PickPointsStrip
+            pickPoints={daily.pickPoints}
+            onWatchAd={() => startWatchAd()}
+            adBusy={adState.kind !== "idle"}
+          />
+        )}
       </div>
 
       {/* Tabs */}
@@ -569,6 +659,175 @@ export function Daily() {
           </div>
         )}
       </div>
+      {/* Out-of-points toast — appears when a pick was rejected for budget */}
+      {outOfPointsToast && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-40 px-4 py-3 flex items-center gap-3"
+          style={{
+            background: "linear-gradient(135deg, rgba(40,8,8,0.96), rgba(20,4,4,0.96))",
+            border: "1.5px solid rgba(255,80,80,0.6)",
+            maxWidth: "calc(100vw - 24px)",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "white", fontWeight: 700, letterSpacing: "0.05em" }}>
+            Out of pick points. Watch an ad to get +1.
+          </span>
+          <button
+            onClick={() => startWatchAd()}
+            className="px-3 py-1.5 active:scale-95 transition-all flex items-center gap-1.5"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,200,0,0.25), rgba(255,200,0,0.1))",
+              border: "1px solid rgba(255,200,0,0.7)",
+              color: "#ffc800",
+              fontSize: 10,
+              fontWeight: 900,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+            }}
+          >
+            <PlayCircle className="w-3 h-3" />
+            Watch
+          </button>
+          <button
+            onClick={() => setOutOfPointsToast(false)}
+            className="opacity-50 hover:opacity-100"
+            style={{ color: "white" }}
+            aria-label="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      {/* Ad-watching overlay */}
+      {adState.kind !== "idle" && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.92)" }}
+        >
+          <div
+            className="font-display uppercase mb-4"
+            style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.3em", fontWeight: 800 }}
+          >
+            {adState.kind === "watching" ? "Ad Playing" : "Granting Bonus…"}
+          </div>
+          <div
+            className="flex items-center justify-center mb-6"
+            style={{
+              width: 140,
+              height: 140,
+              borderRadius: "50%",
+              border: "3px solid rgba(255,200,0,0.4)",
+              background: "rgba(255,200,0,0.05)",
+            }}
+          >
+            {adState.kind === "watching" ? (
+              <span
+                className="font-display"
+                style={{ fontSize: 64, color: "#ffc800", fontWeight: 900, lineHeight: 1 }}
+              >
+                {adState.secondsLeft}
+              </span>
+            ) : (
+              <Loader2 className="w-12 h-12 animate-spin" style={{ color: "#ffc800" }} />
+            )}
+          </div>
+          <div
+            style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em", textAlign: "center", maxWidth: 280 }}
+          >
+            {adState.kind === "watching"
+              ? "Thanks for supporting A.v.A — earning +1 pick point."
+              : "Crediting your account…"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Pick points strip ─────────────────────────────────────────────────────────
+// Renders base-pip + bonus-pip indicators side by side. Filled pip = available,
+// empty pip = spent. When `remaining === 0` and bonus capacity is left, the
+// inline WATCH AD button appears. Designed to be compact (no vertical layout
+// shift) so it fits in the existing daily header.
+function PickPointsStrip({
+  pickPoints,
+  onWatchAd,
+  adBusy,
+}: {
+  pickPoints: PickPoints;
+  onWatchAd: () => void;
+  adBusy: boolean;
+}) {
+  const { base, adBonus, adBonusCap, used, remaining } = pickPoints;
+  const total = base + adBonus;
+  const canWatchAd = remaining === 0 && adBonus < adBonusCap;
+  const pips: { kind: "base" | "bonus"; filled: boolean }[] = [];
+  for (let i = 0; i < base; i++) pips.push({ kind: "base", filled: i < base - Math.min(used, base) });
+  for (let i = 0; i < adBonus; i++) {
+    const bonusUsed = Math.max(0, used - base);
+    pips.push({ kind: "bonus", filled: i < adBonus - Math.min(bonusUsed, adBonus) });
+  }
+  return (
+    <div className="mt-3 flex items-center gap-2 flex-wrap">
+      <Zap className="w-3 h-3" style={{ color: remaining > 0 ? "#ffc800" : "rgba(255,255,255,0.3)" }} />
+      <div
+        className="font-display uppercase"
+        style={{
+          fontSize: 9,
+          color: "rgba(255,255,255,0.5)",
+          letterSpacing: "0.18em",
+          fontWeight: 800,
+        }}
+      >
+        Picks
+      </div>
+      <div className="flex items-center gap-1">
+        {pips.map((p, i) => (
+          <span
+            key={i}
+            style={{
+              display: "inline-block",
+              width: 10,
+              height: 10,
+              borderRadius: 2,
+              background: p.filled
+                ? p.kind === "bonus"
+                  ? "#ff6b35"
+                  : "#ffc800"
+                : "rgba(255,255,255,0.08)",
+              border: `1px solid ${
+                p.filled
+                  ? p.kind === "bonus"
+                    ? "rgba(255,107,53,0.9)"
+                    : "rgba(255,200,0,0.9)"
+                  : "rgba(255,255,255,0.15)"
+              }`,
+            }}
+          />
+        ))}
+      </div>
+      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 700 }}>
+        {remaining}/{total}
+      </span>
+      {canWatchAd && (
+        <button
+          onClick={onWatchAd}
+          disabled={adBusy}
+          className="ml-1 px-2.5 py-1 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-50"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,200,0,0.18), rgba(255,200,0,0.05))",
+            border: "1px solid rgba(255,200,0,0.55)",
+            color: "#ffc800",
+            fontSize: 9,
+            fontWeight: 900,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+          }}
+        >
+          <PlayCircle className="w-3 h-3" />
+          Watch Ad +1
+        </button>
+      )}
     </div>
   );
 }

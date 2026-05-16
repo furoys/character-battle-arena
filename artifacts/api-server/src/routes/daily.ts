@@ -4,11 +4,14 @@ import {
   db,
   dailyMatchupsTable,
   dailyPicksTable,
+  dailyAdBonusTable,
   fightCacheTable,
 } from "@workspace/db";
 import { getOptionalUserId, requireAuth } from "../lib/auth";
 import {
   DAILY_POOL,
+  DAILY_PICK_POINTS_BASE,
+  DAILY_AD_BONUS_CAP,
   getDailyDateString,
   getDailyMatchupsForDate,
 } from "../lib/dailyPool";
@@ -91,6 +94,37 @@ async function tryResolveWinner(
   return winnerSide;
 }
 
+// ── Pick-point economy helpers ────────────────────────────────────────────────
+// Allowance = DAILY_PICK_POINTS_BASE + adPointsEarned. Used = number of picks
+// the user has made today across all matchups. Remaining = max(0, allowance−used).
+type PickPoints = { base: number; adBonus: number; adBonusCap: number; used: number; remaining: number };
+
+async function readPickPoints(userId: string, date: string): Promise<PickPoints> {
+  const [bonusRow] = await db
+    .select()
+    .from(dailyAdBonusTable)
+    .where(
+      and(eq(dailyAdBonusTable.date, date), eq(dailyAdBonusTable.userId, userId)),
+    )
+    .limit(1);
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(dailyPicksTable)
+    .where(
+      and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
+    );
+  const adBonus = bonusRow?.adPointsEarned ?? 0;
+  const used = countRow?.count ?? 0;
+  const allowance = DAILY_PICK_POINTS_BASE + adBonus;
+  return {
+    base: DAILY_PICK_POINTS_BASE,
+    adBonus,
+    adBonusCap: DAILY_AD_BONUS_CAP,
+    used,
+    remaining: Math.max(0, allowance - used),
+  };
+}
+
 // ── GET /api/daily ────────────────────────────────────────────────────────────
 // Returns today's 10 matchups + the caller's picks (if signed in) + community
 // split per matchup + resolved winner per matchup. Open to guests — they just
@@ -149,8 +183,11 @@ router.get("/daily", async (req, res): Promise<void> => {
     splitMap.set(r.matchupId, cur);
   }
 
+  const pickPoints = userId ? await readPickPoints(userId, date) : null;
+
   res.json({
     date,
+    pickPoints,
     matchups: pairs.map((p, i) => {
       const split = splitMap.get(p.entry.id) ?? { t1: 0, t2: 0 };
       return {
@@ -211,24 +248,147 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  // Insert; ignore if a pick already exists (locked).
-  await db
-    .insert(dailyPicksTable)
-    .values({ date, matchupId, userId, pickedSide: side })
-    .onConflictDoNothing();
+  // ── Atomic pick-point spend + insert ──────────────────────────────────────
+  // We need read-modify-write semantics on the user's daily pick budget so two
+  // concurrent picks at point 0 can't both succeed. Strategy: lock the ad-bonus
+  // row (creating with 0 if missing), count picks under the same transaction,
+  // verify budget, then insert. If the user already has a pick on this matchup,
+  // short-circuit — no double-charge for idempotent retries.
+  type PickOutcome =
+    | { kind: "ok"; pickedSide: number; pickPoints: PickPoints }
+    | { kind: "duplicate"; pickedSide: number; pickPoints: PickPoints }
+    | { kind: "out-of-points"; pickPoints: PickPoints };
 
-  const [pick] = await db
-    .select()
-    .from(dailyPicksTable)
-    .where(
-      and(
-        eq(dailyPicksTable.date, date),
-        eq(dailyPicksTable.userId, userId),
-        eq(dailyPicksTable.matchupId, matchupId),
-      ),
-    )
-    .limit(1);
-  res.json({ matchupId, pickedSide: pick?.pickedSide ?? side });
+  const outcome = await db.transaction(async (tx): Promise<PickOutcome> => {
+    // Lazy-create ad bonus row so the lock target always exists, then take
+    // the FOR UPDATE lock. Every operation below is serialized per-user for
+    // today, so duplicate-pick + budget races are both eliminated.
+    await tx
+      .insert(dailyAdBonusTable)
+      .values({ date, userId, adPointsEarned: 0 })
+      .onConflictDoNothing();
+    const [bonus] = await tx
+      .select()
+      .from(dailyAdBonusTable)
+      .where(
+        and(eq(dailyAdBonusTable.date, date), eq(dailyAdBonusTable.userId, userId)),
+      )
+      .for("update")
+      .limit(1);
+    // Existing pick? Idempotent — no spend. Checked AFTER the lock so two
+    // concurrent calls for the same matchup can't both pass this check and
+    // race to a unique-constraint-violation insert.
+    const [existing] = await tx
+      .select()
+      .from(dailyPicksTable)
+      .where(
+        and(
+          eq(dailyPicksTable.date, date),
+          eq(dailyPicksTable.userId, userId),
+          eq(dailyPicksTable.matchupId, matchupId),
+        ),
+      )
+      .limit(1);
+    const adBonus = bonus?.adPointsEarned ?? 0;
+    const allowance = DAILY_PICK_POINTS_BASE + adBonus;
+    const [countRow] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(dailyPicksTable)
+      .where(
+        and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
+      );
+    const usedNow = countRow?.count ?? 0;
+    const buildPoints = (used: number): PickPoints => ({
+      base: DAILY_PICK_POINTS_BASE,
+      adBonus,
+      adBonusCap: DAILY_AD_BONUS_CAP,
+      used,
+      remaining: Math.max(0, allowance - used),
+    });
+    if (existing) {
+      return { kind: "duplicate", pickedSide: existing.pickedSide, pickPoints: buildPoints(usedNow) };
+    }
+    if (usedNow >= allowance) {
+      return { kind: "out-of-points", pickPoints: buildPoints(usedNow) };
+    }
+    await tx
+      .insert(dailyPicksTable)
+      .values({ date, matchupId, userId, pickedSide: side });
+    return { kind: "ok", pickedSide: side, pickPoints: buildPoints(usedNow + 1) };
+  });
+
+  if (outcome.kind === "out-of-points") {
+    res.status(403).json({
+      error: "out-of-pick-points",
+      message: "No pick points left. Watch an ad to earn one.",
+      pickPoints: outcome.pickPoints,
+    });
+    return;
+  }
+  res.json({
+    matchupId,
+    pickedSide: outcome.pickedSide,
+    pickPoints: outcome.pickPoints,
+  });
+});
+
+// ── POST /api/daily/watch-ad ──────────────────────────────────────────────────
+// Records a watched-ad credit, granting +1 pick point for today. Capped at
+// DAILY_AD_BONUS_CAP so a user can never exceed the total lineup size. The
+// "ad" itself is rendered + timed on the client — this endpoint just trusts
+// the call (same risk profile as the rest of the daily moderation surface).
+router.post("/daily/watch-ad", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const date = getDailyDateString();
+  const result = await db.transaction(async (tx) => {
+    await tx
+      .insert(dailyAdBonusTable)
+      .values({ date, userId, adPointsEarned: 0 })
+      .onConflictDoNothing();
+    const [row] = await tx
+      .select()
+      .from(dailyAdBonusTable)
+      .where(
+        and(eq(dailyAdBonusTable.date, date), eq(dailyAdBonusTable.userId, userId)),
+      )
+      .for("update")
+      .limit(1);
+    const current = row?.adPointsEarned ?? 0;
+    if (current >= DAILY_AD_BONUS_CAP) {
+      return { granted: false, reason: "cap" as const, adBonus: current };
+    }
+    // Policy: only grant a bonus when the user has actually exhausted their
+    // current allowance (base + already-earned bonus). Stops users from
+    // pre-farming ad credits before they need them.
+    const [countRow] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(dailyPicksTable)
+      .where(
+        and(eq(dailyPicksTable.date, date), eq(dailyPicksTable.userId, userId)),
+      );
+    const used = countRow?.count ?? 0;
+    const allowance = DAILY_PICK_POINTS_BASE + current;
+    if (used < allowance) {
+      return { granted: false, reason: "not-exhausted" as const, adBonus: current };
+    }
+    const next = current + 1;
+    await tx
+      .update(dailyAdBonusTable)
+      .set({ adPointsEarned: next, updatedAt: new Date() })
+      .where(
+        and(eq(dailyAdBonusTable.date, date), eq(dailyAdBonusTable.userId, userId)),
+      );
+    return { granted: true, adBonus: next };
+  });
+  if (!result.granted) {
+    const pickPoints = await readPickPoints(userId, date);
+    const error =
+      result.reason === "cap" ? "ad-bonus-cap-reached" : "still-have-pick-points";
+    res.status(409).json({ error, pickPoints });
+    return;
+  }
+  const pickPoints = await readPickPoints(userId, date);
+  res.json({ granted: true, pickPoints });
 });
 
 // ── GET /api/daily/leaderboard ────────────────────────────────────────────────

@@ -11,6 +11,29 @@ import {
 import { simulateFight, type SimulateFightProgress } from "../lib/fightSimulator";
 import { getOptionalUserId, requireAuth } from "../lib/auth";
 import { consumeEnergy, OutOfEnergyError } from "../lib/energy";
+import { getDailyMatchupsForDate, getDailyDateString } from "../lib/dailyPool";
+
+// Verify a request's `dailyMatchupId` matches a real matchup in today's
+// lineup AND that the team rosters line up (in either order — the daily UI
+// always shows the lineup's team1 on the left and team2 on the right, but
+// the request itself can come in either orientation). When this passes,
+// energy is NOT consumed for the fight — daily matchups are free.
+function isValidDailyMatchupRequest(
+  dailyMatchupId: string | null | undefined,
+  team1Ids: number[],
+  team2Ids: number[],
+): boolean {
+  if (!dailyMatchupId) return false;
+  const lineup = getDailyMatchupsForDate(getDailyDateString());
+  const entry = lineup.find((e) => e.id === dailyMatchupId);
+  if (!entry) return false;
+  const norm = (a: number[]) => [...a].sort((x, y) => x - y).join(",");
+  const t1 = norm(team1Ids);
+  const t2 = norm(team2Ids);
+  const e1 = norm(entry.team1Ids);
+  const e2 = norm(entry.team2Ids);
+  return (t1 === e1 && t2 === e2) || (t1 === e2 && t2 === e1);
+}
 
 // Helper for the challenge wait branch — poll the DB for the OTHER player's
 // fightId to appear, then return it. Returns null on timeout or close.
@@ -236,9 +259,15 @@ router.post("/fights", async (req, res): Promise<void> => {
   // The streaming endpoint (/fights/stream) is the one the UI actually calls,
   // but this non-streaming endpoint is still exposed and would otherwise be a
   // bypass. POST /fights always generates a fresh fight (no claim/replay
-  // races to worry about), so charge unconditionally for signed-in users.
+  // races to worry about), so charge unconditionally for signed-in users
+  // UNLESS the request is a verified daily-matchup viewing (free).
   const postFightsUserId = getOptionalUserId(req);
-  if (postFightsUserId) {
+  const postFightsIsDaily = isValidDailyMatchupRequest(
+    parsed.data.dailyMatchupId ?? null,
+    team1Ids,
+    team2Ids,
+  );
+  if (postFightsUserId && !postFightsIsDaily) {
     try {
       await consumeEnergy(postFightsUserId);
     } catch (err) {
@@ -380,12 +409,16 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode, dailyMatchupId } = parsed.data;
   // Modifier id can come from either the request body or — for challenge
   // fights — the challenge row itself. Server-truth (challenge row) wins so a
   // tampered client can't change the agreed-upon rules mid-match.
   let modifierId = normalizeModifierId(parsed.data.modifierId);
   const normalizedChallengeCode = challengeCode ? challengeCode.toUpperCase() : null;
+  // Daily-matchup viewings bypass the energy gate. The server verifies the
+  // matchup id is in today's lineup AND the teams match — a tampered client
+  // can't pass a random id and get free fights.
+  const isDailyMatchup = isValidDailyMatchupRequest(dailyMatchupId ?? null, team1Ids, team2Ids);
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
@@ -418,7 +451,7 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
   // per fight" safeguards (otherwise both players would be charged).
   const gateUserId = getOptionalUserId(req);
   const isChallengeFight = !!normalizedChallengeCode;
-  if (gateUserId && !isChallengeFight) {
+  if (gateUserId && !isChallengeFight && !isDailyMatchup) {
     try {
       await consumeEnergy(gateUserId);
     } catch (err) {

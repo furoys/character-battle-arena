@@ -436,17 +436,36 @@ export function Home() {
     setVisibleCount(isSpecificUniverse ? 9999 : INITIAL_VISIBLE);
   }, [searchQuery, activeFilter, tierFilter]);
 
+  // Daily-matchup context from the Daily page. We remember the matchup id +
+  // a signature of the locked teams; the next FIGHT call only treats this as
+  // a daily-bypass if the current team composition still matches that
+  // signature. If the user adds/removes/swaps a fighter, the daily context
+  // silently falls back to a normal energy-consuming fight.
+  const [pendingDaily, setPendingDaily] = useState<
+    { matchupId: string; signature: string } | null
+  >(null);
+  const teamSignature = (a: Character[], b: Character[]) => {
+    const norm = (cs: Character[]) => cs.map((c) => c.id).sort((x, y) => x - y).join(",");
+    const ids = [norm(a), norm(b)].sort();
+    return `${ids[0]}|${ids[1]}`;
+  };
+
   // Load a pending fight from the Suggest page (written to localStorage before navigating here)
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ava_pending_fight");
       if (!raw) return;
       localStorage.removeItem("ava_pending_fight");
-      const parsed = JSON.parse(raw) as { team1?: unknown; team2?: unknown; mode?: string };
+      const parsed = JSON.parse(raw) as { team1?: unknown; team2?: unknown; mode?: string; dailyMatchupId?: unknown };
       const team1 = Array.isArray(parsed?.team1) ? (parsed.team1 as Character[]) : [];
       const team2 = Array.isArray(parsed?.team2) ? (parsed.team2 as Character[]) : [];
-      if (team1.length) setTeam1(team1.slice(0, 5));
-      if (team2.length) setTeam2(team2.slice(0, 5));
+      const t1 = team1.slice(0, 5);
+      const t2 = team2.slice(0, 5);
+      if (t1.length) setTeam1(t1);
+      if (t2.length) setTeam2(t2);
+      if (typeof parsed?.dailyMatchupId === "string" && parsed.dailyMatchupId && t1.length && t2.length) {
+        setPendingDaily({ matchupId: parsed.dailyMatchupId, signature: teamSignature(t1, t2) });
+      }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -604,10 +623,17 @@ export function Home() {
     // the same event-loop tick short-circuits at the guard above.
     fightInFlightRef.current = true;
     setShowModal(true);
-    // Optimistically decrement so the badge updates the moment FIGHT is hit.
-    // After the fight call resolves, refetch from the server to reconcile.
-    if (energy.isSignedIn) energy.applyOptimisticConsume();
-    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null } });
+    // Daily-matchup viewings are free — skip both the optimistic decrement
+    // and (server-side) the energy consume. Only honor the daily context if
+    // the current teams still match the signature locked at navigation time;
+    // any mid-flight edits revert to a normal energy-consuming fight.
+    const dailyId =
+      pendingDaily && pendingDaily.signature === teamSignature(team1, team2)
+        ? pendingDaily.matchupId
+        : null;
+    if (pendingDaily) setPendingDaily(null);
+    if (energy.isSignedIn && !dailyId) energy.applyOptimisticConsume();
+    simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null, dailyMatchupId: dailyId ?? null } });
   };
 
   const handleRandomFight = () => {

@@ -108,6 +108,8 @@ export interface SimulateFightBody {
   challengeCode?: string;
   /** Optional chaos modifier id (e.g. 'lava_floor', 'underdog'). Validated against the server registry; unknown values are ignored. When a challengeCode is also provided the challenge's stored modifierId wins. */
   modifierId?: string | null;
+  /** When set, marks this fight as a daily-matchup viewing. Server verifies the id matches today's lineup AND the teams match the matchup's roster before bypassing the energy gate. Daily-matchup fights are free — they don't consume energy. */
+  dailyMatchupId?: string | null;
 }
 
 export interface FightRound {
