@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Shield } from "lucide-react";
+import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Shield, Share2, Sparkles } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/react";
 import { useListCharacters, Character } from "@workspace/api-client-react";
 import { apiFetch } from "@/lib/api-fetch";
@@ -54,11 +54,79 @@ type LeaderboardResponse = {
   leaders: { userId: string; correct: number; total: number }[];
 };
 
+// ── Countdown to next 8pm ET drop ────────────────────────────────────────────
+// Mirrors `getDailyDateString` on the server: the lineup rolls over at 20:00
+// America/New_York. DST-correct — does NOT assume a 24h day. We pick the
+// target ET wall-clock date (today if before 20:00 ET, else tomorrow), then
+// resolve the UTC instant where ET shows exactly 20:00:00 on that date by
+// trying both EST (-05:00) and EDT (-04:00) candidates. Whichever, when
+// formatted back into ET, lands on `target 20:00`, IS the next rollover.
+function msUntilNextDailyRollover(now: Date = new Date()): number {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+  });
+  function etOf(d: Date) {
+    const p = fmt.formatToParts(d);
+    const g = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+    let h = Number(g("hour"));
+    if (h === 24) h = 0;
+    return { date: `${g("year")}-${g("month")}-${g("day")}`, h };
+  }
+  const cur = etOf(now);
+  // Target ET date in YYYY-MM-DD (today if before 8pm ET, else tomorrow).
+  const baseUtc = Date.UTC(
+    Number(cur.date.slice(0, 4)),
+    Number(cur.date.slice(5, 7)) - 1,
+    Number(cur.date.slice(8, 10)),
+  );
+  const targetMs = cur.h < 20 ? baseUtc : baseUtc + 86400000;
+  const targetDate = new Date(targetMs).toISOString().slice(0, 10);
+  // Two candidates — one for EST, one for EDT. Whichever lands on the target
+  // ET wall-clock is the correct rollover instant.
+  const candEDT = new Date(`${targetDate}T20:00:00-04:00`);
+  const candEST = new Date(`${targetDate}T20:00:00-05:00`);
+  function lands(d: Date) {
+    const ot = etOf(d);
+    return ot.date === targetDate && ot.h === 20;
+  }
+  const target = lands(candEDT) ? candEDT : lands(candEST) ? candEST : candEST;
+  return Math.max(0, target.getTime() - now.getTime());
+}
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// Reactive countdown — re-renders every minute (or every second under 1 hour).
+function useNextDropCountdown(): string {
+  const [ms, setMs] = useState(() => msUntilNextDailyRollover());
+  useEffect(() => {
+    // Tight tick when under 1h so seconds tick visibly; coarse otherwise.
+    const tick = () => setMs(msUntilNextDailyRollover());
+    const interval = ms < 3600_000 ? 1000 : 30_000;
+    const id = window.setInterval(tick, interval);
+    return () => window.clearInterval(id);
+  }, [ms < 3600_000]);
+  return formatCountdown(ms);
+}
+
 // ── Tile shown on the home page (compact) ────────────────────────────────────
 // Shows how many of today's 10 matchups still need a pick. Becomes a result
 // summary ("3/10 correct") once enough verdicts are in.
 export function DailyMatchupHomeTile() {
   const [daily, setDaily] = useState<DailyResponse | null>(null);
+  const countdown = useNextDropCountdown();
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/daily")
@@ -81,12 +149,14 @@ export function DailyMatchupHomeTile() {
   );
   const wins = resolved.filter((m) => m.userPick === m.winnerSide).length;
   const remaining = total - picked;
+  const allComplete = resolved.length > 0 && remaining === 0;
+  const isPerfect = allComplete && wins === resolved.length && resolved.length === total;
 
   let label: string;
   let color = "#ffc800";
-  if (resolved.length > 0 && remaining === 0) {
-    label = `${wins}/${resolved.length} CORRECT`;
-    color = wins >= resolved.length / 2 ? "#22c55e" : "#ff0055";
+  if (allComplete) {
+    label = isPerfect ? `PERFECT ${wins}/${total}` : `${wins}/${resolved.length} CORRECT`;
+    color = isPerfect ? "#ffc800" : wins >= resolved.length / 2 ? "#22c55e" : "#ff0055";
   } else if (picked === 0) {
     label = `${total} NEW FIGHTS`;
   } else {
@@ -98,7 +168,9 @@ export function DailyMatchupHomeTile() {
       <div
         className="flex items-center gap-2 px-3 py-2 cursor-pointer active:scale-[0.98] transition-all"
         style={{
-          background: "linear-gradient(90deg, rgba(255,200,0,0.08), rgba(255,107,53,0.04))",
+          background: isPerfect
+            ? "linear-gradient(90deg, rgba(255,200,0,0.18), rgba(255,107,53,0.10))"
+            : "linear-gradient(90deg, rgba(255,200,0,0.08), rgba(255,107,53,0.04))",
           borderTop: "1px solid rgba(255,200,0,0.18)",
           borderBottom: "1px solid rgba(255,200,0,0.18)",
         }}
@@ -108,7 +180,9 @@ export function DailyMatchupHomeTile() {
           DAILY
         </span>
         <span className="flex-1 truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 700 }}>
-          {daily.matchups[0]?.title}
+          {/* Countdown replaces the matchup title once the user is fully done
+              for the day — gives them the "next drop" hook to come back for. */}
+          {allComplete ? `Next drop in ${countdown}` : (daily.matchups[0]?.title ?? "")}
         </span>
         <span style={{ fontSize: 9, fontWeight: 900, color, letterSpacing: "0.12em" }}>
           {label}
@@ -628,9 +702,200 @@ function MatchupCard({
   );
 }
 
+// ── Perfect-day share image generator ────────────────────────────────────────
+// Renders a 1080×1350 PNG (Instagram portrait) celebrating a 10/10 day. Pure
+// canvas — no extra deps. Returned as a Blob so we can hand it to the Web
+// Share API (mobile) or trigger a download (desktop fallback).
+async function generatePerfectShareImage(date: string, streak: number): Promise<Blob | null> {
+  const W = 1080;
+  const H = 1350;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d");
+  if (!ctx) return null;
+  // Background — deep wine-to-black gradient with subtle ember overlay so the
+  // gold text pops without looking flat.
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#1a0008");
+  bg.addColorStop(0.5, "#0a0a14");
+  bg.addColorStop(1, "#08010a");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  // Inner gold border
+  ctx.strokeStyle = "#ffc800";
+  ctx.lineWidth = 6;
+  ctx.strokeRect(36, 36, W - 72, H - 72);
+  ctx.strokeStyle = "rgba(255,107,53,0.6)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(60, 60, W - 120, H - 120);
+  // Brand wordmark (top)
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,200,0,0.55)";
+  ctx.font = "900 32px Impact, 'Bebas Neue', sans-serif";
+  ctx.fillText("A . V . A   D A I L Y", W / 2, 150);
+  // PERFECT DAY headline
+  ctx.fillStyle = "#ffc800";
+  ctx.font = "900 156px Impact, 'Bebas Neue', sans-serif";
+  ctx.fillText("PERFECT DAY", W / 2, 360);
+  // Big 10/10
+  const grad = ctx.createLinearGradient(0, 460, 0, 720);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(1, "#ff6b35");
+  ctx.fillStyle = grad;
+  ctx.font = "900 280px Impact, 'Bebas Neue', sans-serif";
+  ctx.fillText("10 / 10", W / 2, 720);
+  // Date
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "700 36px 'Helvetica Neue', Arial, sans-serif";
+  ctx.fillText(date.toUpperCase(), W / 2, 800);
+  // Streak band
+  ctx.fillStyle = "rgba(255,107,53,0.12)";
+  ctx.fillRect(120, 880, W - 240, 130);
+  ctx.strokeStyle = "rgba(255,107,53,0.6)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(120, 880, W - 240, 130);
+  ctx.fillStyle = "#ff6b35";
+  ctx.font = "900 48px Impact, 'Bebas Neue', sans-serif";
+  ctx.fillText(`PERFECT-DAY STREAK · ${streak}`, W / 2, 962);
+  // Tagline
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  ctx.font = "italic 600 30px 'Helvetica Neue', Arial, sans-serif";
+  ctx.fillText("Picked every fight. Beat the lineup.", W / 2, 1100);
+  // Footer brand
+  ctx.fillStyle = "#ffc800";
+  ctx.font = "900 60px Impact, 'Bebas Neue', sans-serif";
+  ctx.fillText("ANYONE   VS   ANYONE", W / 2, 1220);
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "700 24px 'Helvetica Neue', Arial, sans-serif";
+  ctx.fillText("AnyoneVsAnyone.replit.app", W / 2, 1265);
+  return await new Promise<Blob | null>((resolve) => c.toBlob((b) => resolve(b), "image/png"));
+}
+
+// ── Perfect-day celebration banner ───────────────────────────────────────────
+// Sits at the top of the matchup list when the user has resolved all 10 picks
+// AND got every one right. Includes a SHARE button that opens the OS share
+// sheet with a generated PNG (mobile) or downloads it (desktop fallback).
+function PerfectDayBanner({ date, streak }: { date: string; streak: number }) {
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  async function share() {
+    setSharing(true);
+    setShareError(null);
+    try {
+      const blob = await generatePerfectShareImage(date, streak);
+      if (!blob) throw new Error("image-failed");
+      const file = new File([blob], `ava-perfect-${date}.png`, { type: "image/png" });
+      const shareData: ShareData = {
+        title: "A.v.A — Perfect Day",
+        text: `Went 10/10 on today's A.v.A Daily Matchups. ${streak}-day perfect streak. Think you can?`,
+        url: "https://AnyoneVsAnyone.replit.app",
+        files: [file],
+      };
+      // Modern mobile: share sheet with image. nav.canShare guards iOS Safari
+      // versions that don't accept files.
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare && nav.canShare(shareData) && nav.share) {
+        await nav.share(shareData);
+        return;
+      }
+      if (nav.share) {
+        // Fallback: text-only share (no image attachment).
+        await nav.share({ title: shareData.title, text: shareData.text, url: shareData.url });
+        return;
+      }
+      // Desktop fallback: trigger a download so the user can post manually.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ava-perfect-${date}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // AbortError fires when the user cancels the native share sheet — not
+      // an error, just dismiss silently.
+      const err = e as { name?: string; message?: string };
+      if (err?.name !== "AbortError") {
+        setShareError("Share failed. Try again.");
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+  return (
+    <div
+      className="relative overflow-hidden p-4"
+      style={{
+        background: "linear-gradient(135deg, rgba(255,200,0,0.18), rgba(255,107,53,0.10))",
+        border: "2px solid rgba(255,200,0,0.7)",
+        boxShadow: "0 0 40px rgba(255,200,0,0.15)",
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <Sparkles className="w-6 h-6 flex-shrink-0" style={{ color: "#ffc800" }} />
+        <div className="flex-1 min-w-0">
+          <div
+            className="font-display uppercase"
+            style={{ fontSize: 10, color: "#ff6b35", letterSpacing: "0.3em", fontWeight: 900 }}
+          >
+            Perfect Day · 10 / 10
+          </div>
+          <div
+            className="font-display uppercase mt-1"
+            style={{ fontSize: 20, color: "white", letterSpacing: "0.05em", fontWeight: 900, lineHeight: 1.1 }}
+          >
+            You called every fight.
+          </div>
+          <div
+            className="mt-1"
+            style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}
+          >
+            Perfect-day streak: <span style={{ color: "#ffc800", fontWeight: 900 }}>{streak}</span>.
+            Share the brag — let your friends try to beat it.
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={share}
+        disabled={sharing}
+        className="w-full mt-3 py-2.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,200,0,0.35), rgba(255,107,53,0.20))",
+          border: "1.5px solid rgba(255,200,0,0.85)",
+          color: "#ffc800",
+          fontSize: 11,
+          fontWeight: 900,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+        }}
+      >
+        {sharing ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            <Share2 className="w-3.5 h-3.5" />
+            Share Perfect Day
+          </>
+        )}
+      </button>
+      {shareError && (
+        <div
+          className="mt-2 text-center"
+          style={{ fontSize: 10, color: "#ff6b35", letterSpacing: "0.1em", fontWeight: 700 }}
+        >
+          {shareError}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export function Daily() {
   const { user, isSignedIn } = useUser();
+  const countdown = useNextDropCountdown();
   const [, navigate] = useLocation();
   const { data: characters } = useListCharacters();
   const characterMap = useMemo(() => {
@@ -845,7 +1110,7 @@ export function Daily() {
               Daily Matchups
             </h1>
             <p className="mt-1" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
-              {daily?.date ?? "—"} · 10 NEW FIGHTS EVERY DAY
+              {daily?.date ?? "—"} · NEXT DROP IN <span style={{ color: "#ffc800", fontWeight: 800 }}>{countdown}</span>
             </p>
           </div>
           {me && (
@@ -973,6 +1238,19 @@ export function Daily() {
                 </SignInButton>
               </div>
             )}
+
+            {/* Perfect-day celebration — only when the user has resolved
+                every one of today's 10 picks AND nailed them all. The streak
+                shown is currentStreak (perfect-day streak) +1 if today isn't
+                yet counted on the server response (server stat is cached). */}
+            {isSignedIn && me && matchups.length > 0 &&
+              resolvedOwn.length === matchups.length &&
+              correctToday === matchups.length && (
+                <PerfectDayBanner
+                  date={daily?.date ?? new Date().toISOString().slice(0, 10)}
+                  streak={Math.max(1, me.currentStreak)}
+                />
+              )}
 
             {/* Personal stats strip */}
             {me && me.totalPicks > 0 && (

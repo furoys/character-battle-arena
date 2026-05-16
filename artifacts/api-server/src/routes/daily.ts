@@ -85,24 +85,19 @@ async function ensureDailyRows(date: string) {
   // matchupId no longer exists in DAILY_POOL (entry was removed/renamed) is
   // skipped — defensive, since the only supported pool mutation is APPEND.
   const poolById = new Map(DAILY_POOL.map((entry) => [entry.id, entry]));
-  // Preserve a stable display order: use the canonical shuffle order for
-  // entries that are in today's canonical lineup, then append any extras at
-  // the end (handles the edge case where a future deploy alters per-date
-  // shuffle output but the DB still holds the originally-materialized rows).
-  const canonicalOrder = new Map(
-    getDailyMatchupsForDate(date).map((entry, idx) => [entry.id, idx]),
-  );
+  // Stable display order: sort by the serial primary key (= DB insertion
+  // order). This preserves the lineup-stability invariant — once a date is
+  // materialized, growing or reshuffling DAILY_POOL never reorders that
+  // date's already-stored rows. (Previously we re-sorted using a freshly
+  // recomputed `getDailyMatchupsForDate(date)`, which silently rotated
+  // existing dates whenever the pool was edited.)
   return rows
     .map((row) => ({ entry: poolById.get(row.matchupId), row }))
     .filter(
       (x): x is { entry: NonNullable<typeof x.entry>; row: typeof rows[number] } =>
         x.entry !== undefined,
     )
-    .sort((a, b) => {
-      const ai = canonicalOrder.get(a.entry.id) ?? 999;
-      const bi = canonicalOrder.get(b.entry.id) ?? 999;
-      return ai - bi;
-    });
+    .sort((a, b) => a.row.id - b.row.id);
 }
 
 // Try to resolve winnerSide by reading the fight verdict cache. If the cache
@@ -282,15 +277,21 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const date = getDailyDateString();
-  const lineup = getDailyMatchupsForDate(date);
-  const entry = lineup.find((p) => p.id === matchupId);
+  // Validate against the MATERIALIZED lineup (DB rows), not a freshly
+  // recomputed `getDailyMatchupsForDate(date)`. If DAILY_POOL is appended
+  // mid-day, the canonical shuffle output changes, but the user's GET
+  // response was built from the persisted DB rows — POST must accept the
+  // same IDs the client received. Otherwise read/write paths disagree and
+  // a mid-day deploy 404s every already-shown matchup.
+  const pairs = await ensureDailyRows(date);
+  const entry = pairs.find((p) => p.entry.id === matchupId)?.entry;
   if (!entry) {
-    // Either an unknown id or one that isn't in today's lineup — clients
-    // should only POST for matchups they got back from GET /api/daily.
+    // Either an unknown id or one that isn't in today's materialized
+    // lineup — clients should only POST for matchups they got back from
+    // GET /api/daily.
     res.status(404).json({ error: "Matchup not part of today's lineup" });
     return;
   }
-  await ensureDailyRows(date);
 
   // Note: we intentionally do NOT block picks here when the global verdict is
   // already known. Picks are per-user — the user only sees `winnerSide` after
