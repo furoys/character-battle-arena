@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /profile
+Disallow: /challenge/
+
+Sitemap: https://anyonevsanyone.replit.app/sitemap.xml
