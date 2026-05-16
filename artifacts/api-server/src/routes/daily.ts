@@ -577,19 +577,24 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
   let recoverablePickId: number | null = null;
   let recoverableStreakLength = 0;
   // Walk newest-first looking for the first wrong unshielded resolved pick.
-  // Count any correct picks BEFORE finding it (those are the user's current
-  // active streak — already included in currentPickStreak). After the wrong
-  // pick is found, continue counting correct picks until the NEXT unshielded
-  // wrong pick (which would still break the chain even after the shield).
+  // The shield is offered ONLY when that wrong pick is the user's most recent
+  // resolved pick — i.e., they just lost and their streak is currently broken.
+  // If they've already gotten back on a winning streak since the loss, the
+  // button hides (no point offering to rescue an old loss when the user has
+  // moved on). After the wrong pick is found, count correct picks BEFORE it
+  // (in chronological order, which is "after" in newest-first walk terms) —
+  // those are the picks that would re-chain into currentPickStreak once the
+  // loss is shielded, until we hit the next unshielded wrong pick.
   let foundWrong = false;
-  let preWrongCorrect = 0;
   let postWrongCorrect = 0;
   for (const r of rows) {
     if (r.winnerSide === null) continue;
     const correct = r.pickedSide === r.winnerSide;
     if (!foundWrong) {
       if (correct) {
-        preWrongCorrect += 1;
+        // A correct pick newer than any loss means the user is currently on a
+        // winning streak — don't surface the shield until they actually lose.
+        break;
       } else if (isShielded(r)) {
         // Already shielded — keep walking; doesn't break.
         continue;
@@ -608,7 +613,9 @@ router.get("/me/daily", requireAuth, async (req, res): Promise<void> => {
     }
   }
   if (recoverablePickId !== null) {
-    recoverableStreakLength = preWrongCorrect + postWrongCorrect;
+    // currentPickStreak is 0 here (we just lost), so the rescued streak length
+    // is exactly the chain of correct picks immediately preceding the loss.
+    recoverableStreakLength = postWrongCorrect;
   }
   // Cooldown: one shield per 7 days, based on the most recent usedAt.
   const [latestShield] = await db
