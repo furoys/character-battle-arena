@@ -191,8 +191,11 @@ function PickReviewModal({
   const sideChars = side === 1 ? t1 : t2;
   const otherChars = side === 1 ? t2 : t1;
   return (
+    // z-[60] sits above the global bottom nav (z-50), otherwise the sticky
+    // Lock In footer is hidden behind the ARENA/DAILY/DEBATE ROOM tab bar
+    // and users can't actually confirm a pick.
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-[60] flex flex-col"
       style={{ background: "rgba(8,8,14,0.97)" }}
     >
       {/* Header */}
@@ -326,9 +329,24 @@ function FighterDetailCard({ character, accent }: { character: Character; accent
   const finishers = profile ? asStringList(profile.finishers) : [];
   const combatStyle = profile && typeof profile.combatStyle === "string" ? profile.combatStyle : null;
   const temperament = profile && typeof profile.temperament === "string" ? profile.temperament : null;
+  // Canonical bio/lore lives in `description`; v3Profile may carry a longer
+  // backstory/bio under a few possible keys depending on the roster import.
+  // Prefer the longer of the two so users see the richest text available.
+  const bioCandidates = [
+    typeof (character as unknown as { description?: string }).description === "string"
+      ? (character as unknown as { description: string }).description
+      : null,
+    profile && typeof profile.bio === "string" ? (profile.bio as string) : null,
+    profile && typeof profile.backstory === "string" ? (profile.backstory as string) : null,
+    profile && typeof profile.lore === "string" ? (profile.lore as string) : null,
+  ].filter((s): s is string => !!s && s.trim().length > 0);
+  const bio = bioCandidates.sort((a, b) => b.length - a.length)[0] ?? null;
+  const weaknesses = typeof (character as unknown as { weaknesses?: string }).weaknesses === "string"
+    ? (character as unknown as { weaknesses: string }).weaknesses
+    : null;
   return (
     <div
-      className="flex gap-3 p-3"
+      className="flex flex-wrap gap-3 p-3"
       style={{
         background: "rgba(255,255,255,0.025)",
         border: `1px solid ${accent}33`,
@@ -400,7 +418,29 @@ function FighterDetailCard({ character, accent }: { character: Character; accent
             </div>
           </div>
         )}
+        {weaknesses && (
+          <div className="mt-1.5">
+            <div style={{ fontSize: 7, color: "#ff6b35", letterSpacing: "0.2em", fontWeight: 800 }}>
+              WEAKNESSES
+            </div>
+            <div className="mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", lineHeight: 1.35 }}>
+              {weaknesses}
+            </div>
+          </div>
+        )}
       </div>
+      {/* Bio / lore — full-width below the portrait+stats row so longer text
+          can breathe. Hidden when the character has no description at all. */}
+      {bio && (
+        <div className="basis-full">
+          <div style={{ fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", fontWeight: 800, marginBottom: 4 }}>
+            BIO · LORE
+          </div>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.45 }}>
+            {bio}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
