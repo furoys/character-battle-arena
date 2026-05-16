@@ -448,6 +448,10 @@ export function Home() {
   // Used by the Daily page → "Watch Fight" flow so the user goes straight
   // into the cinematic without an intermediate home-screen click.
   const [autoFightArmed, setAutoFightArmed] = useState(false);
+  // Remembers that the current fight originated from the Daily Matchups page,
+  // so that closing the cinematic (NEW FIGHT) routes back to /daily instead
+  // of staying on home with cleared teams.
+  const [fightSourceDaily, setFightSourceDaily] = useState(false);
   const teamSignature = (a: Character[], b: Character[]) => {
     const norm = (cs: Character[]) => cs.map((c) => c.id).sort((x, y) => x - y).join(",");
     const ids = [norm(a), norm(b)].sort();
@@ -474,6 +478,10 @@ export function Home() {
       // effect below — we just arm the flag here.
       if (parsed?.autoFight === true && t1.length && t2.length) {
         setAutoFightArmed(true);
+      }
+      // Track that this fight came from Daily so NEW FIGHT routes back.
+      if (typeof parsed?.dailyMatchupId === "string" && parsed.dailyMatchupId) {
+        setFightSourceDaily(true);
       }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1445,11 +1453,17 @@ export function Home() {
           onClose={() => {
             // Reset everything so the next fight starts from a blank slate —
             // teams cleared, mutate state torn down, in-flight lock released.
+            // If this fight came from the Daily Matchups page, route the user
+            // back there instead of leaving them on home with empty teams.
             fightInFlightRef.current = false;
             setShowModal(false);
             simulateFight.reset();
             setTeam1([]);
             setTeam2([]);
+            if (fightSourceDaily) {
+              setFightSourceDaily(false);
+              navigate("/daily");
+            }
           }}
           onRematch={() => {
             simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null } });
