@@ -10,7 +10,7 @@ import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2, Mail } from "lucide-react";
+import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -806,20 +806,19 @@ export function Home() {
 
       <div className="flex flex-col h-full min-h-0">
         <PendingChallengesBar />
-        <DailyMatchupHomeTile />
-        {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
+        {/* ── TOP CHROME — single merged band: mute / logo / energy+profile,
+             flush against the Daily tile below (no divider between them). ── */}
         <div
-          className="flex-shrink-0 sticky top-0 z-30 relative flex items-center justify-end px-3 py-2"
+          className="flex-shrink-0 relative flex items-center justify-end px-3 py-1.5"
           style={{
-            background: "linear-gradient(180deg, #000000 0%, #080810 100%)",
-            borderBottom: "1px solid rgba(255,0,85,0.2)",
+            background: "linear-gradient(180deg, #000000 0%, #050509 100%)",
           }}
         >
           <div className="absolute left-3 top-1/2 -translate-y-1/2">
             <MusicToggle />
           </div>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <AvaLogo className="h-7 w-auto" />
+            <AvaLogo className="h-6 w-auto" />
           </div>
           <div className="flex items-center gap-2">
             <Show when="signed-in">
@@ -828,6 +827,7 @@ export function Home() {
             </Show>
           </div>
         </div>
+        <DailyMatchupHomeTile />
 
         {/* ── CHARACTER GRID ─────────────────────────────────────────────── */}
         {isLoading ? (
@@ -1417,36 +1417,37 @@ export function Home() {
 
           </div>
 
-          {/* ── Feedback micro-row ─────────────────────────────────── */}
-          <div className="px-2 pb-3 pt-0.5 flex gap-1.5">
+          {/* ── Feedback micro-row — text links, no chrome, so they read
+               as utility footnotes instead of competing with RANDOM /
+               CHALLENGE for tap priority. ─────────────────────────────── */}
+          <div className="px-2 pb-2 pt-1 flex items-center justify-center gap-3">
             <button
               onClick={() => window.open(BUG_REPORT_URL, "_system")}
-              className="flex-1 flex items-center justify-center gap-1 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+              className="font-display uppercase tracking-widest transition-opacity duration-150 active:opacity-60"
               style={{
-                height: 26,
                 fontSize: 8,
-                letterSpacing: "0.15em",
-                border: "1px solid rgba(255,0,85,0.2)",
-                background: "rgba(255,0,85,0.04)",
-                color: "rgba(255,0,85,0.5)",
+                letterSpacing: "0.18em",
+                color: "rgba(255,255,255,0.32)",
+                background: "transparent",
+                border: "none",
+                padding: "4px 2px",
               }}
             >
-              <Mail style={{ width: 9, height: 9 }} />
               Report Issue
             </button>
+            <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 8 }}>•</span>
             <button
               onClick={() => window.open(MATCHUP_URL, "_system")}
-              className="flex-1 flex items-center justify-center gap-1 font-display uppercase tracking-widest transition-all duration-150 active:scale-[0.97]"
+              className="font-display uppercase tracking-widest transition-opacity duration-150 active:opacity-60"
               style={{
-                height: 26,
                 fontSize: 8,
-                letterSpacing: "0.15em",
-                border: "1px solid rgba(255,200,0,0.15)",
-                background: "rgba(255,200,0,0.03)",
-                color: "rgba(255,200,0,0.45)",
+                letterSpacing: "0.18em",
+                color: "rgba(255,255,255,0.32)",
+                background: "transparent",
+                border: "none",
+                padding: "4px 2px",
               }}
             >
-              <Swords style={{ width: 9, height: 9 }} />
               Suggest Matchup
             </button>
           </div>
