@@ -51,7 +51,7 @@ type MeDailyResponse = {
 };
 
 type LeaderboardResponse = {
-  leaders: { userId: string; correct: number; total: number }[];
+  leaders: { userId: string; correct: number; total: number; displayName: string }[];
 };
 
 // ── Countdown to next 8pm ET drop ────────────────────────────────────────────
@@ -1323,7 +1323,7 @@ export function Daily() {
                   const isMe = isSignedIn && user?.id === row.userId;
                   const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
                   const pct = row.total ? Math.round((row.correct / row.total) * 100) : 0;
-                  const shortId = isMe ? "YOU" : `${row.userId.slice(-6)}`;
+                  const shortId = isMe ? "YOU" : (row.displayName || `Player ${row.userId.slice(-6)}`);
                   return (
                     <div
                       key={row.userId}

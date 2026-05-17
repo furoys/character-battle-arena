@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { clerkClient } from "@clerk/express";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import {
   db,
@@ -435,7 +436,7 @@ router.post("/daily/watch-ad", requireAuth, async (req, res): Promise<void> => {
 
 // ── GET /api/daily/leaderboard ────────────────────────────────────────────────
 // Top users by total correct picks across all resolved daily matchups.
-router.get("/daily/leaderboard", async (_req, res): Promise<void> => {
+router.get("/daily/leaderboard", async (req, res): Promise<void> => {
   const rows = await db
     .select({
       userId: dailyPicksTable.userId,
@@ -464,7 +465,38 @@ router.get("/daily/leaderboard", async (_req, res): Promise<void> => {
     )
     .limit(20);
 
-  res.json({ leaders: rows });
+  // Enrich with display names from Clerk so the leaderboard doesn't show
+  // opaque user IDs. Best-effort — if Clerk fails (network, key issue, etc.)
+  // we still return the rows with a fallback name derived from the userId.
+  const userIds = rows.map((r) => r.userId).filter((id): id is string => !!id);
+  const nameById = new Map<string, string>();
+  if (userIds.length > 0) {
+    try {
+      const users = await clerkClient.users.getUserList({
+        userId: userIds,
+        limit: userIds.length,
+      });
+      for (const u of users.data) {
+        const handle =
+          u.username ||
+          [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
+          u.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+          "";
+        if (handle) nameById.set(u.id, handle);
+      }
+    } catch (err) {
+      req.log?.warn?.({ err }, "leaderboard: clerk lookup failed; falling back to userId suffix");
+    }
+  }
+
+  const leaders = rows.map((r) => ({
+    userId: r.userId,
+    correct: r.correct,
+    total: r.total,
+    displayName: nameById.get(r.userId) ?? `Player ${r.userId.slice(-6)}`,
+  }));
+
+  res.json({ leaders });
 });
 
 // ── GET /api/me/daily ─────────────────────────────────────────────────────────
