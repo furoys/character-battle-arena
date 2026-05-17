@@ -8,6 +8,7 @@ import { CharacterCard } from "@/components/character-card";
 import { useToast } from "@/hooks/use-toast";
 import { FightScreen } from "@/components/fight-screen";
 import { AvaLogo } from "@/components/ava-logo";
+import { GhostHandTutorial } from "@/components/ghost-hand-tutorial";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
@@ -1033,20 +1034,31 @@ export function Home() {
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {(Array.isArray(filteredCharacters) ? filteredCharacters : []).slice(0, visibleCount).map(character => (
-                  <CharacterCard
-                    key={character.id}
-                    character={character}
-                    selectedTeam={getCharacterTeam(character.id)}
-                    onClick={() => handleCharacterClick(character)}
-                    isFavorite={favorites.has(character.id)}
-                    onToggleFavorite={() => toggleFavorite(character.id)}
-                    disabled={
-                      (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
-                      (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
-                    }
-                  />
-                ))}
+                {(Array.isArray(filteredCharacters) ? filteredCharacters : []).slice(0, visibleCount).map((character, idx) => {
+                  // The first two cards get tutorial-target attributes so the
+                  // Ghost Hand onboarding can locate them via DOM query.
+                  const card = (
+                    <CharacterCard
+                      character={character}
+                      selectedTeam={getCharacterTeam(character.id)}
+                      onClick={() => handleCharacterClick(character)}
+                      isFavorite={favorites.has(character.id)}
+                      onToggleFavorite={() => toggleFavorite(character.id)}
+                      disabled={
+                        (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
+                        (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
+                      }
+                    />
+                  );
+                  if (idx < 2) {
+                    return (
+                      <div key={character.id} data-tutorial-card={idx}>
+                        {card}
+                      </div>
+                    );
+                  }
+                  return <div key={character.id}>{card}</div>;
+                })}
               </div>
               {/* Sentinel div — intersection observer loads more cards when this comes into view */}
               {visibleCount < filteredCharacters.length && (
@@ -1452,6 +1464,19 @@ export function Home() {
             </button>
           </div>
         </div>
+
+        {/* First-time onboarding — Ghost Hand guided fight. Self-gates on
+            localStorage so it only ever fires once per device. */}
+        <GhostHandTutorial
+          characters={Array.isArray(filteredCharacters) ? filteredCharacters : []}
+          team1Count={team1.length}
+          team2Count={team2.length}
+          fightStarted={showModal}
+          onPickForTeam={(character, slot) => {
+            if (slot === 1) setTeam1([character]);
+            else setTeam2([character]);
+          }}
+        />
 
         <FightScreen
           open={showModal}

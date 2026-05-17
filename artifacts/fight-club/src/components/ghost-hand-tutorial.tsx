@@ -1,0 +1,368 @@
+import { useEffect, useRef, useState } from "react";
+import type { Character } from "@workspace/api-client-react";
+
+const STORAGE_KEY = "ava.firstFightTutorialDone";
+
+type Step = "intro" | "pickTeam1" | "pickTeam2" | "fight" | "celebrate" | "done";
+
+interface Props {
+  characters: Character[];
+  team1Count: number;
+  team2Count: number;
+  fightStarted: boolean;
+  onPickForTeam: (character: Character, slot: 1 | 2) => void;
+}
+
+interface HandPosition {
+  x: number;
+  y: number;
+  scale: number;
+  tap: boolean;
+}
+
+const CAPTIONS: Record<Step, string> = {
+  intro: "Welcome to A.v.A",
+  pickTeam1: "Pick your fighter.",
+  pickTeam2: "Pick their enemy.",
+  fight: "Find out who wins.",
+  celebrate: "You're in.",
+  done: "",
+};
+
+export function GhostHandTutorial({
+  characters,
+  team1Count,
+  team2Count,
+  fightStarted,
+  onPickForTeam,
+}: Props) {
+  const [active, setActive] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== "1";
+    } catch {
+      return false;
+    }
+  });
+  const [step, setStep] = useState<Step>("intro");
+  const [hand, setHand] = useState<HandPosition>({ x: -200, y: -200, scale: 1, tap: false });
+  const [captionVisible, setCaptionVisible] = useState(true);
+  const cancelledRef = useRef(false);
+
+  // Bail reactively if teams ever get pre-populated (e.g. async daily preload
+  // hydrates after mount). Must NOT be mount-only — async state would slip
+  // past a single check and we'd overwrite the user's real picks.
+  useEffect(() => {
+    if (!active) return;
+    if (team1Count > 0 || team2Count > 0) {
+      finish();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, team1Count, team2Count]);
+
+  function finish() {
+    cancelledRef.current = true;
+    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
+    setStep("done");
+    setActive(false);
+  }
+
+  function skip() {
+    finish();
+  }
+
+  // Locate a DOM element's center in viewport coords.
+  function centerOf(selector: string): { x: number; y: number } | null {
+    const el = document.querySelector(selector) as HTMLElement | null;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  // Try repeatedly to locate an element (cards may still be mounting).
+  async function waitForCenter(selector: string, timeoutMs = 3000): Promise<{ x: number; y: number } | null> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (cancelledRef.current) return null;
+      const c = centerOf(selector);
+      if (c && c.x > 0 && c.y > 0) return c;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return null;
+  }
+
+  async function sleep(ms: number) {
+    await new Promise(r => setTimeout(r, ms));
+  }
+
+  async function flashCaption(next: Step) {
+    setCaptionVisible(false);
+    await sleep(180);
+    if (cancelledRef.current) return;
+    setStep(next);
+    setCaptionVisible(true);
+  }
+
+  async function moveHandTo(target: { x: number; y: number }) {
+    setHand(h => ({ ...h, x: target.x, y: target.y, scale: 1, tap: false }));
+    await sleep(650);
+  }
+
+  async function doTap() {
+    setHand(h => ({ ...h, scale: 0.82, tap: true }));
+    await sleep(180);
+    setHand(h => ({ ...h, scale: 1, tap: false }));
+    await sleep(120);
+  }
+
+  // Main choreography. Re-runs only when `active` flips on (effectively once).
+  // Any failure path (missing DOM target, timeout) calls finish() so the user
+  // can never get stranded behind a stuck overlay.
+  useEffect(() => {
+    if (!active) return;
+    if (!characters.length) return; // wait for roster
+    let cancelled = false;
+    cancelledRef.current = false;
+    const aborted = () => cancelled || cancelledRef.current;
+
+    (async () => {
+      try {
+        // Brief intro caption
+        await sleep(450);
+        if (aborted()) return;
+        await flashCaption("pickTeam1");
+
+        // STEP 1 — Team 1 pick
+        const targetA = await waitForCenter('[data-tutorial-card="0"]');
+        if (aborted()) return;
+        if (!targetA) { finish(); return; }
+        await moveHandTo(targetA);
+        await doTap();
+        if (aborted()) return;
+        const charA = characters[0];
+        if (!charA) { finish(); return; }
+        onPickForTeam(charA, 1);
+        await sleep(450);
+        if (aborted()) return;
+
+        // STEP 2 — Team 2 pick
+        await flashCaption("pickTeam2");
+        const targetB = await waitForCenter('[data-tutorial-card="1"]');
+        if (aborted()) return;
+        if (!targetB) { finish(); return; }
+        await moveHandTo(targetB);
+        await doTap();
+        if (aborted()) return;
+        const charB = characters[1] ?? characters[0];
+        if (!charB) { finish(); return; }
+        onPickForTeam(charB, 2);
+        await sleep(550);
+        if (aborted()) return;
+
+        // STEP 3 — Hover on FIGHT, wait for real tap
+        await flashCaption("fight");
+        // FIGHT button only renders once both teams are populated — wait a beat.
+        const fightTarget = await waitForCenter('[data-testid="button-fight"]', 4000);
+        if (aborted()) return;
+        if (!fightTarget) { finish(); return; }
+        await moveHandTo(fightTarget);
+        // Linger pulsing — no auto-tap. We wait for the user.
+      } catch {
+        // Any unexpected error → never strand the overlay.
+        if (!aborted()) finish();
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, characters.length]);
+
+  // When the real FIGHT starts, finalize regardless of which step we're on.
+  // If the user starts a fight before tutorial gets to the FIGHT step (e.g.,
+  // they skip ahead and tap real cards themselves), we still dismiss cleanly.
+  useEffect(() => {
+    if (!active) return;
+    if (!fightStarted) return;
+    (async () => {
+      // Only run the celebrate beat if we actually reached the FIGHT prompt;
+      // otherwise just dismiss silently so we don't pop a banner over a fight
+      // the user initiated on their own.
+      if (step === "fight") {
+        await flashCaption("celebrate");
+        await sleep(1400);
+      }
+      finish();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fightStarted, active]);
+
+  if (!active) return null;
+
+  const showHand = step === "pickTeam1" || step === "pickTeam2" || step === "fight";
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Welcome tutorial"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 90,
+        pointerEvents: "none", // never block taps; we want user to tap FIGHT
+      }}
+    >
+      {/* Soft vignette so the hand and caption read against any background */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            step === "celebrate"
+              ? "radial-gradient(ellipse at center, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.9) 100%)"
+              : "radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.55) 100%)",
+          transition: "background 350ms ease",
+        }}
+      />
+
+      {/* Ghost hand */}
+      {showHand && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            transform: `translate(${hand.x - 24}px, ${hand.y - 8}px) scale(${hand.scale})`,
+            transformOrigin: "24px 8px",
+            transition:
+              "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)",
+            pointerEvents: "none",
+            filter: "drop-shadow(0 0 12px rgba(255,0,85,0.7)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))",
+          }}
+        >
+          {/* Pulse ring on FIGHT step */}
+          {step === "fight" && (
+            <div
+              style={{
+                position: "absolute",
+                left: 8,
+                top: -8,
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                border: "2px solid #ff0055",
+                animation: "ghostPulse 1.2s ease-out infinite",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+          {/* Tap ripple */}
+          {hand.tap && (
+            <div
+              style={{
+                position: "absolute",
+                left: 8,
+                top: -8,
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                background: "rgba(255,0,85,0.35)",
+                animation: "ghostTap 380ms ease-out forwards",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+          {/* Hand SVG — stylized pointing index finger */}
+          <svg width="56" height="64" viewBox="0 0 56 64" fill="none">
+            <defs>
+              <linearGradient id="ghostHandFill" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
+                <stop offset="1" stopColor="#ffd8e4" stopOpacity="0.85" />
+              </linearGradient>
+            </defs>
+            {/* Index finger */}
+            <rect x="20" y="2" width="12" height="22" rx="6" fill="url(#ghostHandFill)" stroke="#ff0055" strokeWidth="1.5" />
+            {/* Palm */}
+            <path
+              d="M10 22 Q10 16 16 16 L36 16 Q42 16 42 22 L42 46 Q42 58 28 58 Q14 58 10 46 Z"
+              fill="url(#ghostHandFill)"
+              stroke="#ff0055"
+              strokeWidth="1.5"
+            />
+            {/* Thumb */}
+            <ellipse cx="10" cy="30" rx="6" ry="9" fill="url(#ghostHandFill)" stroke="#ff0055" strokeWidth="1.5" />
+          </svg>
+        </div>
+      )}
+
+      {/* Caption */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: step === "celebrate" ? "44%" : "12%",
+          display: "flex",
+          justifyContent: "center",
+          opacity: captionVisible ? 1 : 0,
+          transition: "opacity 220ms ease, top 350ms ease",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(0,0,0,0.85)",
+            border: "1.5px solid #ff0055",
+            padding: step === "celebrate" ? "16px 28px" : "10px 18px",
+            color: "#fff",
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: step === "celebrate" ? 32 : 18,
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            textShadow: "0 0 14px rgba(255,0,85,0.7)",
+            boxShadow: "0 0 24px rgba(255,0,85,0.35), 0 4px 16px rgba(0,0,0,0.8)",
+          }}
+        >
+          {CAPTIONS[step]}
+        </div>
+      </div>
+
+      {/* Skip button — always available, never hidden, pointerEvents:auto so it's tappable
+          even though the rest of the overlay is non-interactive. */}
+      {step !== "celebrate" && step !== "done" && (
+        <button
+          onClick={skip}
+          style={{
+            position: "absolute",
+            bottom: 12,
+            right: 12,
+            padding: "8px 14px",
+            background: "rgba(0,0,0,0.7)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            color: "rgba(255,255,255,0.55)",
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 11,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            pointerEvents: "auto",
+          }}
+        >
+          Skip
+        </button>
+      )}
+
+      <style>{`
+        @keyframes ghostPulse {
+          0%   { transform: scale(0.75); opacity: 0.9; }
+          70%  { transform: scale(1.6); opacity: 0; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+        @keyframes ghostTap {
+          0%   { transform: scale(0.4); opacity: 0.9; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
