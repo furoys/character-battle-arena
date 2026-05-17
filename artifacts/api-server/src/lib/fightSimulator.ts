@@ -2389,6 +2389,48 @@ function parseSections(raw: string): Map<string, string> {
   return map;
 }
 
+// Sanitize one half of a parallel narrative call before concatenation.
+// Defensive cleanup for two observed model failure modes:
+//   1. Preamble before the first === marker ("Certainly. Here's the
+//      continuation of the fight, starting where you're assigned." etc.) —
+//      this leaks into the *previous* section once the two halves are joined
+//      because section extraction walks === to ===.
+//   2. Trailing meta-markers at the end of a half ("Pending completion by
+//      another contributor.", "to be continued", "(continued in next pass)",
+//      "---", "###") — these tail-end up inside the last section of the
+//      first half for the same reason.
+// The prompt already bans both, but models slip. Strip them here so the
+// reader never sees them.
+function sanitizeNarrativeHalf(raw: string, opts: { stripPreamble: boolean }): string {
+  let out = raw;
+  if (opts.stripPreamble) {
+    const firstMarker = out.search(/===\s*[A-Za-z]/i);
+    if (firstMarker > 0) out = out.slice(firstMarker);
+  }
+  // Strip trailing junk lines: separators (---, ###, ***), and known
+  // meta-marker phrases the model uses when it gives up mid-section.
+  const META_TAIL_RE = new RegExp(
+    "(?:" +
+      // separator-only lines
+      "\\s*(?:-{2,}|#{2,}|\\*{2,})\\s*" +
+      // meta phrases (case-insensitive, may be in parens/brackets, with trailing punctuation)
+      "|\\s*[\\(\\[]?\\s*(?:" +
+        "pending completion(?:[^\\n]*)?" +
+        "|to be continued(?:[^\\n]*)?" +
+        "|continued (?:later|next pass|in (?:the )?next pass)(?:[^\\n]*)?" +
+        "|continue (?:this )?(?:scene|fight)(?: later)?(?:[^\\n]*)?" +
+        "|partial output(?:[^\\n]*)?" +
+        "|output limit(?:[^\\n]*)?" +
+        "|more (?:to )?(?:come|follow|next pass)(?:[^\\n]*)?" +
+        "|\\(?\\s*end of (?:assigned )?sections?\\s*\\)?" +
+      ")\\s*[\\.\\!\\?]?\\s*[\\)\\]]?\\s*" +
+    ")+$",
+    "i",
+  );
+  out = out.replace(META_TAIL_RE, "");
+  return out.trimEnd();
+}
+
 // Extract a named section by key from the AI narrative text.
 function extractSection(text: string, ...patterns: string[]): string {
   const sections = parseSections(text);
@@ -3000,9 +3042,14 @@ DEVELOPER ALLIANCE OVERRIDE — MANDATORY: Chris Henry and Troy Wilson are on op
       aiTextWithTimeout(promptA, tokensA, 45_000, streamerA?.onDelta),
       aiTextWithTimeout(promptB, tokensB, 45_000, streamerB?.onDelta),
     ]);
-    streamerA?.onEnd(rawA);
-    streamerB?.onEnd(rawB);
-    raw = `${rawA}\n\n${rawB}`;
+    const cleanA = sanitizeNarrativeHalf(rawA, { stripPreamble: false });
+    const cleanB = sanitizeNarrativeHalf(rawB, { stripPreamble: true });
+    // Feed sanitized halves into onEnd so the SSE canonical section events
+    // for the last section of each call don't carry the trailing meta-marker
+    // junk that we just stripped from the concatenated buffer.
+    streamerA?.onEnd(cleanA);
+    streamerB?.onEnd(cleanB);
+    raw = `${cleanA}\n\n${cleanB}`;
   } else {
     // Short fights: single call is already fast enough.
     const fullPrompt = promptWithOutputBlock(
