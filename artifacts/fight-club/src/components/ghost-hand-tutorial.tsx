@@ -6,11 +6,17 @@ const STORAGE_KEY = "ava.firstFightTutorialDone";
 type Step = "intro" | "pickTeam1" | "pickTeam2" | "fight" | "celebrate" | "done";
 
 interface Props {
-  characters: Character[];
+  /** Two iconic, recognizable characters to stage during the tutorial. If
+   *  null (e.g. roster not yet loaded), the tutorial waits and self-bails. */
+  tutorialPicks: [Character, Character] | null;
   team1Count: number;
   team2Count: number;
   fightStarted: boolean;
   onPickForTeam: (character: Character, slot: 1 | 2) => void;
+  /** Fires once when the tutorial transitions out of its active state, for
+   *  any reason (skip, completed FIGHT tap, pre-populated bail, fight closed).
+   *  Used by the parent to flip the "tutorial pending" UI gating off. */
+  onFinish?: () => void;
 }
 
 interface HandPosition {
@@ -22,19 +28,20 @@ interface HandPosition {
 
 const CAPTIONS: Record<Step, string> = {
   intro: "Welcome to A.v.A",
-  pickTeam1: "Pick your fighter.",
-  pickTeam2: "Pick their enemy.",
-  fight: "Find out who wins.",
-  celebrate: "You're in.",
+  pickTeam1: "Choose Champion",
+  pickTeam2: "Choose Nemesis",
+  fight: "Awaken Combat",
+  celebrate: "Legendary.",
   done: "",
 };
 
 export function GhostHandTutorial({
-  characters,
+  tutorialPicks,
   team1Count,
   team2Count,
   fightStarted,
   onPickForTeam,
+  onFinish,
 }: Props) {
   const [active, setActive] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -48,12 +55,20 @@ export function GhostHandTutorial({
   const [hand, setHand] = useState<HandPosition>({ x: -200, y: -200, scale: 1, tap: false });
   const [captionVisible, setCaptionVisible] = useState(true);
   const cancelledRef = useRef(false);
+  // Flipped true once the choreography itself starts calling `onPickForTeam`.
+  // After that, team-count changes are EXPECTED (we caused them) and must NOT
+  // trigger the pre-populated-team bail — that would self-cancel the tutorial
+  // immediately after Step 1.
+  const scriptedPickingRef = useRef(false);
+  const finishedRef = useRef(false);
 
   // Bail reactively if teams ever get pre-populated (e.g. async daily preload
   // hydrates after mount). Must NOT be mount-only — async state would slip
-  // past a single check and we'd overwrite the user's real picks.
+  // past a single check and we'd overwrite the user's real picks. But once
+  // OUR scripted picking has started, count changes are us, not the user.
   useEffect(() => {
     if (!active) return;
+    if (scriptedPickingRef.current) return;
     if (team1Count > 0 || team2Count > 0) {
       finish();
     }
@@ -65,6 +80,10 @@ export function GhostHandTutorial({
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
     setStep("done");
     setActive(false);
+    if (!finishedRef.current) {
+      finishedRef.current = true;
+      try { onFinish?.(); } catch { /* ignore parent errors */ }
+    }
   }
 
   function skip() {
@@ -79,13 +98,21 @@ export function GhostHandTutorial({
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
 
-  // Try repeatedly to locate an element (cards may still be mounting).
+  // Try repeatedly to locate an element (cards may still be mounting), then
+  // smooth-scroll it into view so the hand lands somewhere the user can see.
   async function waitForCenter(selector: string, timeoutMs = 3000): Promise<{ x: number; y: number } | null> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       if (cancelledRef.current) return null;
-      const c = centerOf(selector);
-      if (c && c.x > 0 && c.y > 0) return c;
+      const el = document.querySelector(selector) as HTMLElement | null;
+      if (el) {
+        try { el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }); } catch { /* ignore */ }
+        // Let the scroll settle before measuring final coords.
+        await new Promise(r => setTimeout(r, 420));
+        if (cancelledRef.current) return null;
+        const c = centerOf(selector);
+        if (c && c.x > 0 && c.y > 0) return c;
+      }
       await new Promise(r => setTimeout(r, 100));
     }
     return null;
@@ -120,10 +147,11 @@ export function GhostHandTutorial({
   // can never get stranded behind a stuck overlay.
   useEffect(() => {
     if (!active) return;
-    if (!characters.length) return; // wait for roster
+    if (!tutorialPicks) return; // wait for iconic picks to be resolved
     let cancelled = false;
     cancelledRef.current = false;
     const aborted = () => cancelled || cancelledRef.current;
+    const [pickA, pickB] = tutorialPicks;
 
     (async () => {
       try {
@@ -132,30 +160,29 @@ export function GhostHandTutorial({
         if (aborted()) return;
         await flashCaption("pickTeam1");
 
-        // STEP 1 — Team 1 pick
-        const targetA = await waitForCenter('[data-tutorial-card="0"]');
+        // STEP 1 — Team 1 pick (champion)
+        const targetA = await waitForCenter(`[data-tutorial-id="${pickA.id}"]`);
         if (aborted()) return;
         if (!targetA) { finish(); return; }
         await moveHandTo(targetA);
         await doTap();
         if (aborted()) return;
-        const charA = characters[0];
-        if (!charA) { finish(); return; }
-        onPickForTeam(charA, 1);
+        // Mark scripted-pick phase BEFORE we mutate parent state, so the
+        // reactive bail effect doesn't fire on the resulting team-count tick.
+        scriptedPickingRef.current = true;
+        onPickForTeam(pickA, 1);
         await sleep(450);
         if (aborted()) return;
 
-        // STEP 2 — Team 2 pick
+        // STEP 2 — Team 2 pick (nemesis)
         await flashCaption("pickTeam2");
-        const targetB = await waitForCenter('[data-tutorial-card="1"]');
+        const targetB = await waitForCenter(`[data-tutorial-id="${pickB.id}"]`);
         if (aborted()) return;
         if (!targetB) { finish(); return; }
         await moveHandTo(targetB);
         await doTap();
         if (aborted()) return;
-        const charB = characters[1] ?? characters[0];
-        if (!charB) { finish(); return; }
-        onPickForTeam(charB, 2);
+        onPickForTeam(pickB, 2);
         await sleep(550);
         if (aborted()) return;
 
@@ -175,7 +202,7 @@ export function GhostHandTutorial({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, characters.length]);
+  }, [active, tutorialPicks]);
 
   // When the real FIGHT starts, finalize regardless of which step we're on.
   // If the user starts a fight before tutorial gets to the FIGHT step (e.g.,

@@ -387,6 +387,7 @@ export function Home() {
       .map(id => characters.find(c => c.id === id))
       .filter((c): c is Character => c !== undefined)
       .slice(0, 5);
+    tutorialStagedRef.current = false;
     if (activeTeam === 1) setTeam1(members);
     else setTeam2(members);
     toast({ title: `Loaded "${savedTeam.name}"`, description: `Team ${activeTeam} updated` });
@@ -394,6 +395,11 @@ export function Home() {
 
   const [team1, setTeam1] = useState<Character[]>([]);
   const [team2, setTeam2] = useState<Character[]>([]);
+  // True while the current teams were staged by the GhostHandTutorial (not yet
+  // touched by the user). Used to skip the team-reset on FightScreen close
+  // so the new user lands back on Arena with their first matchup still loaded
+  // instead of an empty pair of slots.
+  const tutorialStagedRef = useRef(false);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
   const [flashTeam, setFlashTeam] = useState<1 | 2 | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -470,6 +476,7 @@ export function Home() {
       const team2 = Array.isArray(parsed?.team2) ? (parsed.team2 as Character[]) : [];
       const t1 = team1.slice(0, 5);
       const t2 = team2.slice(0, 5);
+      if (t1.length || t2.length) tutorialStagedRef.current = false;
       if (t1.length) setTeam1(t1);
       if (t2.length) setTeam2(t2);
       if (typeof parsed?.dailyMatchupId === "string" && parsed.dailyMatchupId && t1.length && t2.length) {
@@ -602,6 +609,8 @@ export function Home() {
   }, [filteredCharacters.length]);
 
   const handleCharacterClick = (character: Character) => {
+    // Any user-driven add/remove means teams are no longer pure tutorial state.
+    tutorialStagedRef.current = false;
     const inTeam1 = team1.some(c => c.id === character.id);
     const inTeam2 = team2.some(c => c.id === character.id);
     if (inTeam1) { setTeam1(t => t.filter(c => c.id !== character.id)); return; }
@@ -616,6 +625,43 @@ export function Home() {
       triggerFlash(2);
     }
   };
+
+  // ── First-time tutorial: pick two universally recognizable characters from
+  // the loaded roster so the very first matchup a new user sees is iconic
+  // ("oh, Goku vs Superman!") instead of two random deep-cut indie OCs. The
+  // priority order is rough universal name-recognition. Falls back to grid
+  // order if none of these names exist in the roster.
+  const ICONIC_TUTORIAL_NAMES = useMemo(() => [
+    "Superman", "Goku", "Batman", "Spider-Man", "Naruto",
+    "Saitama", "Iron Man", "Wonder Woman", "Hulk", "Sonic",
+    "Mario", "Pikachu", "Thor", "Captain America", "Deadpool",
+  ], []);
+  // Live state (NOT a one-time memo) — flips false the instant the tutorial
+  // finishes/skips so the iconic-prepend stops affecting the grid for the
+  // rest of this session. A memoized localStorage snapshot would have stayed
+  // stale until the next reload, leaving picks pinned to the top forever.
+  const [tutorialActive, setTutorialActive] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("ava.firstFightTutorialDone") !== "1"; }
+    catch { return false; }
+  });
+  const tutorialPicks = useMemo<[Character, Character] | null>(() => {
+    if (!tutorialActive) return null;
+    const all = Array.isArray(characters) ? characters : [];
+    if (all.length < 2) return null;
+    const found: Character[] = [];
+    const lowerNames = ICONIC_TUTORIAL_NAMES.map(n => n.toLowerCase());
+    for (const target of lowerNames) {
+      const hit = all.find(c =>
+        c.name?.toLowerCase() === target && !found.some(f => f.id === c.id)
+      );
+      if (hit) found.push(hit);
+      if (found.length === 2) break;
+    }
+    if (found.length === 2) return [found[0], found[1]] as [Character, Character];
+    // Fallback: first two of the roster.
+    return [all[0], all[1]] as [Character, Character];
+  }, [tutorialActive, characters, ICONIC_TUTORIAL_NAMES]);
 
   const DEVELOPER_IDS = [780, 781]; // Chris Henry, Troy Wilson
 
@@ -688,6 +734,7 @@ export function Home() {
     const r1 = shuffled.slice(0, size1);
     const r2 = shuffled.slice(size1, size1 + size2);
 
+    tutorialStagedRef.current = false;
     setTeam1(r1);
     setTeam2(r2);
   };
@@ -1034,31 +1081,33 @@ export function Home() {
 
             <div className="p-2.5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {(Array.isArray(filteredCharacters) ? filteredCharacters : []).slice(0, visibleCount).map((character, idx) => {
-                  // The first two cards get tutorial-target attributes so the
-                  // Ghost Hand onboarding can locate them via DOM query.
-                  const card = (
-                    <CharacterCard
-                      character={character}
-                      selectedTeam={getCharacterTeam(character.id)}
-                      onClick={() => handleCharacterClick(character)}
-                      isFavorite={favorites.has(character.id)}
-                      onToggleFavorite={() => toggleFavorite(character.id)}
-                      disabled={
-                        (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
-                        (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
-                      }
-                    />
-                  );
-                  if (idx < 2) {
-                    return (
-                      <div key={character.id} data-tutorial-card={idx}>
-                        {card}
-                      </div>
-                    );
+                {(() => {
+                  // While the tutorial is active, prepend the two iconic picks
+                  // so they are guaranteed to be rendered in the first slice
+                  // (otherwise lazy paging might leave them un-mounted, and
+                  // the ghost hand would have nothing to target).
+                  const base = Array.isArray(filteredCharacters) ? filteredCharacters : [];
+                  let list = base;
+                  if (tutorialPicks) {
+                    const pickIds = new Set([tutorialPicks[0].id, tutorialPicks[1].id]);
+                    list = [tutorialPicks[0], tutorialPicks[1], ...base.filter(c => !pickIds.has(c.id))];
                   }
-                  return <div key={character.id}>{card}</div>;
-                })}
+                  return list.slice(0, visibleCount).map(character => (
+                    <div key={character.id} data-tutorial-id={character.id}>
+                      <CharacterCard
+                        character={character}
+                        selectedTeam={getCharacterTeam(character.id)}
+                        onClick={() => handleCharacterClick(character)}
+                        isFavorite={favorites.has(character.id)}
+                        onToggleFavorite={() => toggleFavorite(character.id)}
+                        disabled={
+                          (activeTeam === 1 && team1.length >= 5 && getCharacterTeam(character.id) === null) ||
+                          (activeTeam === 2 && team2.length >= 5 && getCharacterTeam(character.id) === null)
+                        }
+                      />
+                    </div>
+                  ));
+                })()}
               </div>
               {/* Sentinel div — intersection observer loads more cards when this comes into view */}
               {visibleCount < filteredCharacters.length && (
@@ -1145,7 +1194,7 @@ export function Home() {
               active={activeTeam === 1}
               flash={flashTeam === 1}
               onActivate={() => setActiveTeam(1)}
-              onRemove={(id) => setTeam1(t => t.filter(c => c.id !== id))}
+              onRemove={(id) => { tutorialStagedRef.current = false; setTeam1(t => t.filter(c => c.id !== id)); }}
               onSave={user ? () => setSavingTeamSlot(1) : undefined}
             />
             <div
@@ -1180,7 +1229,7 @@ export function Home() {
               active={activeTeam === 2}
               flash={flashTeam === 2}
               onActivate={() => setActiveTeam(2)}
-              onRemove={(id) => setTeam2(t => t.filter(c => c.id !== id))}
+              onRemove={(id) => { tutorialStagedRef.current = false; setTeam2(t => t.filter(c => c.id !== id)); }}
               onSave={user ? () => setSavingTeamSlot(2) : undefined}
             />
           </div>
@@ -1468,11 +1517,16 @@ export function Home() {
         {/* First-time onboarding — Ghost Hand guided fight. Self-gates on
             localStorage so it only ever fires once per device. */}
         <GhostHandTutorial
-          characters={Array.isArray(filteredCharacters) ? filteredCharacters : []}
+          tutorialPicks={tutorialPicks}
           team1Count={team1.length}
           team2Count={team2.length}
           fightStarted={showModal}
+          onFinish={() => setTutorialActive(false)}
           onPickForTeam={(character, slot) => {
+            // Mark teams as tutorial-staged so the post-fight close handler
+            // won't wipe them — landing back on Arena with the same matchup
+            // ready to go is way friendlier than an empty pair of slots.
+            tutorialStagedRef.current = true;
             if (slot === 1) setTeam1([character]);
             else setTeam2([character]);
           }}
@@ -1488,8 +1542,17 @@ export function Home() {
             fightInFlightRef.current = false;
             setShowModal(false);
             simulateFight.reset();
-            setTeam1([]);
-            setTeam2([]);
+            // First-fight UX: if the teams were staged by the Ghost Hand
+            // tutorial (and the user never edited them), leave them in place
+            // so the new player lands back on Arena with their iconic matchup
+            // ready to re-fight, rematch, or tweak — much friendlier than
+            // dumping them onto two empty slots.
+            if (tutorialStagedRef.current) {
+              tutorialStagedRef.current = false;
+            } else {
+              setTeam1([]);
+              setTeam2([]);
+            }
             if (fightSourceDaily) {
               setFightSourceDaily(false);
               navigate("/daily");
