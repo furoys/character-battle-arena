@@ -598,9 +598,22 @@ function MatchupCard({
           </span>
         )}
         {!resolved && picked && (
-          <span style={{ fontSize: 8, fontWeight: 900, color: "#ffc800", letterSpacing: "0.12em" }}>
-            LOCKED
-          </span>
+          <button
+            disabled={picking}
+            onClick={() => onPick(matchup.matchupId, (matchup.userPick === 1 ? 2 : 1) as 1 | 2)}
+            className="flex items-center gap-1 active:scale-95 transition-all flex-shrink-0 px-2 py-1"
+            style={{
+              fontSize: 8,
+              fontWeight: 900,
+              color: "#ffc800",
+              letterSpacing: "0.12em",
+              border: "1px solid rgba(255,200,0,0.4)",
+              background: "rgba(255,200,0,0.06)",
+            }}
+            aria-label="Change your pick"
+          >
+            CHANGE PICK
+          </button>
         )}
       </div>
 
@@ -970,6 +983,11 @@ export function Daily() {
         if (data?.pickPoints) {
           setDaily((d) => (d ? { ...d, pickPoints: data.pickPoints! } : d));
         }
+      } else if (r.status === 409) {
+        // Pick already locked — fight has been simulated by someone else and
+        // the winner is now globally known, so we can't allow a swap. Just
+        // refresh so the user sees the current state (resolved verdict).
+        reload();
       } else if (r.ok) {
         const data = (await r.json().catch(() => null)) as { pickPoints?: PickPoints } | null;
         if (data?.pickPoints) {

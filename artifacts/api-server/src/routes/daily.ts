@@ -310,6 +310,8 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
   type PickOutcome =
     | { kind: "ok"; pickedSide: number; pickPoints: PickPoints }
     | { kind: "duplicate"; pickedSide: number; pickPoints: PickPoints }
+    | { kind: "changed"; pickedSide: number; pickPoints: PickPoints }
+    | { kind: "locked"; pickedSide: number; pickPoints: PickPoints }
     | { kind: "out-of-points"; pickPoints: PickPoints };
 
   const outcome = await db.transaction(async (tx): Promise<PickOutcome> => {
@@ -359,7 +361,36 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
       remaining: Math.max(0, allowance - used),
     });
     if (existing) {
-      return { kind: "duplicate", pickedSide: existing.pickedSide, pickPoints: buildPoints(usedNow) };
+      // Same side → idempotent retry, no-op.
+      if (existing.pickedSide === side) {
+        return { kind: "duplicate", pickedSide: existing.pickedSide, pickPoints: buildPoints(usedNow) };
+      }
+      // Different side → user wants to change their pick. Only allowed
+      // while the matchup is still GLOBALLY unresolved. Once `winnerSide`
+      // is set, GET /api/daily reveals it to anyone who has already picked,
+      // so allowing a swap after that would let a user peek-then-flip.
+      const [matchupRow] = await tx
+        .select({ winnerSide: dailyMatchupsTable.winnerSide })
+        .from(dailyMatchupsTable)
+        .where(
+          and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, matchupId)),
+        )
+        .limit(1);
+      if (matchupRow?.winnerSide != null) {
+        return { kind: "locked", pickedSide: existing.pickedSide, pickPoints: buildPoints(usedNow) };
+      }
+      await tx
+        .update(dailyPicksTable)
+        .set({ pickedSide: side })
+        .where(
+          and(
+            eq(dailyPicksTable.date, date),
+            eq(dailyPicksTable.userId, userId),
+            eq(dailyPicksTable.matchupId, matchupId),
+          ),
+        );
+      // No point spend — they already paid for the original pick.
+      return { kind: "changed", pickedSide: side, pickPoints: buildPoints(usedNow) };
     }
     if (usedNow >= allowance) {
       return { kind: "out-of-points", pickPoints: buildPoints(usedNow) };
@@ -378,10 +409,20 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
     });
     return;
   }
+  if (outcome.kind === "locked") {
+    res.status(409).json({
+      error: "pick-locked",
+      message: "This fight is already decided — picks are locked.",
+      pickedSide: outcome.pickedSide,
+      pickPoints: outcome.pickPoints,
+    });
+    return;
+  }
   res.json({
     matchupId,
     pickedSide: outcome.pickedSide,
     pickPoints: outcome.pickPoints,
+    changed: outcome.kind === "changed",
   });
 });
 
