@@ -809,13 +809,15 @@ export function Home() {
         <DailyMatchupHomeTile />
         {/* ── TOP BAR — logo + profile only ───────────────────────────── */}
         <div
-          className="flex-shrink-0 sticky top-0 z-30 flex items-center justify-between px-3 py-2"
+          className="flex-shrink-0 sticky top-0 z-30 relative flex items-center justify-end px-3 py-2"
           style={{
             background: "linear-gradient(180deg, #000000 0%, #080810 100%)",
             borderBottom: "1px solid rgba(255,0,85,0.2)",
           }}
         >
-          <AvaLogo className="h-7 w-auto" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <AvaLogo className="h-7 w-auto" />
+          </div>
           <div className="flex items-center gap-2">
             <MusicToggle />
             <Show when="signed-in">
