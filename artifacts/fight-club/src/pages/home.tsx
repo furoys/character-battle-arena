@@ -815,11 +815,13 @@ export function Home() {
             borderBottom: "1px solid rgba(255,0,85,0.2)",
           }}
         >
+          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+            <MusicToggle />
+          </div>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <AvaLogo className="h-7 w-auto" />
           </div>
           <div className="flex items-center gap-2">
-            <MusicToggle />
             <Show when="signed-in">
               <EnergyBadge />
               <HomeProfileButton />
