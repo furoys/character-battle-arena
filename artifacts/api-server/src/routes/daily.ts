@@ -475,6 +475,79 @@ router.post("/daily/watch-ad", requireAuth, async (req, res): Promise<void> => {
   res.json({ granted: true, pickPoints });
 });
 
+// ── GET /api/daily/matchup/:matchupId/breakdown ──────────────────────────────
+// Returns the Stage-1 fight verdict reasoning (difficulty, turning point,
+// key factors, winner proof, loser showcase) for a resolved daily matchup.
+// Used by the Daily page to show "WHY?" the AI ruled the way it did, so
+// players don't just see a "WON/LOST" bar and feel cheated by an opaque
+// outcome. Requires sign-in AND that the caller has already picked this
+// matchup (so we don't leak the verdict to non-pickers).
+router.get(
+  "/daily/matchup/:matchupId/breakdown",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const userId = (req as typeof req & { userId: string }).userId;
+    const rawMatchupId = req.params.matchupId;
+    const matchupId = typeof rawMatchupId === "string" ? rawMatchupId : "";
+    if (!matchupId) { res.status(400).json({ error: "missing-matchup-id" }); return; }
+
+    // Anti-spoiler gate must match the rest of the daily UI: scope to TODAY,
+    // not "any historical pick of this matchup id". Matchup IDs recur across
+    // the DAILY_POOL rotation window, so a user who picked this same matchup
+    // weeks ago could otherwise read today's verdict before picking today.
+    // Also constrain to today's materialized lineup so off-rotation matchup
+    // ids can't be probed at all. Both 403 ("not picked today") and 404
+    // ("not in today's lineup" / "not yet resolved") leak only the same
+    // signal as the existing GET /api/daily endpoint already does.
+    const date = getDailyDateString();
+    const todaysLineup = await ensureDailyRows(date);
+    const entry = todaysLineup.find((p) => p.entry.id === matchupId)?.entry;
+    if (!entry) { res.status(404).json({ error: "matchup-not-found" }); return; }
+
+    const [pick] = await db
+      .select()
+      .from(dailyPicksTable)
+      .where(and(
+        eq(dailyPicksTable.userId, userId),
+        eq(dailyPicksTable.date, date),
+        eq(dailyPicksTable.matchupId, matchupId),
+      ))
+      .limit(1);
+    if (!pick) { res.status(403).json({ error: "must-pick-first" }); return; }
+
+    // Look up the verdict cache. If the fight has never been simulated by
+    // anyone, the cache row won't exist and the matchup is genuinely
+    // unresolved — return 404 so the client can keep its placeholder.
+    const { cacheKey, teamAIsTeam1 } = buildCacheKey(entry.team1Ids, entry.team2Ids);
+    const [cached] = await db
+      .select()
+      .from(fightCacheTable)
+      .where(eq(fightCacheTable.cacheKey, cacheKey))
+      .limit(1);
+    if (!cached) { res.status(404).json({ error: "not-resolved" }); return; }
+
+    // Translate canonical winnerTeam (1 = teamA, 2 = teamB) back to the
+    // matchup's own team1/team2 orientation so the client can compare
+    // directly against userPick / its own team data.
+    const winnerIsTeam1 =
+      (cached.winnerTeam === 1 && teamAIsTeam1) ||
+      (cached.winnerTeam === 2 && !teamAIsTeam1);
+    const winnerSide = winnerIsTeam1 ? 1 : 2;
+
+    res.json({
+      matchupId,
+      winnerSide,
+      difficulty: cached.difficulty,
+      fightType: cached.fightType,
+      keyFactors: cached.keyFactors,
+      turningPoint: cached.turningPoint,
+      winnerProof: cached.winnerProof,
+      loserShowcase: cached.loserShowcase,
+      winRate: cached.winRate,
+    });
+  },
+);
+
 // ── GET /api/daily/leaderboard ────────────────────────────────────────────────
 // Top users by total correct picks across all resolved daily matchups.
 router.get("/daily/leaderboard", async (req, res): Promise<void> => {

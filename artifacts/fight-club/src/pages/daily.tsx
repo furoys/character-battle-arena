@@ -544,6 +544,52 @@ function MatchupCard({
   const userCorrect = resolved && matchup.userPick === matchup.winnerSide;
   const picked = matchup.userPick !== null;
 
+  // ── "Why did the AI rule that way?" panel ────────────────────────────────
+  // Players were complaining that a bare "WON/LOST" bar feels arbitrary —
+  // they want the same reasoning bullets the Arena's victory screen shows.
+  // We fetch the cached Stage-1 verdict on demand (one tap, one request)
+  // so the daily list stays scannable and only loads when the user opts in.
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [breakdown, setBreakdown] = useState<{
+    winnerSide: number;
+    difficulty: string;
+    fightType: string;
+    turningPoint: string;
+    keyFactors: string[];
+    winnerProof: string[];
+    loserShowcase: string[];
+    winRate: number;
+  } | null>(null);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [breakdownError, setBreakdownError] = useState<string | null>(null);
+
+  async function toggleBreakdown() {
+    // Block re-entry while a fetch is in flight — `setBreakdownLoading`
+    // doesn't flush synchronously, so rapid taps could otherwise spawn
+    // duplicate requests before the next render observes `breakdownLoading`.
+    if (breakdownLoading) return;
+    if (breakdownOpen) { setBreakdownOpen(false); return; }
+    setBreakdownOpen(true);
+    if (breakdown) return; // already cached
+    setBreakdownLoading(true);
+    setBreakdownError(null);
+    try {
+      const r = await apiFetch(
+        `/api/daily/matchup/${encodeURIComponent(matchup.matchupId)}/breakdown`,
+      );
+      if (!r.ok) {
+        setBreakdownError(r.status === 404 ? "Breakdown not available yet." : "Couldn't load breakdown.");
+        return;
+      }
+      const data = await r.json();
+      setBreakdown(data);
+    } catch {
+      setBreakdownError("Couldn't load breakdown.");
+    } finally {
+      setBreakdownLoading(false);
+    }
+  }
+
   return (
     <div
       className="flex flex-col gap-3 p-3"
@@ -579,18 +625,37 @@ function MatchupCard({
           </p>
         </div>
         {resolved && picked && (
-          <span
-            className="flex items-center gap-0.5 flex-shrink-0"
-            style={{
-              fontSize: 9,
-              fontWeight: 900,
-              color: userCorrect ? "#22c55e" : "#ff0055",
-              letterSpacing: "0.1em",
-            }}
-          >
-            {userCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-            {userCorrect ? "WON" : "LOST"}
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span
+              className="flex items-center gap-0.5"
+              style={{
+                fontSize: 9,
+                fontWeight: 900,
+                color: userCorrect ? "#22c55e" : "#ff0055",
+                letterSpacing: "0.1em",
+              }}
+            >
+              {userCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+              {userCorrect ? "WON" : "LOST"}
+            </span>
+            <button
+              onClick={toggleBreakdown}
+              className="flex items-center gap-0.5 px-1.5 py-0.5 active:scale-95 transition-all"
+              style={{
+                fontSize: 8,
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                color: breakdownOpen ? "#ffc800" : "rgba(255,255,255,0.55)",
+                border: `1px solid ${breakdownOpen ? "rgba(255,200,0,0.5)" : "rgba(255,255,255,0.18)"}`,
+                background: breakdownOpen ? "rgba(255,200,0,0.06)" : "transparent",
+              }}
+              aria-expanded={breakdownOpen}
+              aria-label="Why this result"
+              data-testid={`button-breakdown-${matchup.matchupId}`}
+            >
+              {breakdownOpen ? "HIDE" : "WHY?"}
+            </button>
+          </div>
         )}
         {resolved && !picked && (
           <span style={{ fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em" }}>
@@ -690,6 +755,105 @@ function MatchupCard({
             <div style={{ width: `${t1Pct}%`, background: "#00f0ff" }} />
             <div style={{ width: `${t2Pct}%`, background: "#ff3b30" }} />
           </div>
+        </div>
+      )}
+
+      {/* WHY breakdown panel — expands inline when the user taps "WHY?" on a
+          resolved matchup. Uses the cached Stage-1 verdict from fight_cache
+          (no AI roundtrip; instant on second open). */}
+      {resolved && picked && breakdownOpen && (
+        <div
+          className="flex flex-col gap-2 p-2.5"
+          style={{
+            background: "rgba(255,200,0,0.04)",
+            border: "1px solid rgba(255,200,0,0.22)",
+          }}
+          role="region"
+          aria-label="Fight breakdown"
+        >
+          {breakdownLoading && (
+            <div className="flex items-center gap-2" style={{ fontSize: 10, color: "rgba(255,255,255,0.6)" }}>
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span style={{ letterSpacing: "0.1em", fontWeight: 700 }}>READING THE TAPE…</span>
+            </div>
+          )}
+          {breakdownError && (
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontStyle: "italic" }}>
+              {breakdownError}
+            </div>
+          )}
+          {breakdown && (
+            <>
+              <div className="flex items-center gap-2 flex-wrap" style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.14em" }}>
+                <span style={{ color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)", padding: "1px 5px", background: "rgba(255,200,0,0.08)" }}>
+                  {breakdown.difficulty.toUpperCase()}
+                </span>
+                <span style={{ color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.15)", padding: "1px 5px" }}>
+                  {breakdown.fightType.toUpperCase()}
+                </span>
+                <span style={{ color: "rgba(255,255,255,0.45)", marginLeft: "auto" }}>
+                  WIN RATE · {breakdown.winRate}%
+                </span>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 8, fontWeight: 900, color: "#ff6b35", letterSpacing: "0.14em", marginBottom: 3 }}>
+                  TURNING POINT
+                </div>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>
+                  {breakdown.turningPoint}
+                </p>
+              </div>
+
+              {breakdown.winnerProof.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 8, fontWeight: 900, color: "#22c55e", letterSpacing: "0.14em", marginBottom: 3 }}>
+                    WHY THEY WON
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {breakdown.winnerProof.map((reason, i) => (
+                      <li key={i} className="flex gap-1.5" style={{ fontSize: 10.5, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
+                        <span style={{ color: "#22c55e", flexShrink: 0 }}>▸</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {breakdown.keyFactors.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.45)", letterSpacing: "0.14em", marginBottom: 3 }}>
+                    KEY FACTORS
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {breakdown.keyFactors.map((f, i) => (
+                      <li key={i} className="flex gap-1.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+                        <span style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>·</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {breakdown.loserShowcase.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.14em", marginBottom: 3 }}>
+                    LOSER'S BEST MOMENTS
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {breakdown.loserShowcase.map((s, i) => (
+                      <li key={i} className="flex gap-1.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", lineHeight: 1.4, fontStyle: "italic" }}>
+                        <span style={{ color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>·</span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
