@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { inArray, desc, eq, and, or, isNull, lt } from "drizzle-orm";
-import { db, charactersTable, fightsTable, fightCacheTable, challengesTable } from "@workspace/db";
+import { db, charactersTable, fightsTable, fightCacheTable, challengesTable, dailyMatchupsTable } from "@workspace/db";
 import { normalizeModifierId, getModifier } from "../lib/modifiers";
 import {
   SimulateFightBody,
@@ -33,6 +33,47 @@ function isValidDailyMatchupRequest(
   const e1 = norm(entry.team1Ids);
   const e2 = norm(entry.team2Ids);
   return (t1 === e1 && t2 === e2) || (t1 === e2 && t2 === e1);
+}
+
+// Look up the canonical fight id for today's daily matchup (if any picker has
+// already run it). Returns null when no fight has been generated yet.
+async function findDailyFightId(dailyMatchupId: string): Promise<number | null> {
+  const date = getDailyDateString();
+  const [row] = await db
+    .select({ fightId: dailyMatchupsTable.fightId })
+    .from(dailyMatchupsTable)
+    .where(and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, dailyMatchupId)))
+    .limit(1);
+  return row?.fightId ?? null;
+}
+
+// Daily-fight equivalent of waitForChallengeFightId: poll the daily_matchups
+// row for either (a) the generator finishing and writing fight_id, or (b) the
+// generator's claim going stale so we can retake it. Used by the second+
+// concurrent first-runner so they end up replaying the same fight as the
+// generator, not generating their own divergent narrative.
+async function waitForDailyFightId(
+  date: string,
+  matchupId: string,
+  timeoutMs: number,
+  isClosed: () => boolean,
+): Promise<WaitResult> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (isClosed()) return { kind: "timeout" };
+    await new Promise((r) => setTimeout(r, 1500));
+    const [row] = await db
+      .select({ fightId: dailyMatchupsTable.fightId, generatingAt: dailyMatchupsTable.generatingAt })
+      .from(dailyMatchupsTable)
+      .where(and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, matchupId)))
+      .limit(1);
+    if (row?.fightId) return { kind: "fightId", fightId: row.fightId };
+    const staleCutoff = new Date(Date.now() - timeoutMs);
+    if (!row?.generatingAt || row.generatingAt < staleCutoff) {
+      return { kind: "claimAvailable" };
+    }
+  }
+  return { kind: "timeout" };
 }
 
 // Helper for the challenge wait branch — poll the DB for the OTHER player's
@@ -219,7 +260,17 @@ router.post("/fights", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", challengeCode } = parsed.data;
+  // Mutual exclusion at the door: a single request can't be both a daily
+  // matchup AND a PvP challenge. Reject ambiguous payloads up front so we
+  // never have to ask "which semantics wins?" further down.
+  if (challengeCode && parsed.data.dailyMatchupId) {
+    res.status(400).json({ error: "challenge-code-and-daily-matchup-id-are-mutually-exclusive" });
+    return;
+  }
+  // `upset` and `modifierId` are mutable because daily-matchup requests force
+  // canonical values below (see daily-replay branch). Mirrors /fights/stream.
+  let upset = parsed.data.upset ?? false;
   // Server-truth: when this fight is bound to a challenge, the challenge row's
   // modifier wins over anything the body claims. Mirrors /fights/stream so
   // tampered body rules can never override the agreed-upon chaos rules.
@@ -233,10 +284,6 @@ router.post("/fights", async (req, res): Promise<void> => {
       .limit(1);
     if (ch) modifierId = normalizeModifierId(ch.modifierId);
   }
-  // Modifiers that flip the verdict (Underdog) must bypass the verdict cache
-  // entirely — the cache key is composition-only, so a flipped winner would
-  // poison subsequent normal fights of the same matchup.
-  const skipCache = upset || getModifier(modifierId)?.flipUnderdog === true;
   const allIds = [...team1Ids, ...team2Ids];
   const allCharacters = await db
     .select()
@@ -278,6 +325,57 @@ router.post("/fights", async (req, res): Promise<void> => {
       throw err;
     }
   }
+
+  // ── Daily-matchup canonical replay ────────────────────────────────────────
+  // Force canonical params + replay an existing fight if one exists. Repair
+  // dangling fight_id by clearing it if the linked fight row is gone (e.g.
+  // someone hit DELETE /fights), so the next call regenerates instead of
+  // returning "not found" forever. No claim race here — JSON path isn't used
+  // by the UI for daily fights, so concurrent-first-runner risk is minimal;
+  // the IS NULL write-back below is still race-tolerant.
+  const postFightsDailyId = postFightsIsDaily ? (parsed.data.dailyMatchupId ?? null) : null;
+  if (postFightsDailyId) {
+    modifierId = null;
+    upset = false;
+    const existingDailyFightId = await findDailyFightId(postFightsDailyId);
+    if (existingDailyFightId) {
+      const [saved] = await db.select().from(fightsTable).where(eq(fightsTable.id, existingDailyFightId)).limit(1);
+      if (saved) {
+        res.json(
+          SimulateFightResponse.parse({
+            id: saved.id,
+            team1,
+            team2,
+            winner: saved.winner,
+            rounds: saved.rounds,
+            summary: saved.summary,
+            arenaIntro: saved.arenaIntro ?? "",
+            intro: saved.intro ?? "",
+            whyWon: saved.whyWon ?? [],
+            settled: true,
+            rematchCount: 0,
+            modifierId: saved.modifierId ?? null,
+            simulatedAt: saved.simulatedAt,
+          }),
+        );
+        return;
+      }
+      // Dangling — clear so we regenerate fresh below.
+      await db
+        .update(dailyMatchupsTable)
+        .set({ fightId: null, generatingAt: null })
+        .where(and(
+          eq(dailyMatchupsTable.date, getDailyDateString()),
+          eq(dailyMatchupsTable.matchupId, postFightsDailyId),
+        ));
+    }
+  }
+
+  // Modifiers that flip the verdict (Underdog) must bypass the verdict cache
+  // entirely — the cache key is composition-only, so a flipped winner would
+  // poison subsequent normal fights of the same matchup. Computed AFTER the
+  // daily canonical-param override so daily requests always read/write cache.
+  const skipCache = upset || getModifier(modifierId)?.flipUnderdog === true;
 
   // ── Cache lookup ──────────────────────────────────────────────────────────
   const { cacheKey, teamAIsTeam1 } = getCacheKey(team1Ids, team2Ids);
@@ -377,6 +475,24 @@ router.post("/fights", async (req, res): Promise<void> => {
     })
     .returning();
 
+  // Daily-matchup write-back: attach this fight to today's daily row so the
+  // next picker who hits this matchup replays the same narrative instead of
+  // generating their own. IS NULL guard makes this race-tolerant — if two
+  // first-time runs land simultaneously, whichever update lands first wins
+  // and all future viewers see that one. Mutual exclusion with challenges:
+  // a request carrying both codes must NOT write a challenge-generated fight
+  // into daily_matchups (would poison the canonical daily replay).
+  if (postFightsDailyId && !challengeCode) {
+    await db
+      .update(dailyMatchupsTable)
+      .set({ fightId: saved.id })
+      .where(and(
+        eq(dailyMatchupsTable.date, getDailyDateString()),
+        eq(dailyMatchupsTable.matchupId, postFightsDailyId),
+        isNull(dailyMatchupsTable.fightId),
+      ));
+  }
+
   res.json(
     SimulateFightResponse.parse({
       id: saved.id,
@@ -409,7 +525,18 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
     return;
   }
 
-  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", upset = false, challengeCode, dailyMatchupId } = parsed.data;
+  const { team1: team1Ids, team2: team2Ids, mode = "cinematic", challengeCode, dailyMatchupId } = parsed.data;
+  // Mutual exclusion at the door: see POST /fights for rationale.
+  if (challengeCode && dailyMatchupId) {
+    res.status(400).json({ error: "challenge-code-and-daily-matchup-id-are-mutually-exclusive" });
+    return;
+  }
+  // `upset` and `modifierId` are mutable here because daily-matchup requests
+  // force canonical values (upset=false, modifierId=null) below — daily fights
+  // must always replay as the same exact narrative for every picker, so a
+  // tampered first request can't poison the canonical replay with a modifier
+  // or underdog flip.
+  let upset = parsed.data.upset ?? false;
   // Modifier id can come from either the request body or — for challenge
   // fights — the challenge row itself. Server-truth (challenge row) wins so a
   // tampered client can't change the agreed-upon rules mid-match.
@@ -630,6 +757,82 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
       }
     }
 
+    // ── Daily-matchup canonical replay + claim race ──────────────────────────
+    // Runs AFTER the challenge branch so a request carrying both codes still
+    // honors challenge semantics. For daily fights we:
+    //   1. Force canonical params (modifierId=null, upset=false) so a crafted
+    //      first-runner can't poison the canonical replay with a verdict-flip.
+    //   2. If a fight already exists for today's (date, matchup), replay it.
+    //   3. If the linked fight row is gone (e.g. someone deleted /fights),
+    //      clear fight_id so the next runner generates fresh instead of
+    //      sending "Saved fight not found" forever.
+    //   4. Otherwise claim the generation slot atomically. Anyone who loses
+    //      the claim polls for fight_id and replays it — same pattern as the
+    //      PvP challenge sync above.
+    if (isDailyMatchup && dailyMatchupId && !normalizedChallengeCode) {
+      modifierId = null;
+      upset = false;
+      const date = getDailyDateString();
+
+      const existingDailyFightId = await findDailyFightId(dailyMatchupId);
+      if (existingDailyFightId) {
+        const [check] = await db
+          .select({ id: fightsTable.id })
+          .from(fightsTable)
+          .where(eq(fightsTable.id, existingDailyFightId))
+          .limit(1);
+        if (check) {
+          await replaySavedFight(existingDailyFightId);
+          return;
+        }
+        // Dangling — clear and fall through to fresh generation.
+        await db
+          .update(dailyMatchupsTable)
+          .set({ fightId: null, generatingAt: null })
+          .where(and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, dailyMatchupId)));
+      }
+
+      const DAILY_STALE_MS = 120_000;
+      let claimedDaily = false;
+      let dailyAttempts = 0;
+      while (dailyAttempts < 3 && !claimedDaily) {
+        dailyAttempts++;
+        const staleCutoff = new Date(Date.now() - DAILY_STALE_MS);
+        const claimed = await db
+          .update(dailyMatchupsTable)
+          .set({ generatingAt: new Date() })
+          .where(and(
+            eq(dailyMatchupsTable.date, date),
+            eq(dailyMatchupsTable.matchupId, dailyMatchupId),
+            isNull(dailyMatchupsTable.fightId),
+            or(
+              isNull(dailyMatchupsTable.generatingAt),
+              lt(dailyMatchupsTable.generatingAt, staleCutoff),
+            ),
+          ))
+          .returning({ id: dailyMatchupsTable.id });
+
+        if (claimed.length > 0) {
+          claimedDaily = true;
+          break;
+        }
+        const w = await waitForDailyFightId(date, dailyMatchupId, DAILY_STALE_MS, () => closed);
+        if (w.kind === "fightId") {
+          await replaySavedFight(w.fightId);
+          return;
+        }
+        if (w.kind === "timeout") {
+          send("error", { message: "Daily fight is taking too long. Try again." });
+          return;
+        }
+        // claimAvailable → loop and re-attempt the claim.
+      }
+      if (!claimedDaily) {
+        send("error", { message: "Could not start daily fight. Try again." });
+        return;
+      }
+    }
+
     // ── Cache lookup (same logic as POST /fights) ────────────────────────────
     // Same skip rule as POST /fights — verdict-flipping modifiers (Underdog)
     // must never read or write the composition-keyed verdict cache, or they
@@ -754,6 +957,23 @@ router.post("/fights/stream", async (req, res): Promise<void> => {
         .update(challengesTable)
         .set({ fightId: saved.id, status: "completed" })
         .where(eq(challengesTable.code, normalizedChallengeCode));
+    }
+
+    // Daily-matchup write-back — symmetric to the replay branch above.
+    // IS NULL guard keeps two simultaneous first-runs from clobbering each
+    // other; whichever lands first becomes the canonical fight for the day.
+    // Gated by !normalizedChallengeCode for strict mutual exclusion with the
+    // challenge flow — see also the 400 reject for mixed payloads at the top
+    // of this endpoint, but this is defense-in-depth.
+    if (isDailyMatchup && dailyMatchupId && !normalizedChallengeCode) {
+      await db
+        .update(dailyMatchupsTable)
+        .set({ fightId: saved.id })
+        .where(and(
+          eq(dailyMatchupsTable.date, getDailyDateString()),
+          eq(dailyMatchupsTable.matchupId, dailyMatchupId),
+          isNull(dailyMatchupsTable.fightId),
+        ));
     }
 
     const fullPayload = SimulateFightResponse.parse({

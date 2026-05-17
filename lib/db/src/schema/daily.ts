@@ -11,6 +11,18 @@ export const dailyMatchupsTable = pgTable("daily_matchups", {
   matchupId: text("matchup_id").notNull(),
   winnerSide: integer("winner_side"), // 1 or 2, null until resolved
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  // First persisted fight for this (date, matchup). Once set, every subsequent
+  // viewer (anyone who picked) replays this saved fight verbatim instead of
+  // generating their own — same pattern as PvP challenge fightId. Written
+  // atomically with an IS NULL guard so simultaneous-first-run races don't
+  // overwrite each other (whichever insert lands first wins).
+  fightId: integer("fight_id"),
+  // Claim lock for the "first picker generates, everyone else replays the
+  // same fight" race. Mirrors challengesTable.generatingAt: set atomically
+  // when a request wins the generation slot, cleared implicitly when
+  // fight_id is filled. Considered stale after 120s without fight_id so a
+  // crashed/aborted generation can't deadlock the matchup forever.
+  generatingAt: timestamp("generating_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("daily_matchups_date_matchup_idx").on(t.date, t.matchupId)]);
 

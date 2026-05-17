@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Shield, Share2, Sparkles } from "lucide-react";
+import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Play, Shield, Share2, Sparkles } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/react";
 import { useListCharacters, Character } from "@workspace/api-client-react";
 import { apiFetch } from "@/lib/api-fetch";
@@ -857,22 +857,30 @@ function MatchupCard({
         </div>
       )}
 
-      {/* Watch fight CTA (only when user picked + not resolved) */}
-      {picked && !resolved && (
+      {/* Watch fight CTA — shown for any user who picked, regardless of
+          resolution. Pre-resolution it triggers generation ("RUN THE FIGHT");
+          post-resolution it replays the canonical saved fight that the first
+          picker generated ("WATCH FIGHT"), so every player gets the full
+          cinematic experience, not just the first one. */}
+      {picked && (
         <button
           onClick={() => onWatch(matchup)}
           className="w-full py-2 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
           style={{
-            background: "linear-gradient(135deg, rgba(255,0,85,0.18), rgba(255,0,85,0.06))",
-            border: "1px solid rgba(255,0,85,0.45)",
-            color: "#ff0055",
+            background: resolved
+              ? "linear-gradient(135deg, rgba(255,200,0,0.18), rgba(255,107,53,0.08))"
+              : "linear-gradient(135deg, rgba(255,0,85,0.18), rgba(255,0,85,0.06))",
+            border: resolved
+              ? "1px solid rgba(255,200,0,0.5)"
+              : "1px solid rgba(255,0,85,0.45)",
+            color: resolved ? "#ffc800" : "#ff0055",
             fontSize: 10,
             fontWeight: 900,
             letterSpacing: "0.18em",
           }}
         >
-          <Swords className="w-3.5 h-3.5" />
-          RUN THE FIGHT
+          {resolved ? <Play className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
+          {resolved ? "WATCH FIGHT" : "RUN THE FIGHT"}
         </button>
       )}
     </div>
