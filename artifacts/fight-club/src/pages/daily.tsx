@@ -1348,43 +1348,67 @@ export function Daily() {
           </div>
         )}
       </div>
-      {/* Out-of-points toast — appears when a pick was rejected for budget */}
+      {/* Out-of-points modal — centered overlay so the WATCH AD button is
+          never hidden behind the bottom nav / system gesture bar on phones
+          with tall safe-areas. Tap-outside dismisses. */}
       {outOfPointsToast && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-40 px-4 py-3 flex items-center gap-3"
-          style={{
-            background: "linear-gradient(135deg, rgba(40,8,8,0.96), rgba(20,4,4,0.96))",
-            border: "1.5px solid rgba(255,80,80,0.6)",
-            maxWidth: "calc(100vw - 24px)",
-          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+          onClick={() => setOutOfPointsToast(false)}
         >
-          <span style={{ fontSize: 11, color: "white", fontWeight: 700, letterSpacing: "0.05em" }}>
-            Out of pick points. Watch an ad to get +1.
-          </span>
-          <button
-            onClick={() => startWatchAd()}
-            className="px-3 py-1.5 active:scale-95 transition-all flex items-center gap-1.5"
+          <div
+            className="relative flex flex-col items-center gap-5 px-6 py-7 w-full max-w-sm"
             style={{
-              background: "linear-gradient(135deg, rgba(255,200,0,0.25), rgba(255,200,0,0.1))",
-              border: "1px solid rgba(255,200,0,0.7)",
-              color: "#ffc800",
-              fontSize: 10,
-              fontWeight: 900,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
+              background: "linear-gradient(135deg, rgba(40,8,8,0.98), rgba(20,4,4,0.98))",
+              border: "1.5px solid rgba(255,80,80,0.6)",
+              boxShadow: "0 0 32px rgba(255,80,80,0.25)",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <PlayCircle className="w-3 h-3" />
-            Watch
-          </button>
-          <button
-            onClick={() => setOutOfPointsToast(false)}
-            className="opacity-50 hover:opacity-100"
-            style={{ color: "white" }}
-            aria-label="Dismiss"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+            <button
+              onClick={() => setOutOfPointsToast(false)}
+              className="absolute top-2 right-2 opacity-50 hover:opacity-100 p-2"
+              style={{ color: "white" }}
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div
+              className="font-display uppercase text-center"
+              style={{
+                fontSize: 18,
+                color: "#ff5050",
+                letterSpacing: "0.15em",
+                fontWeight: 900,
+              }}
+            >
+              Out of Pick Points
+            </div>
+            <p
+              className="text-center"
+              style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}
+            >
+              Watch a short ad to earn another pick and keep your streak going.
+            </p>
+            <button
+              onClick={() => startWatchAd()}
+              className="w-full py-4 active:scale-95 transition-all flex items-center justify-center gap-2"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,200,0,0.35), rgba(255,200,0,0.15))",
+                border: "2px solid rgba(255,200,0,0.85)",
+                color: "#ffc800",
+                fontSize: 14,
+                fontWeight: 900,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                boxShadow: "0 0 20px rgba(255,200,0,0.3)",
+              }}
+            >
+              <PlayCircle className="w-5 h-5" />
+              Watch Ad for +1 Pick
+            </button>
+          </div>
         </div>
       )}
       {/* Pick review modal — opens when the user taps a pick button. Shows both
