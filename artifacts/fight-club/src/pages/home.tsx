@@ -663,6 +663,29 @@ export function Home() {
     return [all[0], all[1]] as [Character, Character];
   }, [tutorialActive, characters, ICONIC_TUTORIAL_NAMES]);
 
+  // Same-universe partner for the synergy demo step. Returns the first
+  // iconic character (NOT already chosen as pickA/pickB) whose `universe`
+  // matches the champion's, so the tutorial actually triggers a real
+  // "<UNIVERSE> UNITY +8%" pill in the dock. Null when no match exists,
+  // in which case the tutorial silently skips the synergy step.
+  const tutorialSynergyPick = useMemo<Character | null>(() => {
+    if (!tutorialActive || !tutorialPicks) return null;
+    const all = Array.isArray(characters) ? characters : [];
+    const [pickA, pickB] = tutorialPicks;
+    if (!pickA.universe) return null;
+    const taken = new Set([pickA.id, pickB.id]);
+    const lowerNames = ICONIC_TUTORIAL_NAMES.map(n => n.toLowerCase());
+    for (const target of lowerNames) {
+      const hit = all.find(c =>
+        c.name?.toLowerCase() === target &&
+        !taken.has(c.id) &&
+        c.universe === pickA.universe
+      );
+      if (hit) return hit;
+    }
+    return null;
+  }, [tutorialActive, tutorialPicks, characters, ICONIC_TUTORIAL_NAMES]);
+
   const DEVELOPER_IDS = [780, 781]; // Chris Henry, Troy Wilson
 
   const handleFight = () => {
@@ -1150,7 +1173,9 @@ export function Home() {
               picker is also reachable from the CHALLENGE dropdown so the
               modifier choice is shared between arena and PvP. */}
           {canFight && (
-            <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+            <div data-tutorial-id="modifier-chip">
+              <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+            </div>
           )}
 
           {/* Glowing FIGHT bar — only when both teams have fighters.
@@ -1329,6 +1354,7 @@ export function Home() {
           {/* Synergy strip — container always rendered to keep dock height
               stable so the character grid above doesn't reflow as teams change. */}
           <div
+            data-tutorial-id="synergy-strip"
             className="flex gap-1 overflow-x-auto px-2 pb-1"
             style={{ scrollbarWidth: "none", minHeight: 18 }}
           >
@@ -1518,17 +1544,24 @@ export function Home() {
             localStorage so it only ever fires once per device. */}
         <GhostHandTutorial
           tutorialPicks={tutorialPicks}
+          tutorialSynergyPick={tutorialSynergyPick}
           team1Count={team1.length}
           team2Count={team2.length}
           fightStarted={showModal}
           onFinish={() => setTutorialActive(false)}
-          onPickForTeam={(character, slot) => {
+          onPickForTeam={(character, slot, append) => {
             // Mark teams as tutorial-staged so the post-fight close handler
             // won't wipe them — landing back on Arena with the same matchup
             // ready to go is way friendlier than an empty pair of slots.
             tutorialStagedRef.current = true;
-            if (slot === 1) setTeam1([character]);
-            else setTeam2([character]);
+            // append=true is used by the synergy step to add a same-universe
+            // partner without clobbering the champion pick. Default replace
+            // keeps the original single-fighter pick behaviour.
+            if (slot === 1) {
+              setTeam1(prev => (append ? [...prev, character] : [character]));
+            } else {
+              setTeam2(prev => (append ? [...prev, character] : [character]));
+            }
           }}
         />
 
@@ -1570,6 +1603,13 @@ export function Home() {
           completedSections={simulateFight.completedSections}
           ttsEnabled={ttsEnabled}
           onToggleTts={toggleTts}
+          // Auto-start narration on the FIRST fight when teams were staged
+          // by the Ghost Hand tutorial, so a brand-new user discovers the
+          // AI voice without having to find the Play button. Subsequent
+          // fights revert to manual play. The ref is read at render time
+          // when the modal opens; the FightScreen effect fires once per
+          // open cycle.
+          autoStartNarration={tutorialStagedRef.current}
         />
       </div>
 

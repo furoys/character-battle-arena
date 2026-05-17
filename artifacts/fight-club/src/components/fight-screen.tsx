@@ -178,6 +178,12 @@ interface FightScreenProps {
   // (the parent owns the canonical ttsEnabled when controlled). When omitted
   // the component falls back to its local toggle.
   onToggleTts?: () => void;
+  // Tutorial hand-off: when true, the first round's "Play Narration" button
+  // is auto-clicked the moment the round is revealed and audio is unlocked.
+  // Used to remove a discovery hurdle on the very first fight a new user
+  // runs from the Ghost Hand tutorial — they shouldn't have to hunt for the
+  // narration CTA to hear the voice they're about to discover the app has.
+  autoStartNarration?: boolean;
 }
 
 function HpBar({ pct, team }: { pct: number; team: 1 | 2 }) {
@@ -459,6 +465,7 @@ export function FightScreen({
   modifierId,
   ttsEnabled: ttsEnabledProp,
   onToggleTts,
+  autoStartNarration = false,
 }: FightScreenProps) {
   // Server-authoritative modifier (carried on the result payload) wins over
   // the prop, which is just an optimistic value passed in before the stream
@@ -649,6 +656,13 @@ export function FightScreen({
   // Reset narration-started state when a new round is revealed.
   useEffect(() => { setNarrationStartedRound(-1); }, [visibleCount]);
 
+  // Tutorial auto-start: fires once per fight, ONLY for round 0. See the
+  // effect declared below the round-switch effect — placement matters,
+  // because round-switch wipes narrationActiveRef when a new round
+  // becomes visible. Declaring this ref up here so both effects share it.
+  const autoNarrationFiredRef = useRef(false);
+  useEffect(() => { if (!open) autoNarrationFiredRef.current = false; }, [open]);
+
   // Stop TTS immediately if the parent disables narration mid-fight.
   useEffect(() => {
     if (!ttsEnabled) stopTts();
@@ -702,6 +716,24 @@ export function FightScreen({
       // Do NOT drain here — wait for user to click Play.
     }
   }, [ttsEnabled, visibleCount, drain]);
+
+  // Tutorial auto-start. Declared AFTER round-switch so we run last on a
+  // visibleCount change — otherwise round-switch would wipe the active
+  // flag we just set. Gated to round 0 only (we want the discovery moment
+  // on round 1, then manual control for everything after), and only fires
+  // when activeRoundRef has actually been updated to this round, so we
+  // can't accidentally arm narration for the wrong round if effects
+  // somehow run in an order we didn't expect. The FIGHT-button tap that
+  // opened this screen IS the user gesture that unlocks audio on iOS.
+  useEffect(() => {
+    if (!autoStartNarration) return;
+    if (!ttsEnabled) return;
+    if (visibleCount !== 1) return;
+    if (autoNarrationFiredRef.current) return;
+    if (activeRoundRef.current !== 0) return;
+    autoNarrationFiredRef.current = true;
+    playNarration();
+  }, [autoStartNarration, ttsEnabled, visibleCount, playNarration]);
 
   // ── music ducking ─────────────────────────────────────────────────────────
   // Drop music volume to ~12% while the narrator is speaking, restore after.

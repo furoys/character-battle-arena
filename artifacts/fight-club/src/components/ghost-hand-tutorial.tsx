@@ -3,16 +3,33 @@ import type { Character } from "@workspace/api-client-react";
 
 const STORAGE_KEY = "ava.firstFightTutorialDone";
 
-type Step = "intro" | "pickTeam1" | "pickTeam2" | "fight" | "celebrate" | "done";
+type Step =
+  | "intro"
+  | "pickTeam1"
+  | "synergy"
+  | "showSynergy"
+  | "pickTeam2"
+  | "modifier"
+  | "fight"
+  | "celebrate"
+  | "done";
 
 interface Props {
   /** Two iconic, recognizable characters to stage during the tutorial. If
    *  null (e.g. roster not yet loaded), the tutorial waits and self-bails. */
   tutorialPicks: [Character, Character] | null;
+  /** Optional 3rd pick — a Team-1 partner from the SAME universe as
+   *  tutorialPicks[0], so the synergy step actually triggers a real
+   *  same-universe bonus pill in the dock. Null when no same-universe
+   *  partner exists in the roster, in which case the synergy step is skipped. */
+  tutorialSynergyPick: Character | null;
   team1Count: number;
   team2Count: number;
   fightStarted: boolean;
-  onPickForTeam: (character: Character, slot: 1 | 2) => void;
+  /** `append=true` adds the character to the team; `append=false` replaces
+   *  it. Tutorial uses append for the synergy partner so we end up with a
+   *  2-fighter Team 1 instead of clobbering the champion pick. */
+  onPickForTeam: (character: Character, slot: 1 | 2, append?: boolean) => void;
   /** Fires once when the tutorial transitions out of its active state, for
    *  any reason (skip, completed FIGHT tap, pre-populated bail, fight closed).
    *  Used by the parent to flip the "tutorial pending" UI gating off. */
@@ -29,7 +46,10 @@ interface HandPosition {
 const CAPTIONS: Record<Step, string> = {
   intro: "Welcome to A.v.A",
   pickTeam1: "Choose Champion",
+  synergy: "Team Up · Same Universe",
+  showSynergy: "Synergy Bonus Unlocked",
   pickTeam2: "Choose Nemesis",
+  modifier: "Chaos Rules · Twist Fate",
   fight: "Awaken Combat",
   celebrate: "Legendary.",
   done: "",
@@ -37,6 +57,7 @@ const CAPTIONS: Record<Step, string> = {
 
 export function GhostHandTutorial({
   tutorialPicks,
+  tutorialSynergyPick,
   team1Count,
   team2Count,
   fightStarted,
@@ -174,7 +195,37 @@ export function GhostHandTutorial({
         await sleep(450);
         if (aborted()) return;
 
-        // STEP 2 — Team 2 pick (nemesis)
+        // STEP 2 — Synergy partner (optional, only when a same-universe
+        // partner exists in the roster). We APPEND so Team 1 ends up with
+        // both the champion and the partner, then highlight the synergy
+        // strip so the +bonus pill is the focal point.
+        if (tutorialSynergyPick) {
+          await flashCaption("synergy");
+          const targetSyn = await waitForCenter(`[data-tutorial-id="${tutorialSynergyPick.id}"]`);
+          if (aborted()) return;
+          if (targetSyn) {
+            await moveHandTo(targetSyn);
+            await doTap();
+            if (aborted()) return;
+            onPickForTeam(tutorialSynergyPick, 1, true);
+            await sleep(550);
+            if (aborted()) return;
+
+            // Point at the synergy pill itself so the user understands WHAT
+            // they just unlocked. No tap — it's not interactive.
+            await flashCaption("showSynergy");
+            const targetPill = await waitForCenter('[data-tutorial-id="synergy-strip"]', 2500);
+            if (!aborted() && targetPill) {
+              await moveHandTo(targetPill);
+              await sleep(1700);
+            }
+            if (aborted()) return;
+          }
+          // If the partner card never showed up we silently fall through —
+          // never strand the user behind a missing step.
+        }
+
+        // STEP 3 — Team 2 pick (nemesis)
         await flashCaption("pickTeam2");
         const targetB = await waitForCenter(`[data-tutorial-id="${pickB.id}"]`);
         if (aborted()) return;
@@ -186,7 +237,17 @@ export function GhostHandTutorial({
         await sleep(550);
         if (aborted()) return;
 
-        // STEP 3 — Hover on FIGHT, wait for real tap
+        // STEP 4 — Chaos modifier preview. Point at the chip and explain;
+        // do NOT open the picker (per UX decision — keep first run fast).
+        await flashCaption("modifier");
+        const targetMod = await waitForCenter('[data-tutorial-id="modifier-chip"]', 3000);
+        if (!aborted() && targetMod) {
+          await moveHandTo(targetMod);
+          await sleep(1700);
+        }
+        if (aborted()) return;
+
+        // STEP 5 — Hover on FIGHT, wait for real tap
         await flashCaption("fight");
         // FIGHT button only renders once both teams are populated — wait a beat.
         const fightTarget = await waitForCenter('[data-testid="button-fight"]', 4000);
@@ -202,7 +263,7 @@ export function GhostHandTutorial({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, tutorialPicks]);
+  }, [active, tutorialPicks, tutorialSynergyPick]);
 
   // When the real FIGHT starts, finalize regardless of which step we're on.
   // If the user starts a fight before tutorial gets to the FIGHT step (e.g.,
@@ -225,7 +286,13 @@ export function GhostHandTutorial({
 
   if (!active) return null;
 
-  const showHand = step === "pickTeam1" || step === "pickTeam2" || step === "fight";
+  const showHand =
+    step === "pickTeam1" ||
+    step === "synergy" ||
+    step === "showSynergy" ||
+    step === "pickTeam2" ||
+    step === "modifier" ||
+    step === "fight";
 
   return (
     <div
@@ -267,8 +334,9 @@ export function GhostHandTutorial({
             filter: "drop-shadow(0 0 12px rgba(255,0,85,0.7)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))",
           }}
         >
-          {/* Pulse ring on FIGHT step */}
-          {step === "fight" && (
+          {/* Pulse ring on FIGHT step, and on info-only beats (synergy /
+              modifier highlight) so the user's eye latches on. */}
+          {(step === "fight" || step === "showSynergy" || step === "modifier") && (
             <div
               style={{
                 position: "absolute",
