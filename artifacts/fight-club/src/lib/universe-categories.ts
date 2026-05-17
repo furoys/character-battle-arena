@@ -136,6 +136,9 @@ const UNIVERSE_TO_CATEGORY: Record<string, UniverseCategory> = {
   "Dead by Daylight": "Games",
   "Apex Legends": "Games",
   "Super Mario": "Games",
+  "Mario": "Games",
+  "Sonic": "Games",
+  "Zelda": "Games",
   "Overwatch": "Games",
   // Movies & TV
   "Action Heroes": "Movies & TV",
