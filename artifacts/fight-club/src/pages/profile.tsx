@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
 import { apiFetch } from "@/lib/api-fetch";
 import { format } from "date-fns";
-import { Trophy, Swords, Star, LogOut, Pencil, Volume2, Mail } from "lucide-react";
+import { Trophy, Swords, Star, LogOut, Pencil, Volume2, Mail, RotateCcw } from "lucide-react";
 import { CharacterAvatar } from "@/components/character-avatar";
 import { CharacterPicker } from "@/components/character-picker";
 import { UsernameEditor } from "@/components/username-editor";
@@ -192,17 +192,34 @@ function SignedInProfile() {
               </button>
             </div>
           </div>
-          <button
-            onClick={() => signOut()}
-            className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-1 border transition-all hover:border-primary/40 hover:text-primary self-start"
-            style={{
-              borderColor: "rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.4)",
-            }}
-          >
-            <LogOut className="h-2.5 w-2.5" />
-            Sign out
-          </button>
+          <div className="flex flex-col gap-1.5 self-start">
+            <button
+              onClick={() => {
+                try { localStorage.removeItem("ava.firstFightTutorialDone"); } catch { /* ignore */ }
+                window.location.href = "/";
+              }}
+              className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-1 border transition-all hover:border-primary/40 hover:text-primary"
+              style={{
+                borderColor: "rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.4)",
+              }}
+              data-testid="button-replay-tutorial"
+            >
+              <RotateCcw className="h-2.5 w-2.5" />
+              Replay tutorial
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-1 border transition-all hover:border-primary/40 hover:text-primary"
+              style={{
+                borderColor: "rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.4)",
+              }}
+            >
+              <LogOut className="h-2.5 w-2.5" />
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
 
