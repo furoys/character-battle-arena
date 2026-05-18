@@ -281,6 +281,12 @@ function useSWAutoUpdate() {
 
     let reg: ServiceWorkerRegistration | null = null;
 
+    // Was the page already controlled by a SW when it loaded? If not, the very
+    // first `controllerchange` is the *initial* install claim — reloading then
+    // would yank a brand-new user out of whatever they were doing (looks like
+    // a crash back to intro). Only reload on TRUE updates.
+    const hadControllerOnLoad = !!navigator.serviceWorker.controller;
+
     const check = () => { reg?.update().catch(() => {}); };
 
     // BASE_URL always has a trailing slash (e.g. "/" or "/fight-club/").
@@ -314,7 +320,29 @@ function useSWAutoUpdate() {
     window.addEventListener("focus", check);
 
     // When a new SW takes control, reload once so the fresh bundle is served.
-    const onController = () => { window.location.reload(); };
+    // BUT: skip the *initial* claim on first install (no prior controller) —
+    // reloading then dumps a brand-new user back to the intro mid-onboarding.
+    // For real updates, defer the reload until the page is hidden so we don't
+    // nuke an in-flight fight/stream/pick. Fallback: reload after 5 min if the
+    // user never backgrounds the tab, so they aren't stranded on a stale build.
+    let reloaded = false;
+    const doReload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+    const onController = () => {
+      if (!hadControllerOnLoad) return; // first install — do nothing
+      if (document.visibilityState === "hidden") {
+        doReload();
+        return;
+      }
+      const onHidden = () => {
+        if (document.visibilityState === "hidden") doReload();
+      };
+      document.addEventListener("visibilitychange", onHidden);
+      window.setTimeout(doReload, 5 * 60_000);
+    };
     navigator.serviceWorker.addEventListener("controllerchange", onController);
 
     return () => {
