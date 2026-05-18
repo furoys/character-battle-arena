@@ -272,7 +272,7 @@ export function GhostHandTutorial({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, tutorialPicks, tutorialSynergyPick]);
+  }, [active, cineDone, tutorialPicks, tutorialSynergyPick]);
 
   // When the real FIGHT starts, finalize regardless of which step we're on.
   // If the user starts a fight before tutorial gets to the FIGHT step (e.g.,
