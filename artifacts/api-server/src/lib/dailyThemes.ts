@@ -1,145 +1,273 @@
 // ── Daily themes ─────────────────────────────────────────────────────────────
-// Day-of-week themed lineup selection. Every day of the week gets a "vibe":
-// Marvel Monday, Anime Friday, etc. Within each theme bucket we walk a
-// pre-shuffled list using a week-index offset, so the same matchup never
-// reappears until the entire bucket has been cycled through. This is a hard
-// no-repeat guarantee (per theme), as opposed to the previous pure-random
-// Fisher-Yates that statistically averaged ~20 days between repeats but
-// could occasionally pair-up the same matchup in adjacent weeks.
+// Day-of-week themed lineup. Each day has a CONCEPT (not just a universe):
+//
+//   Sun  SHOWDOWN SUNDAY        heroes vs villains
+//   Mon  MARVEL vs DC MONDAY    the eternal big-two crossover
+//   Tue  TEAM-UP TUESDAY        squads & multi-character team brawls
+//   Wed  WORLDS COLLIDE WEDNESDAY  cross-franchise crossovers
+//   Thu  THROWDOWN THURSDAY     villain-vs-villain & horror icons
+//   Fri  FACE-OFF FRIDAY        classic rivals & mirror matches
+//   Sat  STREET-LEVEL SATURDAY  real fighters, no cosmic / no god-tier
+//
+// Each theme has its own bucket of matchups. Buckets are pre-shuffled with a
+// per-theme deterministic seed; we walk DAILY_LINEUP_SIZE entries through
+// each bucket using `offset = (weekIndex * size) % bucket.length`, so every
+// matchup in a theme bucket appears exactly once before any repeat on that
+// day-of-week (e.g. rivals bucket = 116 → 12 Fridays of unique pairings;
+// marvel_vs_dc = 31 → 3 Mondays before any Marvel-vs-DC matchup repeats).
+//
+// Tag source: each pool entry is hand-classified via inferred composition
+// (character role + universe family from the DB). The classification is
+// baked in here as ENTRY_THEMES so the runtime path has no DB dependency.
+// Entries can belong to multiple themes (Avengers vs Justice League is
+// marvel_vs_dc AND team) — they show up in every bucket they qualify for.
 //
 // Lineup-stability invariant: once `ensureDailyRows` materializes a date,
 // those rows ARE the canonical lineup. This module's selection only affects
 // dates that have NOT been materialized yet. Already-stored dates are never
-// reshuffled by a code change here — that's enforced in routes/daily.ts.
+// reshuffled by a code change here — enforced in routes/daily.ts.
 
 import { DAILY_POOL, type DailyPoolEntry, DAILY_LINEUP_SIZE } from "./dailyPool";
 
 // ── Theme types ──────────────────────────────────────────────────────────────
 export type ThemeKey =
-  | "marvel"
-  | "dc"
-  | "anime"
-  | "gaming"
-  | "throwdown"   // horror / villains / slashers
-  | "team"        // multi-character team battles
-  | "wildcard";   // cross-universe & everything else
+  | "showdown"      // Sun — heroes vs villains
+  | "marvel_vs_dc"  // Mon — pure Marvel vs DC matchups
+  | "team"          // Tue — multi-character team brawls
+  | "crossover"     // Wed — cross-franchise (not just Marvel/DC)
+  | "throwdown"     // Thu — villain-vs-villain + horror icons
+  | "rivals"        // Fri — 1v1 same-universe rivalries / mirror matches
+  | "street"        // Sat — grounded real fighters, no cosmic tier
+  | "wildcard";     // safety net — full pool
 
 export type DailyTheme = {
   key: ThemeKey;
-  label: string;       // header label, e.g. "MARVEL MONDAY"
+  label: string;       // header label, e.g. "SHOWDOWN SUNDAY"
   blurb: string;       // one-line subhead description
 };
 
 // JS Date.getUTCDay(): 0 = Sunday, 1 = Monday, ..., 6 = Saturday.
-// (We compute the day of week off the ET-anchored calendar date string, so
-// "Sunday" here means the lineup that drops at 8pm ET on Saturday and runs
-// through 8pm ET Sunday — i.e. the lineup the user sees on Sunday evening.)
+// We compute day-of-week off the ET-anchored calendar date string from
+// getDailyDateString, so each theme aligns with the calendar day the user
+// actually sees on the page (8pm ET rollover → ET calendar day).
 const DAY_THEMES: Record<number, DailyTheme> = {
-  0: { key: "dc",        label: "DC SUNDAY",          blurb: "Heroes & villains of the Distinguished Competition." },
-  1: { key: "marvel",    label: "MARVEL MONDAY",      blurb: "Earth's Mightiest. Mutants. Cosmic gods." },
-  2: { key: "team",      label: "TEAM-UP TUESDAY",    blurb: "Squads, factions, and roster-wide brawls." },
-  3: { key: "wildcard",  label: "WILDCARD WEDNESDAY", blurb: "Cross-universe carnage. Anything goes." },
-  4: { key: "throwdown", label: "THROWDOWN THURSDAY", blurb: "Slashers, dark lords, and the worst people alive." },
-  5: { key: "anime",     label: "ANIME FRIDAY",       blurb: "Shonen titans, demon kings, and ultimate quirks." },
-  6: { key: "gaming",    label: "SMASH SATURDAY",     blurb: "Boss battles from the games you grew up on." },
+  0: { key: "showdown",     label: "SHOWDOWN SUNDAY",         blurb: "Heroes vs villains. Good vs evil. Pick a side." },
+  1: { key: "marvel_vs_dc", label: "MARVEL vs DC MONDAY",     blurb: "The eternal debate. Settle it today." },
+  2: { key: "team",         label: "TEAM-UP TUESDAY",         blurb: "Squads, factions, and full-roster brawls." },
+  3: { key: "crossover",    label: "WORLDS COLLIDE WEDNESDAY", blurb: "Universes that were never meant to meet." },
+  4: { key: "throwdown",    label: "THROWDOWN THURSDAY",      blurb: "Villains, slashers, and the worst people alive." },
+  5: { key: "rivals",       label: "FACE-OFF FRIDAY",         blurb: "Classic rivalries. Mirror matches. Personal beef." },
+  6: { key: "street",       label: "STREET-LEVEL SATURDAY",   blurb: "Real fighters. No gods. No cheats. Flesh and bone." },
 };
 
-// ── Keyword tags ─────────────────────────────────────────────────────────────
-// Lowercase substrings to detect each theme from an entry's `id` or `title`.
-// Keep these tight — anything that's only ambiguously in a theme should fall
-// through to `wildcard` instead of polluting two buckets and reducing the
-// effective no-repeat window for that theme.
-
-const MARVEL_KEYS = [
-  "spider", "iron-man", "iron man", "thor", "hulk", "captain-america", "captain america",
-  "wolverine", "deadpool", "xmen", "x-men", "avengers", "magneto", "professor-x", "professor x",
-  "phoenix", "jean", "storm", "cyclops", "venom", "carnage", "thanos", "galactus",
-  "sentry", "knull", "dormammu", "mephisto", "fantastic-four", "fantastic four",
-  "punisher", "daredevil", "moon-knight", "moon knight", "black-panther", "black panther",
-  "scarlet-witch", "scarlet witch", "dr-strange", "strange", "doctor doom", "-doom-", "doom-",
-  "silver-surfer", "silver surfer", "hela", "apocalypse", "gambit", "colossus",
-  "iceman", "hawkeye", "adam-warlock", "adam warlock", "beta-ray", "beta ray",
-  "emma-frost", "emma frost", "psylocke", "bishop", "cable", "wanda", "loki",
-  "she-hulk", "luke-cage", "luke cage", "iron-fist", "iron fist", "miles",
-  "sabretooth", "winter-soldier", "winter soldier", "hyperion", "onslaught",
-  "living-tribunal", "living tribunal", "ghost-rider", "ghost rider",
-];
-
-const DC_KEYS = [
-  "batman", "superman", "joker", "flash", "aquaman", "wonder-woman", "wonder woman",
-  "green-lantern", "green lantern", "darkseid", "brainiac", "lex", "luthor",
-  "nightwing", "red-hood", "red hood", "robin", "riddler", "bane", "raven",
-  "trigon", "catwoman", "titans", "justice-league", "justice league",
-  "legion-of-doom", "legion of doom", "cyborg", "doomsday", "general-zod", "general zod",
-  "doctor-manhattan", "doctor manhattan", "anti-monitor", "sinestro", "atrocitus",
-  "larfleeze", "mongul", "ras-al-ghul", "ra's al ghul", "wally", "barry",
-  "deathstroke", "dr-fate", "dr fate", "scarecrow", "killer-croc",
-  "harley", "kgbeast", "bat-family", "bat family", "gl-corps", "gl corps",
-];
-
-const ANIME_KEYS = [
-  "goku", "vegeta", "naruto", "sasuke", "itachi", "gojo", "sukuna", "saitama",
-  "luffy", "zoro", "kaido", "whitebeard", "ichigo", "yhwach", "hitsugaya",
-  "all-might", "all might", "deku", "bakugo", "endeavor", "all-for-one", "all for one",
-  "garou", "mob", "edward", "roy", "rimuru", "meruem", "asta", "yuno",
-  "kenshiro", "jotaro", "denji", "power", "makima", "light", "-l-", "vs-l",
-  "akaza", "kokushibo", "doma", "alucard", "yusuke", "broly", "frieza", "cell",
-  "gohan", "beerus", "jiren", "father", "aizen", "kira", "saiyan", "shinigami",
-  "bleach", "naruto-", "jjk", "mha", "dbz", "anime",
-];
-
-const GAMING_KEYS = [
-  "kratos", "doomslayer", "doom-slayer", "doom slayer", "master-chief", "master chief",
-  "sub-zero", "scorpion", "raiden", "ryu", "akuma", "bison",
-  "cloud", "sephiroth", "vergil", "dante", "bayonetta",
-  "link", "ganondorf", "mario", "bowser", "pikachu", "mewtwo", "charizard",
-  "arceus", "rayquaza", "samus", "geralt", "aloy", "ellie", "lara", "nathan",
-  "knuckles", "sonic", "jin-sakai", "jin sakai", "solid-snake", "solid snake",
-  "t1000", "t-1000", "t800", "t-800", "robocop", "tomb",
-];
-
-const THROWDOWN_KEYS = [
-  "pennywise", "freddy", "jason", "michael-myers", "michael myers", "pinhead",
-  "voldemort", "sauron", "saruman", "vader", "darth", "kylo", "palpatine",
-  "hannibal", "chucky", "dracula", "horror", "predator", "alien", "xenomorph",
-  "terminator", "night-king", "night king", "ash", "judge-dredd", "judge dredd",
-  "rambo", "boba-fett", "boba fett", "boogeyman", "slasher",
-];
-
-const TEAM_KEYS = [
-  "avengers-vs", "justice-league-vs", "legion-of-doom", "bat-family",
-  "teen-titans", "z-fighters", "akatsuki", "marvel-cosmic", "dc-cosmic",
-  "sorcerers-summit", "speedsters-relay", "billionaires-with-toys",
-  "street-tier-war", "fantastic-four-vs", "four-horsemen", "devils-vs-angels",
-  "gl-corps-vs", "sinestro-corps", "bleach-vs-naruto", "mha-vs-jjk",
-  "horror-icons", "devil-summit", "dc-women", "marvel-women", "chainsaw-vs",
-];
-
-function containsAny(haystack: string, needles: string[]): boolean {
-  for (const n of needles) {
-    if (haystack.includes(n)) return true;
-  }
-  return false;
-}
-
-// Returns the set of themes this entry naturally belongs to. An entry can
-// belong to multiple (e.g. "avengers-vs-justice-league" is marvel + dc +
-// team). We use ALL of them at bucket-build time so each themed day pulls
-// from the largest plausible pool.
-export function inferThemes(entry: DailyPoolEntry): Set<ThemeKey> {
-  const hay = (entry.id + " " + entry.title).toLowerCase();
-  const teamSize = entry.team1Ids.length + entry.team2Ids.length;
-  const out = new Set<ThemeKey>();
-  if (containsAny(hay, MARVEL_KEYS)) out.add("marvel");
-  if (containsAny(hay, DC_KEYS)) out.add("dc");
-  if (containsAny(hay, ANIME_KEYS)) out.add("anime");
-  if (containsAny(hay, GAMING_KEYS)) out.add("gaming");
-  if (containsAny(hay, THROWDOWN_KEYS)) out.add("throwdown");
-  if (teamSize >= 5 || containsAny(hay, TEAM_KEYS)) out.add("team");
-  // Wildcard always includes everything so it's a safe filler / standalone bucket.
-  out.add("wildcard");
-  return out;
-}
+// ── ENTRY_THEMES ─────────────────────────────────────────────────────────────
+// Generated by classifying each DAILY_POOL entry from its character roster
+// (universe family + hero/villain role + team size). Any entry not listed
+// here falls into the `wildcard` bucket only. Keep in sync with DAILY_POOL.
+export const ENTRY_THEMES: Record<string, ThemeKey[]> = {
+  "aang-vs-azula": ["rivals"],
+  "adam-warlock-vs-thanos": ["showdown", "rivals"],
+  "akatsuki-coup": [],
+  "akaza-vs-kokushibo": ["throwdown", "rivals"],
+  "akuma-vs-bison": ["throwdown", "rivals", "street"],
+  "alien-vs-predator": ["crossover", "throwdown"],
+  "all-for-one-vs-all-might": ["showdown", "rivals"],
+  "all-might-vs-goku": ["rivals"],
+  "all-might-vs-saitama": ["crossover"],
+  "alucard-vs-dracula": ["crossover"],
+  "anti-monitor-vs-thanos": ["marvel_vs_dc", "throwdown"],
+  "apocalypse-vs-magneto": ["throwdown", "rivals"],
+  "arceus-vs-mewtwo": ["rivals"],
+  "ash-vs-pinhead": ["throwdown", "rivals"],
+  "asta-vs-yuno": ["rivals"],
+  "atrocitus-vs-sinestro": ["throwdown", "rivals"],
+  "avengers-vs-justice-league": ["marvel_vs_dc", "team"],
+  "avengers-vs-xmen": ["team"],
+  "bane-vs-batman": ["showdown", "rivals"],
+  "bane-vs-hulk": ["showdown", "marvel_vs_dc"],
+  "bat-family-vs-batman": ["team"],
+  "bat-family-vs-rogues": ["team"],
+  "batman-vs-daredevil": ["marvel_vs_dc", "street"],
+  "batman-vs-john-wick": ["crossover", "street"],
+  "batman-vs-punisher": ["marvel_vs_dc"],
+  "bayonetta-vs-dante": ["rivals"],
+  "beerus-vs-darkseid": ["crossover"],
+  "beerus-vs-superman": ["crossover"],
+  "beerus-vs-thor": ["crossover"],
+  "beta-ray-bill-vs-thor": ["rivals"],
+  "billionaires-with-toys": ["showdown", "team"],
+  "bishop-vs-cable": ["rivals"],
+  "black-panther-vs-batman": ["marvel_vs_dc"],
+  "bleach-vs-naruto": ["team"],
+  "boba-fett-vs-predator": ["throwdown", "rivals"],
+  "brainiac-vs-lex-luthor": ["throwdown", "rivals"],
+  "broly-vs-goku": ["rivals"],
+  "broly-vs-hulk": ["crossover"],
+  "captain-america-vs-wonder-woman": ["marvel_vs_dc"],
+  "carnage-vs-venom": ["throwdown", "rivals"],
+  "chainsaw-vs-jjk": ["team", "throwdown"],
+  "charizard-vs-mewtwo": ["rivals"],
+  "chief-vs-samus": ["crossover"],
+  "cloud-vs-sephiroth": ["showdown", "rivals"],
+  "daenerys-vs-cersei": ["rivals"],
+  "dante-vs-vergil": ["showdown", "rivals"],
+  "darth-vader-vs-yoda": ["rivals"],
+  "dc-women-vs-marvel-women": ["marvel_vs_dc", "team"],
+  "deadpool-vs-deathstroke": ["showdown", "marvel_vs_dc"],
+  "denji-vs-power": ["rivals"],
+  "devil-summit": ["team", "throwdown"],
+  "devils-vs-angels": ["showdown", "team"],
+  "doctor-doom-vs-doctor-strange": ["showdown", "rivals"],
+  "doctor-manhattan-vs-strange": ["showdown", "marvel_vs_dc"],
+  "doctor-manhattan-vs-superman": ["showdown", "rivals"],
+  "doma-vs-akaza": ["throwdown", "rivals"],
+  "doom-slayer-vs-kratos": ["rivals"],
+  "doom-vs-lex": ["marvel_vs_dc", "throwdown"],
+  "doomsday-vs-hulk": ["showdown", "marvel_vs_dc"],
+  "dormammu-vs-galactus": ["throwdown", "rivals"],
+  "edward-vs-roy": ["rivals"],
+  "ellie-vs-aloy": ["rivals"],
+  "emma-frost-vs-professor-x": ["rivals"],
+  "endeavor-vs-all-might": ["rivals"],
+  "fantastic-four-vs-x-men": ["team"],
+  "father-vs-aizen": ["throwdown", "rivals"],
+  "flash-vs-quicksilver": ["marvel_vs_dc"],
+  "four-horsemen-vs-x-men": ["showdown", "team"],
+  "freddy-vs-jason": ["throwdown", "rivals"],
+  "frieza-vs-cell": ["throwdown", "rivals"],
+  "frozone-vs-iceman": ["crossover"],
+  "galactus-vs-anos": ["crossover"],
+  "gandalf-vs-saruman": ["showdown", "rivals"],
+  "general-zod-vs-superman": ["showdown", "rivals"],
+  "geralt-vs-aloy": ["rivals"],
+  "geralt-vs-aragorn": ["crossover"],
+  "ghost-rider-vs-pennywise": ["showdown", "crossover", "throwdown"],
+  "godzilla-vs-king-kong": ["rivals"],
+  "godzilla-vs-mechagodzilla": ["rivals"],
+  "gohan-vs-cell": ["showdown", "rivals"],
+  "gojo-vs-aizen": ["rivals"],
+  "gojo-vs-sukuna": ["rivals"],
+  "goku-vs-jiren": ["rivals"],
+  "goku-vs-naruto": ["rivals"],
+  "goku-vs-superman": ["crossover"],
+  "goku-vs-vegeta": ["rivals"],
+  "green-lantern-corps-vs-sinestro-corps": ["showdown", "team"],
+  "green-lantern-vs-silver-surfer": ["marvel_vs_dc"],
+  "hannibal-vs-light": ["crossover", "throwdown"],
+  "harry-vs-voldemort": ["showdown", "rivals"],
+  "hawkeye-vs-green-arrow": ["marvel_vs_dc", "street"],
+  "hela-vs-apocalypse": ["throwdown", "rivals"],
+  "hitsugaya-vs-sub-zero": ["crossover"],
+  "horror-icons-vs-slashers": ["team", "throwdown"],
+  "hulk-vs-superman": ["marvel_vs_dc"],
+  "ichigo-vs-yhwach": ["rivals"],
+  "iron-fist-vs-shang-chi": ["rivals"],
+  "iron-man-vs-batman": ["marvel_vs_dc"],
+  "itachi-vs-sasuke": ["rivals"],
+  "jean-vs-scarlet-witch": ["rivals"],
+  "jin-vs-aragorn": ["crossover"],
+  "jiren-vs-saitama": ["crossover"],
+  "john-mcclane-vs-john-wick": ["rivals", "street"],
+  "justice-league-vs-legion-of-doom": ["showdown", "team"],
+  "kaido-vs-whitebeard": ["rivals"],
+  "kenshiro-vs-jotaro": ["rivals"],
+  "knuckles-vs-wolverine": ["crossover"],
+  "knull-vs-thor": ["showdown", "rivals"],
+  "kratos-vs-doomslayer": ["rivals"],
+  "kratos-vs-master-chief": ["showdown", "crossover"],
+  "kratos-vs-thor": ["showdown", "crossover"],
+  "lara-vs-indy": ["crossover", "street"],
+  "lara-vs-nathan": ["rivals", "street"],
+  "larfleeze-vs-sinestro": ["throwdown", "rivals"],
+  "light-vs-l": ["rivals"],
+  "link-vs-cloud": ["rivals"],
+  "link-vs-ganondorf": ["showdown", "rivals"],
+  "living-tribunal-vs-anti-monitor": ["marvel_vs_dc"],
+  "luffy-vs-naruto": ["rivals"],
+  "luke-cage-vs-colossus": ["rivals"],
+  "luke-vs-kylo": ["rivals"],
+  "mace-vs-palpatine": ["rivals"],
+  "magneto-vs-professor-x": ["showdown", "rivals"],
+  "makima-vs-light": ["crossover", "throwdown"],
+  "mario-vs-bowser": ["showdown", "rivals"],
+  "marvel-cosmic-vs-dc-cosmic": ["marvel_vs_dc", "team"],
+  "master-chief-vs-solid-snake": ["crossover"],
+  "mephisto-vs-trigon": ["marvel_vs_dc", "throwdown"],
+  "meruem-vs-goku": ["showdown", "rivals"],
+  "mha-vs-jjk": ["showdown", "team"],
+  "michael-vs-jason": ["throwdown", "rivals"],
+  "mob-vs-saitama": ["rivals"],
+  "mongul-vs-superman": ["showdown", "rivals"],
+  "moon-knight-vs-daredevil": ["rivals", "street"],
+  "mr-incredible-vs-hulk": ["crossover"],
+  "naruto-vs-sasuke-final": ["rivals"],
+  "neo-vs-terminator": ["crossover"],
+  "night-king-vs-sauron": ["crossover", "throwdown"],
+  "nightwing-vs-red-hood": ["rivals", "street"],
+  "onslaught-vs-sentry": ["throwdown", "rivals"],
+  "optimus-vs-megatron": ["rivals"],
+  "optimus-vs-vader": ["rivals"],
+  "phoenix-vs-galactus": ["showdown", "rivals"],
+  "pikachu-vs-mewtwo": ["showdown", "rivals"],
+  "pinhead-vs-pennywise": ["throwdown", "rivals"],
+  "predator-vs-terminator": ["rivals"],
+  "psylocke-vs-storm": ["rivals"],
+  "punisher-vs-deathstroke": ["showdown", "marvel_vs_dc", "street"],
+  "rambo-vs-predator": ["crossover"],
+  "ras-al-ghul-vs-batman": ["showdown", "rivals"],
+  "rayquaza-vs-charizard": ["rivals"],
+  "riddler-vs-sherlock": ["crossover"],
+  "rimuru-vs-goku": ["crossover"],
+  "robocop-vs-judge-dredd": ["crossover"],
+  "robocop-vs-t1000": ["crossover"],
+  "ryu-vs-akuma": ["rivals", "street"],
+  "saitama-vs-garou": ["rivals"],
+  "saitama-vs-goku": ["crossover"],
+  "saitama-vs-superman": ["crossover"],
+  "sauron-vs-voldemort": ["throwdown", "rivals"],
+  "scarlet-witch-vs-dr-strange": ["rivals"],
+  "scarlet-witch-vs-raven": ["marvel_vs_dc"],
+  "scarlet-witch-vs-wonder-woman": ["marvel_vs_dc"],
+  "sentry-vs-hyperion": ["throwdown", "rivals"],
+  "she-hulk-vs-wonder-woman": ["marvel_vs_dc"],
+  "sherlock-vs-light": ["rivals"],
+  "sinestro-vs-green-lantern": ["showdown", "rivals"],
+  "solo-leveling-vs-hxh": ["crossover"],
+  "sorcerers-summit": ["showdown", "team", "crossover"],
+  "speedsters-relay": ["marvel_vs_dc", "team"],
+  "spider-man-vs-miles": ["rivals"],
+  "spider-man-vs-venom": ["showdown", "rivals"],
+  "spiderman-vs-daredevil": ["rivals"],
+  "storm-vs-magneto": ["showdown", "rivals"],
+  "strange-vs-dr-fate": ["marvel_vs_dc"],
+  "street-tier-war": ["team"],
+  "sub-zero-vs-raiden": ["rivals", "street"],
+  "sub-zero-vs-scorpion": ["throwdown", "rivals", "street"],
+  "sukuna-vs-aizen": ["throwdown", "rivals"],
+  "sukuna-vs-yhwach": ["throwdown", "rivals"],
+  "superman-vs-sentry": ["marvel_vs_dc"],
+  "superman-vs-thor": ["marvel_vs_dc"],
+  "syndrome-vs-lex": ["crossover"],
+  "t1000-vs-t800": ["rivals"],
+  "teen-titans-vs-x-men": ["marvel_vs_dc", "team"],
+  "thanos-vs-darkseid": ["marvel_vs_dc", "throwdown"],
+  "thanos-vs-darkseid-cosmic": ["marvel_vs_dc", "throwdown"],
+  "thor-vs-loki": ["showdown", "rivals"],
+  "vegeta-vs-frieza": ["showdown", "rivals"],
+  "vergil-vs-sephiroth": ["throwdown", "rivals"],
+  "voldemort-vs-gandalf": ["showdown", "rivals"],
+  "wally-vs-barry": ["rivals"],
+  "wick-vs-bond": ["rivals", "street"],
+  "wick-vs-bourne": ["rivals", "street"],
+  "wolverine-vs-cyclops": ["rivals"],
+  "wolverine-vs-deadpool": ["rivals"],
+  "wolverine-vs-sabretooth": ["showdown", "rivals"],
+  "yusuke-vs-saitama": ["rivals"],
+  "z-fighters-vs-dbz-villains": ["showdown", "team"],
+  "zeus-vs-thor": ["crossover"],
+  "zoro-vs-mihawk": ["rivals"],
+  "zuko-vs-azula": ["rivals"],
+};
 
 // ── PRNG (mulberry32) ────────────────────────────────────────────────────────
 function mulberry32(seed: number): () => number {
@@ -164,19 +292,26 @@ function themeSeed(key: ThemeKey): number {
   return h >>> 0;
 }
 
-// ── Bucket build (memoized; pure over DAILY_POOL) ─────────────────────────────
+// ── Bucket build (memoized; pure over DAILY_POOL + ENTRY_THEMES) ─────────────
 type BucketMap = Map<ThemeKey, DailyPoolEntry[]>;
 
 let _buckets: BucketMap | null = null;
 
 function buildBuckets(): BucketMap {
-  const themes: ThemeKey[] = ["marvel", "dc", "anime", "gaming", "throwdown", "team", "wildcard"];
+  const themes: ThemeKey[] = [
+    "showdown", "marvel_vs_dc", "team", "crossover",
+    "throwdown", "rivals", "street", "wildcard",
+  ];
   const map: BucketMap = new Map(themes.map((t) => [t, [] as DailyPoolEntry[]]));
   for (const entry of DAILY_POOL) {
-    const ts = inferThemes(entry);
-    for (const t of ts) {
-      map.get(t)!.push(entry);
+    const tags = ENTRY_THEMES[entry.id] ?? [];
+    for (const t of tags) {
+      const bucket = map.get(t);
+      if (bucket) bucket.push(entry);
     }
+    // wildcard always contains the full pool (safety net for any themed
+    // bucket that ends up smaller than DAILY_LINEUP_SIZE).
+    map.get("wildcard")!.push(entry);
   }
   // Per-bucket deterministic Fisher-Yates so the walk order is stable across
   // server restarts but distinct between themes.
@@ -208,10 +343,10 @@ function epochDaysFromDate(dateStr: string): number {
 }
 
 function dayOfWeekFromDate(dateStr: string): number {
-  // dateStr is the ET-anchored calendar date (see getDailyDateString). We
-  // anchor at UTC midnight to read the weekday; this matches calendar intuition
-  // for ET dates within the same hour-of-day band, which is all that matters
-  // for "which day's theme is it".
+  // dateStr is the ET-anchored calendar date string (YYYY-MM-DD). We read
+  // the weekday from UTC midnight of that date — for any YYYY-MM-DD this
+  // returns the weekday of that calendar date, which is what the user
+  // sees on the page.
   const d = new Date(`${dateStr}T00:00:00Z`);
   return d.getUTCDay();
 }
@@ -225,9 +360,8 @@ export function getDailyThemeForDate(dateStr: string): DailyTheme {
 // the theme bucket starting at offset = (weekIndex * LINEUP_SIZE) % size.
 // This means every entry in the theme's bucket appears once before any
 // matchup repeats on that day-of-week. Then we do a tiny per-day re-shuffle
-// inside the chosen slice so the display order on the page varies day to day
-// even though the underlying 10 are the same that "themed week" within the
-// cycle.
+// inside the chosen slice so the display order on the page varies day to
+// day even within the same theme-week.
 export function getThemedDailyMatchupsForDate(
   dateStr: string,
   count: number = DAILY_LINEUP_SIZE,
@@ -235,10 +369,9 @@ export function getThemedDailyMatchupsForDate(
   const theme = getDailyThemeForDate(dateStr);
   const buckets = getBuckets();
   const bucket = buckets.get(theme.key) ?? [];
-  // If the themed bucket somehow can't supply enough distinct entries, fall
-  // back to wildcard (which is the full pool) for the gap. Should never
-  // trigger with the current pool (smallest themed bucket is `throwdown` at
-  // 20+), but keeps the function total in the face of future pool edits.
+  // If the themed bucket can't supply enough distinct entries, fall back
+  // to wildcard (full pool) for the gap. Defensive — keeps the function
+  // total even if a future pool edit shrinks a themed bucket below 10.
   let pool: DailyPoolEntry[] = bucket;
   if (pool.length < count) {
     const wildcard = buckets.get("wildcard") ?? [];
@@ -249,8 +382,6 @@ export function getThemedDailyMatchupsForDate(
     return { theme, entries: [] };
   }
   const epochDays = epochDaysFromDate(dateStr);
-  // weekIndex changes every 7 epoch days. Each week, the same day-of-week
-  // walks forward by `count` entries through the bucket. Negative-safe mod.
   const weekIndex = Math.floor(epochDays / 7);
   const size = pool.length;
   const offset = (((weekIndex * count) % size) + size) % size;
@@ -258,9 +389,7 @@ export function getThemedDailyMatchupsForDate(
   for (let i = 0; i < count; i++) {
     picks.push(pool[(offset + i) % size]!);
   }
-  // Per-day display-order reshuffle of the chosen 10 (doesn't change the
-  // contents, just the order, so the page doesn't look stagnant when a
-  // matchup repeats every full theme-cycle).
+  // Per-day display-order reshuffle of the chosen 10.
   const dayRng = mulberry32(Math.imul(epochDays + 1, 2654435761));
   for (let i = picks.length - 1; i > 0; i--) {
     const j = Math.floor(dayRng() * (i + 1));
@@ -272,7 +401,7 @@ export function getThemedDailyMatchupsForDate(
 }
 
 // Debug helper — used by tests or admin tooling to inspect how big each
-// themed bucket ended up after keyword inference. Not used in request paths.
+// themed bucket ended up. Not used in request paths.
 export function getThemeBucketSizes(): Record<ThemeKey, number> {
   const buckets = getBuckets();
   const out = {} as Record<ThemeKey, number>;
