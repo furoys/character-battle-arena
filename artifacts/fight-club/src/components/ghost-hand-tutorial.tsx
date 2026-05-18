@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Character } from "@workspace/api-client-react";
+import { CinematicIntro } from "./cinematic-intro";
 
 const STORAGE_KEY = "ava.firstFightTutorialDone";
 
@@ -23,6 +24,9 @@ interface Props {
    *  same-universe bonus pill in the dock. Null when no same-universe
    *  partner exists in the roster, in which case the synergy step is skipped. */
   tutorialSynergyPick: Character | null;
+  /** Characters used for the pre-tutorial cinematic montage. A small slice of
+   *  the loaded roster is sufficient — recognizable images flash on screen. */
+  montageCharacters: Character[];
   team1Count: number;
   team2Count: number;
   fightStarted: boolean;
@@ -58,6 +62,7 @@ const CAPTIONS: Record<Step, string> = {
 export function GhostHandTutorial({
   tutorialPicks,
   tutorialSynergyPick,
+  montageCharacters,
   team1Count,
   team2Count,
   fightStarted,
@@ -72,6 +77,9 @@ export function GhostHandTutorial({
       return false;
     }
   });
+  // Pre-tutorial cinematic plays first. The ghost-hand choreography blocks
+  // until the cinematic completes (or the user skips it).
+  const [cineDone, setCineDone] = useState(false);
   const [step, setStep] = useState<Step>("intro");
   const [hand, setHand] = useState<HandPosition>({ x: -200, y: -200, scale: 1, tap: false });
   const [captionVisible, setCaptionVisible] = useState(true);
@@ -153,14 +161,14 @@ export function GhostHandTutorial({
 
   async function moveHandTo(target: { x: number; y: number }) {
     setHand(h => ({ ...h, x: target.x, y: target.y, scale: 1, tap: false }));
-    await sleep(650);
+    await sleep(950);
   }
 
   async function doTap() {
     setHand(h => ({ ...h, scale: 0.82, tap: true }));
-    await sleep(180);
+    await sleep(260);
     setHand(h => ({ ...h, scale: 1, tap: false }));
-    await sleep(120);
+    await sleep(220);
   }
 
   // Main choreography. Re-runs only when `active` flips on (effectively once).
@@ -168,6 +176,7 @@ export function GhostHandTutorial({
   // can never get stranded behind a stuck overlay.
   useEffect(() => {
     if (!active) return;
+    if (!cineDone) return; // wait for cinematic intro to finish first
     if (!tutorialPicks) return; // wait for iconic picks to be resolved
     let cancelled = false;
     cancelledRef.current = false;
@@ -176,8 +185,8 @@ export function GhostHandTutorial({
 
     (async () => {
       try {
-        // Brief intro caption
-        await sleep(450);
+        // Brief intro caption — slower for a more cinematic feel
+        await sleep(900);
         if (aborted()) return;
         await flashCaption("pickTeam1");
 
@@ -192,7 +201,7 @@ export function GhostHandTutorial({
         // reactive bail effect doesn't fire on the resulting team-count tick.
         scriptedPickingRef.current = true;
         onPickForTeam(pickA, 1);
-        await sleep(450);
+        await sleep(950);
         if (aborted()) return;
 
         // STEP 2 — Synergy partner (optional, only when a same-universe
@@ -208,7 +217,7 @@ export function GhostHandTutorial({
             await doTap();
             if (aborted()) return;
             onPickForTeam(tutorialSynergyPick, 1, true);
-            await sleep(550);
+            await sleep(1100);
             if (aborted()) return;
 
             // Point at the synergy pill itself so the user understands WHAT
@@ -217,7 +226,7 @@ export function GhostHandTutorial({
             const targetPill = await waitForCenter('[data-tutorial-id="synergy-strip"]', 2500);
             if (!aborted() && targetPill) {
               await moveHandTo(targetPill);
-              await sleep(1700);
+              await sleep(2600);
             }
             if (aborted()) return;
           }
@@ -234,7 +243,7 @@ export function GhostHandTutorial({
         await doTap();
         if (aborted()) return;
         onPickForTeam(pickB, 2);
-        await sleep(550);
+        await sleep(1100);
         if (aborted()) return;
 
         // STEP 4 — Chaos modifier preview. Point at the chip and explain;
@@ -243,7 +252,7 @@ export function GhostHandTutorial({
         const targetMod = await waitForCenter('[data-tutorial-id="modifier-chip"]', 3000);
         if (!aborted() && targetMod) {
           await moveHandTo(targetMod);
-          await sleep(1700);
+          await sleep(2600);
         }
         if (aborted()) return;
 
@@ -285,6 +294,24 @@ export function GhostHandTutorial({
   }, [fightStarted, active]);
 
   if (!active) return null;
+
+  // Cinematic intro plays first — full-bleed black overlay above the page.
+  // We render it as a SIBLING to the choreography overlay (returned together
+  // in a fragment) so the user sees the pre-roll, then the choreography
+  // takes over once `cineDone` flips. Both gate on `tutorialPicks` being
+  // resolved — the roster has to be loaded for either to show anything.
+  if (!cineDone) {
+    if (!tutorialPicks) return null;
+    return (
+      <CinematicIntro
+        pickA={tutorialPicks[0]}
+        pickB={tutorialPicks[1]}
+        montage={montageCharacters}
+        onComplete={() => setCineDone(true)}
+        onSkip={() => setCineDone(true)}
+      />
+    );
+  }
 
   const showHand =
     step === "pickTeam1" ||

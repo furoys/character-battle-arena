@@ -1545,6 +1545,7 @@ export function Home() {
         <GhostHandTutorial
           tutorialPicks={tutorialPicks}
           tutorialSynergyPick={tutorialSynergyPick}
+          montageCharacters={Array.isArray(characters) ? characters.slice(0, 60) : []}
           team1Count={team1.length}
           team2Count={team2.length}
           fightStarted={showModal}
