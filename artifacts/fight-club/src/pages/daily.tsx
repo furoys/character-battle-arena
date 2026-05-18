@@ -1378,9 +1378,11 @@ export function Daily() {
             🛡 NEXT SHIELD: {new Date(me.streakShield.nextAvailableAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </div>
         )}
-        {/* Pick-points strip — only shown when signed in. Visualizes 3 base
-            pips + any bonus pips earned via ads, filled = remaining. */}
-        {isSignedIn && daily?.pickPoints && (
+        {/* Pick-points strip — only shown when signed in AND there's an
+            ad-gating economy to display (adBonusCap > 0). Currently base ==
+            lineup size so every pick is free and we hide the strip entirely
+            to avoid an energy-looking pip bar that confuses users. */}
+        {isSignedIn && daily?.pickPoints && daily.pickPoints.adBonusCap > 0 && (
           <PickPointsStrip
             pickPoints={daily.pickPoints}
             onWatchAd={() => startWatchAd()}

@@ -383,7 +383,10 @@ export const DAILY_LINEUP_SIZE = 20;
 // Pick point economy. Each daily pick costs 1 point. Users get DAILY_PICK_POINTS_BASE
 // free per day; once those are spent they can watch an ad to earn +1 point, up
 // to DAILY_AD_BONUS_CAP extra (so max picks/day = BASE + CAP = full lineup).
-export const DAILY_PICK_POINTS_BASE = 3;
+// Currently BASE === DAILY_LINEUP_SIZE so every daily pick is free and the
+// ad-bonus path is dormant (CAP = 0). The two constants and the ad-bonus
+// route remain in place so re-enabling gating is a one-line BASE change.
+export const DAILY_PICK_POINTS_BASE = DAILY_LINEUP_SIZE;
 export const DAILY_AD_BONUS_CAP = DAILY_LINEUP_SIZE - DAILY_PICK_POINTS_BASE;
 
 function epochDaysFromDate(dateStr: string): number {
