@@ -21,6 +21,7 @@ import {
   getDailyDateString,
   getDailyMatchupsForDate,
 } from "../lib/dailyPool";
+import { getDailyThemeForDate } from "../lib/dailyThemes";
 
 const router: IRouter = Router();
 
@@ -227,9 +228,16 @@ router.get("/daily", async (req, res): Promise<void> => {
   }
 
   const pickPoints = userId ? await readPickPoints(userId, date) : null;
+  // Day-of-week theme banner: "MARVEL MONDAY", "ANIME FRIDAY", etc. The
+  // theme is a function of the date string only, so it always matches the
+  // materialized lineup for that date (even if the underlying theme bucket
+  // logic changes later — the rows in DB are the canonical lineup for that
+  // date; theme is just the label).
+  const theme = getDailyThemeForDate(date);
 
   res.json({
     date,
+    theme,
     pickPoints,
     matchups: pairs.map((p, i) => {
       const split = splitMap.get(p.entry.id) ?? { t1: 0, t2: 0 };

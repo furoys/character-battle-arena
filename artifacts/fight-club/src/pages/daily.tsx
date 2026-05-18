@@ -25,7 +25,8 @@ type PickPoints = {
   remaining: number;
 };
 
-type DailyResponse = { date: string; pickPoints: PickPoints | null; matchups: DailyMatchup[] };
+type DailyTheme = { key: string; label: string; blurb: string };
+type DailyResponse = { date: string; theme?: DailyTheme; pickPoints: PickPoints | null; matchups: DailyMatchup[] };
 
 type MeDailyResponse = {
   totalPicks: number;
@@ -1297,8 +1298,23 @@ export function Daily() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="font-display text-2xl uppercase tracking-[0.2em]" style={{ color: "#ffc800", lineHeight: 1 }}>
-              Daily Matchups
+              {daily?.theme?.label ?? "Daily Matchups"}
             </h1>
+            {daily?.theme?.blurb && (
+              <p
+                className="mt-1"
+                style={{
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.55)",
+                  letterSpacing: "0.06em",
+                  fontStyle: "italic",
+                  maxWidth: 280,
+                  lineHeight: 1.3,
+                }}
+              >
+                {daily.theme.blurb}
+              </p>
+            )}
             <p className="mt-1" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
               {daily?.date ?? "—"} · NEXT DROP IN <span style={{ color: "#ffc800", fontWeight: 800 }}>{countdown}</span>
             </p>

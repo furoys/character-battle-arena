@@ -309,28 +309,29 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-// Deterministic, unbiased seeded shuffle keyed by the day index. Same date
-// everywhere in the world → same N matchups in the same order. Uses a
-// Fisher–Yates shuffle driven by mulberry32 seeded from epoch days so each
-// entry has equal long-run probability of appearing on any given day (unlike
-// the previous hash-and-sort approach, which biased some entries 2x).
+// Themed daily selection. Each day of the week has a theme (Marvel Monday,
+// Anime Friday, etc.) and the lineup is drawn from a pre-shuffled theme
+// bucket using a week-index offset. Within a theme, every matchup in the
+// bucket appears exactly once before any repeat — a hard no-repeat guarantee
+// across the bucket's theme cycle (much stronger than the old pure-random
+// Fisher–Yates that statistically averaged ~20 days between repeats but
+// could cluster the same matchup in adjacent weeks).
+//
+// See dailyThemes.ts for the day-of-week → theme mapping and the bucket
+// building / rotation algorithm. We import lazily inside the function to
+// avoid a circular import (dailyThemes imports DAILY_POOL from here).
+//
+// Old PRNG / Fisher–Yates kept around in `mulberry32` above (still used by
+// dailyThemes for its per-day display reshuffle).
 export function getDailyMatchupsForDate(
   dateStr: string,
   count: number = DAILY_LINEUP_SIZE,
 ): DailyPoolEntry[] {
-  const day = epochDaysFromDate(dateStr);
-  // Mix the day with a large odd constant so neighbouring days produce very
-  // different PRNG streams (avoids near-identical lineups on consecutive days).
-  const rng = mulberry32(Math.imul(day + 1, 2654435761));
-  const arr = DAILY_POOL.slice();
-  // Fisher–Yates from the end. Swap each i with a random j in [0, i].
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const tmp = arr[i]!;
-    arr[i] = arr[j]!;
-    arr[j] = tmp;
-  }
-  return arr.slice(0, Math.min(count, arr.length));
+  // Lazy require to keep the module graph acyclic at evaluation time.
+  // (dailyThemes imports DAILY_POOL from this module at top level.)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getThemedDailyMatchupsForDate } = require("./dailyThemes") as typeof import("./dailyThemes");
+  return getThemedDailyMatchupsForDate(dateStr, count).entries;
 }
 
 // Single-matchup helper kept for backwards compatibility with any callers
