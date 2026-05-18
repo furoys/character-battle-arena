@@ -9,6 +9,7 @@ type Step =
   | "pickTeam1"
   | "synergy"
   | "showSynergy"
+  | "switchToTeam2"
   | "pickTeam2"
   | "modifier"
   | "fight"
@@ -34,6 +35,9 @@ interface Props {
    *  it. Tutorial uses append for the synergy partner so we end up with a
    *  2-fighter Team 1 instead of clobbering the champion pick. */
   onPickForTeam: (character: Character, slot: 1 | 2, append?: boolean) => void;
+  /** Called when the tutorial reaches the "switch to Team 2" beat so the
+   *  parent can update the active-team toggle, just like a real user tap. */
+  onActivateTeam?: (team: 1 | 2) => void;
   /** Fires once when the tutorial transitions out of its active state, for
    *  any reason (skip, completed FIGHT tap, pre-populated bail, fight closed).
    *  Used by the parent to flip the "tutorial pending" UI gating off. */
@@ -52,6 +56,7 @@ const CAPTIONS: Record<Step, string> = {
   pickTeam1: "Choose Champion",
   synergy: "Team Up · Same Universe",
   showSynergy: "Synergy Bonus Unlocked",
+  switchToTeam2: "Now Tap Team 2",
   pickTeam2: "Choose Nemesis",
   modifier: "Chaos Rules · Twist Fate",
   fight: "Awaken Combat",
@@ -67,6 +72,7 @@ export function GhostHandTutorial({
   team2Count,
   fightStarted,
   onPickForTeam,
+  onActivateTeam,
   onFinish,
 }: Props) {
   const [active, setActive] = useState<boolean>(() => {
@@ -234,7 +240,21 @@ export function GhostHandTutorial({
           // never strand the user behind a missing step.
         }
 
-        // STEP 3 — Team 2 pick (nemesis)
+        // STEP 3a — Switch to Team 2 tab. Real users have to tap the Team 2
+        // slot to start adding nemesis picks, so the tutorial demonstrates it
+        // explicitly with a hand tap + caption + parent activation callback.
+        await flashCaption("switchToTeam2");
+        const targetTeam2Tab = await waitForCenter('[data-tutorial-id="team-2-slot"]', 2500);
+        if (!aborted() && targetTeam2Tab) {
+          await moveHandTo(targetTeam2Tab);
+          await doTap();
+          if (aborted()) return;
+          try { onActivateTeam?.(2); } catch { /* parent guard */ }
+          await sleep(900);
+          if (aborted()) return;
+        }
+
+        // STEP 3b — Team 2 pick (nemesis)
         await flashCaption("pickTeam2");
         const targetB = await waitForCenter(`[data-tutorial-id="${pickB.id}"]`);
         if (aborted()) return;
@@ -317,6 +337,7 @@ export function GhostHandTutorial({
     step === "pickTeam1" ||
     step === "synergy" ||
     step === "showSynergy" ||
+    step === "switchToTeam2" ||
     step === "pickTeam2" ||
     step === "modifier" ||
     step === "fight";
@@ -363,7 +384,7 @@ export function GhostHandTutorial({
         >
           {/* Pulse ring on FIGHT step, and on info-only beats (synergy /
               modifier highlight) so the user's eye latches on. */}
-          {(step === "fight" || step === "showSynergy" || step === "modifier") && (
+          {(step === "fight" || step === "showSynergy" || step === "modifier" || step === "switchToTeam2") && (
             <div
               style={{
                 position: "absolute",

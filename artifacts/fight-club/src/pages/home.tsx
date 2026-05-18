@@ -1248,15 +1248,17 @@ export function Home() {
                 VS
               </div>
             </div>
-            <TeamSlot
-              team={2}
-              members={team2}
-              active={activeTeam === 2}
-              flash={flashTeam === 2}
-              onActivate={() => setActiveTeam(2)}
-              onRemove={(id) => { tutorialStagedRef.current = false; setTeam2(t => t.filter(c => c.id !== id)); }}
-              onSave={user ? () => setSavingTeamSlot(2) : undefined}
-            />
+            <div data-tutorial-id="team-2-slot">
+              <TeamSlot
+                team={2}
+                members={team2}
+                active={activeTeam === 2}
+                flash={flashTeam === 2}
+                onActivate={() => setActiveTeam(2)}
+                onRemove={(id) => { tutorialStagedRef.current = false; setTeam2(t => t.filter(c => c.id !== id)); }}
+                onSave={user ? () => setSavingTeamSlot(2) : undefined}
+              />
+            </div>
           </div>
 
           {/* Save-team dialog — inline banner */}
@@ -1549,6 +1551,7 @@ export function Home() {
           team1Count={team1.length}
           team2Count={team2.length}
           fightStarted={showModal}
+          onActivateTeam={(t) => setActiveTeam(t)}
           onFinish={() => setTutorialActive(false)}
           onPickForTeam={(character, slot, append) => {
             // Mark teams as tutorial-staged so the post-fight close handler
