@@ -1165,7 +1165,9 @@ export function Home() {
               opts in (or out) of AI narration at the moment of commitment.
               Lives here (not the top bar) because the choice is per-fight. */}
           {canFight && (
-            <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
+            <div data-tutorial-id="narration-toggle">
+              <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
+            </div>
           )}
 
           {/* Chaos modifier strip — sits directly above the FIGHT bar so the

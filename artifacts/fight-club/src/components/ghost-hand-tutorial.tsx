@@ -7,11 +7,10 @@ const STORAGE_KEY = "ava.firstFightTutorialDone";
 type Step =
   | "intro"
   | "pickTeam1"
-  | "synergy"
-  | "showSynergy"
   | "switchToTeam2"
   | "pickTeam2"
   | "modifier"
+  | "narration"
   | "fight"
   | "celebrate"
   | "done";
@@ -54,11 +53,10 @@ interface HandPosition {
 const CAPTIONS: Record<Step, string> = {
   intro: "Welcome to A.v.A",
   pickTeam1: "Choose Champion",
-  synergy: "Team Up · Same Universe",
-  showSynergy: "Synergy Bonus Unlocked",
   switchToTeam2: "Now Tap Team 2",
   pickTeam2: "Choose Nemesis",
   modifier: "Chaos Rules · Twist Fate",
+  narration: "Narration · Tap to Toggle",
   fight: "Awaken Combat",
   celebrate: "Legendary.",
   done: "",
@@ -210,37 +208,7 @@ export function GhostHandTutorial({
         await sleep(950);
         if (aborted()) return;
 
-        // STEP 2 — Synergy partner (optional, only when a same-universe
-        // partner exists in the roster). We APPEND so Team 1 ends up with
-        // both the champion and the partner, then highlight the synergy
-        // strip so the +bonus pill is the focal point.
-        if (tutorialSynergyPick) {
-          await flashCaption("synergy");
-          const targetSyn = await waitForCenter(`[data-tutorial-id="${tutorialSynergyPick.id}"]`);
-          if (aborted()) return;
-          if (targetSyn) {
-            await moveHandTo(targetSyn);
-            await doTap();
-            if (aborted()) return;
-            onPickForTeam(tutorialSynergyPick, 1, true);
-            await sleep(1100);
-            if (aborted()) return;
-
-            // Point at the synergy pill itself so the user understands WHAT
-            // they just unlocked. No tap — it's not interactive.
-            await flashCaption("showSynergy");
-            const targetPill = await waitForCenter('[data-tutorial-id="synergy-strip"]', 2500);
-            if (!aborted() && targetPill) {
-              await moveHandTo(targetPill);
-              await sleep(2600);
-            }
-            if (aborted()) return;
-          }
-          // If the partner card never showed up we silently fall through —
-          // never strand the user behind a missing step.
-        }
-
-        // STEP 3a — Switch to Team 2 tab. Real users have to tap the Team 2
+        // STEP 2 — Switch to Team 2 tab. Real users have to tap the Team 2
         // slot to start adding nemesis picks, so the tutorial demonstrates it
         // explicitly with a hand tap + caption + parent activation callback.
         await flashCaption("switchToTeam2");
@@ -266,13 +234,24 @@ export function GhostHandTutorial({
         await sleep(1100);
         if (aborted()) return;
 
-        // STEP 4 — Chaos modifier preview. Point at the chip and explain;
+        // STEP 3 — Chaos modifier preview. Point at the chip and explain;
         // do NOT open the picker (per UX decision — keep first run fast).
         await flashCaption("modifier");
         const targetMod = await waitForCenter('[data-tutorial-id="modifier-chip"]', 3000);
         if (!aborted() && targetMod) {
           await moveHandTo(targetMod);
-          await sleep(2600);
+          await sleep(2200);
+        }
+        if (aborted()) return;
+
+        // STEP 4 — Narration toggle. Point at the AI-narration on/off chip so
+        // first-run users know they can mute it before tapping FIGHT. No tap —
+        // we don't want to flip the user's preference for them.
+        await flashCaption("narration");
+        const targetNarr = await waitForCenter('[data-tutorial-id="narration-toggle"]', 3000);
+        if (!aborted() && targetNarr) {
+          await moveHandTo(targetNarr);
+          await sleep(2400);
         }
         if (aborted()) return;
 
@@ -292,7 +271,7 @@ export function GhostHandTutorial({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, cineDone, tutorialPicks, tutorialSynergyPick]);
+  }, [active, cineDone, tutorialPicks]);
 
   // When the real FIGHT starts, finalize regardless of which step we're on.
   // If the user starts a fight before tutorial gets to the FIGHT step (e.g.,
@@ -335,11 +314,10 @@ export function GhostHandTutorial({
 
   const showHand =
     step === "pickTeam1" ||
-    step === "synergy" ||
-    step === "showSynergy" ||
     step === "switchToTeam2" ||
     step === "pickTeam2" ||
     step === "modifier" ||
+    step === "narration" ||
     step === "fight";
 
   return (
@@ -384,7 +362,7 @@ export function GhostHandTutorial({
         >
           {/* Pulse ring on FIGHT step, and on info-only beats (synergy /
               modifier highlight) so the user's eye latches on. */}
-          {(step === "fight" || step === "showSynergy" || step === "modifier" || step === "switchToTeam2") && (
+          {(step === "fight" || step === "modifier" || step === "narration" || step === "switchToTeam2") && (
             <div
               style={{
                 position: "absolute",
