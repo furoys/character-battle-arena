@@ -599,12 +599,17 @@ router.get("/daily/leaderboard", async (req, res): Promise<void> => {
         limit: userIds.length,
       });
       for (const u of users.data) {
-        const handle =
-          u.username ||
-          [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
-          u.primaryEmailAddress?.emailAddress?.split("@")[0] ||
-          "";
-        if (handle) nameById.set(u.id, handle);
+        // Privacy: leaderboard must NEVER expose real names or emails. Only
+        // surface the user-chosen "@ tag" stored in unsafeMetadata.username
+        // (set via the in-app UsernameEditor) or Clerk's native username.
+        // If neither is set, fall through to the anonymous "Player XXXXXX"
+        // fallback computed below instead of leaking firstName/lastName/email.
+        const metaTag =
+          typeof (u.unsafeMetadata as { username?: unknown } | null | undefined)?.username === "string"
+            ? ((u.unsafeMetadata as { username?: string }).username as string).trim()
+            : "";
+        const handle = metaTag || u.username || "";
+        if (handle) nameById.set(u.id, `@${handle}`);
       }
     } catch (err) {
       req.log?.warn?.({ err }, "leaderboard: clerk lookup failed; falling back to userId suffix");
