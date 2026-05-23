@@ -6629,3 +6629,45 @@ id = "2rlEddgXjf0Ywc0ernceG"
 uri = "file://character-roster.pdf"
 type = "pdf"
 title = "A.v.A — Full Character Roster (953 characters)"
+
+[[outputs]]
+id = "Bp9zAFd-5T39CZVlEQEh7"
+uri = "file://marketing/play-store/screenshot-1-hero.jpg"
+type = "image"
+title = "1 — Hero / Brand intro"
+
+[[outputs]]
+id = "emhzm8ACfcRv83dgSusEM"
+uri = "file://marketing/play-store/screenshot-2-pick-anyone.jpg"
+type = "image"
+title = "2 — Pick anyone from any universe"
+
+[[outputs]]
+id = "QvroO6oQDYhtv3GrsYksN"
+uri = "file://marketing/play-store/screenshot-3-ai-narration.jpg"
+type = "image"
+title = "3 — AI writes the fight"
+
+[[outputs]]
+id = "NlcjEua8JUjdz2vyYd6NY"
+uri = "file://marketing/play-store/screenshot-4-daily-matchups.jpg"
+type = "image"
+title = "4 — 20 daily matchups"
+
+[[outputs]]
+id = "usBePyrXSxVvIhNgxMDJW"
+uri = "file://marketing/play-store/screenshot-5-blind-pick.jpg"
+type = "image"
+title = "5 — Challenge friends · blind pick"
+
+[[outputs]]
+id = "pe9hmKWdMvhvFwaqEtmlL"
+uri = "file://marketing/play-store/screenshot-6-chaos.jpg"
+type = "image"
+title = "6 — Chaos modifiers"
+
+[[outputs]]
+id = "vE619HjjIscqSwT_vf-Xx"
+uri = "file://marketing/play-store-description.md"
+type = "text"
+title = "Play Store listing copy (title · short · full · keywords)"

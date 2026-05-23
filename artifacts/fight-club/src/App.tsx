@@ -27,6 +27,8 @@ import { Profile } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
 import { SignUpPage } from "@/pages/sign-up";
 import { Privacy } from "@/pages/privacy";
+import { Terms } from "@/pages/terms";
+import { Marketing } from "@/pages/marketing";
 import NotFound from "@/pages/not-found";
 
 // Evaluated once at module load — Capacitor's isNativePlatform() is sync and
@@ -90,6 +92,8 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/marketing/:n" component={Marketing} />
       {/* All other routes require sign-in */}
       <Route>
         <RequireAuth>

@@ -476,6 +476,41 @@ function SignedInProfile() {
             Suggest Matchup
           </button>
         </div>
+
+        {/* Legal footer — Play Store / app store compliance. Kept small and
+            understated; tap targets are still 40px tall for accessibility. */}
+        <div
+          className="mt-8 pt-6 flex items-center justify-center gap-6"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <a
+            href="/privacy"
+            className="font-display uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{
+              fontSize: 9,
+              letterSpacing: "0.22em",
+              color: "rgba(255,255,255,0.4)",
+              textDecoration: "none",
+              padding: "10px 4px",
+            }}
+          >
+            Privacy
+          </a>
+          <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 9 }}>·</span>
+          <a
+            href="/terms"
+            className="font-display uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{
+              fontSize: 9,
+              letterSpacing: "0.22em",
+              color: "rgba(255,255,255,0.4)",
+              textDecoration: "none",
+              padding: "10px 4px",
+            }}
+          >
+            Terms
+          </a>
+        </div>
       </div>
     </div>
   );
