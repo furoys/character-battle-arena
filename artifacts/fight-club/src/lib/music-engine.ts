@@ -37,11 +37,20 @@ class MusicEngine {
       // or ctx.resume() succeeds after mute), start the pending track if nothing
       // is already producing audio.
       this.ctx.onstatechange = () => {
+        // `!this.transitioning` is critical: ctx state can transition to
+        // "running" mid-setTrack (right after ensureCtx, during the 100ms
+        // pre-play wait) while cleanupFns is still empty because playLobby/
+        // playBattle/playVictory hasn't pushed its cleanup yet. Without this
+        // guard we'd recursively kick off a SECOND setTrack for the same
+        // track — the original then races through to playLobby too, and you
+        // end up with two looping sources playing the same MP3 offset by
+        // ~700ms (the classic "doubled music" bug).
         if (
           this.ctx?.state === "running" &&
           !this._muted &&
           this.currentTrack !== "off" &&
-          this.cleanupFns.length === 0
+          this.cleanupFns.length === 0 &&
+          !this.transitioning
         ) {
           const t = this.currentTrack;
           this.currentTrack = "off";
@@ -84,39 +93,47 @@ class MusicEngine {
     const fadeSec = track === "victory" ? 0.18 : 0.5;
     const waitMs  = track === "victory" ? 200  : 600;
 
-    this.stopAll(fadeSec);
-    this.currentTrack = track;
+    try {
+      this.stopAll(fadeSec);
+      this.currentTrack = track;
 
-    await new Promise<void>((r) => setTimeout(r, waitMs));
-    this.transitioning = false;
+      await new Promise<void>((r) => setTimeout(r, waitMs));
 
-    if (track === "off" || this._muted) {
-      this.restoreGain(0.1);
-      return;
-    }
+      if (track === "off" || this._muted) {
+        this.restoreGain(0.1);
+        return;
+      }
 
-    const { ctx } = this.ensureCtx();
+      const { ctx } = this.ensureCtx();
 
-    // If the AudioContext is still suspended (browser autoplay policy), don't
-    // try to start oscillators — onstatechange will call setTrack again once
-    // the user's first gesture allows ctx.resume() to succeed.
-    if (ctx.state !== "running") return;
+      // If the AudioContext is still suspended (browser autoplay policy), don't
+      // try to start oscillators — onstatechange will call setTrack again once
+      // the user's first gesture allows ctx.resume() to succeed.
+      if (ctx.state !== "running") return;
 
-    this.restoreGain(0.05);
+      this.restoreGain(0.05);
 
-    await new Promise<void>((r) => setTimeout(r, 100));
-    if (this.currentTrack !== track) return;
+      await new Promise<void>((r) => setTimeout(r, 100));
+      if (this.currentTrack !== track) return;
 
-    switch (track) {
-      case "lobby":
-        this.playLobby();
-        break;
-      case "battle":
-        this.playBattle();
-        break;
-      case "victory":
-        this.playVictory();
-        break;
+      switch (track) {
+        case "lobby":
+          this.playLobby();
+          break;
+        case "battle":
+          this.playBattle();
+          break;
+        case "victory":
+          this.playVictory();
+          break;
+      }
+    } finally {
+      // Hold `transitioning` true through the ENTIRE lifecycle (including
+      // ensureCtx + the 100ms pre-play wait) so onstatechange can't fire a
+      // recursive setTrack while we're still in the gap between
+      // currentTrack assignment and the playLobby/Battle/Victory cleanup
+      // push. See onstatechange comment in ensureCtx.
+      this.transitioning = false;
     }
   }
 
