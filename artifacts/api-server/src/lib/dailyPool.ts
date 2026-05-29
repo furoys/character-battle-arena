@@ -330,6 +330,28 @@ export const DAILY_POOL: DailyPoolEntry[] = [
   { id: "meliodas-vs-escanor", title: "Meliodas vs Escanor", hook: "Demon king vs the Lion's Pride at high noon.", team1Ids: [573], team2Ids: [574] },
   { id: "goku-vs-beerus", title: "Goku vs Beerus", hook: "Ultra Instinct student vs his god of destruction master.", team1Ids: [2], team2Ids: [40] },
   { id: "vegeta-vs-jiren", title: "Vegeta vs Jiren", hook: "Saiyan pride vs Pride Trooper. Final Flash vs concentrated will.", team1Ids: [12], team2Ids: [41] },
+
+  // ── Fun matchups (mascots, monster-tamers, toons, gaming icons) ──────────────
+  // Lighter, instantly-recognizable "obvious but fun" fights — the kind people
+  // tag a friend about. Mascot wars, Pokémon vs Digimon, cartoon chaos, etc.
+  { id: "mario-vs-sonic", title: "Mario vs Sonic", hook: "Plumber vs hedgehog. The console war made flesh.", team1Ids: [217], team2Ids: [216] },
+  { id: "pokemon-vs-digimon", title: "Charizard vs WarGreymon", hook: "Pokémon vs Digimon — the monster-tamer war, settled.", team1Ids: [241], team2Ids: [247] },
+  { id: "pikachu-vs-kirby", title: "Pikachu vs Kirby", hook: "Electric mouse vs the pink puffball that eats anything.", team1Ids: [226], team2Ids: [218] },
+  { id: "mega-man-vs-samus", title: "Mega Man vs Samus Aran", hook: "Blue Bomber vs the bounty hunter. Arm-cannon duel.", team1Ids: [221], team2Ids: [214] },
+  { id: "sonic-vs-flash", title: "Sonic vs The Flash", hook: "Fastest hedgehog vs fastest man alive.", team1Ids: [216], team2Ids: [789] },
+  { id: "spongebob-vs-kirby", title: "SpongeBob vs Kirby", hook: "Two of the most unkillable cuties ever drawn.", team1Ids: [757], team2Ids: [218] },
+  { id: "bugs-vs-popeye", title: "Bugs Bunny vs Popeye", hook: "Toon trickster vs spinach-powered sailor.", team1Ids: [471], team2Ids: [756] },
+  { id: "shrek-vs-bowser", title: "Shrek vs Bowser", hook: "Big green ogre vs the Koopa King. Swamp vs castle.", team1Ids: [563], team2Ids: [219] },
+  { id: "goku-vs-sonic", title: "Goku vs Sonic", hook: "Saiyan speed vs supersonic hedgehog.", team1Ids: [2], team2Ids: [216] },
+  { id: "kirby-vs-bowser", title: "Kirby vs Bowser", hook: "The little pink hero vs the big spiky villain.", team1Ids: [218], team2Ids: [219] },
+  { id: "pokemon-vs-digimon-team", title: "Pokémon vs Digimon", hook: "Mewtwo, Charizard & Lucario vs Omnimon, WarGreymon & Beelzemon.", team1Ids: [240, 241, 244], team2Ids: [249, 247, 251] },
+  { id: "mario-vs-luigi", title: "Mario vs Luigi", hook: "Super Mario Bros. The Year of Luigi, finally settled.", team1Ids: [217], team2Ids: [1254] },
+  { id: "sonic-vs-shadow", title: "Sonic vs Shadow", hook: "Blue blur vs the ultimate life form.", team1Ids: [216], team2Ids: [1252] },
+  { id: "samus-vs-dark-samus", title: "Samus vs Dark Samus", hook: "The hunter vs her Phazon doppelgänger.", team1Ids: [214], team2Ids: [1160] },
+  { id: "samurai-jack-vs-aku", title: "Samurai Jack vs Aku", hook: "The samurai vs the shape-shifting master of darkness.", team1Ids: [761], team2Ids: [762] },
+  { id: "mask-vs-beetlejuice", title: "The Mask vs Beetlejuice", hook: "Two reality-bending agents of pure chaos.", team1Ids: [170], team2Ids: [171] },
+  { id: "pacquiao-vs-tyson", title: "Manny Pacquiao vs Mike Tyson", hook: "Pac-Man's speed vs Iron Mike's power.", team1Ids: [1264], team2Ids: [522] },
+  { id: "pacquiao-vs-ali", title: "Manny Pacquiao vs Muhammad Ali", hook: "Eight-division king vs The Greatest.", team1Ids: [1264], team2Ids: [521] },
 ];
 
 // Deterministic day index → matchup. The "daily" period rolls over at

@@ -366,6 +366,25 @@ export const ENTRY_THEMES: Record<string, ThemeKey[]> = {
   "meliodas-vs-escanor": ["rivals"],
   "goku-vs-beerus": ["rivals"],
   "vegeta-vs-jiren": ["rivals"],
+  // ── Fun matchups ────────────────────────────────────────────────────
+  "mario-vs-sonic": ["crossover", "rivals"],
+  "pokemon-vs-digimon": ["crossover", "rivals"],
+  "pikachu-vs-kirby": ["crossover"],
+  "mega-man-vs-samus": ["crossover", "rivals"],
+  "sonic-vs-flash": ["crossover"],
+  "spongebob-vs-kirby": ["crossover"],
+  "bugs-vs-popeye": ["crossover", "rivals"],
+  "shrek-vs-bowser": ["crossover"],
+  "goku-vs-sonic": ["crossover"],
+  "kirby-vs-bowser": ["showdown", "crossover"],
+  "pokemon-vs-digimon-team": ["team", "crossover"],
+  "mario-vs-luigi": ["rivals"],
+  "sonic-vs-shadow": ["showdown", "rivals"],
+  "samus-vs-dark-samus": ["showdown", "rivals"],
+  "samurai-jack-vs-aku": ["showdown", "rivals"],
+  "mask-vs-beetlejuice": ["crossover", "throwdown"],
+  "pacquiao-vs-tyson": ["rivals", "street"],
+  "pacquiao-vs-ali": ["rivals", "street"],
 };
 
 // ── PRNG (mulberry32) ────────────────────────────────────────────────────────
