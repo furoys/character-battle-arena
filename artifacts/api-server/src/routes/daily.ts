@@ -384,7 +384,29 @@ router.post("/daily/pick", requireAuth, async (req, res): Promise<void> => {
           and(eq(dailyMatchupsTable.date, date), eq(dailyMatchupsTable.matchupId, matchupId)),
         )
         .limit(1);
-      if (matchupRow?.winnerSide != null) {
+      // `winnerSide` is materialized LAZILY (only by tryResolveWinner during
+      // GET /api/daily). But the moment a user runs/skips the daily fight the
+      // verdict lands in fightCacheTable — so there's a window where the fight
+      // is decided (cache present) yet daily_matchups.winnerSide is still null.
+      // Without the cache check below, a user could run the fight, skip to the
+      // reveal, and then flip their pick to the now-known winner. So we also
+      // consult the verdict cache here and treat a cached result as locked.
+      let resolvedWinnerSide = matchupRow?.winnerSide ?? null;
+      if (resolvedWinnerSide == null) {
+        const { cacheKey, teamAIsTeam1 } = buildCacheKey(entry.team1Ids, entry.team2Ids);
+        const [cached] = await tx
+          .select({ winnerTeam: fightCacheTable.winnerTeam })
+          .from(fightCacheTable)
+          .where(eq(fightCacheTable.cacheKey, cacheKey))
+          .limit(1);
+        if (cached) {
+          const winnerIsTeam1 =
+            (cached.winnerTeam === 1 && teamAIsTeam1) ||
+            (cached.winnerTeam === 2 && !teamAIsTeam1);
+          resolvedWinnerSide = winnerIsTeam1 ? 1 : 2;
+        }
+      }
+      if (resolvedWinnerSide != null) {
         return { kind: "locked", pickedSide: existing.pickedSide, pickPoints: buildPoints(usedNow) };
       }
       await tx
