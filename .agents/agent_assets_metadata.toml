@@ -6671,3 +6671,9 @@ id = "vE619HjjIscqSwT_vf-Xx"
 uri = "file://marketing/play-store-description.md"
 type = "text"
 title = "Play Store listing copy (title · short · full · keywords)"
+
+[[outputs]]
+id = "LV2E8WpZ45QJCEZI21-zL"
+uri = "file://daily-forecast-40-days.md"
+type = "text"
+title = "Daily Lineup Forecast — Next 40 Days"
