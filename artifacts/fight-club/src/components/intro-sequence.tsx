@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, type MutableRefObject } from "react";
+import { musicEngine } from "@/lib/music-engine";
 
 // ── Cast — 15 characters from across every universe ───────────────────────────
 const CAST = [
@@ -550,6 +551,17 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
   }, [onDone]);
 
   const stage = useStage(finish, audioStarted);
+
+  // ── Claim audio for the intro ────────────────────────────────────────────
+  // useLayoutEffect runs during commit — BEFORE pages mounting underneath this
+  // overlay (e.g. home.tsx) fire their setTrack("lobby") useEffect. Telling the
+  // shared MusicEngine to stand down here prevents the lobby track from playing
+  // on top of the intro's own music + speech (the "doubled audio" bug). The
+  // engine resumes the requested track when we release on unmount.
+  useLayoutEffect(() => {
+    musicEngine.beginIntro();
+    return () => musicEngine.endIntro();
+  }, []);
 
   // ── Eagerly create + resume AudioContext ─────────────────────────────────
   // useLayoutEffect fires synchronously after React commits but before the

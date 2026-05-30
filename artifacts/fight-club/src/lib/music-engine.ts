@@ -9,6 +9,14 @@ class MusicEngine {
   private _ducked = false;
   private cleanupFns: Array<() => void> = [];
   private transitioning = false;
+  // While the cinematic intro is on screen it owns ALL audio output (its own
+  // intro-music.mp3 + speech). Pages mounting underneath the intro overlay
+  // (e.g. home.tsx) call setTrack("lobby") on mount, which would otherwise
+  // start the engine's lobby track ON TOP of the intro — two tracks at once.
+  // While `introActive` is true the engine plays nothing; it just records the
+  // last requested track in `pendingTrack` and applies it when the intro ends.
+  private introActive = false;
+  private pendingTrack: MusicTrack | null = null;
   // Decoded AudioBuffer cache keyed by URL. Lets us pre-warm large MP3s
   // (battle, victory) so the music starts instantly when the track switches
   // instead of waiting on a fetch + decode round-trip.
@@ -84,7 +92,35 @@ class MusicEngine {
     }, delaySec * 1000);
   }
 
+  // Called by the intro overlay on mount — the intro owns audio while on screen.
+  beginIntro() {
+    if (this.introActive) return;
+    this.introActive = true;
+    // Remember whatever was (or was about to be) playing so we can resume it
+    // when the intro releases. On a fresh load this is "off"; pages mounting
+    // under the intro set pendingTrack via setTrack while introActive is true.
+    if (this.currentTrack !== "off") this.pendingTrack = this.currentTrack;
+    this.stopAll(0.3);
+    this.currentTrack = "off";
+  }
+
+  // Called when the intro finishes / is skipped / unmounts — hand audio back.
+  endIntro() {
+    if (!this.introActive) return;
+    this.introActive = false;
+    const pending = this.pendingTrack;
+    this.pendingTrack = null;
+    if (pending && pending !== "off") void this.setTrack(pending);
+  }
+
   async setTrack(track: MusicTrack) {
+    // Intro owns audio output right now — record the desired track and apply it
+    // once the intro releases control (endIntro). Never start engine audio
+    // under the intro, or it overlaps the intro's own music + speech.
+    if (this.introActive) {
+      this.pendingTrack = track;
+      return;
+    }
     if (track === this.currentTrack || this.transitioning) return;
     this.transitioning = true;
 

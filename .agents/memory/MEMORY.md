@@ -1,0 +1,1 @@
+- [Audio engine vs intro overlay ownership](audio-engine-intro-ownership.md) — shared MusicEngine must defer to the intro overlay's audio; gate via beginIntro/endIntro called from useLayoutEffect (not useEffect) to win the mount race.
