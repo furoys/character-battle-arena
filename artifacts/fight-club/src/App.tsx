@@ -23,7 +23,9 @@ import { Fights } from "@/pages/fights";
 import { Admin } from "@/pages/admin";
 import { Daily } from "@/pages/daily";
 import { Tournaments } from "@/pages/tournaments";
-import { Wager } from "@/pages/wager";
+// Wager Mode is parked for a later release — keep this import + the /wager
+// route below commented so it can be revived quickly.
+// import { Wager } from "@/pages/wager";
 import { Challenge } from "@/pages/challenge";
 import { Profile } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
@@ -106,7 +108,7 @@ function Router() {
             <Route path="/fights" component={Fights} />
             <Route path="/daily" component={Daily} />
             <Route path="/tournaments" component={Tournaments} />
-            <Route path="/wager" component={Wager} />
+            {/* <Route path="/wager" component={Wager} /> */}
             <Route path="/admin" component={Admin} />
             <Route path="/challenge/:code" component={Challenge} />
             <Route path="/profile" component={Profile} />

@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Calendar, Trophy, Coins } from "lucide-react";
+import { Swords, Calendar, Trophy } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
   { href: "/daily", label: "Daily", icon: Calendar },
   { href: "/tournaments", label: "Cup", icon: Trophy },
-  { href: "/wager", label: "Wager", icon: Coins },
+  // Wager Mode is built but parked for a later release — re-add this tab (and
+  // the /wager route in App.tsx, plus bump the nav grid back to grid-cols-4)
+  // to bring it back. The page/route/backend code all still exist.
+  // { href: "/wager", label: "Wager", icon: Coins },
 ];
 
 // Hide chrome (header + bottom nav) on full-screen flow pages where the
@@ -36,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030308] h-[72px] grid grid-cols-4">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030308] h-[72px] grid grid-cols-3">
         {navItems.map((item) => {
           const active = location === item.href;
           return (
