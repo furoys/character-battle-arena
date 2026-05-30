@@ -398,12 +398,12 @@ export function getDailyDateString(now: Date = new Date()): string {
 
 // How many matchups appear in the daily lineup. Players see this many fresh
 // fights every day to pick from.
-export const DAILY_LINEUP_SIZE = 20;
+export const DAILY_LINEUP_SIZE = 25;
 
 // Pick point economy. Each daily pick costs 1 point. Users get DAILY_PICK_POINTS_BASE
 // free per day; once those are spent they can watch an ad to earn +1 point, up
 // to DAILY_AD_BONUS_CAP extra (so max picks/day = BASE + CAP = full lineup).
-// Current tuning: 10 free picks, then watch an ad for each of the remaining 10.
+// Current tuning: 10 free picks, then watch an ad for each of the remaining 15.
 export const DAILY_PICK_POINTS_BASE = 10;
 export const DAILY_AD_BONUS_CAP = DAILY_LINEUP_SIZE - DAILY_PICK_POINTS_BASE;
 

@@ -893,7 +893,7 @@ function MatchupCard({
 // Renders a 1080×1350 PNG (Instagram portrait) celebrating a 10/10 day. Pure
 // canvas — no extra deps. Returned as a Blob so we can hand it to the Web
 // Share API (mobile) or trigger a download (desktop fallback).
-async function generatePerfectShareImage(date: string, streak: number): Promise<Blob | null> {
+async function generatePerfectShareImage(date: string, streak: number, total: number): Promise<Blob | null> {
   const W = 1080;
   const H = 1350;
   const c = document.createElement("canvas");
@@ -931,7 +931,7 @@ async function generatePerfectShareImage(date: string, streak: number): Promise<
   grad.addColorStop(1, "#ff6b35");
   ctx.fillStyle = grad;
   ctx.font = "900 280px Impact, 'Bebas Neue', sans-serif";
-  ctx.fillText("10 / 10", W / 2, 720);
+  ctx.fillText(`${total} / ${total}`, W / 2, 720);
   // Date
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "700 36px 'Helvetica Neue', Arial, sans-serif";
@@ -963,19 +963,19 @@ async function generatePerfectShareImage(date: string, streak: number): Promise<
 // Sits at the top of the matchup list when the user has resolved all 10 picks
 // AND got every one right. Includes a SHARE button that opens the OS share
 // sheet with a generated PNG (mobile) or downloads it (desktop fallback).
-function PerfectDayBanner({ date, streak }: { date: string; streak: number }) {
+function PerfectDayBanner({ date, streak, total }: { date: string; streak: number; total: number }) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   async function share() {
     setSharing(true);
     setShareError(null);
     try {
-      const blob = await generatePerfectShareImage(date, streak);
+      const blob = await generatePerfectShareImage(date, streak, total);
       if (!blob) throw new Error("image-failed");
       const file = new File([blob], `ava-perfect-${date}.png`, { type: "image/png" });
       const shareData: ShareData = {
         title: "A.v.A — Perfect Day",
-        text: `Went 10/10 on today's A.v.A Daily Matchups. ${streak}-day perfect streak. Think you can?`,
+        text: `Went ${total}/${total} on today's A.v.A Daily Matchups. ${streak}-day perfect streak. Think you can?`,
         url: "https://AnyoneVsAnyone.replit.app",
         files: [file],
       };
@@ -1027,7 +1027,7 @@ function PerfectDayBanner({ date, streak }: { date: string; streak: number }) {
             className="font-display uppercase"
             style={{ fontSize: 10, color: "#ff6b35", letterSpacing: "0.3em", fontWeight: 900 }}
           >
-            Perfect Day · 10 / 10
+            Perfect Day · {total} / {total}
           </div>
           <div
             className="font-display uppercase mt-1"
@@ -1469,6 +1469,7 @@ export function Daily() {
                 <PerfectDayBanner
                   date={daily?.date ?? new Date().toISOString().slice(0, 10)}
                   streak={Math.max(1, me.currentStreak)}
+                  total={matchups.length}
                 />
               )}
 
