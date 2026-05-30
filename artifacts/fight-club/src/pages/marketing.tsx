@@ -394,7 +394,7 @@ function Tile4() {
         <Headline
           eyebrow="Daily Drop"
           title={"20 Fights.\nEvery Day."}
-          sub="New matchups at 8PM ET · climb the leaderboard"
+          sub="New matchups at midnight ET · climb the leaderboard"
           color={GOLD}
         />
       </div>

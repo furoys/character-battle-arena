@@ -354,24 +354,23 @@ export const DAILY_POOL: DailyPoolEntry[] = [
 ];
 
 // Deterministic day index → matchup. The "daily" period rolls over at
-// 8:00 PM America/New_York (Eastern Time), so 10 fresh matchups drop every
-// evening at 8pm ET regardless of DST.
+// MIDNIGHT America/New_York (Eastern Time), so a fresh lineup drops at the
+// start of each ET calendar day regardless of DST.
 //
-// DST-safe algorithm: read the current ET wall-clock date AND hour directly
-// via Intl. If hour >= 20, the key is today's ET calendar date; otherwise
-// it's yesterday's ET date. This avoids the off-by-an-hour bug you get from
-// "subtract 20h in UTC then format in ET" on spring-forward / fall-back days.
+// DST-safe algorithm: read the current ET wall-clock date directly via Intl.
+// With a midnight rollover the daily key is simply today's ET calendar date
+// (the hour is always >= 0). Reading the ET date via Intl avoids the
+// off-by-an-hour bugs you get from UTC math on spring-forward / fall-back days.
 //
 // Example (any time of year):
-//   - 7:59pm ET Tue → hour=19 → key = Mon's ET date  (Mon's lineup still up)
-//   - 8:00pm ET Tue → hour=20 → key = Tue's ET date  (Tue's lineup drops)
-//   - 11:59pm ET Tue → hour=23 → key = Tue's ET date
-//   -  3:00am ET Wed → hour=3  → key = Tue's ET date (yesterday in ET terms)
+//   - 12:00am ET Tue → key = Tue's ET date  (Tue's lineup drops)
+//   - 11:59pm ET Tue → key = Tue's ET date
+//   - 12:00am ET Wed → key = Wed's ET date  (Wed's lineup drops)
 //
 // The rest of the pipeline keys off the returned date STRING, so changing
 // the rollover policy here automatically changes when /api/me/daily starts
 // returning a new lineup.
-const DAILY_ROLLOVER_HOUR_ET = 20; // 8pm Eastern
+const DAILY_ROLLOVER_HOUR_ET = 0; // midnight Eastern
 const DAILY_TIMEZONE = "America/New_York";
 const ET_DATETIME_PARTS = new Intl.DateTimeFormat("en-CA", {
   timeZone: DAILY_TIMEZONE,

@@ -9,12 +9,13 @@
 //   Fri  FACE-OFF FRIDAY        classic rivals & mirror matches
 //   Sat  STREET-LEVEL SATURDAY  real fighters, no cosmic / no god-tier
 //
-// Each theme has its own bucket of matchups. Buckets are pre-shuffled with a
-// per-theme deterministic seed; we walk DAILY_LINEUP_SIZE entries through
-// each bucket using `offset = (weekIndex * size) % bucket.length`, so every
-// matchup in a theme bucket appears exactly once before any repeat on that
-// day-of-week (e.g. rivals bucket = 116 → 12 Fridays of unique pairings;
-// marvel_vs_dc = 31 → 3 Mondays before any Marvel-vs-DC matchup repeats).
+// Each theme has its own bucket of matchups, pre-shuffled with a per-theme
+// deterministic seed. The daily lineup is NOT a single theme any more: every
+// day serves a VARIED mix drawn from ALL category buckets via weighted
+// round-robin, so heroes-vs-villains, Marvel-vs-DC, crossovers, villain
+// throwdowns, rivalries, street fights and team brawls all appear daily.
+// The day-of-week theme is the "spotlight" — it gets the largest single share
+// and drives the header label/blurb — but no one category dominates the card.
 //
 // Tag source: each pool entry is hand-classified via inferred composition
 // (character role + universe family from the DB). The classification is
@@ -49,15 +50,15 @@ export type DailyTheme = {
 // JS Date.getUTCDay(): 0 = Sunday, 1 = Monday, ..., 6 = Saturday.
 // We compute day-of-week off the ET-anchored calendar date string from
 // getDailyDateString, so each theme aligns with the calendar day the user
-// actually sees on the page (8pm ET rollover → ET calendar day).
+// actually sees on the page (midnight ET rollover → ET calendar day).
 const DAY_THEMES: Record<number, DailyTheme> = {
-  0: { key: "showdown",     label: "SHOWDOWN SUNDAY",         blurb: "Heroes vs villains. Good vs evil. Pick a side." },
-  1: { key: "marvel_vs_dc", label: "MARVEL vs DC MONDAY",     blurb: "The eternal debate. Settle it today." },
-  2: { key: "team",         label: "TEAM-UP TUESDAY",         blurb: "Squads, factions, and full-roster brawls." },
-  3: { key: "crossover",    label: "WORLDS COLLIDE WEDNESDAY", blurb: "Universes that were never meant to meet." },
-  4: { key: "throwdown",    label: "THROWDOWN THURSDAY",      blurb: "Villains, slashers, and the worst people alive." },
-  5: { key: "rivals",       label: "FACE-OFF FRIDAY",         blurb: "Classic rivalries. Mirror matches. Personal beef." },
-  6: { key: "street",       label: "STREET-LEVEL SATURDAY",   blurb: "Real fighters. No gods. No cheats. Flesh and bone." },
+  0: { key: "showdown",     label: "SHOWDOWN SUNDAY",          blurb: "Heroes vs villains headline — plus a brawl from every universe." },
+  1: { key: "marvel_vs_dc", label: "MARVEL vs DC MONDAY",      blurb: "The big-two grudge headlines a card pulled from everywhere." },
+  2: { key: "team",         label: "TEAM-UP TUESDAY",          blurb: "Squads & factions headline today's mixed card." },
+  3: { key: "crossover",    label: "WORLDS COLLIDE WEDNESDAY",  blurb: "Cross-franchise chaos headlines — something from every world." },
+  4: { key: "throwdown",    label: "THROWDOWN THURSDAY",       blurb: "Villains & horror icons headline today's mixed bag." },
+  5: { key: "rivals",       label: "FACE-OFF FRIDAY",          blurb: "Classic rivalries headline a card from every corner." },
+  6: { key: "street",       label: "STREET-LEVEL SATURDAY",    blurb: "Grounded fighters headline — plus a mix from every world." },
 };
 
 // ── ENTRY_THEMES ─────────────────────────────────────────────────────────────
@@ -474,48 +475,103 @@ export function getDailyThemeForDate(dateStr: string): DailyTheme {
   return DAY_THEMES[dayOfWeekFromDate(dateStr)]!;
 }
 
-// Themed lineup for a given date. Walks DAILY_LINEUP_SIZE entries through
-// the theme bucket starting at offset = (weekIndex * LINEUP_SIZE) % size.
-// This means every entry in the theme's bucket appears once before any
-// matchup repeats on that day-of-week. Then we do a tiny per-day re-shuffle
-// inside the chosen slice so the display order on the page varies day to
-// day even within the same theme-week.
+// Varied daily lineup for a given date. Instead of serving a single theme's
+// bucket (which made whole days feel all-anime or all-Marvel), we draw a mix
+// across ALL category buckets via weighted round-robin:
+//   - The day's theme is the "spotlight" and takes ~2x the share of any other
+//     category (it leads each round AND appears a second time per round).
+//   - Every other category contributes too, so the card always spans
+//     heroes-vs-villains, Marvel-vs-DC, crossovers, throwdowns, rivalries,
+//     street fights and team brawls.
+// Each category bucket is walked from a start offset that advances every day
+// (so consecutive days surface different slices and repeats stay far apart),
+// entries are de-duped across categories, the wildcard (full pool) tops up any
+// shortfall, and a per-day reshuffle randomizes the final display order.
 export function getThemedDailyMatchupsForDate(
   dateStr: string,
   count: number = DAILY_LINEUP_SIZE,
 ): { theme: DailyTheme; entries: DailyPoolEntry[] } {
   const theme = getDailyThemeForDate(dateStr);
   const buckets = getBuckets();
-  const bucket = buckets.get(theme.key) ?? [];
-  // If the themed bucket can't supply enough distinct entries, fall back
-  // to wildcard (full pool) for the gap. Defensive — keeps the function
-  // total even if a future pool edit shrinks a themed bucket below 10.
-  let pool: DailyPoolEntry[] = bucket;
-  if (pool.length < count) {
-    const wildcard = buckets.get("wildcard") ?? [];
-    const seen = new Set(pool.map((e) => e.id));
-    pool = [...pool, ...wildcard.filter((e) => !seen.has(e.id))];
-  }
-  if (pool.length === 0) {
-    return { theme, entries: [] };
-  }
   const epochDays = epochDaysFromDate(dateStr);
-  const weekIndex = Math.floor(epochDays / 7);
-  const size = pool.length;
-  const offset = (((weekIndex * count) % size) + size) % size;
-  const picks: DailyPoolEntry[] = [];
-  for (let i = 0; i < count; i++) {
-    picks.push(pool[(offset + i) % size]!);
+
+  // All real categories (wildcard is the full-pool safety net, not a category).
+  const CATEGORY_ORDER: ThemeKey[] = [
+    "marvel_vs_dc", "crossover", "throwdown", "rivals", "street", "team", "showdown",
+  ];
+  const spotlight: ThemeKey = theme.key === "wildcard" ? "rivals" : theme.key;
+  // Spotlight leads every round AND repeats once → ~2x the share of others.
+  const rotation: ThemeKey[] = [
+    spotlight,
+    spotlight,
+    ...CATEGORY_ORDER.filter((c) => c !== spotlight),
+  ];
+
+  // Per-category cursor; start offset advances daily so slices move day to day.
+  const cursor = new Map<ThemeKey, number>();
+  for (const cat of new Set(rotation)) {
+    const size = buckets.get(cat)?.length ?? 0;
+    cursor.set(cat, size === 0 ? 0 : (((epochDays * 3) % size) + size) % size);
   }
-  // Per-day display-order reshuffle of the chosen 10.
+
+  const chosen: DailyPoolEntry[] = [];
+  const seen = new Set<string>();
+  const pullNext = (cat: ThemeKey): DailyPoolEntry | null => {
+    const b = buckets.get(cat) ?? [];
+    if (b.length === 0) return null;
+    for (let tries = 0; tries < b.length; tries++) {
+      const idx = cursor.get(cat)! % b.length;
+      cursor.set(cat, cursor.get(cat)! + 1);
+      const e = b[idx]!;
+      if (!seen.has(e.id)) {
+        seen.add(e.id);
+        return e;
+      }
+    }
+    return null;
+  };
+
+  const maxRounds = count * 2 + 4;
+  for (let round = 0; round < maxRounds && chosen.length < count; round++) {
+    let progressed = false;
+    for (const cat of rotation) {
+      if (chosen.length >= count) break;
+      const e = pullNext(cat);
+      if (e) {
+        chosen.push(e);
+        progressed = true;
+      }
+    }
+    if (!progressed) break; // every category bucket is exhausted
+  }
+
+  // Top up from the wildcard (full pool) if the categories couldn't fill it.
+  if (chosen.length < count) {
+    const wild = buckets.get("wildcard") ?? [];
+    const wsize = wild.length;
+    if (wsize > 0) {
+      let wc = (((epochDays * 7) % wsize) + wsize) % wsize;
+      for (let tries = 0; tries < wsize && chosen.length < count; tries++) {
+        const e = wild[wc % wsize]!;
+        wc++;
+        if (!seen.has(e.id)) {
+          seen.add(e.id);
+          chosen.push(e);
+        }
+      }
+    }
+  }
+
+  // Per-day display-order reshuffle so the spotlight picks aren't always first.
   const dayRng = mulberry32(Math.imul(epochDays + 1, 2654435761));
-  for (let i = picks.length - 1; i > 0; i--) {
+  for (let i = chosen.length - 1; i > 0; i--) {
     const j = Math.floor(dayRng() * (i + 1));
-    const tmp = picks[i]!;
-    picks[i] = picks[j]!;
-    picks[j] = tmp;
+    const tmp = chosen[i]!;
+    chosen[i] = chosen[j]!;
+    chosen[j] = tmp;
   }
-  return { theme, entries: picks };
+
+  return { theme, entries: chosen.slice(0, count) };
 }
 
 // Debug helper — used by tests or admin tooling to inspect how big each

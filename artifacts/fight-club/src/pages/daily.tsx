@@ -55,13 +55,13 @@ type LeaderboardResponse = {
   leaders: { userId: string; correct: number; total: number; displayName: string }[];
 };
 
-// ── Countdown to next 8pm ET drop ────────────────────────────────────────────
-// Mirrors `getDailyDateString` on the server: the lineup rolls over at 20:00
-// America/New_York. DST-correct — does NOT assume a 24h day. We pick the
-// target ET wall-clock date (today if before 20:00 ET, else tomorrow), then
-// resolve the UTC instant where ET shows exactly 20:00:00 on that date by
-// trying both EST (-05:00) and EDT (-04:00) candidates. Whichever, when
-// formatted back into ET, lands on `target 20:00`, IS the next rollover.
+// ── Countdown to next midnight ET drop ───────────────────────────────────────
+// Mirrors `getDailyDateString` on the server: the lineup rolls over at 00:00
+// America/New_York. DST-correct — does NOT assume a 24h day. The next rollover
+// is the start of tomorrow's ET calendar date, so we resolve the UTC instant
+// where ET shows exactly 00:00:00 on that date by trying both EST (-05:00) and
+// EDT (-04:00) candidates. Whichever, when formatted back into ET, lands on
+// `target 00:00`, IS the next rollover.
 function msUntilNextDailyRollover(now: Date = new Date()): number {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -79,21 +79,21 @@ function msUntilNextDailyRollover(now: Date = new Date()): number {
     return { date: `${g("year")}-${g("month")}-${g("day")}`, h };
   }
   const cur = etOf(now);
-  // Target ET date in YYYY-MM-DD (today if before 8pm ET, else tomorrow).
+  // The next midnight ET is the start of tomorrow's ET calendar date.
   const baseUtc = Date.UTC(
     Number(cur.date.slice(0, 4)),
     Number(cur.date.slice(5, 7)) - 1,
     Number(cur.date.slice(8, 10)),
   );
-  const targetMs = cur.h < 20 ? baseUtc : baseUtc + 86400000;
+  const targetMs = baseUtc + 86400000;
   const targetDate = new Date(targetMs).toISOString().slice(0, 10);
   // Two candidates — one for EST, one for EDT. Whichever lands on the target
-  // ET wall-clock is the correct rollover instant.
-  const candEDT = new Date(`${targetDate}T20:00:00-04:00`);
-  const candEST = new Date(`${targetDate}T20:00:00-05:00`);
+  // ET wall-clock (00:00 on targetDate) is the correct rollover instant.
+  const candEDT = new Date(`${targetDate}T00:00:00-04:00`);
+  const candEST = new Date(`${targetDate}T00:00:00-05:00`);
   function lands(d: Date) {
     const ot = etOf(d);
-    return ot.date === targetDate && ot.h === 20;
+    return ot.date === targetDate && ot.h === 0;
   }
   const target = lands(candEDT) ? candEDT : lands(candEST) ? candEST : candEST;
   return Math.max(0, target.getTime() - now.getTime());
