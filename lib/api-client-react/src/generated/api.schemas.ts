@@ -262,3 +262,119 @@ export interface TournamentInput {
    */
   competitorIds: number[];
 }
+
+export interface Wallet {
+  /** Current virtual coin balance */
+  balance: number;
+  /** Consecutive winning bets */
+  currentStreak: number;
+  /** All-time best winning streak */
+  bestStreak: number;
+  /** Whether the daily coin drop is available now */
+  canClaimDaily: boolean;
+  /** Coins granted by the daily drop */
+  dailyDropAmount: number;
+  /** ET date string of the last claim, or null */
+  lastDailyClaim: string | null;
+}
+
+export interface ClaimDailyResult {
+  /** True if coins were granted, false if already claimed today */
+  claimed: boolean;
+  balance: number;
+  dailyDropAmount: number;
+  canClaimDaily: boolean;
+  lastDailyClaim: string | null;
+}
+
+export interface QuoteWagerBody {
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team1: number[];
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team2: number[];
+}
+
+export interface WagerSideOdds {
+  /** Implied win probability for this side (1-99) */
+  winProbPct: number;
+  /** Decimal payout odds in basis points (decimal odds x 10000) */
+  oddsBp: number;
+}
+
+export interface WagerQuote {
+  team1: WagerSideOdds;
+  team2: WagerSideOdds;
+  minStake: number;
+}
+
+/**
+ * Which side the user is backing
+ */
+export type PlaceWagerBodySide =
+  (typeof PlaceWagerBodySide)[keyof typeof PlaceWagerBodySide];
+
+export const PlaceWagerBodySide = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+} as const;
+
+export interface PlaceWagerBody {
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team1: number[];
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team2: number[];
+  /** Which side the user is backing */
+  side: PlaceWagerBodySide;
+  /**
+   * Coins to wager
+   * @minimum 1
+   */
+  stake: number;
+}
+
+export interface WagerResult {
+  id: number;
+  won: boolean;
+  pickedSide: number;
+  winnerSide: number;
+  /** True when the underdog won the roll — drives upset mode in the cinematic replay */
+  upset: boolean;
+  stake: number;
+  oddsBp: number;
+  /** Gross coins returned (0 if lost) */
+  payout: number;
+  newBalance: number;
+  currentStreak: number;
+  bestStreak: number;
+  team1Ids: number[];
+  team2Ids: number[];
+  team1Names: string[];
+  team2Names: string[];
+  /** Short verdict blurb for the matchup */
+  turningPoint: string;
+}
+
+export interface WagerRecord {
+  id: number;
+  team1Names: string[];
+  team2Names: string[];
+  pickedSide: number;
+  winnerSide: number;
+  stake: number;
+  oddsBp: number;
+  payout: number;
+  status: string;
+  createdAt: string;
+}

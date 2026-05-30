@@ -505,3 +505,121 @@ export const GetTournamentResponse = zod.object({
   }),
   createdAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Get the signed-in user's virtual coin wallet
+ */
+export const GetWalletResponse = zod.object({
+  balance: zod.number().describe("Current virtual coin balance"),
+  currentStreak: zod.number().describe("Consecutive winning bets"),
+  bestStreak: zod.number().describe("All-time best winning streak"),
+  canClaimDaily: zod
+    .boolean()
+    .describe("Whether the daily coin drop is available now"),
+  dailyDropAmount: zod.number().describe("Coins granted by the daily drop"),
+  lastDailyClaim: zod
+    .string()
+    .nullable()
+    .describe("ET date string of the last claim, or null"),
+});
+
+/**
+ * @summary Claim the once-per-day virtual coin drop (ET rollover)
+ */
+export const ClaimDailyCoinsResponse = zod.object({
+  claimed: zod
+    .boolean()
+    .describe("True if coins were granted, false if already claimed today"),
+  balance: zod.number(),
+  dailyDropAmount: zod.number(),
+  canClaimDaily: zod.boolean(),
+  lastDailyClaim: zod.string().nullable(),
+});
+
+/**
+ * @summary Quote payout odds for both sides of a matchup (no state change)
+ */
+export const quoteWagerBodyTeam1Max = 5;
+
+export const quoteWagerBodyTeam2Max = 5;
+
+export const QuoteWagerBody = zod.object({
+  team1: zod.array(zod.number()).min(1).max(quoteWagerBodyTeam1Max),
+  team2: zod.array(zod.number()).min(1).max(quoteWagerBodyTeam2Max),
+});
+
+export const QuoteWagerResponse = zod.object({
+  team1: zod.object({
+    winProbPct: zod
+      .number()
+      .describe("Implied win probability for this side (1-99)"),
+    oddsBp: zod
+      .number()
+      .describe("Decimal payout odds in basis points (decimal odds x 10000)"),
+  }),
+  team2: zod.object({
+    winProbPct: zod
+      .number()
+      .describe("Implied win probability for this side (1-99)"),
+    oddsBp: zod
+      .number()
+      .describe("Decimal payout odds in basis points (decimal odds x 10000)"),
+  }),
+  minStake: zod.number(),
+});
+
+/**
+ * @summary Place and settle a virtual-coin bet on a matchup
+ */
+export const placeWagerBodyTeam1Max = 5;
+
+export const placeWagerBodyTeam2Max = 5;
+
+export const PlaceWagerBody = zod.object({
+  team1: zod.array(zod.number()).min(1).max(placeWagerBodyTeam1Max),
+  team2: zod.array(zod.number()).min(1).max(placeWagerBodyTeam2Max),
+  side: zod
+    .union([zod.literal(1), zod.literal(2)])
+    .describe("Which side the user is backing"),
+  stake: zod.number().min(1).describe("Coins to wager"),
+});
+
+export const PlaceWagerResponse = zod.object({
+  id: zod.number(),
+  won: zod.boolean(),
+  pickedSide: zod.number(),
+  winnerSide: zod.number(),
+  upset: zod
+    .boolean()
+    .describe(
+      "True when the underdog won the roll — drives upset mode in the cinematic replay",
+    ),
+  stake: zod.number(),
+  oddsBp: zod.number(),
+  payout: zod.number().describe("Gross coins returned (0 if lost)"),
+  newBalance: zod.number(),
+  currentStreak: zod.number(),
+  bestStreak: zod.number(),
+  team1Ids: zod.array(zod.number()),
+  team2Ids: zod.array(zod.number()),
+  team1Names: zod.array(zod.string()),
+  team2Names: zod.array(zod.string()),
+  turningPoint: zod.string().describe("Short verdict blurb for the matchup"),
+});
+
+/**
+ * @summary List the signed-in user's bet history
+ */
+export const ListWagersResponseItem = zod.object({
+  id: zod.number(),
+  team1Names: zod.array(zod.string()),
+  team2Names: zod.array(zod.string()),
+  pickedSide: zod.number(),
+  winnerSide: zod.number(),
+  stake: zod.number(),
+  oddsBp: zod.number(),
+  payout: zod.number(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListWagersResponse = zod.array(ListWagersResponseItem);

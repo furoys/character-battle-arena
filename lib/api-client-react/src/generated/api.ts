@@ -19,18 +19,25 @@ import type {
 import type {
   Character,
   CharacterStatsSummary,
+  ClaimDailyResult,
   CreateCharacterBody,
   ErrorResponse,
   FightDetail,
   FightRecord,
   FightResult,
   HealthStatus,
+  PlaceWagerBody,
+  QuoteWagerBody,
   SaveTeamBody,
   SavedTeam,
   SimulateFightBody,
   Tournament,
   TournamentInput,
   TournamentSummary,
+  WagerQuote,
+  WagerRecord,
+  WagerResult,
+  Wallet,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1421,6 +1428,399 @@ export function useGetTournament<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetTournamentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the signed-in user's virtual coin wallet
+ */
+export const getGetWalletUrl = () => {
+  return `/api/wager/wallet`;
+};
+
+export const getWallet = async (options?: RequestInit): Promise<Wallet> => {
+  return customFetch<Wallet>(getGetWalletUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWalletQueryKey = () => {
+  return [`/api/wager/wallet`] as const;
+};
+
+export const getGetWalletQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWallet>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getWallet>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWalletQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWallet>>> = ({
+    signal,
+  }) => getWallet({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWallet>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWalletQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWallet>>
+>;
+export type GetWalletQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the signed-in user's virtual coin wallet
+ */
+
+export function useGetWallet<
+  TData = Awaited<ReturnType<typeof getWallet>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getWallet>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWalletQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Claim the once-per-day virtual coin drop (ET rollover)
+ */
+export const getClaimDailyCoinsUrl = () => {
+  return `/api/wager/claim-daily`;
+};
+
+export const claimDailyCoins = async (
+  options?: RequestInit,
+): Promise<ClaimDailyResult> => {
+  return customFetch<ClaimDailyResult>(getClaimDailyCoinsUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClaimDailyCoinsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimDailyCoins>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof claimDailyCoins>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["claimDailyCoins"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof claimDailyCoins>>,
+    void
+  > = () => {
+    return claimDailyCoins(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClaimDailyCoinsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof claimDailyCoins>>
+>;
+
+export type ClaimDailyCoinsMutationError = ErrorType<void>;
+
+/**
+ * @summary Claim the once-per-day virtual coin drop (ET rollover)
+ */
+export const useClaimDailyCoins = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimDailyCoins>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof claimDailyCoins>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClaimDailyCoinsMutationOptions(options));
+};
+
+/**
+ * @summary Quote payout odds for both sides of a matchup (no state change)
+ */
+export const getQuoteWagerUrl = () => {
+  return `/api/wager/quote`;
+};
+
+export const quoteWager = async (
+  quoteWagerBody: QuoteWagerBody,
+  options?: RequestInit,
+): Promise<WagerQuote> => {
+  return customFetch<WagerQuote>(getQuoteWagerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(quoteWagerBody),
+  });
+};
+
+export const getQuoteWagerMutationOptions = <
+  TError = ErrorType<ErrorResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof quoteWager>>,
+    TError,
+    { data: BodyType<QuoteWagerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof quoteWager>>,
+  TError,
+  { data: BodyType<QuoteWagerBody> },
+  TContext
+> => {
+  const mutationKey = ["quoteWager"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof quoteWager>>,
+    { data: BodyType<QuoteWagerBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return quoteWager(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type QuoteWagerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof quoteWager>>
+>;
+export type QuoteWagerMutationBody = BodyType<QuoteWagerBody>;
+export type QuoteWagerMutationError = ErrorType<ErrorResponse | void>;
+
+/**
+ * @summary Quote payout odds for both sides of a matchup (no state change)
+ */
+export const useQuoteWager = <
+  TError = ErrorType<ErrorResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof quoteWager>>,
+    TError,
+    { data: BodyType<QuoteWagerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof quoteWager>>,
+  TError,
+  { data: BodyType<QuoteWagerBody> },
+  TContext
+> => {
+  return useMutation(getQuoteWagerMutationOptions(options));
+};
+
+/**
+ * @summary Place and settle a virtual-coin bet on a matchup
+ */
+export const getPlaceWagerUrl = () => {
+  return `/api/wager/place`;
+};
+
+export const placeWager = async (
+  placeWagerBody: PlaceWagerBody,
+  options?: RequestInit,
+): Promise<WagerResult> => {
+  return customFetch<WagerResult>(getPlaceWagerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(placeWagerBody),
+  });
+};
+
+export const getPlaceWagerMutationOptions = <
+  TError = ErrorType<ErrorResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof placeWager>>,
+    TError,
+    { data: BodyType<PlaceWagerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof placeWager>>,
+  TError,
+  { data: BodyType<PlaceWagerBody> },
+  TContext
+> => {
+  const mutationKey = ["placeWager"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof placeWager>>,
+    { data: BodyType<PlaceWagerBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return placeWager(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PlaceWagerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof placeWager>>
+>;
+export type PlaceWagerMutationBody = BodyType<PlaceWagerBody>;
+export type PlaceWagerMutationError = ErrorType<ErrorResponse | void>;
+
+/**
+ * @summary Place and settle a virtual-coin bet on a matchup
+ */
+export const usePlaceWager = <
+  TError = ErrorType<ErrorResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof placeWager>>,
+    TError,
+    { data: BodyType<PlaceWagerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof placeWager>>,
+  TError,
+  { data: BodyType<PlaceWagerBody> },
+  TContext
+> => {
+  return useMutation(getPlaceWagerMutationOptions(options));
+};
+
+/**
+ * @summary List the signed-in user's bet history
+ */
+export const getListWagersUrl = () => {
+  return `/api/wager/wagers`;
+};
+
+export const listWagers = async (
+  options?: RequestInit,
+): Promise<WagerRecord[]> => {
+  return customFetch<WagerRecord[]>(getListWagersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListWagersQueryKey = () => {
+  return [`/api/wager/wagers`] as const;
+};
+
+export const getListWagersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWagers>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listWagers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListWagersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listWagers>>> = ({
+    signal,
+  }) => listWagers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWagers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWagersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWagers>>
+>;
+export type ListWagersQueryError = ErrorType<void>;
+
+/**
+ * @summary List the signed-in user's bet history
+ */
+
+export function useListWagers<
+  TData = Awaited<ReturnType<typeof listWagers>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listWagers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWagersQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

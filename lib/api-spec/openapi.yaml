@@ -18,6 +18,8 @@ tags:
     description: Signed-in user operations
   - name: tournaments
     description: Single-elimination tournament brackets
+  - name: wager
+    description: Virtual-coin wager mode (play money only)
 paths:
   /healthz:
     get:
@@ -334,6 +336,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /wager/wallet:
+    get:
+      operationId: getWallet
+      tags: [wager]
+      summary: Get the signed-in user's virtual coin wallet
+      responses:
+        "200":
+          description: Wallet state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+        "401":
+          description: Not signed in
+
+  /wager/claim-daily:
+    post:
+      operationId: claimDailyCoins
+      tags: [wager]
+      summary: Claim the once-per-day virtual coin drop (ET rollover)
+      responses:
+        "200":
+          description: Claim result with updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDailyResult"
+        "401":
+          description: Not signed in
+
+  /wager/quote:
+    post:
+      operationId: quoteWager
+      tags: [wager]
+      summary: Quote payout odds for both sides of a matchup (no state change)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteWagerBody"
+      responses:
+        "200":
+          description: Per-side odds and implied win probability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WagerQuote"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not signed in
+
+  /wager/place:
+    post:
+      operationId: placeWager
+      tags: [wager]
+      summary: Place and settle a virtual-coin bet on a matchup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceWagerBody"
+      responses:
+        "200":
+          description: Settled wager result with updated balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WagerResult"
+        "400":
+          description: Validation error or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not signed in
+
+  /wager/wagers:
+    get:
+      operationId: listWagers
+      tags: [wager]
+      summary: List the signed-in user's bet history
+      responses:
+        "200":
+          description: Recent wagers (most recent first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WagerRecord"
+        "401":
+          description: Not signed in
 
 components:
   schemas:
@@ -876,3 +979,234 @@ components:
       required:
         - size
         - competitorIds
+
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: integer
+          description: "Current virtual coin balance"
+        currentStreak:
+          type: integer
+          description: "Consecutive winning bets"
+        bestStreak:
+          type: integer
+          description: "All-time best winning streak"
+        canClaimDaily:
+          type: boolean
+          description: "Whether the daily coin drop is available now"
+        dailyDropAmount:
+          type: integer
+          description: "Coins granted by the daily drop"
+        lastDailyClaim:
+          type: string
+          nullable: true
+          description: "ET date string of the last claim, or null"
+      required:
+        - balance
+        - currentStreak
+        - bestStreak
+        - canClaimDaily
+        - dailyDropAmount
+        - lastDailyClaim
+
+    ClaimDailyResult:
+      type: object
+      properties:
+        claimed:
+          type: boolean
+          description: "True if coins were granted, false if already claimed today"
+        balance:
+          type: integer
+        dailyDropAmount:
+          type: integer
+        canClaimDaily:
+          type: boolean
+        lastDailyClaim:
+          type: string
+          nullable: true
+      required:
+        - claimed
+        - balance
+        - dailyDropAmount
+        - canClaimDaily
+        - lastDailyClaim
+
+    QuoteWagerBody:
+      type: object
+      properties:
+        team1:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+        team2:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+      required:
+        - team1
+        - team2
+
+    WagerSideOdds:
+      type: object
+      properties:
+        winProbPct:
+          type: integer
+          description: "Implied win probability for this side (1-99)"
+        oddsBp:
+          type: integer
+          description: "Decimal payout odds in basis points (decimal odds x 10000)"
+      required:
+        - winProbPct
+        - oddsBp
+
+    WagerQuote:
+      type: object
+      properties:
+        team1:
+          $ref: "#/components/schemas/WagerSideOdds"
+        team2:
+          $ref: "#/components/schemas/WagerSideOdds"
+        minStake:
+          type: integer
+      required:
+        - team1
+        - team2
+        - minStake
+
+    PlaceWagerBody:
+      type: object
+      properties:
+        team1:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+        team2:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+        side:
+          type: integer
+          enum: [1, 2]
+          description: "Which side the user is backing"
+        stake:
+          type: integer
+          minimum: 1
+          description: "Coins to wager"
+      required:
+        - team1
+        - team2
+        - side
+        - stake
+
+    WagerResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        won:
+          type: boolean
+        pickedSide:
+          type: integer
+        winnerSide:
+          type: integer
+        upset:
+          type: boolean
+          description: "True when the underdog won the roll — drives upset mode in the cinematic replay"
+        stake:
+          type: integer
+        oddsBp:
+          type: integer
+        payout:
+          type: integer
+          description: "Gross coins returned (0 if lost)"
+        newBalance:
+          type: integer
+        currentStreak:
+          type: integer
+        bestStreak:
+          type: integer
+        team1Ids:
+          type: array
+          items:
+            type: integer
+        team2Ids:
+          type: array
+          items:
+            type: integer
+        team1Names:
+          type: array
+          items:
+            type: string
+        team2Names:
+          type: array
+          items:
+            type: string
+        turningPoint:
+          type: string
+          description: "Short verdict blurb for the matchup"
+      required:
+        - id
+        - won
+        - pickedSide
+        - winnerSide
+        - upset
+        - stake
+        - oddsBp
+        - payout
+        - newBalance
+        - currentStreak
+        - bestStreak
+        - team1Ids
+        - team2Ids
+        - team1Names
+        - team2Names
+        - turningPoint
+
+    WagerRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        team1Names:
+          type: array
+          items:
+            type: string
+        team2Names:
+          type: array
+          items:
+            type: string
+        pickedSide:
+          type: integer
+        winnerSide:
+          type: integer
+        stake:
+          type: integer
+        oddsBp:
+          type: integer
+        payout:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - team1Names
+        - team2Names
+        - pickedSide
+        - winnerSide
+        - stake
+        - oddsBp
+        - payout
+        - status
+        - createdAt
