@@ -1250,7 +1250,7 @@ export function Home() {
                 VS
               </div>
             </div>
-            <div data-tutorial-id="team-2-slot">
+            <div data-tutorial-id="team-2-slot" className="flex-1 min-w-0 flex">
               <TeamSlot
                 team={2}
                 members={team2}
