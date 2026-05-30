@@ -475,7 +475,7 @@ export function Home() {
     return `${ids[0]}|${ids[1]}`;
   };
 
-  // Load a pending fight from the Suggest page (written to localStorage before navigating here)
+  // Load a pending fight from the Daily page (written to localStorage before navigating here)
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ava_pending_fight");

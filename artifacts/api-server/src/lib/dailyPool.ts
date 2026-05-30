@@ -1,8 +1,7 @@
 // ── Daily Matchup Pool ────────────────────────────────────────────────────────
 // Curated set of matchups that get rotated through the "Daily Matchup" feature.
 // Each day's pick is deterministic: index = (daysSinceEpoch) % pool.length.
-// Keep entries here in sync with their Debate Room counterparts (titles can
-// diverge — these are the prompt the user sees on the daily card).
+// Titles are the prompt the user sees on the daily card.
 //
 // NEVER reorder entries — the pool index controls which day each one falls on.
 // To swap one out, replace it in place with a new matchup (same array slot)

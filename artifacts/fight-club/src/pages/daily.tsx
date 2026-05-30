@@ -267,7 +267,7 @@ function PickReviewModal({
   const otherChars = side === 1 ? t2 : t1;
   return (
     // z-[60] sits above the global bottom nav (z-50), otherwise the sticky
-    // Lock In footer is hidden behind the ARENA/DAILY/DEBATE ROOM tab bar
+    // Lock In footer is hidden behind the ARENA/DAILY tab bar
     // and users can't actually confirm a pick.
     <div
       className="fixed inset-0 z-[60] flex flex-col"
@@ -1275,7 +1275,7 @@ export function Daily() {
         JSON.stringify({
           team1,
           team2,
-          mode: "debate",
+          mode: "realistic",
           dailyMatchupId: matchup.matchupId,
           autoFight: true,
         }),

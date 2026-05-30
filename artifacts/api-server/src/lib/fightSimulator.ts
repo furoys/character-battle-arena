@@ -2450,7 +2450,6 @@ export function normalizeTone(input: string | undefined): FightTone {
     case "cinematic":
     case "fun":       return "cinematic";
     case "realistic":
-    case "debate":
     default:          return "realistic";
   }
 }
