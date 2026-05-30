@@ -196,6 +196,13 @@ router.post("/tournaments", async (req, res): Promise<void> => {
       .where(inArray(charactersTable.id, requestedIds));
     for (const c of rows) charMap.set(c.id, c);
   }
+  // Reject unknown ids outright (don't silently drop + random-fill, which would
+  // produce a surprising bracket the player never picked).
+  const unknownIds = requestedIds.filter((id) => !charMap.has(id));
+  if (unknownIds.length > 0) {
+    res.status(400).json({ error: `Unknown character id(s): ${unknownIds.join(", ")}` });
+    return;
+  }
   const seeded: Character[] = [];
   for (const id of requestedIds) {
     const c = charMap.get(id);
