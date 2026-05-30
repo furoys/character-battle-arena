@@ -2140,6 +2140,28 @@ function buildFightResolution(
   };
 }
 
+// ─── Deterministic verdict resolver (no AI, no narrative) ─────────────────────
+// Returns the locked winner + Stage-1 resolution for a matchup WITHOUT writing
+// any narrative. Mirrors the exact pre-narrative path inside simulateFight
+// (applyFightModifiers → assessMatchup → buildFightResolution) so the verdict
+// is byte-for-byte identical to what a full simulateFight would produce for the
+// same teams. Used by Tournament Mode to auto-run a whole bracket instantly,
+// and the result is written to fightCacheTable so a later "watch this fight"
+// replays the same outcome.
+export function resolveFightVerdict(
+  team1: Character[],
+  team2: Character[],
+): { winner: 1 | 2; resolution: FightResolution } {
+  const { modTeam1, modTeam2 } = applyFightModifiers(team1, team2);
+  const assessment = assessMatchup(modTeam1, modTeam2);
+  const winnerTeam = assessment.verdict === 1 ? modTeam1 : modTeam2;
+  const loserTeam = assessment.verdict === 1 ? modTeam2 : modTeam1;
+  const winHax = teamHax(winnerTeam);
+  const loseHax = teamHax(loserTeam);
+  const resolution = buildFightResolution(winnerTeam, loserTeam, winHax, loseHax, assessment);
+  return { winner: assessment.verdict, resolution };
+}
+
 // Apply a concrete damage bonus when an attacker's power type exploits a defender's known weakness.
 // This makes weaknesses mechanically meaningful, not just narrative flavor.
 function getWeaknessBonus(attacker: Character, defender: Character): number {

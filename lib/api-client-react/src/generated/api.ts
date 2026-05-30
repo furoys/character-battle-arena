@@ -28,6 +28,9 @@ import type {
   SaveTeamBody,
   SavedTeam,
   SimulateFightBody,
+  Tournament,
+  TournamentInput,
+  TournamentSummary,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1177,3 +1180,251 @@ export const useDeleteSavedTeam = <
 > => {
   return useMutation(getDeleteSavedTeamMutationOptions(options));
 };
+
+/**
+ * @summary List recent tournaments (community feed)
+ */
+export const getListTournamentsUrl = () => {
+  return `/api/tournaments`;
+};
+
+export const listTournaments = async (
+  options?: RequestInit,
+): Promise<TournamentSummary[]> => {
+  return customFetch<TournamentSummary[]>(getListTournamentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTournamentsQueryKey = () => {
+  return [`/api/tournaments`] as const;
+};
+
+export const getListTournamentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTournaments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listTournaments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListTournamentsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listTournaments>>> = ({
+    signal,
+  }) => listTournaments({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTournaments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTournamentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTournaments>>
+>;
+export type ListTournamentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent tournaments (community feed)
+ */
+
+export function useListTournaments<
+  TData = Awaited<ReturnType<typeof listTournaments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listTournaments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTournamentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create and auto-run a tournament bracket
+ */
+export const getCreateTournamentUrl = () => {
+  return `/api/tournaments`;
+};
+
+export const createTournament = async (
+  tournamentInput: TournamentInput,
+  options?: RequestInit,
+): Promise<Tournament> => {
+  return customFetch<Tournament>(getCreateTournamentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(tournamentInput),
+  });
+};
+
+export const getCreateTournamentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTournament>>,
+    TError,
+    { data: BodyType<TournamentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTournament>>,
+  TError,
+  { data: BodyType<TournamentInput> },
+  TContext
+> => {
+  const mutationKey = ["createTournament"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTournament>>,
+    { data: BodyType<TournamentInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createTournament(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTournamentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTournament>>
+>;
+export type CreateTournamentMutationBody = BodyType<TournamentInput>;
+export type CreateTournamentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create and auto-run a tournament bracket
+ */
+export const useCreateTournament = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTournament>>,
+    TError,
+    { data: BodyType<TournamentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTournament>>,
+  TError,
+  { data: BodyType<TournamentInput> },
+  TContext
+> => {
+  return useMutation(getCreateTournamentMutationOptions(options));
+};
+
+/**
+ * @summary Get a tournament by id
+ */
+export const getGetTournamentUrl = (id: number) => {
+  return `/api/tournaments/${id}`;
+};
+
+export const getTournament = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Tournament> => {
+  return customFetch<Tournament>(getGetTournamentUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTournamentQueryKey = (id: number) => {
+  return [`/api/tournaments/${id}`] as const;
+};
+
+export const getGetTournamentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTournament>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTournament>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetTournamentQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTournament>>> = ({
+    signal,
+  }) => getTournament(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTournament>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTournamentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTournament>>
+>;
+export type GetTournamentQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a tournament by id
+ */
+
+export function useGetTournament<
+  TData = Awaited<ReturnType<typeof getTournament>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTournament>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTournamentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

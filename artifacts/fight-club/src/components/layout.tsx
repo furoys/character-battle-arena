@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Swords, Calendar } from "lucide-react";
+import { Swords, Calendar, Trophy } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Arena", icon: Swords },
   { href: "/daily", label: "Daily", icon: Calendar },
+  { href: "/tournaments", label: "Cup", icon: Trophy },
 ];
 
 // Hide chrome (header + bottom nav) on full-screen flow pages where the
@@ -34,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030308] h-[72px] grid grid-cols-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030308] h-[72px] grid grid-cols-3">
         {navItems.map((item) => {
           const active = location === item.href;
           return (

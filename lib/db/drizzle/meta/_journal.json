@@ -78,6 +78,20 @@
       "when": 1779230000000,
       "tag": "0010_daily_streak_shields",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779240000000,
+      "tag": "0011_daily_matchup_fight_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779250000000,
+      "tag": "0012_tournaments",
+      "breakpoints": true
     }
   ]
 }

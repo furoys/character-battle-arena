@@ -184,3 +184,81 @@ export interface SaveTeamBody {
   name: string;
   characterIds: number[];
 }
+
+export interface TournamentCompetitor {
+  id: number;
+  name: string;
+  universe: string;
+  imageUrl: string | null;
+}
+
+export interface TournamentMatch {
+  matchId: string;
+  a: TournamentCompetitor | null;
+  b: TournamentCompetitor | null;
+  /** 1 if competitor a won, 2 if competitor b won, null for a bye */
+  winnerSide: number | null;
+  winnerId: number | null;
+  /** easy | moderate | hard */
+  difficulty: string | null;
+  /** stomp | one-sided | close */
+  fightType: string | null;
+  /** Short win-condition / turning point line */
+  blurb: string | null;
+}
+
+export interface TournamentRound {
+  name: string;
+  matches: TournamentMatch[];
+}
+
+export interface TournamentBracket {
+  rounds: TournamentRound[];
+}
+
+export interface Tournament {
+  id: number;
+  userId: string | null;
+  name: string;
+  themeLabel: string | null;
+  size: number;
+  championId: number;
+  championName: string;
+  bracket: TournamentBracket;
+  createdAt: string;
+}
+
+export interface TournamentSummary {
+  id: number;
+  name: string;
+  themeLabel: string | null;
+  size: number;
+  championId: number;
+  championName: string;
+  createdAt: string;
+}
+
+/**
+ * Number of competitors in the bracket
+ */
+export type TournamentInputSize =
+  (typeof TournamentInputSize)[keyof typeof TournamentInputSize];
+
+export const TournamentInputSize = {
+  NUMBER_8: 8,
+  NUMBER_16: 16,
+} as const;
+
+export interface TournamentInput {
+  /** Number of competitors in the bracket */
+  size: TournamentInputSize;
+  /** Display name for the tournament */
+  name?: string;
+  /** Optional themed-cup label */
+  themeLabel?: string | null;
+  /**
+   * Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16).
+   * @maxItems 16
+   */
+  competitorIds: number[];
+}

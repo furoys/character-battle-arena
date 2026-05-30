@@ -16,6 +16,8 @@ tags:
     description: Fight simulation
   - name: me
     description: Signed-in user operations
+  - name: tournaments
+    description: Single-elimination tournament brackets
 paths:
   /healthz:
     get:
@@ -269,6 +271,69 @@ paths:
           description: Not signed in
         "404":
           description: Team not found or not owned by user
+
+  /tournaments:
+    get:
+      operationId: listTournaments
+      tags: [tournaments]
+      summary: List recent tournaments (community feed)
+      responses:
+        "200":
+          description: Recent tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TournamentSummary"
+    post:
+      operationId: createTournament
+      tags: [tournaments]
+      summary: Create and auto-run a tournament bracket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TournamentInput"
+      responses:
+        "201":
+          description: Completed tournament with full bracket and champion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tournaments/{id}:
+    get:
+      operationId: getTournament
+      tags: [tournaments]
+      summary: Get a tournament by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tournament
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -643,3 +708,171 @@ components:
       required:
         - name
         - characterIds
+
+    TournamentCompetitor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        universe:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - universe
+        - imageUrl
+
+    TournamentMatch:
+      type: object
+      properties:
+        matchId:
+          type: string
+        a:
+          $ref: "#/components/schemas/TournamentCompetitor"
+          nullable: true
+        b:
+          $ref: "#/components/schemas/TournamentCompetitor"
+          nullable: true
+        winnerSide:
+          type: integer
+          nullable: true
+          description: "1 if competitor a won, 2 if competitor b won, null for a bye"
+        winnerId:
+          type: integer
+          nullable: true
+        difficulty:
+          type: string
+          nullable: true
+          description: "easy | moderate | hard"
+        fightType:
+          type: string
+          nullable: true
+          description: "stomp | one-sided | close"
+        blurb:
+          type: string
+          nullable: true
+          description: "Short win-condition / turning point line"
+      required:
+        - matchId
+        - a
+        - b
+        - winnerSide
+        - winnerId
+        - difficulty
+        - fightType
+        - blurb
+
+    TournamentRound:
+      type: object
+      properties:
+        name:
+          type: string
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/TournamentMatch"
+      required:
+        - name
+        - matches
+
+    TournamentBracket:
+      type: object
+      properties:
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/TournamentRound"
+      required:
+        - rounds
+
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        themeLabel:
+          type: string
+          nullable: true
+        size:
+          type: integer
+        championId:
+          type: integer
+        championName:
+          type: string
+        bracket:
+          $ref: "#/components/schemas/TournamentBracket"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - themeLabel
+        - size
+        - championId
+        - championName
+        - bracket
+        - createdAt
+
+    TournamentSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        themeLabel:
+          type: string
+          nullable: true
+        size:
+          type: integer
+        championId:
+          type: integer
+        championName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - themeLabel
+        - size
+        - championId
+        - championName
+        - createdAt
+
+    TournamentInput:
+      type: object
+      properties:
+        size:
+          type: integer
+          enum: [8, 16]
+          description: "Number of competitors in the bracket"
+        name:
+          type: string
+          description: "Display name for the tournament"
+        themeLabel:
+          type: string
+          nullable: true
+          description: "Optional themed-cup label"
+        competitorIds:
+          type: array
+          maxItems: 16
+          items:
+            type: integer
+          description: "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16)."
+      required:
+        - size
+        - competitorIds

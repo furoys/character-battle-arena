@@ -8,6 +8,7 @@ import ttsRouter from "./tts";
 import downloadsRouter from "./downloads";
 import meRouter from "./me";
 import dailyRouter from "./daily";
+import tournamentsRouter from "./tournaments";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(ttsRouter);
 router.use(downloadsRouter);
 router.use(meRouter);
 router.use(dailyRouter);
+router.use(tournamentsRouter);
 
 export default router;

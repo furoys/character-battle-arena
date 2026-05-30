@@ -407,3 +407,101 @@ export const SaveTeamResponse = zod.object({
 export const DeleteSavedTeamParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary List recent tournaments (community feed)
+ */
+export const ListTournamentsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  themeLabel: zod.string().nullable(),
+  size: zod.number(),
+  championId: zod.number(),
+  championName: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListTournamentsResponse = zod.array(ListTournamentsResponseItem);
+
+/**
+ * @summary Create and auto-run a tournament bracket
+ */
+export const createTournamentBodyCompetitorIdsMax = 16;
+
+export const CreateTournamentBody = zod.object({
+  size: zod
+    .union([zod.literal(8), zod.literal(16)])
+    .describe("Number of competitors in the bracket"),
+  name: zod.string().optional().describe("Display name for the tournament"),
+  themeLabel: zod.string().nullish().describe("Optional themed-cup label"),
+  competitorIds: zod
+    .array(zod.number())
+    .max(createTournamentBodyCompetitorIdsMax)
+    .describe(
+      "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16).",
+    ),
+});
+
+/**
+ * @summary Get a tournament by id
+ */
+export const GetTournamentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetTournamentResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string().nullable(),
+  name: zod.string(),
+  themeLabel: zod.string().nullable(),
+  size: zod.number(),
+  championId: zod.number(),
+  championName: zod.string(),
+  bracket: zod.object({
+    rounds: zod.array(
+      zod.object({
+        name: zod.string(),
+        matches: zod.array(
+          zod.object({
+            matchId: zod.string(),
+            a: zod
+              .object({
+                id: zod.number(),
+                name: zod.string(),
+                universe: zod.string(),
+                imageUrl: zod.string().nullable(),
+              })
+              .nullable(),
+            b: zod
+              .object({
+                id: zod.number(),
+                name: zod.string(),
+                universe: zod.string(),
+                imageUrl: zod.string().nullable(),
+              })
+              .nullable(),
+            winnerSide: zod
+              .number()
+              .nullable()
+              .describe(
+                "1 if competitor a won, 2 if competitor b won, null for a bye",
+              ),
+            winnerId: zod.number().nullable(),
+            difficulty: zod
+              .string()
+              .nullable()
+              .describe("easy | moderate | hard"),
+            fightType: zod
+              .string()
+              .nullable()
+              .describe("stomp | one-sided | close"),
+            blurb: zod
+              .string()
+              .nullable()
+              .describe("Short win-condition \/ turning point line"),
+          }),
+        ),
+      }),
+    ),
+  }),
+  createdAt: zod.coerce.date(),
+});
