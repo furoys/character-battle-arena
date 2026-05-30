@@ -11,7 +11,7 @@ import { AvaLogo } from "@/components/ava-logo";
 import { GhostHandTutorial } from "@/components/ghost-hand-tutorial";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
-import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2 } from "lucide-react";
+import { Search, Shuffle, Swords, X, AlertTriangle, Link, Mic, MicOff, Bookmark, Trash2, ChevronDown } from "lucide-react";
 import { Link as NavLink, useLocation } from "wouter";
 import { Show, useUser } from "@clerk/react";
 import { CharacterAvatar } from "@/components/character-avatar";
@@ -400,6 +400,16 @@ export function Home() {
   // so the new user lands back on Arena with their first matchup still loaded
   // instead of an empty pair of slots.
   const tutorialStagedRef = useRef(false);
+  // Collapsible bottom dock — lets users slide the team builder away so the
+  // character roster gets nearly the full screen while browsing. Auto-reopens
+  // whenever a fighter is added so the new pick is never hidden.
+  const [teamDockOpen, setTeamDockOpen] = useState(true);
+  const prevTeamTotalRef = useRef(0);
+  useEffect(() => {
+    const total = team1.length + team2.length;
+    if (total > prevTeamTotalRef.current) setTeamDockOpen(true);
+    prevTeamTotalRef.current = total;
+  }, [team1.length, team2.length]);
   const [activeTeam, setActiveTeam] = useState<1 | 2>(1);
   const [flashTeam, setFlashTeam] = useState<1 | 2 | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1161,10 +1171,43 @@ export function Home() {
             boxShadow: "0 -8px 24px rgba(0,0,0,0.6)",
           }}
         >
+          {/* Collapse handle — slides the team dock away so the roster gets
+              nearly the full screen while browsing. Auto-reopens when a fighter
+              is added (see prevTeamTotalRef effect). Shows live team counts so
+              the user always knows their squad size even when collapsed. */}
+          <button
+            onClick={() => setTeamDockOpen(o => !o)}
+            aria-label={teamDockOpen ? "Hide team builder" : "Show team builder"}
+            aria-expanded={teamDockOpen}
+            className="w-full flex items-center justify-center gap-2.5 active:opacity-60 transition-opacity"
+            style={{
+              height: 26,
+              background: "rgba(255,255,255,0.025)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <ChevronDown
+              className="h-3.5 w-3.5"
+              style={{
+                color: "rgba(255,255,255,0.45)",
+                transform: teamDockOpen ? "none" : "rotate(180deg)",
+                transition: "transform 0.2s ease",
+              }}
+            />
+            <span className="font-display uppercase" style={{ fontSize: 8, letterSpacing: "0.22em", color: "rgba(255,255,255,0.4)" }}>
+              {teamDockOpen ? "Hide Teams" : "Show Teams"}
+            </span>
+            <span className="font-display" style={{ fontSize: 8.5, letterSpacing: "0.1em", fontWeight: 700 }}>
+              <span style={{ color: "#00f0ff", opacity: 0.85 }}>T1 {team1.length}</span>
+              <span style={{ color: "rgba(255,255,255,0.25)", margin: "0 5px" }}>·</span>
+              <span style={{ color: "#ff3b30", opacity: 0.85 }}>T2 {team2.length}</span>
+            </span>
+          </button>
+
           {/* Narration toggle — appears alongside FIGHT so the user explicitly
               opts in (or out) of AI narration at the moment of commitment.
               Lives here (not the top bar) because the choice is per-fight. */}
-          {canFight && (
+          {teamDockOpen && canFight && (
             <div data-tutorial-id="narration-toggle">
               <NarrationToggle on={ttsEnabled} onToggle={toggleTts} />
             </div>
@@ -1174,7 +1217,7 @@ export function Home() {
               modifier in play is visible at the moment of commitment. The same
               picker is also reachable from the CHALLENGE dropdown so the
               modifier choice is shared between arena and PvP. */}
-          {canFight && (
+          {teamDockOpen && canFight && (
             <div data-tutorial-id="modifier-chip">
               <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
             </div>
@@ -1213,6 +1256,8 @@ export function Home() {
             );
           })()}
 
+          {teamDockOpen && (
+          <>
           {/* Team slots — compact horizontal */}
           <div className="flex items-stretch gap-2 px-2 pt-1.5">
             <TeamSlot
@@ -1542,6 +1587,8 @@ export function Home() {
               Suggest Matchup
             </button>
           </div>
+          </>
+          )}
         </div>
 
         {/* First-time onboarding — Ghost Hand guided fight. Self-gates on
