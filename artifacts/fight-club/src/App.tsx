@@ -10,6 +10,7 @@ import { Layout } from "@/components/layout";
 import { AgeGate } from "@/components/age-gate";
 import { IntroSequence } from "@/components/intro-sequence";
 import { RotatePrompt } from "@/components/rotate-prompt";
+import { RatePrompt } from "@/components/rate-prompt";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { MusicProvider } from "@/contexts/music-context";
 import { useAgeMode } from "@/hooks/use-age-mode";
@@ -258,6 +259,7 @@ function ClerkProviderWithRoutes() {
               <Router />
             </Layout>
             <RotatePrompt />
+            <RatePrompt />
             <Toaster />
           </IntroOrchestrator>
         </TooltipProvider>

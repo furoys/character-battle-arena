@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { signalGoodMoment } from "@/lib/rate-prompt";
 import { Link, useLocation } from "wouter";
 import { Calendar, Trophy, Swords, Check, X, Flame, Loader2, Zap, PlayCircle, Play, Shield, Share2, Sparkles } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/react";
@@ -1290,6 +1291,17 @@ export function Daily() {
   const pickedCount = matchups.filter((m) => m.userPick !== null).length;
   const resolvedOwn = matchups.filter((m) => m.userPick !== null && m.winnerSide !== null);
   const correctToday = resolvedOwn.filter((m) => m.userPick === m.winnerSide).length;
+
+  // A perfect daily run (every pick resolved AND correct) is the single
+  // strongest delight signal in the app — the best moment to ask for a rating.
+  const perfectDay =
+    !!me &&
+    matchups.length > 0 &&
+    resolvedOwn.length === matchups.length &&
+    correctToday === matchups.length;
+  useEffect(() => {
+    if (perfectDay) signalGoodMoment("perfect-day");
+  }, [perfectDay]);
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: "#0a0a0f" }}>

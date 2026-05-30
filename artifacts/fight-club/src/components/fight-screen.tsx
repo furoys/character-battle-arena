@@ -3,6 +3,7 @@ import { FightResult, FightRound } from "@workspace/api-client-react";
 import { resolveApiUrl } from "@/lib/api-fetch";
 import { ChevronLeft, Swords, Zap, Trophy, FastForward, Mic } from "lucide-react";
 import { VictoryScreen } from "@/components/victory-screen";
+import { signalGoodMoment } from "@/lib/rate-prompt";
 import { ModifierBadge } from "@/components/modifier-badge";
 import { useMusic } from "@/contexts/music-context";
 
@@ -496,6 +497,13 @@ export function FightScreen({
 
   useEffect(() => {
     if (showVictory) setTrack("victory");
+  }, [showVictory]);
+
+  // Finishing a cinematic fight is a high-satisfaction moment — a good, non-naggy
+  // time to (eventually) ask for a Play Store rating. The gating in
+  // lib/rate-prompt.ts decides whether to actually surface anything.
+  useEffect(() => {
+    if (showVictory) signalGoodMoment("fight-finished");
   }, [showVictory]);
 
   // ── TTS narration (OpenAI AI voice) ───────────────────────────────────────
