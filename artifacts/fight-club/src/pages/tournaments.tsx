@@ -812,13 +812,13 @@ export function Tournaments() {
             </button>
           </div>
 
-          <div className="mt-3 flex gap-4 overflow-x-auto pb-4">
+          <div className="mt-3 flex flex-col gap-6 pb-4">
             {rounds.map((round, ri) => (
-              <div key={ri} className="flex min-w-[230px] flex-col gap-3">
-                <div className="text-center text-[11px] font-bold uppercase tracking-widest text-primary">
+              <div key={ri} className="flex flex-col gap-3">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-primary">
                   {round.name}
                 </div>
-                <div className="flex flex-1 flex-col justify-around gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {round.matches.map((m) => {
                     const revealed = (matchOrder.get(m.matchId) ?? 0) < revealedMatches;
                     // Upset = the lower-power fighter won. Power is looked up from
@@ -1025,7 +1025,7 @@ export function Tournaments() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
-                {availableFiltered.slice(0, 120).map((c) => {
+                {availableFiltered.map((c) => {
                   const locked = currentOwner !== "user" || cpuThinking || draftComplete;
                   return (
                     <DraftPickCard
@@ -1534,8 +1534,7 @@ function PvpDraftRoom({
     return draftablePool
       .filter((c) => !pickedIds.has(c.id))
       .filter((c) => universeFilter === "all" || c.universe === universeFilter)
-      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q))
-      .slice(0, 90);
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q));
   }, [draftablePool, pickedIds, search, universeFilter]);
 
   // ── MENU: create or join ─────────────────────────────────────────────────────
