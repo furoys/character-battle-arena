@@ -74,14 +74,116 @@ function powerScore(c: Character): number {
   );
 }
 
-// CPU drafts strong but not perfectly — picks randomly from the top few
-// available fighters so the same draft doesn't repeat every time.
-function cpuChoose(available: Character[]): Character | null {
-  if (available.length === 0) return null;
-  const ranked = [...available].sort((a, b) => powerScore(b) - powerScore(a));
-  const topN = ranked.slice(0, Math.min(5, ranked.length));
-  return topN[Math.floor(Math.random() * topN.length)] ?? ranked[0]!;
+// How aggressively the CPU drafts. "Fun cool picks" is the constant across all
+// three — difficulty only changes how much raw power it chases on top of that.
+type CpuDifficulty = "chill" | "rival" | "boss";
+
+// Crowd-pleasing fighters the CPU loves to draft, so the bracket feels iconic
+// instead of a parade of obscure max-stat characters. Single tokens match by
+// whole word ("goku" hits "Goku Black"); multi-word entries match the full name.
+const ICONIC_NAMES = new Set<string>([
+  // Marvel
+  "spider-man", "iron man", "captain america", "thor", "hulk", "wolverine",
+  "deadpool", "thanos", "venom", "magneto", "doctor strange", "black panther",
+  "storm", "captain marvel", "scarlet witch", "ghost rider", "silver surfer",
+  // DC
+  "superman", "batman", "wonder woman", "flash", "aquaman", "joker", "darkseid",
+  "shazam", "harley quinn", "green lantern",
+  // Dragon Ball
+  "goku", "vegeta", "gohan", "frieza", "broly", "beerus", "cell", "jiren",
+  "gogeta", "vegito", "trunks", "whis",
+  // Naruto / Boruto
+  "naruto", "sasuke", "kakashi", "itachi", "madara", "minato", "pain",
+  // One Piece
+  "luffy", "zoro", "sanji", "shanks", "kaido", "whitebeard",
+  // Bleach / JJK / MHA / Demon Slayer
+  "ichigo", "aizen", "kenpachi", "gojo", "sukuna", "deku", "all might",
+  "tanjiro", "rengoku", "muzan", "yoriichi",
+  // Pokémon
+  "pikachu", "charizard", "mewtwo", "mew",
+  // Star Wars
+  "darth vader", "yoda", "luke skywalker", "obi-wan", "darth maul", "kylo ren",
+  // Fighting games
+  "scorpion", "sub-zero", "raiden", "liu kang", "ryu", "ken", "chun-li", "akuma",
+  // Nintendo / Sega
+  "sonic", "mario", "luigi", "link", "kirby", "samus", "bowser", "donkey kong",
+  // TMNT
+  "leonardo", "raphael", "donatello", "michelangelo", "shredder",
+  // Heavy hitters / horror / misc
+  "saitama", "kratos", "master chief", "doomslayer", "doom slayer", "predator",
+  "xenomorph", "terminator", "john wick", "freddy krueger", "jason voorhees",
+  "michael myers", "pennywise", "gandalf", "aragorn", "sauron", "harry potter",
+  "voldemort", "eren", "levi", "ryuk", "alucard", "dio", "jotaro", "meruem",
+  "gon", "hisoka", "sephiroth", "cloud", "aang", "zuko", "optimus prime",
+  "megatron", "homelander", "omni-man", "invincible",
+]);
+
+// Universes whose roster is broadly recognizable. Generic mega-buckets like
+// "Multiverse Comics" / "Legacy Comics" / "Kingdom" are intentionally excluded.
+const FUN_UNIVERSES = new Set<string>([
+  "Marvel", "DC", "Dragon Ball", "Naruto", "Boruto", "One Piece", "Bleach",
+  "Demon Slayer", "My Hero Academia", "Jujutsu Kaisen", "Hunter x Hunter",
+  "Attack on Titan", "JoJo's Bizarre Adventure", "Fullmetal Alchemist",
+  "Pokémon", "Star Wars", "Mortal Kombat", "Street Fighter", "Harry Potter",
+  "Lord of the Rings", "TMNT", "Cartoon Network", "Adventure Time", "Ben 10",
+  "God of War", "Halo", "Avatar: The Last Airbender", "Transformers",
+  "The Boys", "Invincible", "Nintendo", "Final Fantasy",
+]);
+
+function isIconicName(name: string): boolean {
+  const lower = name.toLowerCase();
+  if (ICONIC_NAMES.has(lower)) return true;
+  return lower
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .some((w) => ICONIC_NAMES.has(w));
 }
+
+function isFunPick(c: Character): boolean {
+  return isIconicName(c.name) || (!!c.universe && FUN_UNIVERSES.has(c.universe));
+}
+
+function pickWeighted(items: { c: Character; w: number }[]): Character | null {
+  if (items.length === 0) return null;
+  const total = items.reduce((s, it) => s + Math.max(0, it.w), 0);
+  if (total <= 0) return items[Math.floor(Math.random() * items.length)]!.c;
+  let r = Math.random() * total;
+  for (const it of items) {
+    r -= Math.max(0, it.w);
+    if (r <= 0) return it.c;
+  }
+  return items[items.length - 1]!.c;
+}
+
+// The CPU drafts fun, recognizable fighters with real variety. It draws from a
+// "fun pool" (iconic names + popular universes) whenever that pool is big
+// enough, and difficulty only tilts how much power it chases inside that pool:
+//   chill → leans toward weaker fighters (easy to beat)
+//   rival → balanced, lots of spread
+//   boss  → hunts the strongest fun fighters (tough to beat)
+function cpuChoose(available: Character[], difficulty: CpuDifficulty): Character | null {
+  if (available.length === 0) return null;
+  const fun = available.filter(isFunPick);
+  const pool = fun.length >= 3 ? fun : available;
+  const ranked = [...pool].sort((a, b) => powerScore(b) - powerScore(a));
+  const n = ranked.length;
+  const weighted = ranked.map((c, i) => {
+    const top = n - i; // strongest = n, weakest = 1
+    let w: number;
+    if (difficulty === "boss") w = top * top;
+    else if (difficulty === "chill") w = i + 1;
+    else w = n + top;
+    if (isIconicName(c.name)) w *= 1.6;
+    return { c, w };
+  });
+  return pickWeighted(weighted);
+}
+
+const CPU_DIFFICULTIES: { key: CpuDifficulty; label: string; blurb: string }[] = [
+  { key: "chill", label: "Chill", blurb: "Fun picks, easier to beat" },
+  { key: "rival", label: "Rival", blurb: "Fun picks, balanced fight" },
+  { key: "boss", label: "Boss", blurb: "Fun picks, tough as nails" },
+];
 
 // ── Champion share-card generator (1080×1350 PNG, pure canvas) ────────────────
 async function generateChampionShareImage(
@@ -183,6 +285,7 @@ export function Tournaments() {
   const { isMinor } = useAgeMode();
 
   const [size, setSize] = useState<Size>(8);
+  const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("rival");
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
   const [universeFilter, setUniverseFilter] = useState<string>("all");
@@ -209,37 +312,45 @@ export function Tournaments() {
     }
   }, [reopenQuery.data]);
 
-  // Round-by-round reveal animation.
-  const [revealedRounds, setRevealedRounds] = useState(0);
+  // Match-by-match reveal animation — matches resolve one at a time, in bracket
+  // order (all of round 1, then round 2, …), so the YOU-vs-CPU drama builds.
+  const totalMatches = useMemo(
+    () =>
+      tournament
+        ? tournament.bracket.rounds.reduce((s, r) => s + r.matches.length, 0)
+        : 0,
+    [tournament],
+  );
+  const [revealedMatches, setRevealedMatches] = useState(0);
   const revealTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => {
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
     if (!tournament) {
-      setRevealedRounds(0);
+      setRevealedMatches(0);
       return;
     }
-    const total = tournament.bracket.rounds.length;
-    setRevealedRounds(0);
-    for (let i = 1; i <= total; i++) {
+    setRevealedMatches(0);
+    // Slightly faster per-match on a 16 bracket (15 matches) so it never drags.
+    const step = totalMatches > 8 ? 480 : 620;
+    for (let i = 1; i <= totalMatches; i++) {
       revealTimers.current.push(
-        setTimeout(() => setRevealedRounds(i), i * 750),
+        setTimeout(() => setRevealedMatches(i), 400 + i * step),
       );
     }
     return () => {
       revealTimers.current.forEach(clearTimeout);
       revealTimers.current = [];
     };
-  }, [tournament]);
+  }, [tournament, totalMatches]);
 
-  const allRevealed =
-    !!tournament && revealedRounds >= tournament.bracket.rounds.length;
+  const allRevealed = !!tournament && revealedMatches >= totalMatches;
 
   function revealAll() {
     if (!tournament) return;
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
-    setRevealedRounds(tournament.bracket.rounds.length);
+    setRevealedMatches(totalMatches);
   }
 
   // Watch flow (reuses the exact streaming fight engine as the Arena).
@@ -316,13 +427,13 @@ export function Tournaments() {
     if (phase !== "drafting" || currentOwner !== "cpu" || draftComplete) return;
     setCpuThinking(true);
     const pool = draftable.filter((c) => !pickedIds.has(c.id));
-    const choice = cpuChoose(pool);
+    const choice = cpuChoose(pool, cpuDifficulty);
     const t = setTimeout(() => {
       if (choice) setPicks((prev) => [...prev, { id: choice.id, owner: "cpu" }]);
       setCpuThinking(false);
     }, 550 + Math.random() * 350);
     return () => clearTimeout(t);
-  }, [phase, currentOwner, draftComplete, draftable, pickedIds]);
+  }, [phase, currentOwner, draftComplete, draftable, pickedIds, cpuDifficulty]);
 
   async function submitDraft() {
     try {
@@ -391,15 +502,20 @@ export function Tournaments() {
     const rounds = tournament.bracket.rounds;
     const isDraft = tournament.mode === "draft";
 
-    // Tally head-to-head wins by owner and find whose fighter took the cup.
+    // Tally head-to-head wins by owner and find whose fighter took the cup. The
+    // tally only counts matches that have already been REVEALED so the scoreboard
+    // ticks up live during the run. Each match gets a global reveal index.
     const ownerById = new Map<number, Owner | null>();
+    const matchOrder = new Map<string, number>();
     let userMatchWins = 0;
     let cpuMatchWins = 0;
+    let gi = 0;
     for (const r of rounds) {
       for (const m of r.matches) {
+        matchOrder.set(m.matchId, gi);
         if (m.a) ownerById.set(m.a.id, (m.a.owner as Owner | null) ?? null);
         if (m.b) ownerById.set(m.b.id, (m.b.owner as Owner | null) ?? null);
-        if (m.winnerId != null) {
+        if (gi < revealedMatches && m.winnerId != null) {
           const wOwner =
             m.a?.id === m.winnerId
               ? ((m.a.owner as Owner | null) ?? null)
@@ -409,6 +525,7 @@ export function Tournaments() {
           if (wOwner === "user") userMatchWins++;
           else if (wOwner === "cpu") cpuMatchWins++;
         }
+        gi++;
       }
     }
     const champOwner = ownerById.get(tournament.championId) ?? null;
@@ -437,49 +554,57 @@ export function Tournaments() {
             </div>
           )}
 
-          {isDraft && allRevealed && (
+          {isDraft && (
             <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <div className="grid grid-cols-3 items-stretch text-center">
                 <div
-                  className={`flex flex-col items-center justify-center gap-1 p-4 ${
-                    champOwner === "user" ? "bg-primary/15" : ""
+                  className={`flex flex-col items-center justify-center gap-1 p-4 transition-colors ${
+                    allRevealed && champOwner === "user" ? "bg-primary/15" : ""
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-primary">
                     <User className="h-3.5 w-3.5" /> You
                   </div>
-                  <div className="text-4xl font-black text-foreground">{userMatchWins}</div>
+                  <div className="text-4xl font-black tabular-nums text-foreground">{userMatchWins}</div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Wins</div>
                 </div>
                 <div className="flex flex-col items-center justify-center gap-1 border-x border-white/10 p-4">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {champOwner === "user"
-                      ? "You win the cup"
-                      : champOwner === "cpu"
-                        ? "CPU wins the cup"
-                        : "Final"}
+                    {!allRevealed
+                      ? "Running…"
+                      : champOwner === "user"
+                        ? "You win the cup"
+                        : champOwner === "cpu"
+                          ? "CPU wins the cup"
+                          : "Final"}
                   </div>
                   <div
                     className={`text-2xl font-black uppercase ${
-                      champOwner === "user"
+                      allRevealed && champOwner === "user"
                         ? "text-primary"
-                        : champOwner === "cpu"
+                        : allRevealed && champOwner === "cpu"
                           ? "text-sky-400"
                           : "text-amber-400"
                     }`}
                   >
-                    {champOwner === "user" ? "🏆 You" : champOwner === "cpu" ? "CPU 🏆" : "—"}
+                    {!allRevealed
+                      ? "VS"
+                      : champOwner === "user"
+                        ? "🏆 You"
+                        : champOwner === "cpu"
+                          ? "CPU 🏆"
+                          : "—"}
                   </div>
                 </div>
                 <div
-                  className={`flex flex-col items-center justify-center gap-1 p-4 ${
-                    champOwner === "cpu" ? "bg-sky-400/15" : ""
+                  className={`flex flex-col items-center justify-center gap-1 p-4 transition-colors ${
+                    allRevealed && champOwner === "cpu" ? "bg-sky-400/15" : ""
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-sky-400">
                     <Cpu className="h-3.5 w-3.5" /> CPU
                   </div>
-                  <div className="text-4xl font-black text-foreground">{cpuMatchWins}</div>
+                  <div className="text-4xl font-black tabular-nums text-foreground">{cpuMatchWins}</div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Wins</div>
                 </div>
               </div>
@@ -499,30 +624,28 @@ export function Tournaments() {
           </div>
 
           <div className="mt-3 flex gap-4 overflow-x-auto pb-4">
-            {rounds.map((round, ri) => {
-              const shown = ri < revealedRounds;
-              return (
-                <div key={ri} className="flex min-w-[230px] flex-col gap-3">
-                  <div className="text-center text-[11px] font-bold uppercase tracking-widest text-primary">
-                    {round.name}
-                  </div>
-                  <div
-                    className={`flex flex-1 flex-col justify-around gap-3 transition-all duration-500 ${
-                      shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"
-                    }`}
-                  >
-                    {round.matches.map((m) => (
+            {rounds.map((round, ri) => (
+              <div key={ri} className="flex min-w-[230px] flex-col gap-3">
+                <div className="text-center text-[11px] font-bold uppercase tracking-widest text-primary">
+                  {round.name}
+                </div>
+                <div className="flex flex-1 flex-col justify-around gap-3">
+                  {round.matches.map((m) => {
+                    const revealed = (matchOrder.get(m.matchId) ?? 0) < revealedMatches;
+                    return (
                       <BracketMatchCard
                         key={m.matchId}
                         match={m}
+                        revealed={revealed}
+                        concealIdentity={ri > 0 && !revealed}
                         showOwners={isDraft}
                         onWatch={() => watchMatch(m)}
                       />
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -797,6 +920,29 @@ export function Tournaments() {
           </p>
         </div>
 
+        {/* CPU difficulty */}
+        <div className="mt-5">
+          <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            CPU difficulty
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {CPU_DIFFICULTIES.map((d) => (
+              <button
+                key={d.key}
+                onClick={() => setCpuDifficulty(d.key)}
+                className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-center transition-all ${
+                  cpuDifficulty === d.key
+                    ? "border-sky-400 bg-sky-400/15 text-sky-300"
+                    : "border-white/15 text-muted-foreground hover:bg-white/5"
+                }`}
+              >
+                <span className="text-xs font-black uppercase tracking-widest">{d.label}</span>
+                <span className="text-[10px] leading-tight text-muted-foreground">{d.blurb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Name */}
         <div className="mt-4">
           <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -1058,20 +1204,49 @@ function ChampionBanner({
 
 function BracketMatchCard({
   match,
+  revealed,
+  concealIdentity,
   showOwners,
   onWatch,
 }: {
   match: TournamentMatch;
+  revealed: boolean;
+  concealIdentity: boolean;
   showOwners: boolean;
   onWatch: () => void;
 }) {
   const canWatch = !!match.a && !!match.b;
+  // Until a match is revealed, hide the outcome (winner highlight, blurb, Watch)
+  // so the result builds drama match-by-match instead of showing the whole bracket.
+  // For rounds past the first, also conceal the competitors themselves — their
+  // identity is the result of an earlier (still-hidden) match, so showing them
+  // would spoil who already advanced.
+  const showResult = revealed && match.winnerId != null;
   return (
-    <div className="rounded-lg border border-white/10 bg-black/30 p-2">
+    <div
+      className={`rounded-lg border bg-black/30 p-2 transition-all duration-300 ${
+        showResult ? "border-white/10" : "border-white/5"
+      } ${revealed ? "opacity-100 translate-y-0" : "opacity-40 translate-y-1"}`}
+    >
+      {concealIdentity ? (
+        <>
+          <PendingCompetitor />
+          <div className="my-1 flex items-center justify-center">
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+              vs
+            </span>
+          </div>
+          <PendingCompetitor />
+          <div className="mt-2 flex items-center justify-center gap-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+            <Loader2 className="h-3 w-3 animate-spin" /> Awaiting fighters
+          </div>
+        </>
+      ) : (
+      <>
       <Competitor
         comp={match.a}
-        won={match.winnerSide === 1}
-        lost={match.winnerSide === 2}
+        won={showResult && match.winnerSide === 1}
+        lost={showResult && match.winnerSide === 2}
         showOwners={showOwners}
       />
       <div className="my-1 flex items-center justify-center">
@@ -1081,32 +1256,53 @@ function BracketMatchCard({
       </div>
       <Competitor
         comp={match.b}
-        won={match.winnerSide === 2}
-        lost={match.winnerSide === 1}
+        won={showResult && match.winnerSide === 2}
+        lost={showResult && match.winnerSide === 1}
         showOwners={showOwners}
       />
-      {match.blurb && (
-        <p className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
-          {match.blurb}
-        </p>
+      {!revealed && canWatch ? (
+        <div className="mt-2 flex items-center justify-center gap-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+          <Loader2 className="h-3 w-3 animate-spin" /> Pending
+        </div>
+      ) : (
+        <>
+          {showResult && match.blurb && (
+            <p className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+              {match.blurb}
+            </p>
+          )}
+          <div className="mt-2 flex items-center justify-between gap-1">
+            {showResult && match.difficulty && (
+              <span
+                className={`text-[9px] font-bold uppercase tracking-widest ${difficultyColor(match.difficulty)}`}
+              >
+                {match.fightType ?? match.difficulty}
+              </span>
+            )}
+            {showResult && canWatch && (
+              <button
+                onClick={onWatch}
+                className="ml-auto flex items-center gap-1 rounded-md bg-primary/20 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/30"
+              >
+                <Play className="h-3 w-3" /> Watch
+              </button>
+            )}
+          </div>
+        </>
       )}
-      <div className="mt-2 flex items-center justify-between gap-1">
-        {match.difficulty && (
-          <span
-            className={`text-[9px] font-bold uppercase tracking-widest ${difficultyColor(match.difficulty)}`}
-          >
-            {match.fightType ?? match.difficulty}
-          </span>
-        )}
-        {canWatch && (
-          <button
-            onClick={onWatch}
-            className="ml-auto flex items-center gap-1 rounded-md bg-primary/20 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/30"
-          >
-            <Play className="h-3 w-3" /> Watch
-          </button>
-        )}
+      </>
+      )}
+    </div>
+  );
+}
+
+function PendingCompetitor() {
+  return (
+    <div className="flex items-center gap-2 rounded-md px-1.5 py-1">
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-white/10 bg-black/40">
+        <Swords className="h-3.5 w-3.5 text-muted-foreground/50" />
       </div>
+      <span className="truncate text-xs font-semibold text-muted-foreground/50">???</span>
     </div>
   );
 }
