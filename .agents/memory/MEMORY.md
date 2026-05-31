@@ -4,3 +4,4 @@
 - [Betting on a deterministic engine](wager-deterministic-betting.md) — Wager Mode must settle via a probabilistic roll (favorite wins at its win-rate %), not the raw deterministic verdict, or revealed odds let users back the guaranteed winner forever.
 - [Drizzle migrations](drizzle-migrations.md) — `generate` is broken (snapshot collision); post-merge `migrate` is the real deploy path; hand-write idempotent SQL + journal entry.
 - [Capacitor native Clerk auth vs prod server](capacitor-clerk-prod-auth.md) — native build from dev bakes dev Clerk key; prod server rejects dev tokens → guest everywhere. Fix: load prod URL via Capacitor server.url.
+- [Character portrait AI generation](character-portrait-generation.md) — image gen refuses prompts that name copyrighted characters; regenerate stragglers with appearance-based prompts (no franchise name). File layout, slug rule, batch mechanics.
