@@ -1337,7 +1337,13 @@ function PvpDraftRoom({
   onClose: () => void;
 }) {
   const { user } = useUser();
-  const suggestedName = user?.firstName || user?.username || "";
+  // Prefer the profile "@tag" (Clerk unsafeMetadata.username) the player chose
+  // in-app, falling back to their Clerk username / first name.
+  const suggestedName =
+    (user?.unsafeMetadata?.username as string | undefined) ||
+    user?.username ||
+    user?.firstName ||
+    "";
   const [view, setView] = useState<"menu" | "room">(initialCode ? "room" : "menu");
   const [createSize, setCreateSize] = useState<Size>(8);
   const [nameInput, setNameInput] = useState(suggestedName);
