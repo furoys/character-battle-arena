@@ -23,6 +23,8 @@ import type {
   CreateCharacterBody,
   ErrorResponse,
   FightDetail,
+  FightOdds,
+  FightOddsBody,
   FightRecord,
   FightResult,
   HealthStatus,
@@ -772,6 +774,92 @@ export const useClearFightHistory = <
   TContext
 > => {
   return useMutation(getClearFightHistoryMutationOptions(options));
+};
+
+/**
+ * @summary Get implied pre-fight win probabilities for a matchup (no AI, no persistence)
+ */
+export const getGetFightOddsUrl = () => {
+  return `/api/fights/odds`;
+};
+
+export const getFightOdds = async (
+  fightOddsBody: FightOddsBody,
+  options?: RequestInit,
+): Promise<FightOdds> => {
+  return customFetch<FightOdds>(getGetFightOddsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(fightOddsBody),
+  });
+};
+
+export const getGetFightOddsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getFightOdds>>,
+    TError,
+    { data: BodyType<FightOddsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getFightOdds>>,
+  TError,
+  { data: BodyType<FightOddsBody> },
+  TContext
+> => {
+  const mutationKey = ["getFightOdds"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getFightOdds>>,
+    { data: BodyType<FightOddsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getFightOdds(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetFightOddsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getFightOdds>>
+>;
+export type GetFightOddsMutationBody = BodyType<FightOddsBody>;
+export type GetFightOddsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get implied pre-fight win probabilities for a matchup (no AI, no persistence)
+ */
+export const useGetFightOdds = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getFightOdds>>,
+    TError,
+    { data: BodyType<FightOddsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getFightOdds>>,
+  TError,
+  { data: BodyType<FightOddsBody> },
+  TContext
+> => {
+  return useMutation(getGetFightOddsMutationOptions(options));
 };
 
 /**

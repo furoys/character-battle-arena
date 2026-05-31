@@ -1,4 +1,5 @@
 - [Audio engine vs intro overlay ownership](audio-engine-intro-ownership.md) — shared MusicEngine must defer to the intro overlay's audio; gate via beginIntro/endIntro called from useLayoutEffect (not useEffect) to win the mount race.
+- [Multiplayer session writes need row locks](pvp-session-row-locks.md) — token-claim/turn-gated flows (challenges, draft_sessions) must do read-check-write under SELECT…FOR UPDATE in a txn, or concurrent requests clobber.
 - [Betting on a deterministic engine](wager-deterministic-betting.md) — Wager Mode must settle via a probabilistic roll (favorite wins at its win-rate %), not the raw deterministic verdict, or revealed odds let users back the guaranteed winner forever.
 - [Drizzle migrations](drizzle-migrations.md) — `generate` is broken (snapshot collision); post-merge `migrate` is the real deploy path; hand-write idempotent SQL + journal entry.
 - [Capacitor native Clerk auth vs prod server](capacitor-clerk-prod-auth.md) — native build from dev bakes dev Clerk key; prod server rejects dev tokens → guest everywhere. Fix: load prod URL via Capacitor server.url.

@@ -4,11 +4,12 @@ import { db, charactersTable, fightsTable, fightCacheTable, challengesTable, dai
 import { normalizeModifierId, getModifier } from "../lib/modifiers";
 import {
   SimulateFightBody,
+  GetFightOddsBody,
   ListFightsResponse,
   SimulateFightResponse,
   GetFightResponse,
 } from "@workspace/api-zod";
-import { simulateFight, type SimulateFightProgress } from "../lib/fightSimulator";
+import { simulateFight, resolveFightVerdict, type SimulateFightProgress } from "../lib/fightSimulator";
 import { getOptionalUserId, requireAuth } from "../lib/auth";
 import { consumeEnergy, OutOfEnergyError } from "../lib/energy";
 import { getDailyMatchupsForDate, getDailyDateString } from "../lib/dailyPool";
@@ -133,6 +134,45 @@ function difficultyToWinRate(difficulty: string): number {
   if (difficulty === "hard") return 57;
   return 75;
 }
+
+// ── POST /api/fights/odds ─────────────────────────────────────────────────────
+// Lightweight, deterministic pre-fight odds. Runs the same Stage-1 verdict as a
+// real fight (resolveFightVerdict) but generates NO AI narrative and persists
+// nothing — so the Arena can show implied win % + let the player "call it"
+// before committing energy to the actual fight.
+router.post("/fights/odds", async (req, res): Promise<void> => {
+  const parsed = GetFightOddsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+  const { team1: t1Ids, team2: t2Ids } = parsed.data;
+
+  const chars = await db
+    .select()
+    .from(charactersTable)
+    .where(inArray(charactersTable.id, [...t1Ids, ...t2Ids]));
+  const byId = new Map(chars.map((c) => [c.id, c]));
+  const team1 = t1Ids.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => !!c);
+  const team2 = t2Ids.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => !!c);
+
+  if (team1.length === 0 || team2.length === 0) {
+    res.status(400).json({ error: "Both teams need at least one valid fighter" });
+    return;
+  }
+
+  const { winner, resolution } = resolveFightVerdict(team1, team2);
+  const winRate = difficultyToWinRate(resolution.difficulty);
+  const team1WinProb = winner === 1 ? winRate : 100 - winRate;
+  const team2WinProb = 100 - team1WinProb;
+
+  res.json({
+    favored: winner,
+    team1WinProb,
+    team2WinProb,
+    mismatch: resolution.fightType.toUpperCase(),
+  });
+});
 
 router.get("/fights", async (req, res): Promise<void> => {
   const fights = await db

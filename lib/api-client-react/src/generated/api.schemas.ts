@@ -75,6 +75,41 @@ export interface CharacterStatsSummary {
   universeBreakdown: CharacterStatsSummaryUniverseBreakdownItem[];
 }
 
+export interface FightOddsBody {
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team1: number[];
+  /**
+   * @minItems 1
+   * @maxItems 5
+   */
+  team2: number[];
+}
+
+/**
+ * Which side the deterministic verdict favors (1 or 2).
+ */
+export type FightOddsFavored =
+  (typeof FightOddsFavored)[keyof typeof FightOddsFavored];
+
+export const FightOddsFavored = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+} as const;
+
+export interface FightOdds {
+  /** Which side the deterministic verdict favors (1 or 2). */
+  favored: FightOddsFavored;
+  /** Implied win probability for team 1, as a whole percent (0-100). */
+  team1WinProb: number;
+  /** Implied win probability for team 2, as a whole percent (0-100). */
+  team2WinProb: number;
+  /** Qualitative closeness label (e.g. BLOWOUT, DOMINANT, SOLID, CLOSE, TOSSUP). */
+  mismatch: string;
+}
+
 /**
  * Tone of the fight. realistic = strict stat-driven logic, no chaos (default). cinematic = epic theatrical. brutal = grounded, vicious, bone-snap physicality. (fun/debate accepted as legacy aliases of cinematic/realistic.)
  */

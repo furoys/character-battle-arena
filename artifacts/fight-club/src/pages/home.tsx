@@ -730,6 +730,9 @@ export function Home() {
         : null;
     if (pendingDaily) setPendingDaily(null);
     if (energy.isSignedIn && !dailyId) energy.applyOptimisticConsume();
+    // Lock in the player's pre-fight "call" so the result effect can score it.
+    callAtFightRef.current = myCall;
+    setLastCall(null);
     simulateFight.mutate({ data: { team1: team1.map(c => c.id), team2: team2.map(c => c.id), mode: "cinematic", upset: false, modifierId: modifierId ?? null, dailyMatchupId: dailyId ?? null } });
   };
 
@@ -831,6 +834,82 @@ export function Home() {
     for (const s of syn2.active) pills.push({ ...s, team: 2 });
     return pills;
   }, [syn1, syn2]);
+
+  // ── Arena "Call It" — pre-fight odds + prediction record ──────────────────
+  // Before committing energy to a fight, show the deterministic implied odds and
+  // let the player predict the winner. After the fight resolves we compare their
+  // call against the real verdict and keep a local prediction record + streak.
+  const [odds, setOdds] = useState<
+    { favored: number; team1WinProb: number; team2WinProb: number; mismatch: string } | null
+  >(null);
+  const [myCall, setMyCall] = useState<1 | 2 | null>(null);
+  const callAtFightRef = useRef<1 | 2 | null>(null);
+  const [callRecord, setCallRecord] = useState<{ wins: number; total: number; streak: number; best: number }>(
+    () => readLS("ava:arenaCalls", { wins: 0, total: 0, streak: 0, best: 0 }),
+  );
+  const [lastCall, setLastCall] = useState<{ correct: boolean } | null>(null);
+
+  // A stable signature of the current matchup; changing it means a different
+  // fight, so we refetch odds and clear any prior call + reveal.
+  const oddsKey = useMemo(
+    () =>
+      canFight
+        ? `${[...team1.map((c) => c.id)].sort((a, b) => a - b).join(",")}|${[...team2.map((c) => c.id)].sort((a, b) => a - b).join(",")}`
+        : "",
+    [team1, team2, canFight],
+  );
+
+  useEffect(() => {
+    setMyCall(null);
+    setLastCall(null);
+    if (!oddsKey) {
+      setOdds(null);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(resolveApiUrl("/api/fights/odds"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ team1: team1.map((c) => c.id), team2: team2.map((c) => c.id) }),
+        });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!cancelled) setOdds(d);
+      } catch {
+        /* odds are a nice-to-have; ignore network errors */
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oddsKey]);
+
+  // Resolve the player's call once the fight verdict is known. The ref guard
+  // ensures we only score a given fight once even if this effect re-runs.
+  useEffect(() => {
+    const data = simulateFight.data;
+    const call = callAtFightRef.current;
+    if (!data || !data.winner || call == null) return;
+    callAtFightRef.current = null;
+    const correct = call === data.winner;
+    setCallRecord((prev) => {
+      const streak = correct ? prev.streak + 1 : 0;
+      const next = {
+        wins: prev.wins + (correct ? 1 : 0),
+        total: prev.total + 1,
+        streak,
+        best: Math.max(prev.best, streak),
+      };
+      writeLS("ava:arenaCalls", next);
+      return next;
+    });
+    setLastCall({ correct });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simulateFight.data?.id, simulateFight.data?.winner]);
 
   return (
     <>
@@ -1220,6 +1299,82 @@ export function Home() {
           {teamDockOpen && canFight && (
             <div data-tutorial-id="modifier-chip">
               <ModifierTrigger current={modifierId} onClick={() => setModifierPickerOpen(true)} />
+            </div>
+          )}
+
+          {/* Call It — pre-fight odds + winner prediction. Sits right above the
+              FIGHT bar so the player commits a call at the moment of fighting. */}
+          {teamDockOpen && canFight && (
+            <div style={{ padding: "6px 10px 2px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: 5 }}>
+                <span className="font-display uppercase" style={{ fontSize: 8, letterSpacing: "0.22em", color: "rgba(255,255,255,0.4)" }}>
+                  Call It
+                </span>
+                {odds && (
+                  <span className="font-display uppercase" style={{ fontSize: 7.5, letterSpacing: "0.16em", color: "rgba(255,255,255,0.3)" }}>
+                    {odds.mismatch === "STOMP" ? "Stomp" : odds.mismatch === "ONE-SIDED" ? "One-sided" : "Close fight"}
+                  </span>
+                )}
+                {callRecord.total > 0 && (
+                  <span className="font-display" style={{ fontSize: 8.5, letterSpacing: "0.06em", color: "rgba(255,255,255,0.5)" }}>
+                    Calls {callRecord.wins}–{callRecord.total - callRecord.wins}
+                    {callRecord.streak > 1 && <span style={{ color: "#ffc64d" }}> · {callRecord.streak}🔥</span>}
+                  </span>
+                )}
+              </div>
+
+              {/* Odds bar */}
+              <div className="flex w-full overflow-hidden" style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
+                <div style={{ width: `${odds ? odds.team1WinProb : 50}%`, background: "#00f0ff", transition: "width 0.3s ease" }} />
+                <div style={{ width: `${odds ? odds.team2WinProb : 50}%`, background: "#ff3b30", transition: "width 0.3s ease" }} />
+              </div>
+
+              {/* Call buttons */}
+              <div className="flex gap-2" style={{ marginTop: 6 }}>
+                {([1, 2] as const).map((side) => {
+                  const picked = myCall === side;
+                  const color = side === 1 ? "#00f0ff" : "#ff3b30";
+                  const prob = odds ? (side === 1 ? odds.team1WinProb : odds.team2WinProb) : null;
+                  return (
+                    <button
+                      key={side}
+                      onClick={() => setMyCall(picked ? null : side)}
+                      data-testid={`button-call-team${side}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 font-display uppercase active:scale-[0.98] transition-transform"
+                      style={{
+                        height: 30,
+                        borderRadius: 6,
+                        border: `1px solid ${picked ? color : "rgba(255,255,255,0.12)"}`,
+                        background: picked ? `${color}26` : "rgba(255,255,255,0.03)",
+                        color: picked ? "#fff" : "rgba(255,255,255,0.6)",
+                        fontSize: 9.5,
+                        letterSpacing: "0.12em",
+                        boxShadow: picked ? `0 0 12px ${color}55` : "none",
+                      }}
+                    >
+                      <span>Team {side}</span>
+                      {prob != null && (
+                        <span style={{ color, fontWeight: 700, fontSize: 10 }}>{prob}%</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Reveal banner after the most recent called fight */}
+              {lastCall && (
+                <div
+                  className="font-display uppercase text-center"
+                  style={{
+                    marginTop: 6,
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    color: lastCall.correct ? "#34d399" : "#ff7a7a",
+                  }}
+                >
+                  {lastCall.correct ? "✓ Nailed the call" : "✗ Wrong call"}
+                </div>
+              )}
             </div>
           )}
 

@@ -9,6 +9,7 @@ import downloadsRouter from "./downloads";
 import meRouter from "./me";
 import dailyRouter from "./daily";
 import tournamentsRouter from "./tournaments";
+import draftsRouter from "./drafts";
 import wagerRouter from "./wager";
 
 const router: IRouter = Router();
@@ -23,6 +24,7 @@ router.use(downloadsRouter);
 router.use(meRouter);
 router.use(dailyRouter);
 router.use(tournamentsRouter);
+router.use(draftsRouter);
 router.use(wagerRouter);
 
 export default router;

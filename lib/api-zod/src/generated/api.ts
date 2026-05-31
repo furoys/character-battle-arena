@@ -334,6 +334,39 @@ export const SimulateFightResponse = zod.object({
 });
 
 /**
+ * @summary Get implied pre-fight win probabilities for a matchup (no AI, no persistence)
+ */
+export const getFightOddsBodyTeam1Max = 5;
+
+export const getFightOddsBodyTeam2Max = 5;
+
+export const GetFightOddsBody = zod.object({
+  team1: zod.array(zod.number()).min(1).max(getFightOddsBodyTeam1Max),
+  team2: zod.array(zod.number()).min(1).max(getFightOddsBodyTeam2Max),
+});
+
+export const GetFightOddsResponse = zod.object({
+  favored: zod
+    .union([zod.literal(1), zod.literal(2)])
+    .describe("Which side the deterministic verdict favors (1 or 2)."),
+  team1WinProb: zod
+    .number()
+    .describe(
+      "Implied win probability for team 1, as a whole percent (0-100).",
+    ),
+  team2WinProb: zod
+    .number()
+    .describe(
+      "Implied win probability for team 2, as a whole percent (0-100).",
+    ),
+  mismatch: zod
+    .string()
+    .describe(
+      "Qualitative closeness label (e.g. BLOWOUT, DOMINANT, SOLID, CLOSE, TOSSUP).",
+    ),
+});
+
+/**
  * @summary Get a single fight by id
  */
 export const GetFightParams = zod.object({

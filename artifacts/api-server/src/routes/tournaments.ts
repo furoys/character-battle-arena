@@ -54,7 +54,7 @@ function toCompetitor(
 }
 
 // Round names depend on bracket size.
-function roundNames(size: number): string[] {
+export function roundNames(size: number): string[] {
   if (size === 32)
     return ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"];
   if (size === 16) return ["Round of 16", "Quarterfinals", "Semifinals", "Final"];
@@ -121,6 +121,44 @@ async function resolveMatch(
     fightType: resolution.fightType,
     blurb: resolution.turningPoint,
   };
+}
+
+// Auto-run a full single-elim bracket round-by-round (deterministic, no AI).
+// Shared by classic/CPU-draft cups (POST /tournaments) and async PvP drafts.
+export async function runBracket(
+  seeded: Character[],
+  size: number,
+  ownerById: Map<number, "user" | "cpu">,
+): Promise<{ rounds: TournamentRound[]; champion: Character }> {
+  const names = roundNames(size);
+  const rounds: TournamentRound[] = [];
+  let current: Character[] = seeded.slice(0, size);
+
+  for (let roundIdx = 0; roundIdx < names.length; roundIdx++) {
+    const matches: TournamentMatch[] = [];
+    const winners: Character[] = [];
+    for (let i = 0; i < current.length; i += 2) {
+      const a = current[i]!;
+      const b = current[i + 1]!;
+      const { winnerSide, difficulty, fightType, blurb } = await resolveMatch(a, b);
+      const winnerChar = winnerSide === 1 ? a : b;
+      winners.push(winnerChar);
+      matches.push({
+        matchId: `r${roundIdx}-m${i / 2}`,
+        a: toCompetitor(a, ownerById.get(a.id) ?? null),
+        b: toCompetitor(b, ownerById.get(b.id) ?? null),
+        winnerSide,
+        winnerId: winnerChar.id,
+        difficulty,
+        fightType,
+        blurb,
+      });
+    }
+    rounds.push({ name: names[roundIdx]!, matches });
+    current = winners;
+  }
+
+  return { rounds, champion: current[0]! };
 }
 
 router.get("/tournaments", async (_req, res): Promise<void> => {
@@ -280,35 +318,7 @@ router.post("/tournaments", async (req, res): Promise<void> => {
   }
 
   // ── Auto-run the bracket round by round (deterministic, no AI) ────────────
-  const names = roundNames(size);
-  const rounds: TournamentRound[] = [];
-  let current: Character[] = seeded.slice(0, size);
-
-  for (let roundIdx = 0; roundIdx < names.length; roundIdx++) {
-    const matches: TournamentMatch[] = [];
-    const winners: Character[] = [];
-    for (let i = 0; i < current.length; i += 2) {
-      const a = current[i]!;
-      const b = current[i + 1]!;
-      const { winnerSide, difficulty, fightType, blurb } = await resolveMatch(a, b);
-      const winnerChar = winnerSide === 1 ? a : b;
-      winners.push(winnerChar);
-      matches.push({
-        matchId: `r${roundIdx}-m${i / 2}`,
-        a: toCompetitor(a, ownerById.get(a.id) ?? null),
-        b: toCompetitor(b, ownerById.get(b.id) ?? null),
-        winnerSide,
-        winnerId: winnerChar.id,
-        difficulty,
-        fightType,
-        blurb,
-      });
-    }
-    rounds.push({ name: names[roundIdx]!, matches });
-    current = winners;
-  }
-
-  const champion = current[0]!;
+  const { rounds, champion } = await runBracket(seeded, size, ownerById);
   const bracket: TournamentBracket = { rounds };
   const userId = getOptionalUserId(req);
 

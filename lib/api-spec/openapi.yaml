@@ -175,6 +175,31 @@ paths:
         "204":
           description: Fight history cleared
 
+  /fights/odds:
+    post:
+      operationId: getFightOdds
+      tags: [fights]
+      summary: Get implied pre-fight win probabilities for a matchup (no AI, no persistence)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FightOddsBody"
+      responses:
+        "200":
+          description: Implied win probabilities for each side
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FightOdds"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /fights/{id}:
     get:
       operationId: getFight
@@ -575,6 +600,39 @@ components:
         - totalCharacters
         - universeBreakdown
 
+    FightOddsBody:
+      type: object
+      required: [team1, team2]
+      properties:
+        team1:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+        team2:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+          maxItems: 5
+    FightOdds:
+      type: object
+      required: [favored, team1WinProb, team2WinProb, mismatch]
+      properties:
+        favored:
+          type: integer
+          enum: [1, 2]
+          description: Which side the deterministic verdict favors (1 or 2).
+        team1WinProb:
+          type: integer
+          description: Implied win probability for team 1, as a whole percent (0-100).
+        team2WinProb:
+          type: integer
+          description: Implied win probability for team 2, as a whole percent (0-100).
+        mismatch:
+          type: string
+          description: Qualitative closeness label (e.g. BLOWOUT, DOMINANT, SOLID, CLOSE, TOSSUP).
     SimulateFightBody:
       type: object
       properties:

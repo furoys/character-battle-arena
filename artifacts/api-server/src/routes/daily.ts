@@ -579,12 +579,27 @@ router.get(
 );
 
 // ── GET /api/daily/leaderboard ────────────────────────────────────────────────
-// Top users by total correct picks across all resolved daily matchups.
+// Ranks users by correct picks across resolved daily matchups.
+//   ?scope=alltime (default) → every resolved matchup, ever.
+//   ?scope=today             → only today's (ET) resolved matchups.
+// When the caller is signed in, also returns their own rank + percentile
+// ("you beat X% of players") for the same scope, even if they're outside top-20.
 router.get("/daily/leaderboard", async (req, res): Promise<void> => {
-  const rows = await db
+  const scope = req.query.scope === "today" ? "today" : "alltime";
+  const userId = getOptionalUserId(req);
+
+  const correctSum = sql`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)`;
+  const accuracy = sql`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)::float / nullif(count(*), 0)`;
+
+  const conds = [sql`${dailyMatchupsTable.winnerSide} IS NOT NULL`];
+  if (scope === "today") conds.push(eq(dailyPicksTable.date, getDailyDateString()));
+
+  // Full per-user ranking (one row per user). We rank in JS so we can locate the
+  // requester's position even when they're far below the top-20 cutoff.
+  const ranked = await db
     .select({
       userId: dailyPicksTable.userId,
-      correct: sql<number>`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)::int`,
+      correct: sql<number>`${correctSum}::int`,
       total: sql<number>`count(*)::int`,
     })
     .from(dailyPicksTable)
@@ -595,24 +610,17 @@ router.get("/daily/leaderboard", async (req, res): Promise<void> => {
         eq(dailyPicksTable.matchupId, dailyMatchupsTable.matchupId),
       ),
     )
-    .where(sql`${dailyMatchupsTable.winnerSide} IS NOT NULL`)
+    .where(and(...conds))
     .groupBy(dailyPicksTable.userId)
-    .orderBy(
-      // Deterministic tie-breakers: correct DESC → accuracy DESC → userId ASC.
-      desc(
-        sql`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)`,
-      ),
-      desc(
-        sql`sum(case when ${dailyPicksTable.pickedSide} = ${dailyMatchupsTable.winnerSide} then 1 else 0 end)::float / nullif(count(*), 0)`,
-      ),
-      dailyPicksTable.userId,
-    )
-    .limit(20);
+    // Deterministic tie-breakers: correct DESC → accuracy DESC → userId ASC.
+    .orderBy(desc(correctSum), desc(accuracy), dailyPicksTable.userId);
 
-  // Enrich with display names from Clerk so the leaderboard doesn't show
+  const topRows = ranked.slice(0, 20);
+
+  // Enrich top-20 with display names from Clerk so the leaderboard doesn't show
   // opaque user IDs. Best-effort — if Clerk fails (network, key issue, etc.)
   // we still return the rows with a fallback name derived from the userId.
-  const userIds = rows.map((r) => r.userId).filter((id): id is string => !!id);
+  const userIds = topRows.map((r) => r.userId).filter((id): id is string => !!id);
   const nameById = new Map<string, string>();
   if (userIds.length > 0) {
     try {
@@ -638,14 +646,33 @@ router.get("/daily/leaderboard", async (req, res): Promise<void> => {
     }
   }
 
-  const leaders = rows.map((r) => ({
+  const leaders = topRows.map((r, i) => ({
+    rank: i + 1,
     userId: r.userId,
     correct: r.correct,
     total: r.total,
     displayName: nameById.get(r.userId) ?? `Player ${r.userId.slice(-6)}`,
   }));
 
-  res.json({ leaders });
+  // Requester's own standing within the same scope (null when signed-out or no
+  // resolved picks yet). beatPct = share of OTHER ranked players you're ahead of.
+  let me: {
+    rank: number;
+    correct: number;
+    total: number;
+    beatPct: number;
+  } | null = null;
+  if (userId) {
+    const idx = ranked.findIndex((r) => r.userId === userId);
+    if (idx >= 0) {
+      const totalPlayers = ranked.length;
+      const rank = idx + 1;
+      const beatPct = totalPlayers > 1 ? Math.round(((totalPlayers - rank) / (totalPlayers - 1)) * 100) : 0;
+      me = { rank, correct: ranked[idx].correct, total: ranked[idx].total, beatPct };
+    }
+  }
+
+  res.json({ scope, totalPlayers: ranked.length, leaders, me });
 });
 
 // ── GET /api/me/daily ─────────────────────────────────────────────────────────

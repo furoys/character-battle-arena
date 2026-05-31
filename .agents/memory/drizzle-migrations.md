@@ -1,35 +1,21 @@
 ---
-name: drizzle migrations in this repo
-description: How to add a DB migration safely here — generate is broken, migrate is the real deploy mechanism, write idempotent SQL by hand.
+name: Drizzle migrations are hand-authored
+description: How to add a DB migration in this repo — drizzle-kit generate is broken, write SQL + journal by hand.
 ---
 
-# Adding a DB schema change
+# Drizzle migrations: hand-author, don't generate
 
-**`drizzle-kit generate` is broken** — `lib/db/drizzle/meta/` has a pre-existing
-snapshot collision (multiple snapshots point to the same parent), so generate
-aborts. Do NOT rely on it. There is no `generate` npm script either.
-
-**`drizzle-kit migrate` IS the real mechanism.** `scripts/post-merge.sh`
-(the reconciliation that runs after every task merge) runs
-`pnpm --filter db migrate`. Deploy postBuild does NOT migrate. So a new table
-only reaches prod if it has a tracked journal entry + SQL file.
+`drizzle-kit generate` is broken in this repo (snapshot collision — it errors instead
+of emitting a new migration). The team hand-authors every migration.
 
 **How to add a migration:**
-1. Hand-write `lib/db/drizzle/NNNN_name.sql` using `CREATE TABLE IF NOT EXISTS` /
-   `ADD COLUMN IF NOT EXISTS` (idempotent — dev DBs are populated via
-   `drizzle-kit push`, so the objects may already exist).
-2. Append an entry to `lib/db/drizzle/meta/_journal.json` with an `idx` one higher
-   than the last and a `when` (epoch ms) strictly greater than the previous —
-   migrate applies entries whose `when` > last-applied `created_at` in
-   `drizzle.__drizzle_migrations`. No snapshot file is needed for migrate.
-3. Verify: `pnpm --filter @workspace/db run migrate` (safe to re-run — idempotent).
+1. Edit/add the Drizzle schema in `lib/db/src/schema/` and export it from `lib/db/src/schema/index.ts`.
+2. Hand-write the SQL file `lib/db/drizzle/NNNN_<name>.sql` (next index). Make it idempotent
+   (e.g. `CREATE TABLE IF NOT EXISTS`) so it's safe to re-run.
+3. Add a matching entry to `lib/db/drizzle/meta/_journal.json` (increment `idx`).
+4. Apply with `pnpm --filter @workspace/db run migrate` (NOT `push`, except dev emergencies).
 
-**Why:** `drizzle migrate` replays from the last applied `when`, not from scratch,
-so older non-idempotent migrations (e.g. 0000_initial) are never re-run on an
-existing DB. Confirmed by checking `drizzle.__drizzle_migrations` row count.
-
-**Gotcha:** journal entries can drift from SQL files — a migration's `.sql` can
-exist on disk but be missing from `_journal.json` (it was applied via `push`
-during dev and never tracked). Such a migration is silently skipped by
-post-merge migrate. When adding a new one, backfill any missing prior entries
-(safe because they're `IF NOT EXISTS`).
+**Why:** generate's snapshot diff collides and aborts, so a clean generated migration
+can't be produced. Manual SQL + journal entry is the supported path. Post-merge, the
+reconciliation step runs `migrate` — that's the real production deploy path for schema
+changes, so the hand-written SQL must stand on its own.

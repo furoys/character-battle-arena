@@ -12,7 +12,11 @@ import {
   Cpu,
   User,
   Sparkles,
+  Check,
+  Copy,
+  ArrowLeft,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api-fetch";
 import {
   useListCharacters,
   useListTournaments,
@@ -352,6 +356,19 @@ export function Tournaments() {
   // Only the cup the user just ran this session counts toward the vs-CPU record —
   // reopening past/community cups from the recent feed must never move it.
   const [sessionCupId, setSessionCupId] = useState<number | null>(null);
+
+  // ── Async PvP draft (draft a friend) ────────────────────────────────────────
+  const [showPvp, setShowPvp] = useState(false);
+  const [pvpInitialCode, setPvpInitialCode] = useState<string | null>(null);
+  // Open straight into the draft room if arriving via a shared ?draft=CODE link.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("draft");
+    if (code) {
+      setPvpInitialCode(code.toUpperCase());
+      setShowPvp(true);
+    }
+  }, []);
 
   // Reopen a past tournament from the recent list.
   const [reopenId, setReopenId] = useState<number | null>(null);
@@ -856,6 +873,25 @@ export function Tournaments() {
     );
   }
 
+  // ── PvP DRAFT ROOM (draft a friend) ──────────────────────────────────────────
+  if (showPvp && !tournament) {
+    return (
+      <PvpDraftRoom
+        characters={characters ?? []}
+        charById={charById}
+        initialCode={pvpInitialCode}
+        onComplete={(id) => {
+          setShowPvp(false);
+          setReopenId(id);
+        }}
+        onClose={() => {
+          setShowPvp(false);
+          setPvpInitialCode(null);
+        }}
+      />
+    );
+  }
+
   // ── DRAFTING VIEW ──────────────────────────────────────────────────────────
   if (phase === "drafting") {
     const pickNumber = Math.min(picks.length + 1, size);
@@ -1026,6 +1062,25 @@ export function Tournaments() {
         <p className="mt-1 text-sm text-muted-foreground">
           Draft against the CPU — you alternate picks, then your fighters battle through the bracket. Every round-one match is you vs the computer. Watch any match in full.
         </p>
+
+        {/* Draft a friend (async PvP) */}
+        <button
+          onClick={() => {
+            setPvpInitialCode(null);
+            setShowPvp(true);
+          }}
+          data-testid="button-draft-friend"
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left transition-all hover:border-sky-400/60 hover:bg-sky-400/15"
+        >
+          <Share2 className="h-5 w-5 flex-shrink-0 text-sky-400" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-black uppercase tracking-wide text-sky-300">Draft a Friend</div>
+            <div className="text-[11px] text-muted-foreground">
+              Share a code, draft alternately, then both watch the same bracket play out.
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 flex-shrink-0 text-sky-400" />
+        </button>
 
         {/* Running record vs CPU */}
         {cpuRecord.wins + cpuRecord.losses > 0 && (
@@ -1205,6 +1260,432 @@ export function Tournaments() {
             <Swords className="h-5 w-5" /> Start Draft
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Async PvP Draft Room ──────────────────────────────────────────────────────
+type DraftRole = "creator" | "joiner";
+type PvpPick = { id: number; owner: DraftRole };
+type PvpSession = {
+  code: string;
+  size: number;
+  status: "open" | "drafting" | "complete";
+  picks: PvpPick[];
+  pickCount: number;
+  turn: DraftRole | null;
+  joinerPresent: boolean;
+  tournamentId: number | null;
+  championOwner: DraftRole | null;
+  expiresAt: string;
+};
+
+function pvpCredsKey(code: string): string {
+  return `ava:pvpDraft:${code}`;
+}
+function loadPvpCreds(code: string): { token: string; role: DraftRole } | null {
+  try {
+    const raw = localStorage.getItem(pvpCredsKey(code));
+    if (!raw) return null;
+    const v = JSON.parse(raw) as { token?: string; role?: DraftRole };
+    if (v.token && (v.role === "creator" || v.role === "joiner")) return { token: v.token, role: v.role };
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function PvpDraftRoom({
+  characters,
+  charById,
+  initialCode,
+  onComplete,
+  onClose,
+}: {
+  characters: Character[];
+  charById: Map<number, Character>;
+  initialCode: string | null;
+  onComplete: (tournamentId: number) => void;
+  onClose: () => void;
+}) {
+  const [view, setView] = useState<"menu" | "room">(initialCode ? "room" : "menu");
+  const [createSize, setCreateSize] = useState<Size>(8);
+  const [joinInput, setJoinInput] = useState("");
+  const [code, setCode] = useState<string | null>(initialCode);
+  const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<DraftRole | null>(null);
+  const [session, setSession] = useState<PvpSession | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState(false);
+  const completedRef = useRef(false);
+  const joinAttemptedRef = useRef(false);
+
+  async function createDraft() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await apiFetch("/api/drafts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ size: createSize }),
+      });
+      const d = (await r.json()) as PvpSession & { creatorToken: string; role: DraftRole; error?: string };
+      if (!r.ok) throw new Error(d.error || "Could not create draft");
+      localStorage.setItem(pvpCredsKey(d.code), JSON.stringify({ token: d.creatorToken, role: "creator" }));
+      setCode(d.code);
+      setToken(d.creatorToken);
+      setRole("creator");
+      setSession(d);
+      setView("room");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create draft");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const joinDraft = async (raw: string) => {
+    const c = raw.toUpperCase().trim();
+    if (!c) return;
+    setBusy(true);
+    setError(null);
+    try {
+      // If we already hold creds for this code (creator opening their own link,
+      // or a refresh), just resume — don't try to join a second time.
+      const stored = loadPvpCreds(c);
+      if (stored) {
+        setCode(c);
+        setToken(stored.token);
+        setRole(stored.role);
+        setView("room");
+        return;
+      }
+      const r = await apiFetch(`/api/drafts/${c}/join`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      const d = (await r.json()) as PvpSession & { joinerToken: string; role: DraftRole; error?: string };
+      if (!r.ok) throw new Error(d.error || "Could not join draft");
+      localStorage.setItem(pvpCredsKey(c), JSON.stringify({ token: d.joinerToken, role: "joiner" }));
+      setCode(c);
+      setToken(d.joinerToken);
+      setRole("joiner");
+      setSession(d);
+      setView("room");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not join draft");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Auto-join when arriving via a shared ?draft=CODE link.
+  useEffect(() => {
+    if (initialCode && !joinAttemptedRef.current) {
+      joinAttemptedRef.current = true;
+      void joinDraft(initialCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode]);
+
+  // Restore creds from storage if we have a code but no token (e.g. refresh).
+  useEffect(() => {
+    if (code && !token) {
+      const stored = loadPvpCreds(code);
+      if (stored) {
+        setToken(stored.token);
+        setRole(stored.role);
+      }
+    }
+  }, [code, token]);
+
+  // Poll session state while the room is open.
+  useEffect(() => {
+    if (!code) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const r = await apiFetch(`/api/drafts/${code}`);
+        if (!r.ok) return;
+        const d = (await r.json()) as PvpSession;
+        if (active) setSession(d);
+      } catch {
+        /* transient */
+      }
+    };
+    void poll();
+    const id = setInterval(() => void poll(), 2000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [code]);
+
+  // Hand off to the shared bracket view once the draft completes.
+  useEffect(() => {
+    if (session?.status === "complete" && session.tournamentId && !completedRef.current) {
+      completedRef.current = true;
+      onComplete(session.tournamentId);
+    }
+  }, [session, onComplete]);
+
+  async function placePick(id: number) {
+    if (!code || !token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await apiFetch(`/api/drafts/${code}/pick`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token, characterId: id }),
+      });
+      const d = (await r.json()) as PvpSession & { error?: string };
+      if (!r.ok) throw new Error(d.error || "Pick failed");
+      setSession(d);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Pick failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const shareUrl = code ? `${window.location.origin}${window.location.pathname}?draft=${code}` : "";
+  async function copyShare() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError("Copy failed — long-press the code to copy it manually.");
+    }
+  }
+
+  const pickedIds = useMemo(() => new Set((session?.picks ?? []).map((p) => p.id)), [session]);
+  const myPicks = (session?.picks ?? []).filter((p) => p.owner === role);
+  const oppPicks = (session?.picks ?? []).filter((p) => p.owner !== role);
+  const myTurn = session?.status === "drafting" && session.turn === role;
+  const perSide = session ? session.size / 2 : 0;
+
+  const available = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return characters
+      .filter((c) => c.universe !== EXCLUDED_UNIVERSE && !pickedIds.has(c.id))
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q))
+      .slice(0, 60);
+  }, [characters, pickedIds, search]);
+
+  // ── MENU: create or join ─────────────────────────────────────────────────────
+  if (view === "menu") {
+    return (
+      <div className="min-h-full bg-background px-3 pt-4 pb-28">
+        <div className="mx-auto max-w-md">
+          <button
+            onClick={onClose}
+            data-testid="button-pvp-back"
+            className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
+          </button>
+          <div className="flex items-center gap-2">
+            <Share2 className="h-6 w-6 text-sky-400" strokeWidth={2.5} />
+            <h1 className="text-2xl font-black uppercase tracking-tight text-foreground">Draft a Friend</h1>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create a draft, send the code to a friend, and take turns picking. When the field is full, you both
+            watch the identical bracket play out.
+          </p>
+
+          {error && (
+            <div className="mt-3 rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-semibold text-rose-300">
+              {error}
+            </div>
+          )}
+
+          {/* Create */}
+          <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Create a draft</div>
+            <div className="mt-2 flex gap-2">
+              {SIZE_OPTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setCreateSize(s)}
+                  data-testid={`button-pvp-size-${s}`}
+                  className={`flex-1 rounded-lg border px-3 py-2.5 text-center text-sm font-black uppercase tracking-widest transition-all ${
+                    createSize === s
+                      ? "border-sky-400 bg-sky-400/15 text-sky-300"
+                      : "border-white/15 text-muted-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">You each draft {createSize / 2} fighters.</p>
+            <button
+              onClick={() => void createDraft()}
+              disabled={busy}
+              data-testid="button-pvp-create"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-sky-400 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              Create & Share
+            </button>
+          </div>
+
+          {/* Join */}
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Join with a code</div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={joinInput}
+                onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
+                placeholder="ABC123"
+                maxLength={6}
+                data-testid="input-pvp-join-code"
+                className="flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-center font-mono text-lg font-black uppercase tracking-[0.3em] text-foreground placeholder:text-muted-foreground/40 focus:border-sky-400 focus:outline-none"
+              />
+              <button
+                onClick={() => void joinDraft(joinInput)}
+                disabled={busy || joinInput.trim().length < 4}
+                data-testid="button-pvp-join"
+                className="rounded-lg bg-white/10 px-4 py-2.5 text-sm font-black uppercase tracking-widest text-foreground transition-all hover:bg-white/20 disabled:opacity-40"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ROOM: lobby + drafting ───────────────────────────────────────────────────
+  return (
+    <div className="min-h-full bg-background px-3 pt-4 pb-28">
+      <div className="mx-auto max-w-3xl">
+        <button
+          onClick={onClose}
+          data-testid="button-pvp-back"
+          className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Leave room
+        </button>
+
+        {/* Code + share */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Draft code</div>
+            <div className="font-mono text-2xl font-black tracking-[0.3em] text-sky-300" data-testid="text-pvp-code">
+              {code}
+            </div>
+          </div>
+          <button
+            onClick={() => void copyShare()}
+            data-testid="button-pvp-copy"
+            className="flex items-center gap-1.5 rounded-lg bg-sky-500/20 px-3 py-2 text-xs font-black uppercase tracking-widest text-sky-200 hover:bg-sky-500/30"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy link"}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-3 rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-semibold text-rose-300">
+            {error}
+          </div>
+        )}
+
+        {/* Status line */}
+        <div className="mt-4 flex items-center justify-center gap-2 text-center text-sm font-bold">
+          {!session ? (
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </span>
+          ) : session.status === "open" ? (
+            <span className="flex items-center gap-2 text-amber-300">
+              <Loader2 className="h-4 w-4 animate-spin" /> Waiting for your opponent to join…
+            </span>
+          ) : session.status === "complete" ? (
+            <span className="flex items-center gap-2 text-sky-300">
+              <Loader2 className="h-4 w-4 animate-spin" /> Draft complete — running the bracket…
+            </span>
+          ) : myTurn ? (
+            <span className="text-primary">Your pick — choose a fighter below</span>
+          ) : (
+            <span className="flex items-center gap-2 text-sky-300">
+              <Loader2 className="h-4 w-4 animate-spin" /> Opponent is picking…
+            </span>
+          )}
+        </div>
+
+        {/* Squads */}
+        {session && session.status !== "open" && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <DraftSquad
+              title="Your Squad"
+              owner="user"
+              picks={myPicks.map((p) => ({ id: p.id, owner: "user" as Owner }))}
+              charById={charById}
+              size={perSide}
+            />
+            <DraftSquad
+              title="Opponent"
+              owner="cpu"
+              picks={oppPicks.map((p) => ({ id: p.id, owner: "cpu" as Owner }))}
+              charById={charById}
+              size={perSide}
+            />
+          </div>
+        )}
+
+        {/* Picker — only on your turn */}
+        {myTurn && (
+          <div className="mt-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search fighters…"
+                data-testid="input-pvp-search"
+                className="w-full rounded-lg border border-white/15 bg-black/40 py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {available.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => void placePick(c.id)}
+                  disabled={busy}
+                  data-testid={`button-pvp-pick-${c.id}`}
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-left transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50"
+                >
+                  <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-white/15 bg-black/40">
+                    {c.imageUrl ? (
+                      <img src={c.imageUrl} alt={c.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                        <Swords className="h-3.5 w-3.5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-bold text-foreground">{c.name}</div>
+                    <div className="truncate text-[10px] text-muted-foreground">{c.universe}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {available.length === 0 && (
+              <p className="mt-4 text-center text-xs text-muted-foreground">No fighters match that search.</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

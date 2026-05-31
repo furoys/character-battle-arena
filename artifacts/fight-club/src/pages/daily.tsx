@@ -53,7 +53,10 @@ type MeDailyResponse = {
 };
 
 type LeaderboardResponse = {
-  leaders: { userId: string; correct: number; total: number; displayName: string }[];
+  scope?: "today" | "alltime";
+  totalPlayers?: number;
+  leaders: { rank?: number; userId: string; correct: number; total: number; displayName: string }[];
+  me?: { rank: number; correct: number; total: number; beatPct: number } | null;
 };
 
 // ── Countdown to next midnight ET drop ───────────────────────────────────────
@@ -1094,6 +1097,7 @@ export function Daily() {
   const [daily, setDaily] = useState<DailyResponse | null>(null);
   const [me, setMe] = useState<MeDailyResponse | null>(null);
   const [board, setBoard] = useState<LeaderboardResponse | null>(null);
+  const [lbScope, setLbScope] = useState<"today" | "alltime">("today");
   const [pickingId, setPickingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"matchup" | "leaderboard">("matchup");
 
@@ -1108,11 +1112,16 @@ export function Daily() {
         .then((d) => setMe(d as MeDailyResponse | null))
         .catch(() => {});
     }
-    apiFetch("/api/daily/leaderboard")
+  };
+
+  // Leaderboard is fetched separately so it can react to the Today/All-time
+  // scope toggle (and re-includes the signed-in user's own rank).
+  useEffect(() => {
+    apiFetch(`/api/daily/leaderboard?scope=${lbScope}`)
       .then((r) => r.json())
       .then((d) => setBoard(d as LeaderboardResponse))
       .catch(() => {});
-  };
+  }, [lbScope, isSignedIn]);
 
   useEffect(() => {
     reload();
@@ -1531,18 +1540,73 @@ export function Daily() {
             <div className="flex items-center gap-2 mb-3">
               <Trophy className="w-4 h-4" style={{ color: "#ffc800" }} />
               <h2 className="font-display uppercase" style={{ fontSize: 14, color: "#ffc800", letterSpacing: "0.18em" }}>
-                Top Predictors
+                {lbScope === "today" ? "Today's Leaders" : "All-Time Leaders"}
               </h2>
             </div>
+
+            {/* Today / All-time scope toggle */}
+            <div className="flex gap-1 mb-3" style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: 3 }}>
+              {(["today", "alltime"] as const).map((s) => {
+                const on = lbScope === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setLbScope(s)}
+                    data-testid={`button-lb-${s}`}
+                    className="flex-1 font-display uppercase"
+                    style={{
+                      height: 28,
+                      borderRadius: 6,
+                      fontSize: 10,
+                      letterSpacing: "0.14em",
+                      background: on ? "rgba(255,200,0,0.16)" : "transparent",
+                      border: `1px solid ${on ? "rgba(255,200,0,0.45)" : "transparent"}`,
+                      color: on ? "#ffc800" : "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    {s === "today" ? "Today" : "All-Time"}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Your standing — only for signed-in users who have a resolved pick */}
+            {isSignedIn && board?.me && (
+              <div
+                className="flex items-center gap-3 px-3 py-2.5 mb-3"
+                style={{
+                  background: "linear-gradient(135deg, rgba(255,200,0,0.12), rgba(255,200,0,0.04))",
+                  border: "1px solid rgba(255,200,0,0.4)",
+                  borderRadius: 8,
+                }}
+              >
+                <span className="font-display" style={{ fontSize: 18, fontWeight: 900, color: "#ffc800", width: 44, textAlign: "center" }}>
+                  #{board.me.rank}
+                </span>
+                <div className="flex-1">
+                  <div className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.12em", color: "#fff" }}>
+                    Your Rank{lbScope === "today" ? " Today" : ""}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)" }}>
+                    {board.me.correct}/{board.me.total} correct
+                    {(board.totalPlayers ?? 0) > 1 && ` · you beat ${board.me.beatPct}% of players`}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {!board || board.leaders.length === 0 ? (
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "32px 0" }}>
-                No verdicts yet. Be the first to lock in.
+                {lbScope === "today"
+                  ? "No verdicts in yet today. Results post as matchups resolve."
+                  : "No verdicts yet. Be the first to lock in."}
               </p>
             ) : (
               <div className="flex flex-col gap-1">
                 {board.leaders.map((row, i) => {
                   const isMe = isSignedIn && user?.id === row.userId;
-                  const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+                  const rank = row.rank ?? i + 1;
+                  const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`;
                   const pct = row.total ? Math.round((row.correct / row.total) * 100) : 0;
                   const shortId = isMe ? "YOU" : (row.displayName || `Player ${row.userId.slice(-6)}`);
                   return (
