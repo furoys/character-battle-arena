@@ -416,6 +416,10 @@ export const ListTournamentsResponseItem = zod.object({
   name: zod.string(),
   themeLabel: zod.string().nullable(),
   size: zod.number(),
+  mode: zod
+    .string()
+    .nullish()
+    .describe("'draft' for drafted-vs-CPU cups, null\/'classic' otherwise"),
   championId: zod.number(),
   championName: zod.string(),
   createdAt: zod.coerce.date(),
@@ -426,6 +430,8 @@ export const ListTournamentsResponse = zod.array(ListTournamentsResponseItem);
  * @summary Create and auto-run a tournament bracket
  */
 export const createTournamentBodyCompetitorIdsMax = 16;
+
+export const createTournamentBodyOwnersMax = 16;
 
 export const CreateTournamentBody = zod.object({
   size: zod
@@ -438,6 +444,19 @@ export const CreateTournamentBody = zod.object({
     .max(createTournamentBodyCompetitorIdsMax)
     .describe(
       "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16).",
+    ),
+  mode: zod
+    .enum(["draft", "classic"])
+    .optional()
+    .describe(
+      "'draft' = drafted vs CPU (owners required, must fill the bracket). Defaults to classic.",
+    ),
+  owners: zod
+    .array(zod.enum(["user", "cpu"]))
+    .max(createTournamentBodyOwnersMax)
+    .optional()
+    .describe(
+      "Parallel to competitorIds: who drafted each fighter ('user' | 'cpu'). Required for draft mode.",
     ),
 });
 
@@ -454,6 +473,10 @@ export const GetTournamentResponse = zod.object({
   name: zod.string(),
   themeLabel: zod.string().nullable(),
   size: zod.number(),
+  mode: zod
+    .string()
+    .nullish()
+    .describe("'draft' for drafted-vs-CPU cups, null\/'classic' otherwise"),
   championId: zod.number(),
   championName: zod.string(),
   bracket: zod.object({
@@ -469,6 +492,12 @@ export const GetTournamentResponse = zod.object({
                 name: zod.string(),
                 universe: zod.string(),
                 imageUrl: zod.string().nullable(),
+                owner: zod
+                  .string()
+                  .nullish()
+                  .describe(
+                    "Draft mode: 'user' or 'cpu'. null for classic cups.",
+                  ),
               })
               .nullable(),
             b: zod
@@ -477,6 +506,12 @@ export const GetTournamentResponse = zod.object({
                 name: zod.string(),
                 universe: zod.string(),
                 imageUrl: zod.string().nullable(),
+                owner: zod
+                  .string()
+                  .nullish()
+                  .describe(
+                    "Draft mode: 'user' or 'cpu'. null for classic cups.",
+                  ),
               })
               .nullable(),
             winnerSide: zod

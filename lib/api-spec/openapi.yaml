@@ -824,6 +824,10 @@ components:
         imageUrl:
           type: string
           nullable: true
+        owner:
+          type: string
+          nullable: true
+          description: "Draft mode: 'user' or 'cpu'. null for classic cups."
       required:
         - id
         - name
@@ -908,6 +912,10 @@ components:
           nullable: true
         size:
           type: integer
+        mode:
+          type: string
+          nullable: true
+          description: "'draft' for drafted-vs-CPU cups, null/'classic' otherwise"
         championId:
           type: integer
         championName:
@@ -940,6 +948,10 @@ components:
           nullable: true
         size:
           type: integer
+        mode:
+          type: string
+          nullable: true
+          description: "'draft' for drafted-vs-CPU cups, null/'classic' otherwise"
         championId:
           type: integer
         championName:
@@ -976,6 +988,17 @@ components:
           items:
             type: integer
           description: "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16)."
+        mode:
+          type: string
+          enum: [draft, classic]
+          description: "'draft' = drafted vs CPU (owners required, must fill the bracket). Defaults to classic."
+        owners:
+          type: array
+          maxItems: 16
+          items:
+            type: string
+            enum: [user, cpu]
+          description: "Parallel to competitorIds: who drafted each fighter ('user' | 'cpu'). Required for draft mode."
       required:
         - size
         - competitorIds

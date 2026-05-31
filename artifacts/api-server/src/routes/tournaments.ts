@@ -37,8 +37,17 @@ function difficultyToWinRate(difficulty: string): number {
   return 75;
 }
 
-function toCompetitor(c: Character): TournamentCompetitor {
-  return { id: c.id, name: c.name, universe: c.universe, imageUrl: c.imageUrl ?? null };
+function toCompetitor(
+  c: Character,
+  owner?: "user" | "cpu" | null,
+): TournamentCompetitor {
+  return {
+    id: c.id,
+    name: c.name,
+    universe: c.universe,
+    imageUrl: c.imageUrl ?? null,
+    owner: owner ?? null,
+  };
 }
 
 // Round names depend on bracket size.
@@ -116,6 +125,7 @@ router.get("/tournaments", async (_req, res): Promise<void> => {
       name: tournamentsTable.name,
       themeLabel: tournamentsTable.themeLabel,
       size: tournamentsTable.size,
+      mode: tournamentsTable.mode,
       championId: tournamentsTable.championId,
       championName: tournamentsTable.championName,
       createdAt: tournamentsTable.createdAt,
@@ -130,6 +140,7 @@ router.get("/tournaments", async (_req, res): Promise<void> => {
       name: r.name,
       themeLabel: r.themeLabel ?? null,
       size: r.size,
+      mode: r.mode ?? null,
       championId: r.championId,
       championName: r.championName,
       createdAt: r.createdAt.toISOString(),
@@ -158,6 +169,7 @@ router.get("/tournaments/:id", async (req, res): Promise<void> => {
     name: row.name,
     themeLabel: row.themeLabel ?? null,
     size: row.size,
+    mode: row.mode ?? null,
     championId: row.championId,
     championName: row.championName,
     bracket: row.bracket,
@@ -172,19 +184,44 @@ router.post("/tournaments", async (req, res): Promise<void> => {
     return;
   }
   const { size, name, themeLabel } = parsed.data;
+  const mode = parsed.data.mode === "draft" ? "draft" : null;
+  const ownersInput = parsed.data.owners ?? [];
 
-  // De-dupe provided ids, preserving seed order.
+  // De-dupe provided ids, preserving seed order. Track each id's owner (draft).
   const seenIds = new Set<number>();
   const requestedIds: number[] = [];
-  for (const id of parsed.data.competitorIds) {
+  const ownerById = new Map<number, "user" | "cpu">();
+  parsed.data.competitorIds.forEach((id, idx) => {
     if (!seenIds.has(id)) {
       seenIds.add(id);
       requestedIds.push(id);
+      // Owners are only meaningful in draft mode; ignore them otherwise so a
+      // classic cup can never carry owner attribution.
+      if (mode === "draft") {
+        const owner = ownersInput[idx];
+        if (owner === "user" || owner === "cpu") ownerById.set(id, owner);
+      }
     }
-  }
+  });
   if (requestedIds.length > size) {
     res.status(400).json({ error: `Too many competitors for a ${size}-fighter bracket` });
     return;
+  }
+
+  // Draft mode is a fully-drafted bracket: every slot is a deliberate pick with a
+  // known owner, so no random top-up is allowed.
+  if (mode === "draft") {
+    if (requestedIds.length !== size) {
+      res
+        .status(400)
+        .json({ error: `Draft mode requires exactly ${size} fighters (got ${requestedIds.length})` });
+      return;
+    }
+    const missingOwner = requestedIds.some((id) => !ownerById.has(id));
+    if (missingOwner) {
+      res.status(400).json({ error: "Draft mode requires an owner for every fighter" });
+      return;
+    }
   }
 
   // Load the requested characters and order them by seed.
@@ -243,8 +280,8 @@ router.post("/tournaments", async (req, res): Promise<void> => {
       winners.push(winnerChar);
       matches.push({
         matchId: `r${roundIdx}-m${i / 2}`,
-        a: toCompetitor(a),
-        b: toCompetitor(b),
+        a: toCompetitor(a, ownerById.get(a.id) ?? null),
+        b: toCompetitor(b, ownerById.get(b.id) ?? null),
         winnerSide,
         winnerId: winnerChar.id,
         difficulty,
@@ -267,6 +304,7 @@ router.post("/tournaments", async (req, res): Promise<void> => {
       name: name?.trim() || "A.v.A Cup",
       themeLabel: themeLabel ?? null,
       size,
+      mode,
       championId: champion.id,
       championName: champion.name,
       bracket,
@@ -279,6 +317,7 @@ router.post("/tournaments", async (req, res): Promise<void> => {
     name: inserted!.name,
     themeLabel: inserted!.themeLabel ?? null,
     size: inserted!.size,
+    mode: inserted!.mode ?? null,
     championId: inserted!.championId,
     championName: inserted!.championName,
     bracket: inserted!.bracket,

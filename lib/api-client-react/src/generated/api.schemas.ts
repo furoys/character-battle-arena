@@ -190,6 +190,8 @@ export interface TournamentCompetitor {
   name: string;
   universe: string;
   imageUrl: string | null;
+  /** Draft mode: 'user' or 'cpu'. null for classic cups. */
+  owner?: string | null;
 }
 
 export interface TournamentMatch {
@@ -222,6 +224,8 @@ export interface Tournament {
   name: string;
   themeLabel: string | null;
   size: number;
+  /** 'draft' for drafted-vs-CPU cups, null/'classic' otherwise */
+  mode?: string | null;
   championId: number;
   championName: string;
   bracket: TournamentBracket;
@@ -233,6 +237,8 @@ export interface TournamentSummary {
   name: string;
   themeLabel: string | null;
   size: number;
+  /** 'draft' for drafted-vs-CPU cups, null/'classic' otherwise */
+  mode?: string | null;
   championId: number;
   championName: string;
   createdAt: string;
@@ -249,6 +255,25 @@ export const TournamentInputSize = {
   NUMBER_16: 16,
 } as const;
 
+/**
+ * 'draft' = drafted vs CPU (owners required, must fill the bracket). Defaults to classic.
+ */
+export type TournamentInputMode =
+  (typeof TournamentInputMode)[keyof typeof TournamentInputMode];
+
+export const TournamentInputMode = {
+  draft: "draft",
+  classic: "classic",
+} as const;
+
+export type TournamentInputOwnersItem =
+  (typeof TournamentInputOwnersItem)[keyof typeof TournamentInputOwnersItem];
+
+export const TournamentInputOwnersItem = {
+  user: "user",
+  cpu: "cpu",
+} as const;
+
 export interface TournamentInput {
   /** Number of competitors in the bracket */
   size: TournamentInputSize;
@@ -261,6 +286,13 @@ export interface TournamentInput {
    * @maxItems 16
    */
   competitorIds: number[];
+  /** 'draft' = drafted vs CPU (owners required, must fill the bracket). Defaults to classic. */
+  mode?: TournamentInputMode;
+  /**
+   * Parallel to competitorIds: who drafted each fighter ('user' | 'cpu'). Required for draft mode.
+   * @maxItems 16
+   */
+  owners?: TournamentInputOwnersItem[];
 }
 
 export interface Wallet {

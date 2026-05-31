@@ -12,6 +12,8 @@ export type TournamentCompetitor = {
   name: string;
   universe: string;
   imageUrl: string | null;
+  // Draft mode: who drafted this fighter. null for classic (non-draft) cups.
+  owner?: "user" | "cpu" | null;
 };
 
 export type TournamentMatch = {
@@ -42,6 +44,8 @@ export const tournamentsTable = pgTable("tournaments", {
   // Optional human label for a themed cup (e.g. "Marvel Cup"). Display-only.
   themeLabel: text("theme_label"),
   size: integer("size").notNull(), // 8 or 16
+  // "draft" = drafted vs CPU; null/"classic" = manually seeded bracket.
+  mode: text("mode"),
   championId: integer("champion_id").notNull(),
   championName: text("champion_name").notNull(),
   bracket: jsonb("bracket").notNull().$type<TournamentBracket>(),
