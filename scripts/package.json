@@ -18,6 +18,7 @@
     "enrich-new-chars": "tsx ./src/enrich-new-chars.ts",
     "generate-from-list": "tsx ./src/generate-from-list.ts",
     "reenrich-new-chars": "tsx ./src/reenrich-new-chars.ts",
+    "regen-full-dump": "tsx ./src/regen-full-dump.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
