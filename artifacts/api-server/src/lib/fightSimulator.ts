@@ -2329,6 +2329,22 @@ export function makeSectionStreamer(
   };
 }
 
+// Strip separator-only lines (---, ***, ___, or bare #### heading hashes) from
+// the head and tail of a parsed section. Models occasionally emit a horizontal
+// rule or empty heading line between === markers; because section extraction
+// walks delimiter to delimiter, such a line lands at the END of the PRECEDING
+// round's content — mid-narrative, where sanitizeNarrativeHalf's tail strip
+// (which only runs on the end of a whole half) can never reach it.
+function trimSectionSeparators(s: string): string {
+  const SEP_LINE = /^[ \t]*(?:[-*_]{2,}|#{1,6})[ \t]*$/;
+  const lines = s.split("\n");
+  let start = 0;
+  let end = lines.length;
+  while (start < end && (lines[start]!.trim() === "" || SEP_LINE.test(lines[start]!))) start++;
+  while (end > start && (lines[end - 1]!.trim() === "" || SEP_LINE.test(lines[end - 1]!))) end--;
+  return lines.slice(start, end).join("\n").trim();
+}
+
 // Parse AI narrative that uses === MARKER === delimiters into a map of MARKER -> content.
 // Falls back to numbered-header detection if the AI omits delimiters.
 function parseSections(raw: string): Map<string, string> {
@@ -2352,7 +2368,7 @@ function parseSections(raw: string): Map<string, string> {
       const { name, contentStart } = dparts[i]!;
       // End of content is the start of the NEXT delimiter
       const end = dparts[i + 1]?.delimEnd ?? raw.length;
-      const content = raw.slice(contentStart, end).trim();
+      const content = trimSectionSeparators(raw.slice(contentStart, end));
       if (content && !map.has(name)) map.set(name, content);
     }
     return map;
@@ -2405,7 +2421,7 @@ function parseSections(raw: string): Map<string, string> {
   for (let i = 0; i < fparts.length; i++) {
     const { key, lineIdx } = fparts[i]!;
     const end = fparts[i + 1]?.lineIdx ?? lines.length;
-    const content = lines.slice(lineIdx + 1, end).join("\n").trim();
+    const content = trimSectionSeparators(lines.slice(lineIdx + 1, end).join("\n"));
     if (content && !map.has(key)) map.set(key, content);
   }
   return map;

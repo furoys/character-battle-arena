@@ -5,5 +5,6 @@
 - [Drizzle migrations](drizzle-migrations.md) — `generate` is broken (snapshot collision); post-merge `migrate` is the real deploy path; hand-write idempotent SQL + journal entry.
 - [Capacitor native Clerk auth vs prod server](capacitor-clerk-prod-auth.md) — native build from dev bakes dev Clerk key; prod server rejects dev tokens → guest everywhere. Fix: load prod URL via Capacitor server.url.
 - [Character portrait AI generation](character-portrait-generation.md) — image gen refuses prompts that name copyrighted characters; regenerate stragglers with appearance-based prompts (no franchise name). File layout, slug rule, batch mechanics.
+- [AI narrative section parsing](narrative-section-parsing.md) — parser walks === to ===, so interior trailing markdown junk lands in the PRECEDING section; clean per-section, not just per-half.
 - [PWA precache vs content images](pwa-precache-character-images.md) — keep `characters/**` in injectManifest globIgnores; injectManifest hard-errors the prod build on any single asset >2 MiB.
 - [Prod data propagation](prod-data-propagation.md) — publish migrates schema only, not row data; prod executeSql is read-only; push characters via regen charactersFullDump.json (regen-full-dump) + deploy → startup seedNewChars inserts missing-by-name.
