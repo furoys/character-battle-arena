@@ -36,6 +36,46 @@
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 1; }
 }
+
+/* ── Tournament: champion embers + reveal motion ── */
+@keyframes champEmberRise {
+  0%   { transform: translateY(0) scale(1);                          opacity: 0; }
+  15%  { opacity: 0.85; }
+  100% { transform: translateY(-170px) translateX(var(--drift, 0px)) scale(0.35); opacity: 0; }
+}
+.champ-ember {
+  position: absolute;
+  bottom: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: champEmberRise var(--dur, 4s) ease-in infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes champSweep {
+  0%   { transform: translateX(-150%) skewX(-18deg); }
+  100% { transform: translateX(260%)  skewX(-18deg); }
+}
+.champ-sweep { animation: champSweep 2.8s ease-in-out infinite; }
+@keyframes bracketPop {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.bracket-pop { animation: bracketPop 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes upsetShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+.upset-shake { animation: upsetShake 0.45s ease-in-out both; }
+@keyframes turnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--turn-ring, rgba(255,255,255,0.0)); }
+  50%       { box-shadow: 0 0 0 4px var(--turn-ring, rgba(255,255,255,0.12)); }
+}
+.turn-pulse { animation: turnPulse 1.8s ease-in-out infinite; }
+
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));

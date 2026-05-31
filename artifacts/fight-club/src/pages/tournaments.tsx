@@ -840,7 +840,7 @@ export function Tournaments() {
           <div className="mt-3 flex gap-1.5 pb-4 sm:gap-3">
             {rounds.map((round, ri) => (
               <div key={ri} className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="truncate text-center text-[10px] font-bold uppercase tracking-widest text-primary">
+                <div className="mx-auto max-w-full truncate rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-widest text-primary">
                   {round.name}
                 </div>
                 <div className="flex flex-1 flex-col justify-around gap-2">
@@ -926,6 +926,16 @@ export function Tournaments() {
   // ── DRAFTING VIEW ──────────────────────────────────────────────────────────
   if (phase === "drafting") {
     const pickNumber = Math.min(picks.length + 1, size);
+    const userPower = userPicks.reduce((s, p) => {
+      const c = charById.get(p.id);
+      return s + (c ? powerScore(c) : 0);
+    }, 0);
+    const cpuPower = cpuPicks.reduce((s, p) => {
+      const c = charById.get(p.id);
+      return s + (c ? powerScore(c) : 0);
+    }, 0);
+    const totalPow = userPower + cpuPower;
+    const userPowerPct = totalPow > 0 ? userPower / totalPow : 0.5;
     return (
       <div className="min-h-full bg-background px-3 pt-4 pb-28">
         <div className="mx-auto max-w-3xl">
@@ -995,10 +1005,57 @@ export function Tournaments() {
             )}
           </div>
 
+          {/* Snake-order pick tracker */}
+          <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1">
+            {draftOrder.map((o, i) => {
+              const done = i < picks.length;
+              const active = i === picks.length && !draftComplete;
+              return (
+                <div
+                  key={i}
+                  className={`flex h-6 min-w-6 flex-1 items-center justify-center rounded-md border text-[9px] font-black transition-all ${
+                    o === "user"
+                      ? done
+                        ? "border-primary/60 bg-primary/25 text-primary"
+                        : "border-primary/25 text-primary/60"
+                      : done
+                        ? "border-sky-400/60 bg-sky-400/25 text-sky-300"
+                        : "border-sky-400/25 text-sky-400/60"
+                  } ${active ? "turn-pulse scale-110 border-dashed" : ""}`}
+                  style={
+                    active
+                      ? {
+                          ["--turn-ring" as string]:
+                            o === "user" ? "rgba(244,63,94,0.4)" : "rgba(56,189,248,0.4)",
+                        }
+                      : undefined
+                  }
+                  title={`Pick ${i + 1} — ${o === "user" ? "You" : "CPU"}`}
+                >
+                  {o === "user" ? "Y" : "C"}
+                </div>
+              );
+            })}
+          </div>
+
           {/* Squad columns */}
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <DraftSquad title="Your Squad" owner="user" picks={userPicks} charById={charById} size={size / 2} />
-            <DraftSquad title="CPU Squad" owner="cpu" picks={cpuPicks} charById={charById} size={size / 2} />
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <DraftSquad
+              title="Your Squad"
+              owner="user"
+              picks={userPicks}
+              charById={charById}
+              size={size / 2}
+              powerPct={userPowerPct}
+            />
+            <DraftSquad
+              title="CPU Squad"
+              owner="cpu"
+              picks={cpuPicks}
+              charById={charById}
+              size={size / 2}
+              powerPct={1 - userPowerPct}
+            />
           </div>
 
           {/* Search + filter */}
@@ -1078,34 +1135,64 @@ export function Tournaments() {
   return (
     <div className="min-h-full bg-background px-3 pt-4 pb-28">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-center gap-2">
-          <Trophy className="h-7 w-7 text-primary" strokeWidth={2.5} />
-          <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">
-            Tournament
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Draft against the CPU — you alternate picks, then your fighters battle through the bracket. Every round-one match is you vs the computer. Watch any match in full.
-        </p>
-
-        {/* Draft a friend (async PvP) */}
-        <button
-          onClick={() => {
-            setPvpInitialCode(null);
-            setShowPvp(true);
-          }}
-          data-testid="button-draft-friend"
-          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left transition-all hover:border-sky-400/60 hover:bg-sky-400/15"
-        >
-          <Share2 className="h-5 w-5 flex-shrink-0 text-sky-400" />
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-black uppercase tracking-wide text-sky-300">Draft a Friend</div>
-            <div className="text-[11px] text-muted-foreground">
-              Share a code, draft alternately, then both watch the same bracket play out.
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-5">
+          <div className="absolute inset-0 -z-0 opacity-30">
+            <div className="champ-sweep absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          </div>
+          <div className="relative flex items-center gap-2.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/40 bg-primary/15">
+              <Trophy className="h-6 w-6 text-primary" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black uppercase leading-none tracking-tight text-foreground">
+                Tournament
+              </h1>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/80">
+                Draft · Battle · Crown a champion
+              </p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 flex-shrink-0 text-sky-400" />
-        </button>
+          <p className="relative mt-3 text-sm text-muted-foreground">
+            Pick your fighters one by one, then watch the bracket play out match by match.
+          </p>
+        </div>
+
+        {/* Pick a mode */}
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {/* Draft a friend (async PvP) */}
+          <button
+            onClick={() => {
+              setPvpInitialCode(null);
+              setShowPvp(true);
+            }}
+            data-testid="button-draft-friend"
+            className="group flex flex-col gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-sky-400/60 hover:bg-sky-400/15"
+          >
+            <div className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 flex-shrink-0 text-sky-400" />
+              <span className="text-sm font-black uppercase tracking-wide text-sky-300">Draft a Friend</span>
+              <ChevronRight className="ml-auto h-5 w-5 flex-shrink-0 text-sky-400 transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Share a code, draft alternately, then both watch the same bracket play out.
+            </span>
+          </button>
+
+          {/* Draft vs CPU (configured below) */}
+          <div className="flex flex-col gap-2 rounded-2xl border border-primary/40 bg-primary/10 p-4">
+            <div className="flex items-center gap-2">
+              <Cpu className="h-5 w-5 flex-shrink-0 text-primary" />
+              <span className="text-sm font-black uppercase tracking-wide text-primary">Draft vs CPU</span>
+              <span className="ml-auto rounded-full bg-primary/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-primary">
+                Set up below
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Snake-draft against the computer, then run the bracket. Configure it below.
+            </span>
+          </div>
+        </div>
 
         {/* Running record vs CPU */}
         {cpuRecord.wins + cpuRecord.losses > 0 && (
@@ -1204,20 +1291,33 @@ export function Tournaments() {
           <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Bracket size
           </div>
-          <div className="mt-2 flex gap-2">
-            {SIZE_OPTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSize(s)}
-                className={`flex-1 rounded-lg border px-4 py-3 text-center font-black uppercase tracking-widest transition-all ${
-                  size === s
-                    ? "border-primary bg-primary/15 text-primary"
-                    : "border-white/15 text-muted-foreground hover:bg-white/5"
-                }`}
-              >
-                {s} Fighters
-              </button>
-            ))}
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {SIZE_OPTIONS.map((s) => {
+              const selected = size === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center transition-all ${
+                    selected
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-white/15 text-muted-foreground hover:bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-end gap-0.5" aria-hidden>
+                    {Array.from({ length: Math.log2(s) }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={`w-1 rounded-sm ${selected ? "bg-primary" : "bg-white/30"}`}
+                        style={{ height: 6 + i * 4 }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-lg font-black leading-none">{s}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest">Fighters</span>
+                </button>
+              );
+            })}
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
             You and the CPU each draft {size / 2} fighters.
@@ -1266,10 +1366,10 @@ export function Tournaments() {
           <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-primary">
             <Swords className="h-3.5 w-3.5" /> How the draft works
           </div>
-          <ol className="mt-2 space-y-1.5 text-xs text-muted-foreground">
-            <li>1. You pick first, then you and the CPU alternate (snake order).</li>
-            <li>2. The CPU drafts strong fighters — choose wisely.</li>
-            <li>3. Your fighters meet the CPU's in round one, then the bracket runs to a champion.</li>
+          <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
+            <li>1. Snake draft — you pick first, then alternate with the CPU.</li>
+            <li>2. Round one pits your fighters against the CPU's.</li>
+            <li>3. The bracket runs to a single champion.</li>
           </ol>
         </div>
       </div>
@@ -1557,6 +1657,16 @@ function PvpDraftRoom({
   const oppRawName = role === "creator" ? session?.joinerName : session?.creatorName;
   const myName = (myRawName ?? "").trim() || "You";
   const oppName = (oppRawName ?? "").trim() || "Opponent";
+  const myPower = myPicks.reduce((s, p) => {
+    const c = charById.get(p.id);
+    return s + (c ? powerScore(c) : 0);
+  }, 0);
+  const oppPower = oppPicks.reduce((s, p) => {
+    const c = charById.get(p.id);
+    return s + (c ? powerScore(c) : 0);
+  }, 0);
+  const totalPvpPower = myPower + oppPower;
+  const myPowerPct = totalPvpPower > 0 ? myPower / totalPvpPower : 0.5;
 
   const universeOptions = useMemo<UniverseOption[]>(() => {
     const counts = new Map<string, number>();
@@ -1778,6 +1888,8 @@ function PvpDraftRoom({
               picks={myPicks.map((p) => ({ id: p.id, owner: "user" as Owner }))}
               charById={charById}
               size={perSide}
+              powerPct={myPowerPct}
+              isCpuSide={false}
             />
             <DraftSquad
               title={oppName}
@@ -1785,6 +1897,8 @@ function PvpDraftRoom({
               picks={oppPicks.map((p) => ({ id: p.id, owner: "cpu" as Owner }))}
               charById={charById}
               size={perSide}
+              powerPct={1 - myPowerPct}
+              isCpuSide={false}
             />
           </div>
         )}
@@ -1841,24 +1955,45 @@ function DraftSquad({
   picks,
   charById,
   size,
+  powerPct,
+  isCpuSide,
 }: {
   title: string;
   owner: Owner;
   picks: Pick[];
   charById: Map<number, Character>;
   size: number;
+  /** Share of combined squad power (0–1) — drives the strength bar. */
+  powerPct?: number;
+  /** When true, show a CPU icon; otherwise a user icon (PvP both sides are people). */
+  isCpuSide?: boolean;
 }) {
   const accent = owner === "user" ? "text-primary" : "text-sky-400";
   const ring = owner === "user" ? "border-primary/30" : "border-sky-400/30";
+  const barColor = owner === "user" ? "bg-primary" : "bg-sky-400";
+  const showCpuIcon = isCpuSide ?? owner === "cpu";
   return (
     <div className={`rounded-xl border ${ring} bg-black/30 p-2.5`}>
       <div className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest ${accent}`}>
-        {owner === "user" ? <User className="h-3.5 w-3.5" /> : <Cpu className="h-3.5 w-3.5" />}
-        {title}
+        {showCpuIcon ? <Cpu className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+        <span className="truncate">{title}</span>
         <span className="ml-auto text-muted-foreground">
           {picks.length}/{size}
         </span>
       </div>
+      {powerPct != null && (
+        <div className="mt-2">
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className={`h-full rounded-full ${barColor} transition-all duration-500`}
+              style={{ width: `${Math.round(Math.max(0, Math.min(1, powerPct)) * 100)}%` }}
+            />
+          </div>
+          <div className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+            Squad power
+          </div>
+        </div>
+      )}
       <div className="mt-2 flex flex-col gap-1.5">
         {Array.from({ length: size }).map((_, i) => {
           const p = picks[i];
@@ -1925,6 +2060,19 @@ function ChampionBanner({
 
   const championPortrait = champion?.imageUrl ?? null;
 
+  // Rising embers behind the champion — randomized once per mount.
+  const embers = useMemo(
+    () =>
+      Array.from({ length: 18 }).map(() => ({
+        left: Math.random() * 100,
+        drift: `${(Math.random() - 0.5) * 70}px`,
+        delay: Math.random() * 3,
+        dur: 3.2 + Math.random() * 2.6,
+        size: 3 + Math.random() * 5,
+      })),
+    [],
+  );
+
   async function share() {
     setSharing(true);
     setShareError(null);
@@ -1966,26 +2114,50 @@ function ChampionBanner({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-b from-amber-400/15 via-amber-400/5 to-transparent p-5 text-center">
-      <div className="flex items-center justify-center gap-2 text-amber-400">
-        <Crown className="h-5 w-5" />
+      {/* Atmosphere: light rays + rising embers behind the content */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="victory-light-ray absolute left-1/2 top-0 h-full w-40 -translate-x-1/2 bg-gradient-to-b from-amber-300/25 to-transparent blur-2xl" />
+        <div className="victory-light-ray absolute left-1/4 top-0 h-full w-24 -translate-x-1/2 bg-gradient-to-b from-amber-400/15 to-transparent blur-2xl" style={{ animationDelay: "0.8s" }} />
+        <div className="victory-light-ray absolute left-3/4 top-0 h-full w-24 -translate-x-1/2 bg-gradient-to-b from-amber-400/15 to-transparent blur-2xl" style={{ animationDelay: "1.6s" }} />
+        {embers.map((e, i) => (
+          <span
+            key={i}
+            className="champ-ember bg-amber-300"
+            style={{
+              left: `${e.left}%`,
+              width: e.size,
+              height: e.size,
+              ["--drift" as string]: e.drift,
+              ["--dur" as string]: `${e.dur}s`,
+              ["--delay" as string]: `${e.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative flex items-center justify-center gap-2 text-amber-400">
+        <Crown className="victory-crown h-5 w-5" />
         <span className="text-[11px] font-black uppercase tracking-[0.3em]">
           {tournament.name} Champion
         </span>
-        <Crown className="h-5 w-5" />
+        <Crown className="victory-crown h-5 w-5" />
       </div>
-      <div className="mt-4 flex flex-col items-center">
-        {championPortrait ? (
-          <img
-            src={championPortrait}
-            alt={tournament.championName}
-            className="h-28 w-28 rounded-full border-2 border-amber-400 object-cover shadow-[0_0_40px_rgba(251,191,36,0.5)]"
-          />
-        ) : (
-          <div className="flex h-28 w-28 items-center justify-center rounded-full border-2 border-amber-400 bg-black/40">
-            <Trophy className="h-12 w-12 text-amber-400" />
-          </div>
-        )}
-        <h1 className="mt-3 text-3xl font-black uppercase tracking-tight text-foreground">
+      <div className="relative mt-4 flex flex-col items-center">
+        <div className="relative">
+          <div aria-hidden className="absolute inset-0 -z-10 rounded-full bg-amber-400/30 blur-2xl victory-glow-pulse" />
+          {championPortrait ? (
+            <img
+              src={championPortrait}
+              alt={tournament.championName}
+              className="victory-portrait-rise h-28 w-28 rounded-full border-2 border-amber-400 object-cover shadow-[0_0_40px_rgba(251,191,36,0.5)]"
+            />
+          ) : (
+            <div className="victory-portrait-rise flex h-28 w-28 items-center justify-center rounded-full border-2 border-amber-400 bg-black/40">
+              <Trophy className="h-12 w-12 text-amber-400" />
+            </div>
+          )}
+        </div>
+        <h1 className="victory-slam mt-3 text-3xl font-black uppercase tracking-tight text-foreground">
           {tournament.championName}
         </h1>
         {champion?.universe && (
@@ -2079,11 +2251,17 @@ function BracketMatchCard({
   return (
     <div
       className={`relative rounded-lg border bg-black/30 p-2 transition-all duration-300 ${
-        showUpset ? "border-amber-400/50" : showResult ? "border-white/10" : "border-white/5"
-      } ${revealed ? "opacity-100 translate-y-0" : "opacity-40 translate-y-1"}`}
+        showUpset
+          ? "border-amber-400/50 shadow-[0_0_18px_rgba(251,191,36,0.18)]"
+          : showResult
+            ? "border-white/10"
+            : "border-white/5"
+      } ${revealed ? "opacity-100 translate-y-0" : "opacity-40 translate-y-1"} ${
+        showResult ? "bracket-pop" : ""
+      }`}
     >
       {showUpset && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-black shadow-[0_0_12px_rgba(251,191,36,0.6)]">
+        <div className="upset-shake absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-black shadow-[0_0_12px_rgba(251,191,36,0.6)]">
           ⚡ Upset
         </div>
       )}
