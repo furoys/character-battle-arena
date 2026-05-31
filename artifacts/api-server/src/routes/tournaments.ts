@@ -17,6 +17,9 @@ import { resolveFightVerdict } from "../lib/fightSimulator";
 
 const router: IRouter = Router();
 
+// Developer Legends (Chris, Troy, Tim, Cory) have max stats and are barred from tournaments.
+const EXCLUDED_UNIVERSE = "Developer Legends";
+
 // ── Cache key helper (mirrors fights.ts getCacheKey) ──────────────────────────
 function getCacheKey(
   team1Ids: number[],
@@ -238,6 +241,16 @@ router.post("/tournaments", async (req, res): Promise<void> => {
   const unknownIds = requestedIds.filter((id) => !charMap.has(id));
   if (unknownIds.length > 0) {
     res.status(400).json({ error: `Unknown character id(s): ${unknownIds.join(", ")}` });
+    return;
+  }
+  // Developer Legends have max stats and would trivially win any bracket, so they
+  // are barred from tournaments. The frontend hides them, but enforce it here too
+  // so a forged request can't slip one in.
+  const barred = requestedIds.filter(
+    (id) => charMap.get(id)?.universe === EXCLUDED_UNIVERSE,
+  );
+  if (barred.length > 0) {
+    res.status(400).json({ error: "Developer Legends are not allowed in tournaments" });
     return;
   }
   const seeded: Character[] = [];

@@ -36,6 +36,9 @@ type WatchTarget = {
 
 const SIZE_OPTIONS: Size[] = [8, 16];
 
+// Developer Legends (Chris, Troy, Tim, Cory) have max stats and are barred from tournaments.
+const EXCLUDED_UNIVERSE = "Developer Legends";
+
 type Owner = "user" | "cpu";
 type Pick = { id: number; owner: Owner };
 
@@ -260,11 +263,19 @@ export function Tournaments() {
     return m;
   }, [characters]);
 
+  // Developer Legends (Chris, Troy, Tim, Cory) have max stats and would trivially
+  // win any bracket, so they're barred from tournaments. charById above still
+  // includes them so old cups that contain them render correctly.
+  const draftable = useMemo(
+    () => (characters ?? []).filter((c) => c.universe !== EXCLUDED_UNIVERSE),
+    [characters],
+  );
+
   const universes = useMemo(() => {
     const set = new Set<string>();
-    (characters ?? []).forEach((c) => c.universe && set.add(c.universe));
+    draftable.forEach((c) => c.universe && set.add(c.universe));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [characters]);
+  }, [draftable]);
 
   // ── Draft derivations ──────────────────────────────────────────────────────
   const draftOrder = useMemo(() => buildDraftOrder(size), [size]);
@@ -277,13 +288,13 @@ export function Tournaments() {
   // Roster available to draft from: not yet picked, plus search/universe filter.
   const availableFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (characters ?? []).filter((c) => {
+    return draftable.filter((c) => {
       if (pickedIds.has(c.id)) return false;
       if (universeFilter !== "all" && c.universe !== universeFilter) return false;
       if (q && !c.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [characters, search, universeFilter, pickedIds]);
+  }, [draftable, search, universeFilter, pickedIds]);
 
   function startDraft() {
     setPicks([]);
@@ -304,14 +315,14 @@ export function Tournaments() {
   useEffect(() => {
     if (phase !== "drafting" || currentOwner !== "cpu" || draftComplete) return;
     setCpuThinking(true);
-    const pool = (characters ?? []).filter((c) => !pickedIds.has(c.id));
+    const pool = draftable.filter((c) => !pickedIds.has(c.id));
     const choice = cpuChoose(pool);
     const t = setTimeout(() => {
       if (choice) setPicks((prev) => [...prev, { id: choice.id, owner: "cpu" }]);
       setCpuThinking(false);
     }, 550 + Math.random() * 350);
     return () => clearTimeout(t);
-  }, [phase, currentOwner, draftComplete, characters, pickedIds]);
+  }, [phase, currentOwner, draftComplete, draftable, pickedIds]);
 
   async function submitDraft() {
     try {
@@ -818,7 +829,7 @@ export function Tournaments() {
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <button
             onClick={startDraft}
-            disabled={isLoading || (characters?.length ?? 0) < size}
+            disabled={isLoading || draftable.length < size}
             className="ml-auto flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-black uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Swords className="h-5 w-5" /> Start Draft
