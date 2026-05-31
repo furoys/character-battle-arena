@@ -1,0 +1,503 @@
+A.v.A ROSTER COMPARISON
+Attached list (AVA_Roster_1500_CLEAN_SORTED) vs current live roster
+============================================================
+
+Attached list:   1,500 characters
+Current roster:  1,207 characters
+In both:         1,165
+MISSING from your roster (in list, not in DB): 335
+EXTRA in your roster (in DB, not in list):     42
+
+============================================================
+SECTION 1 — IN THE LIST BUT MISSING FROM YOUR ROSTER (335)
+(grouped by the list's universe label)
+============================================================
+
+Anime (28)
+  - Garou (Monster)
+  - Genos (Upgrade)
+  - Gon (Adult Form)
+  - Hisoka
+  - Ichigo (Bankai)
+  - Jiren (Full Power)
+  - Jogo
+  - Kaido (Hybrid)
+  - Kakashi (DMS)
+  - Kenpachi (Bankai)
+  - Kokushibo (Upper Moon 1)
+  - Kurapika
+  - Levi (Prime)
+  - Madara (Ten Tails)
+  - Mahito
+  - Megumi Fushiguro
+  - Mikasa (Ackerman)
+  - Obito (Ten Tails)
+  - Reiner Braun
+  - Saitama (Serious Punch)
+  - Sanji (Ifrit Jambe)
+  - Shanks (Haki Master)
+  - Tanjiro (Demon King)
+  - Whis (Angel)
+  - Whitebeard (Prime)
+  - Yuji Itadori
+  - Zeke Yeager
+  - Zoro (Enma)
+
+Cartoon Network (15)
+  - Billy
+  - Edd
+  - Eddy
+  - Grim
+  - Gwen Tennyson
+  - HIM
+  - Kevin Levin
+  - Mandark
+  - Mandy
+  - Mojo Jojo
+  - Muriel Bagge
+  - Numbuh Five
+  - Numbuh One
+  - Powerpuff Girls
+  - Vilgax
+
+Comics (18)
+  - Flash (Wally West Full Speed)
+  - Galactus (Lifebringer)
+  - Green Lantern (White Lantern)
+  - Infinity
+  - Knull (King in Black)
+  - Living Tribunal (Cosmic)
+  - Lucifer Morningstar (DC)
+  - Martian Manhunter (Full Power)
+  - Michael Demiurgos (DC)
+  - Scarlet Witch (House of M)
+  - Sentry (Void)
+  - Shazam (Full Power)
+  - Silver Surfer (Power Cosmic)
+  - Thanos (Astral Regulator)
+  - The Beyonder (Secret Wars)
+  - The Presence (DC)
+  - The Spectre (Full Power)
+  - Wonder Woman (God Mode)
+
+DC (1)
+  - The Presence (True Form)
+
+Disney (1)
+  - Te K■■
+
+Doctor Who (3)
+  - The Doctor
+  - The Master
+  - The Silence
+
+Family Guy (7)
+  - Herbert
+  - Joe Swanson
+  - Lois Griffin
+  - Meg Griffin
+  - Peter Griffin
+  - Quagmire
+  - Stewie Griffin
+
+Futurama (4)
+  - Fry
+  - Leela
+  - Professor Farnsworth
+  - Zoidberg
+
+Half-Life (1)
+  - G-Man
+
+Horror (92)
+  - Five Nights Bonnie
+  - Five Nights Chica
+  - Five Nights Foxy
+  - Five Nights Freddy
+  - Frankenstein's Monster
+  - Freddy Krueger (Dream World)
+  - Ghostface
+  - Gremlin (Stripe)
+  - Hellboy (Demon Form)
+  - Hereditary Demon (Paimon)
+  - Hoffman (Saw)
+  - Insidious Bride in Black
+  - Insidious Lipstick Demon
+  - Invisible Man
+  - It Follows Entity
+  - Jason Voorhees (Uber Jason)
+  - Jigsaw
+  - Ju-On Spirit
+  - Kayako Saeki
+  - Krampus
+  - Leatherface
+  - Maxine (X)
+  - Michael Myers (Halloween Kills)
+  - Midsommar Cultist
+  - Nosferatu
+  - Pazuzu
+  - Pearl (X)
+  - Pennywise (IT 2017)
+  - Pinhead (Hell Priest)
+  - Predalien
+  - Predator (City Hunter)
+  - Predator (Jungle Hunter)
+  - Pumpkinhead
+  - Regan MacNeil
+  - Resident Evil Licker
+  - Resident Evil Nemesis (Mr. X)
+  - Sadako (Ringu)
+  - Samara Morgan
+  - Security Breach Glamrock Freddy
+  - Security Breach Vanny
+  - Silent Hill Nurse
+  - Silent Hill Pyramid Head
+  - Slender Man
+  - Smile Entity
+  - Spawn (Necroplasm)
+  - Springtrap
+  - Terrifier
+  - The Autopsy of Jane Doe Entity
+  - The Black Phone Grabber
+  - The Blair Witch
+  - The Collector (The Collector)
+  - The Conjuring Crooked Man
+  - The Conjuring Demon
+  - The Creeper (Jeepers Creepers)
+  - The Crooked Man
+  - The Descent Crawlers
+  - The Evil Dead Tree
+  - The Exorcist Believer Demon
+  - The Exorcist Demon
+  - The Fly (Brundlefly)
+  - The Grudge (Onryo)
+  - The Grudge House
+  - The Hills Have Eyes Mutant
+  - The Invisible Man (2020)
+  - The Lich King (Horror Adjacent)
+  - The Lighthouse Keeper (Psych)
+  - The Menu Chef (Psych Horror)
+  - The Mist Behemoth
+  - The Mist Creatures
+  - The Nun
+  - The Nun (Valak Form)
+  - The Nun II Demon
+  - The Orphan (Esther)
+  - The Predator (Upgrade)
+  - The Ring Tape Spirit
+  - The Ring Well Spirit
+  - The Ritual Creature
+  - The Shining Jack Torrance
+  - The Shining Overlook
+  - The Strangers
+  - The Tall Man (Phantasm)
+  - The Thing (John Carpenter)
+  - The Thing Dog Creature
+  - The Witch (Black Phillip)
+  - The Wolfman
+  - Tiffany Valentine
+  - Underworld Selene
+  - Underworld Viktor
+  - Valak
+  - Van Helsing Dracula
+  - Wrong Turn Cannibal
+  - Xenomorph Queen
+
+Lovecraft Mythos (1)
+  - Nyarlathotep
+
+Marvel (2)
+  - T'Challa Black Panther
+  - The One Above All (True Form)
+
+Mixed (18)
+  - Fry (Time Travel)
+  - Hades (Mythology)
+  - Hellboy (Full Power)
+  - Hercules (Myth)
+  - Homer (Treehouse of Horror)
+  - John Constantine (DC)
+  - Morty (Evil Morty Prime)
+  - Patrick (Toon Force)
+  - Peter Griffin (Chicken Fight)
+  - Randy (Tegridy)
+  - Rick Sanchez (Prep)
+  - Spawn (God Form)
+  - SpongeBob (Toon Force)
+  - Stewie (Time Machine)
+  - Sypha Belnades
+  - Trevor Belmont
+  - Vilgax (Conqueror)
+  - Zeus (Mythology)
+
+Mortal Kombat (40)
+  - Fujin
+  - Geras
+  - Havik
+  - Hotaru
+  - Hsu Hao
+  - Jacqui Briggs
+  - Jax Briggs
+  - Kabal
+  - Kano
+  - Kenshi
+  - Khameleon
+  - Kintaro
+  - Kira
+  - Kobra
+  - Kollector
+  - Kotal Kahn
+  - Kronika
+  - Kung Lao
+  - Li Mei
+  - Mavado
+  - Meat
+  - Mokap
+  - Motaro
+  - Nightwolf
+  - Nitara
+  - Noob Saibot
+  - Onaga
+  - Quan Chi
+  - Rain
+  - Reptile
+  - Sheeva
+  - Shujinko
+  - Sindel
+  - Skarlet
+  - Smoke
+  - Sonya Blade
+  - Stryker
+  - Takeda
+  - Tanya
+  - Triborg
+
+Narnia (1)
+  - The White Witch
+
+Nickelodeon (9)
+  - Aang (Nick)
+  - Jimmy Neutron
+  - Korra
+  - Patrick Star
+  - Sheen Estevez
+  - SpongeBob
+  - Squidward
+  - Timmy Turner
+  - Wanda
+
+Rick and Morty (4)
+  - Jerry Smith
+  - Morty Smith
+  - Rick Sanchez
+  - Summer Smith
+
+SCP (4)
+  - SCP-096
+  - SCP-173
+  - SCP-682
+  - The Scarlet King
+
+South Park (5)
+  - Kenny McCormick
+  - Kyle Broflovski
+  - Mr Garrison
+  - Randy Marsh
+  - Stan Marsh
+
+Street Fighter (35)
+  - G
+  - Gill
+  - Hakan
+  - Hugo
+  - Ibuki
+  - Jamie
+  - JP
+  - Juri
+  - Kage
+  - Karin
+  - Kimberly
+  - Laura
+  - Lily
+  - Luke
+  - Makoto
+  - Manon
+  - Marisa
+  - Menat
+  - Necalli
+  - Oro
+  - Poison
+  - Q
+  - Rashid
+  - Remy
+  - Rolento
+  - Rose
+  - Rufus
+  - Sagat
+  - Sean
+  - Seth
+  - T. Hawk
+  - Urien
+  - Vega
+  - Zangief
+  - Zeku
+
+Teletoon (4)
+  - Johnny Test
+  - Total Drama Duncan
+  - Total Drama Gwen
+  - Total Drama Owen
+
+The Simpsons (9)
+  - Homer Simpson
+  - Krusty the Clown
+  - Lisa Simpson
+  - Marge Simpson
+  - Milhouse
+  - Moe Szyslak
+  - Mr Burns
+  - Ned Flanders
+  - Sideshow Bob
+
+Transformers (2)
+  - Primus
+  - Unicron
+
+Video Game (31)
+  - Fortnite Jonesy
+  - Fortnite Midas
+  - Fortnite Peely
+  - Ganondorf (Demon King)
+  - Genji
+  - Geralt (Master)
+  - Knuckles (Master Emerald)
+  - Lady Maria (Nightmare)
+  - Lilith
+  - Link (TOTK)
+  - Luigi (Poltergust)
+  - Malenia (Goddess)
+  - Mario (Fire Flower)
+  - Master Chief (Mjolnir)
+  - Noctis (Armiger)
+  - Odin (Ragnarok)
+  - Overwatch Tracer
+  - Radahn (Starscourge)
+  - Raiden (Cyborg)
+  - Reaper
+  - Ridley
+  - Samus (Power Suit)
+  - Sephiroth (Safer)
+  - Shadow (Chaos Control)
+  - Sigma
+  - Solid Snake (Old Snake)
+  - Sonic (Super)
+  - Thor (Ragnarok)
+  - Tyrael
+  - Yennefer (Mage)
+  - Zelda (Sage)
+
+============================================================
+SECTION 2 — IN YOUR ROSTER BUT NOT IN THE LIST (42)
+============================================================
+
+Adventure Time (1)
+  - Adventure Time
+
+Akira (1)
+  - Akira
+
+Alien (1)
+  - Alien
+
+Alita (1)
+  - Alita: Battle Angel
+
+Asura's Wrath (1)
+  - Asura's Wrath
+
+Baki the Grappler (1)
+  - Baki
+
+Ben 10 (1)
+  - Ben 10
+
+Boruto (1)
+  - Boruto
+
+Bourne (1)
+  - Bourne
+
+Boxing (2)
+  - Anthony Joshua
+  - Deontay Wilder
+
+Chainsaw Man (1)
+  - Chainsaw Man
+
+DC (4)
+  - Death (DC)
+  - Delirium
+  - Desire
+  - Doctor Light
+
+Death Note (1)
+  - L
+
+Developer Legends (1)
+  - Cory Peters
+
+Devilman (1)
+  - Devilman
+
+Dirty Harry (1)
+  - Dirty Harry
+
+Doom (1)
+  - Doom
+
+Edd n Eddy" (2)
+  - Edd,"Ed
+  - Eddy,"Ed
+
+Films (1)
+  - V
+
+Full Bleed Studios (1)
+  - Pitt
+
+Kingdom (1)
+  - Te Kā
+
+Legacy Comics (1)
+  - Martian Manhunter's Nemesis (Despero)
+
+Multiverse Comics (2)
+  - T'Challa / Black Panther
+  - X-23
+
+Mythology (2)
+  - Cain
+  - Death
+
+Naruto (1)
+  - Naruto
+
+NieR: Automata (3)
+  - 2B
+  - 9S
+  - A2
+
+Supernatural (2)
+  - Abaddon
+  - Amara
+
+Terminator (3)
+  - T-1000
+  - Terminator T-3000
+  - Terminator T-800
+
+Variants (1)
+  - Giorno Giovanna (Gold Experience Requiem)
+
+Wishmaster (1)
+  - Djinn

@@ -6677,3 +6677,15 @@ id = "LV2E8WpZ45QJCEZI21-zL"
 uri = "file://daily-forecast-40-days.md"
 type = "text"
 title = "Daily Lineup Forecast — Next 40 Days"
+
+[[outputs]]
+id = "OKVaPrTcaeeTb-B9AYomq"
+uri = "file://attached_assets/roster_comparison.txt"
+type = "text"
+title = "Roster Comparison — Full Report (grouped by universe)"
+
+[[outputs]]
+id = "BQFlwr1tkxJzduS5pfjBw"
+uri = "file://attached_assets/roster_comparison.csv"
+type = "table"
+title = "Roster Comparison — CSV (missing + extra, with status)"
