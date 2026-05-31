@@ -48,6 +48,11 @@ export const tournamentsTable = pgTable("tournaments", {
   mode: text("mode"),
   championId: integer("champion_id").notNull(),
   championName: text("champion_name").notNull(),
+  // PvP "Draft a Friend" cups: the two players' display names, mapped
+  // creator → "user" side, joiner → "cpu" side. Null for solo/PvE cups,
+  // in which case the UI falls back to "You" / "CPU".
+  creatorName: text("creator_name"),
+  joinerName: text("joiner_name"),
   bracket: jsonb("bracket").notNull().$type<TournamentBracket>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

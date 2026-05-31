@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useUser } from "@clerk/react";
 import {
   Trophy,
   Swords,
@@ -659,6 +660,13 @@ export function Tournaments() {
     }
     const champOwner = ownerById.get(tournament.championId) ?? null;
 
+    // PvP "Draft a Friend" cups show both players' names in place of "You"/"CPU".
+    // Detect PvP via the durable theme label (names may be blank if guests skip
+    // them), and fall back to neutral PvP labels rather than "CPU" when blank.
+    const isPvp = tournament.themeLabel === "PvP Draft";
+    const userSideLabel = (tournament.creatorName ?? "").trim() || (isPvp ? "Host" : "You");
+    const cpuSideLabel = (tournament.joinerName ?? "").trim() || (isPvp ? "Challenger" : "CPU");
+
     // ── Draft grades + "steal of the draft" (draft cups only) ────────────────
     // Round 0 competitors are in seed = pick order, so we can reconstruct each
     // side's squad and the order fighters were drafted in.
@@ -697,6 +705,19 @@ export function Tournaments() {
               tournament={tournament}
               champion={charById.get(tournament.championId) ?? null}
               ownerLabel={isDraft ? champOwner : null}
+              ownerText={
+                !isDraft
+                  ? null
+                  : champOwner === "user"
+                    ? isPvp
+                      ? `${userSideLabel}'s champion`
+                      : "Your champion"
+                    : champOwner === "cpu"
+                      ? isPvp
+                        ? `${cpuSideLabel}'s champion`
+                        : "CPU's champion"
+                      : null
+              }
             />
           ) : (
             <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/30 py-8">
@@ -722,7 +743,7 @@ export function Tournaments() {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-primary">
-                    <User className="h-3.5 w-3.5" /> You
+                    <User className="h-3.5 w-3.5" /> {userSideLabel}
                   </div>
                   <div className="text-4xl font-black tabular-nums text-foreground">{userMatchWins}</div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Wins</div>
@@ -732,9 +753,9 @@ export function Tournaments() {
                     {!allRevealed
                       ? "Running…"
                       : champOwner === "user"
-                        ? "You win the cup"
+                        ? `${userSideLabel} wins the cup`
                         : champOwner === "cpu"
-                          ? "CPU wins the cup"
+                          ? `${cpuSideLabel} wins the cup`
                           : "Final"}
                   </div>
                   <div
@@ -749,9 +770,9 @@ export function Tournaments() {
                     {!allRevealed
                       ? "VS"
                       : champOwner === "user"
-                        ? "🏆 You"
+                        ? `🏆 ${userSideLabel}`
                         : champOwner === "cpu"
-                          ? "CPU 🏆"
+                          ? `${cpuSideLabel} 🏆`
                           : "—"}
                   </div>
                 </div>
@@ -761,7 +782,7 @@ export function Tournaments() {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-sky-400">
-                    <Cpu className="h-3.5 w-3.5" /> CPU
+                    <Cpu className="h-3.5 w-3.5" /> {cpuSideLabel}
                   </div>
                   <div className="text-4xl font-black tabular-nums text-foreground">{cpuMatchWins}</div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Wins</div>
@@ -778,12 +799,12 @@ export function Tournaments() {
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3">
                   <User className="h-4 w-4 text-primary" />
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">You</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">{userSideLabel}</span>
                   <span className={`text-3xl font-black ${userGrade.color}`}>{userGrade.grade}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-sky-400/30 bg-sky-400/5 py-3">
                   <Cpu className="h-4 w-4 text-sky-400" />
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-sky-400">CPU</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-sky-400">{cpuSideLabel}</span>
                   <span className={`text-3xl font-black ${cpuGrade.color}`}>{cpuGrade.grade}</span>
                 </div>
               </div>
@@ -793,7 +814,11 @@ export function Tournaments() {
                   <span>
                     Steal of the draft:{" "}
                     <span className="font-bold text-amber-300">{stealPick.name}</span>
-                    {stealPick.owner === "user" ? " (You)" : stealPick.owner === "cpu" ? " (CPU)" : ""}
+                    {stealPick.owner === "user"
+                      ? ` (${userSideLabel})`
+                      : stealPick.owner === "cpu"
+                        ? ` (${cpuSideLabel})`
+                        : ""}
                   </span>
                 </div>
               )}
@@ -1278,6 +1303,8 @@ type PvpSession = {
   joinerPresent: boolean;
   tournamentId: number | null;
   championOwner: DraftRole | null;
+  creatorName: string | null;
+  joinerName: string | null;
   expiresAt: string;
 };
 
@@ -1309,8 +1336,11 @@ function PvpDraftRoom({
   onComplete: (tournamentId: number) => void;
   onClose: () => void;
 }) {
+  const { user } = useUser();
+  const suggestedName = user?.firstName || user?.username || "";
   const [view, setView] = useState<"menu" | "room">(initialCode ? "room" : "menu");
   const [createSize, setCreateSize] = useState<Size>(8);
+  const [nameInput, setNameInput] = useState(suggestedName);
   const [joinInput, setJoinInput] = useState("");
   const [code, setCode] = useState<string | null>(initialCode);
   const [token, setToken] = useState<string | null>(null);
@@ -1325,6 +1355,11 @@ function PvpDraftRoom({
   const joinAttemptedRef = useRef(false);
   const shareInputRef = useRef<HTMLInputElement>(null);
 
+  // Prefill the name field from the signed-in Clerk profile once it loads.
+  useEffect(() => {
+    if (suggestedName) setNameInput((prev) => (prev ? prev : suggestedName));
+  }, [suggestedName]);
+
   async function createDraft() {
     setBusy(true);
     setError(null);
@@ -1332,7 +1367,7 @@ function PvpDraftRoom({
       const r = await apiFetch("/api/drafts", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ size: createSize }),
+        body: JSON.stringify({ size: createSize, name: nameInput.trim() || undefined }),
       });
       const d = (await r.json()) as PvpSession & { creatorToken: string; role: DraftRole; error?: string };
       if (!r.ok) throw new Error(d.error || "Could not create draft");
@@ -1368,7 +1403,7 @@ function PvpDraftRoom({
       const r = await apiFetch(`/api/drafts/${c}/join`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: "{}",
+        body: JSON.stringify({ name: nameInput.trim() || undefined }),
       });
       const d = (await r.json()) as PvpSession & { joinerToken: string; role: DraftRole; error?: string };
       if (!r.ok) throw new Error(d.error || "Could not join draft");
@@ -1512,6 +1547,10 @@ function PvpDraftRoom({
   const oppPicks = (session?.picks ?? []).filter((p) => p.owner !== role);
   const myTurn = session?.status === "drafting" && session.turn === role;
   const perSide = session ? session.size / 2 : 0;
+  const myRawName = role === "creator" ? session?.creatorName : session?.joinerName;
+  const oppRawName = role === "creator" ? session?.joinerName : session?.creatorName;
+  const myName = (myRawName ?? "").trim() || "You";
+  const oppName = (oppRawName ?? "").trim() || "Opponent";
 
   const universeOptions = useMemo<UniverseOption[]>(() => {
     const counts = new Map<string, number>();
@@ -1564,8 +1603,30 @@ function PvpDraftRoom({
             </div>
           )}
 
-          {/* Create */}
+          {/* Your name (shared by create + join) */}
           <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <label
+              htmlFor="pvp-name"
+              className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground"
+            >
+              Your name
+            </label>
+            <input
+              id="pvp-name"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="e.g. Alex"
+              maxLength={24}
+              data-testid="input-pvp-name"
+              className="mt-2 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-sky-400 focus:outline-none"
+            />
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Shown to your friend during the draft and on the final bracket.
+            </p>
+          </div>
+
+          {/* Create */}
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
             <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Create a draft</div>
             <div className="mt-2 flex gap-2">
               {SIZE_OPTIONS.map((s) => (
@@ -1697,7 +1758,7 @@ function PvpDraftRoom({
             <span className="text-primary">Your pick — choose a fighter below</span>
           ) : (
             <span className="flex items-center gap-2 text-sky-300">
-              <Loader2 className="h-4 w-4 animate-spin" /> Opponent is picking…
+              <Loader2 className="h-4 w-4 animate-spin" /> {oppName} is picking…
             </span>
           )}
         </div>
@@ -1706,14 +1767,14 @@ function PvpDraftRoom({
         {session && session.status !== "open" && (
           <div className="mt-4 grid grid-cols-2 gap-3">
             <DraftSquad
-              title="Your Squad"
+              title={myName}
               owner="user"
               picks={myPicks.map((p) => ({ id: p.id, owner: "user" as Owner }))}
               charById={charById}
               size={perSide}
             />
             <DraftSquad
-              title="Opponent"
+              title={oppName}
               owner="cpu"
               picks={oppPicks.map((p) => ({ id: p.id, owner: "cpu" as Owner }))}
               charById={charById}
@@ -1827,10 +1888,12 @@ function ChampionBanner({
   tournament,
   champion,
   ownerLabel,
+  ownerText,
 }: {
   tournament: Tournament;
   champion: Character | null;
   ownerLabel?: Owner | null;
+  ownerText?: string | null;
 }) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
@@ -1934,11 +1997,11 @@ function ChampionBanner({
           >
             {ownerLabel === "user" ? (
               <>
-                <User className="h-3.5 w-3.5" /> Your champion
+                <User className="h-3.5 w-3.5" /> {ownerText ?? "Your champion"}
               </>
             ) : (
               <>
-                <Cpu className="h-3.5 w-3.5" /> CPU's champion
+                <Cpu className="h-3.5 w-3.5" /> {ownerText ?? "CPU's champion"}
               </>
             )}
           </div>

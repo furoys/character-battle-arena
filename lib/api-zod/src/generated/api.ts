@@ -512,6 +512,18 @@ export const GetTournamentResponse = zod.object({
     .describe("'draft' for drafted-vs-CPU cups, null\/'classic' otherwise"),
   championId: zod.number(),
   championName: zod.string(),
+  creatorName: zod
+    .string()
+    .nullish()
+    .describe(
+      "PvP draft: name of the creator (user side). Null for solo cups.",
+    ),
+  joinerName: zod
+    .string()
+    .nullish()
+    .describe(
+      "PvP draft: name of the joiner (opponent side). Null for solo cups.",
+    ),
   bracket: zod.object({
     rounds: zod.array(
       zod.object({

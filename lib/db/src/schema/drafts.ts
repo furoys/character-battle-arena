@@ -32,6 +32,10 @@ export const draftSessionsTable = pgTable(
     picks: jsonb("picks").notNull().$type<DraftPick[]>().default([]),
     // Clerk userId of the creator (nullable; guests can host a draft).
     creatorUserId: text("creator_user_id"),
+    // Display names each side chose when creating / joining (nullable; guests
+    // may leave them blank). Shown instead of "You"/"CPU" in the PvP result.
+    creatorName: text("creator_name"),
+    joinerName: text("joiner_name"),
     // Anonymous role tokens (see header). Never exposed by the poll endpoint.
     creatorToken: text("creator_token"),
     joinerToken: text("joiner_token"),

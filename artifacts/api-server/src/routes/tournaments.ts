@@ -215,6 +215,8 @@ router.get("/tournaments/:id", async (req, res): Promise<void> => {
     mode: row.mode ?? null,
     championId: row.championId,
     championName: row.championName,
+    creatorName: row.creatorName ?? null,
+    joinerName: row.joinerName ?? null,
     bracket: row.bracket,
     createdAt: row.createdAt.toISOString(),
   });

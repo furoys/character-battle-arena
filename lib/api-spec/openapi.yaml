@@ -978,6 +978,14 @@ components:
           type: integer
         championName:
           type: string
+        creatorName:
+          type: string
+          nullable: true
+          description: "PvP draft: name of the creator (user side). Null for solo cups."
+        joinerName:
+          type: string
+          nullable: true
+          description: "PvP draft: name of the joiner (opponent side). Null for solo cups."
         bracket:
           $ref: "#/components/schemas/TournamentBracket"
         createdAt:

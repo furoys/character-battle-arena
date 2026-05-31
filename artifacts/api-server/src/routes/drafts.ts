@@ -19,6 +19,13 @@ const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 const VALID_SIZES = new Set([8, 16, 32]);
 const EXCLUDED_UNIVERSE = "Developer Legends";
 
+// Player display name — trimmed, length-capped, blank → null (guests may skip).
+function cleanName(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const t = raw.trim().slice(0, 24);
+  return t.length > 0 ? t : null;
+}
+
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -51,6 +58,8 @@ function publicView(s: typeof draftSessionsTable.$inferSelect) {
     joinerPresent: !!s.joinerToken,
     tournamentId: s.tournamentId ?? null,
     championOwner: s.championOwner ?? null,
+    creatorName: s.creatorName ?? null,
+    joinerName: s.joinerName ?? null,
     expiresAt: s.expiresAt.toISOString(),
   };
 }
@@ -64,6 +73,7 @@ router.post("/drafts", async (req, res): Promise<void> => {
   }
   const creatorToken = randomUUID();
   const creatorUserId = getOptionalUserId(req);
+  const creatorName = cleanName((req.body as { name?: unknown }).name);
   const expiresAt = new Date(Date.now() + DRAFT_TTL_MS);
 
   // Retry on the (vanishingly unlikely) code collision.
@@ -72,7 +82,7 @@ router.post("/drafts", async (req, res): Promise<void> => {
     try {
       const [row] = await db
         .insert(draftSessionsTable)
-        .values({ code, size, status: "open", picks: [], creatorToken, creatorUserId, expiresAt })
+        .values({ code, size, status: "open", picks: [], creatorToken, creatorUserId, creatorName, expiresAt })
         .returning();
       res.status(201).json({ ...publicView(row!), creatorToken, role: "creator" });
       return;
@@ -97,6 +107,7 @@ router.get("/drafts/:code", async (req, res): Promise<void> => {
 // ── POST /api/drafts/:code/join — second player joins ─────────────────────────
 router.post("/drafts/:code/join", async (req, res): Promise<void> => {
   const code = String(req.params["code"] ?? "").toUpperCase();
+  const joinerName = cleanName((req.body as { name?: unknown }).name);
   // Lock the session row for the whole join so two simultaneous joiners can't
   // both claim the open slot (read-then-write race → token/role clobbering).
   const result = await db.transaction(async (tx) => {
@@ -112,7 +123,7 @@ router.post("/drafts/:code/join", async (req, res): Promise<void> => {
     const joinerToken = randomUUID();
     const [updated] = await tx
       .update(draftSessionsTable)
-      .set({ joinerToken, status: "drafting" })
+      .set({ joinerToken, joinerName, status: "drafting" })
       .where(eq(draftSessionsTable.code, code))
       .returning();
     return { ok: true as const, joinerToken, view: publicView(updated!) };
@@ -209,6 +220,8 @@ router.post("/drafts/:code/pick", async (req, res): Promise<void> => {
           mode: "draft",
           championId: champion.id,
           championName: champion.name,
+          creatorName: s.creatorName ?? null,
+          joinerName: s.joinerName ?? null,
           bracket,
         })
         .returning();

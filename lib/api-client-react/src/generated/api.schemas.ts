@@ -263,6 +263,10 @@ export interface Tournament {
   mode?: string | null;
   championId: number;
   championName: string;
+  /** PvP draft: name of the creator (user side). Null for solo cups. */
+  creatorName?: string | null;
+  /** PvP draft: name of the joiner (opponent side). Null for solo cups. */
+  joinerName?: string | null;
   bracket: TournamentBracket;
   createdAt: string;
 }
