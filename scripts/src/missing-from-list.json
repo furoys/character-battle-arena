@@ -1,0 +1,1334 @@
+[
+  {
+    "name": "Garou (Monster)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Genos (Upgrade)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Gon (Adult Form)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Hisoka",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Ichigo (Bankai)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Jiren (Full Power)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Jogo",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Kaido (Hybrid)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Kakashi (DMS)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Kenpachi (Bankai)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Kokushibo (Upper Moon 1)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Kurapika",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Levi (Prime)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Madara (Ten Tails)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Mahito",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Megumi Fushiguro",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Mikasa (Ackerman)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Obito (Ten Tails)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Reiner Braun",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Saitama (Serious Punch)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Sanji (Ifrit Jambe)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Shanks (Haki Master)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Tanjiro (Demon King)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Whis (Angel)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Whitebeard (Prime)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Yuji Itadori",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Zeke Yeager",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Zoro (Enma)",
+    "listUniverse": "Anime"
+  },
+  {
+    "name": "Billy",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Grim",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Gwen Tennyson",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "HIM",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Kevin Levin",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Mandark",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Mandy",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Mojo Jojo",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Muriel Bagge",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Numbuh Five",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Numbuh One",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Powerpuff Girls",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Vilgax",
+    "listUniverse": "Cartoon Network"
+  },
+  {
+    "name": "Flash (Wally West Full Speed)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Galactus (Lifebringer)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Green Lantern (White Lantern)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Infinity",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Knull (King in Black)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Living Tribunal (Cosmic)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Lucifer Morningstar (DC)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Martian Manhunter (Full Power)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Michael Demiurgos (DC)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Scarlet Witch (House of M)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Sentry (Void)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Shazam (Full Power)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Silver Surfer (Power Cosmic)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Thanos (Astral Regulator)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "The Beyonder (Secret Wars)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "The Presence (DC)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "The Spectre (Full Power)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "Wonder Woman (God Mode)",
+    "listUniverse": "Comics"
+  },
+  {
+    "name": "The Presence (True Form)",
+    "listUniverse": "DC"
+  },
+  {
+    "name": "Te K■■",
+    "listUniverse": "Disney"
+  },
+  {
+    "name": "The Doctor",
+    "listUniverse": "Doctor Who"
+  },
+  {
+    "name": "The Master",
+    "listUniverse": "Doctor Who"
+  },
+  {
+    "name": "The Silence",
+    "listUniverse": "Doctor Who"
+  },
+  {
+    "name": "Herbert",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Joe Swanson",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Lois Griffin",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Meg Griffin",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Peter Griffin",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Quagmire",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Stewie Griffin",
+    "listUniverse": "Family Guy"
+  },
+  {
+    "name": "Fry",
+    "listUniverse": "Futurama"
+  },
+  {
+    "name": "Leela",
+    "listUniverse": "Futurama"
+  },
+  {
+    "name": "Professor Farnsworth",
+    "listUniverse": "Futurama"
+  },
+  {
+    "name": "Zoidberg",
+    "listUniverse": "Futurama"
+  },
+  {
+    "name": "G-Man",
+    "listUniverse": "Half-Life"
+  },
+  {
+    "name": "Five Nights Bonnie",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Five Nights Chica",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Five Nights Foxy",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Five Nights Freddy",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Frankenstein's Monster",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Freddy Krueger (Dream World)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Ghostface",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Gremlin (Stripe)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Hellboy (Demon Form)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Hereditary Demon (Paimon)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Hoffman (Saw)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Insidious Bride in Black",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Insidious Lipstick Demon",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Invisible Man",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "It Follows Entity",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Jason Voorhees (Uber Jason)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Jigsaw",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Ju-On Spirit",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Kayako Saeki",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Krampus",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Leatherface",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Maxine (X)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Michael Myers (Halloween Kills)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Midsommar Cultist",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Nosferatu",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Pazuzu",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Pearl (X)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Pennywise (IT 2017)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Pinhead (Hell Priest)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Predalien",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Predator (City Hunter)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Predator (Jungle Hunter)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Pumpkinhead",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Regan MacNeil",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Resident Evil Licker",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Resident Evil Nemesis (Mr. X)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Sadako (Ringu)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Samara Morgan",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Security Breach Glamrock Freddy",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Security Breach Vanny",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Silent Hill Nurse",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Silent Hill Pyramid Head",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Slender Man",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Smile Entity",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Spawn (Necroplasm)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Springtrap",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Terrifier",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Autopsy of Jane Doe Entity",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Black Phone Grabber",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Blair Witch",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Collector (The Collector)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Conjuring Crooked Man",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Conjuring Demon",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Creeper (Jeepers Creepers)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Crooked Man",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Descent Crawlers",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Evil Dead Tree",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Exorcist Believer Demon",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Exorcist Demon",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Fly (Brundlefly)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Grudge (Onryo)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Grudge House",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Hills Have Eyes Mutant",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Invisible Man (2020)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Lich King (Horror Adjacent)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Lighthouse Keeper (Psych)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Menu Chef (Psych Horror)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Mist Behemoth",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Mist Creatures",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Nun",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Nun (Valak Form)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Nun II Demon",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Orphan (Esther)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Predator (Upgrade)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Ring Tape Spirit",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Ring Well Spirit",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Ritual Creature",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Shining Jack Torrance",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Shining Overlook",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Strangers",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Tall Man (Phantasm)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Thing (John Carpenter)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Thing Dog Creature",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Witch (Black Phillip)",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "The Wolfman",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Tiffany Valentine",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Underworld Selene",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Underworld Viktor",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Valak",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Van Helsing Dracula",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Wrong Turn Cannibal",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Xenomorph Queen",
+    "listUniverse": "Horror"
+  },
+  {
+    "name": "Nyarlathotep",
+    "listUniverse": "Lovecraft Mythos"
+  },
+  {
+    "name": "T'Challa Black Panther",
+    "listUniverse": "Marvel"
+  },
+  {
+    "name": "The One Above All (True Form)",
+    "listUniverse": "Marvel"
+  },
+  {
+    "name": "Fry (Time Travel)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Hades (Mythology)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Hellboy (Full Power)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Hercules (Myth)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Homer (Treehouse of Horror)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "John Constantine (DC)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Morty (Evil Morty Prime)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Patrick (Toon Force)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Peter Griffin (Chicken Fight)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Randy (Tegridy)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Rick Sanchez (Prep)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Spawn (God Form)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "SpongeBob (Toon Force)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Stewie (Time Machine)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Sypha Belnades",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Trevor Belmont",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Vilgax (Conqueror)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Zeus (Mythology)",
+    "listUniverse": "Mixed"
+  },
+  {
+    "name": "Fujin",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Geras",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Havik",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Hotaru",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Hsu Hao",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Jacqui Briggs",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Jax Briggs",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kabal",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kano",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kenshi",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Khameleon",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kintaro",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kira",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kobra",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kollector",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kotal Kahn",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kronika",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Kung Lao",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Li Mei",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Mavado",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Meat",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Mokap",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Motaro",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Nightwolf",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Nitara",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Noob Saibot",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Onaga",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Quan Chi",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Rain",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Reptile",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Sheeva",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Shujinko",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Sindel",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Skarlet",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Smoke",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Sonya Blade",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Stryker",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Takeda",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Tanya",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "Triborg",
+    "listUniverse": "Mortal Kombat"
+  },
+  {
+    "name": "The White Witch",
+    "listUniverse": "Narnia"
+  },
+  {
+    "name": "Aang (Nick)",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Jimmy Neutron",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Korra",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Patrick Star",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Sheen Estevez",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "SpongeBob",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Squidward",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Timmy Turner",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Wanda",
+    "listUniverse": "Nickelodeon"
+  },
+  {
+    "name": "Jerry Smith",
+    "listUniverse": "Rick and Morty"
+  },
+  {
+    "name": "Morty Smith",
+    "listUniverse": "Rick and Morty"
+  },
+  {
+    "name": "Rick Sanchez",
+    "listUniverse": "Rick and Morty"
+  },
+  {
+    "name": "Summer Smith",
+    "listUniverse": "Rick and Morty"
+  },
+  {
+    "name": "SCP-096",
+    "listUniverse": "SCP"
+  },
+  {
+    "name": "SCP-173",
+    "listUniverse": "SCP"
+  },
+  {
+    "name": "SCP-682",
+    "listUniverse": "SCP"
+  },
+  {
+    "name": "The Scarlet King",
+    "listUniverse": "SCP"
+  },
+  {
+    "name": "Kenny McCormick",
+    "listUniverse": "South Park"
+  },
+  {
+    "name": "Kyle Broflovski",
+    "listUniverse": "South Park"
+  },
+  {
+    "name": "Mr Garrison",
+    "listUniverse": "South Park"
+  },
+  {
+    "name": "Randy Marsh",
+    "listUniverse": "South Park"
+  },
+  {
+    "name": "Stan Marsh",
+    "listUniverse": "South Park"
+  },
+  {
+    "name": "G",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Gill",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Hakan",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Hugo",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Ibuki",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Jamie",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "JP",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Juri",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Kage",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Karin",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Kimberly",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Laura",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Lily",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Luke",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Makoto",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Manon",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Marisa",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Menat",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Necalli",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Oro",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Poison",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Q",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Rashid",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Remy",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Rolento",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Rose",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Rufus",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Sagat",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Sean",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Seth",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "T. Hawk",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Urien",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Vega",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Zangief",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Zeku",
+    "listUniverse": "Street Fighter"
+  },
+  {
+    "name": "Johnny Test",
+    "listUniverse": "Teletoon"
+  },
+  {
+    "name": "Total Drama Duncan",
+    "listUniverse": "Teletoon"
+  },
+  {
+    "name": "Total Drama Gwen",
+    "listUniverse": "Teletoon"
+  },
+  {
+    "name": "Total Drama Owen",
+    "listUniverse": "Teletoon"
+  },
+  {
+    "name": "Homer Simpson",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Krusty the Clown",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Lisa Simpson",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Marge Simpson",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Milhouse",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Moe Szyslak",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Mr Burns",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Ned Flanders",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Sideshow Bob",
+    "listUniverse": "The Simpsons"
+  },
+  {
+    "name": "Primus",
+    "listUniverse": "Transformers"
+  },
+  {
+    "name": "Unicron",
+    "listUniverse": "Transformers"
+  },
+  {
+    "name": "Fortnite Jonesy",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Fortnite Midas",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Fortnite Peely",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Ganondorf (Demon King)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Genji",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Geralt (Master)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Knuckles (Master Emerald)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Lady Maria (Nightmare)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Lilith",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Link (TOTK)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Luigi (Poltergust)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Malenia (Goddess)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Mario (Fire Flower)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Master Chief (Mjolnir)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Noctis (Armiger)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Odin (Ragnarok)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Overwatch Tracer",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Radahn (Starscourge)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Raiden (Cyborg)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Reaper",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Ridley",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Samus (Power Suit)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Sephiroth (Safer)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Shadow (Chaos Control)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Sigma",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Solid Snake (Old Snake)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Sonic (Super)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Thor (Ragnarok)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Tyrael",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Yennefer (Mage)",
+    "listUniverse": "Video Game"
+  },
+  {
+    "name": "Zelda (Sage)",
+    "listUniverse": "Video Game"
+  }
+]
