@@ -55,6 +55,8 @@ function toCompetitor(
 
 // Round names depend on bracket size.
 function roundNames(size: number): string[] {
+  if (size === 32)
+    return ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"];
   if (size === 16) return ["Round of 16", "Quarterfinals", "Semifinals", "Final"];
   return ["Quarterfinals", "Semifinals", "Final"];
 }

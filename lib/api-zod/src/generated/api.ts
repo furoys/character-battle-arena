@@ -429,13 +429,13 @@ export const ListTournamentsResponse = zod.array(ListTournamentsResponseItem);
 /**
  * @summary Create and auto-run a tournament bracket
  */
-export const createTournamentBodyCompetitorIdsMax = 16;
+export const createTournamentBodyCompetitorIdsMax = 32;
 
-export const createTournamentBodyOwnersMax = 16;
+export const createTournamentBodyOwnersMax = 32;
 
 export const CreateTournamentBody = zod.object({
   size: zod
-    .union([zod.literal(8), zod.literal(16)])
+    .union([zod.literal(8), zod.literal(16), zod.literal(32)])
     .describe("Number of competitors in the bracket"),
   name: zod.string().optional().describe("Display name for the tournament"),
   themeLabel: zod.string().nullish().describe("Optional themed-cup label"),
@@ -443,7 +443,7 @@ export const CreateTournamentBody = zod.object({
     .array(zod.number())
     .max(createTournamentBodyCompetitorIdsMax)
     .describe(
-      "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16).",
+      "Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (32).",
     ),
   mode: zod
     .enum(["draft", "classic"])

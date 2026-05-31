@@ -253,6 +253,7 @@ export type TournamentInputSize =
 export const TournamentInputSize = {
   NUMBER_8: 8,
   NUMBER_16: 16,
+  NUMBER_32: 32,
 } as const;
 
 /**
@@ -282,15 +283,15 @@ export interface TournamentInput {
   /** Optional themed-cup label */
   themeLabel?: string | null;
   /**
-   * Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (16).
-   * @maxItems 16
+   * Seeded competitor character ids (in seed order). Fewer than size will be topped up with random characters. Capped at the largest bracket size (32).
+   * @maxItems 32
    */
   competitorIds: number[];
   /** 'draft' = drafted vs CPU (owners required, must fill the bracket). Defaults to classic. */
   mode?: TournamentInputMode;
   /**
    * Parallel to competitorIds: who drafted each fighter ('user' | 'cpu'). Required for draft mode.
-   * @maxItems 16
+   * @maxItems 32
    */
   owners?: TournamentInputOwnersItem[];
 }

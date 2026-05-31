@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Cpu,
   User,
+  Sparkles,
 } from "lucide-react";
 import {
   useListCharacters,
@@ -27,14 +28,14 @@ import { FightScreen } from "@/components/fight-screen";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 
-type Size = 8 | 16;
+type Size = 8 | 16 | 32;
 
 type WatchTarget = {
   a: { id: number; name: string; imageUrl: string | null };
   b: { id: number; name: string; imageUrl: string | null };
 };
 
-const SIZE_OPTIONS: Size[] = [8, 16];
+const SIZE_OPTIONS: Size[] = [8, 16, 32];
 
 // Developer Legends (Chris, Troy, Tim, Cory) have max stats and are barred from tournaments.
 const EXCLUDED_UNIVERSE = "Developer Legends";
@@ -72,6 +73,57 @@ function powerScore(c: Character): number {
   return (
     num(c.strength) + num(c.speed) + num(c.intelligence) + num(c.durability)
   );
+}
+
+// ── Running record vs CPU (client-only, localStorage) ───────────────────────
+// Persisted so the player builds a streak across sessions — the main "run
+// another one" hook. Guests and signed-in users alike keep a local record.
+type CpuRecord = {
+  wins: number;
+  losses: number;
+  streak: number; // signed: + = win streak, - = loss streak
+  best: number; // best win streak ever
+  lastId: number | null; // last tournament id counted (de-dupe)
+};
+const RECORD_KEY = "ava_tournament_cpu_record";
+const EMPTY_RECORD: CpuRecord = { wins: 0, losses: 0, streak: 0, best: 0, lastId: null };
+
+function loadCpuRecord(): CpuRecord {
+  try {
+    const raw = localStorage.getItem(RECORD_KEY);
+    if (!raw) return { ...EMPTY_RECORD };
+    const p = JSON.parse(raw) as Partial<CpuRecord>;
+    return {
+      wins: num(p.wins),
+      losses: num(p.losses),
+      streak: num(p.streak),
+      best: num(p.best),
+      lastId: typeof p.lastId === "number" ? p.lastId : null,
+    };
+  } catch {
+    return { ...EMPTY_RECORD };
+  }
+}
+
+function applyOutcome(rec: CpuRecord, tournamentId: number, won: boolean): CpuRecord {
+  if (rec.lastId === tournamentId) return rec; // already counted this cup
+  const streak = won ? (rec.streak > 0 ? rec.streak + 1 : 1) : rec.streak < 0 ? rec.streak - 1 : -1;
+  return {
+    wins: rec.wins + (won ? 1 : 0),
+    losses: rec.losses + (won ? 0 : 1),
+    streak,
+    best: Math.max(rec.best, streak),
+    lastId: tournamentId,
+  };
+}
+
+// Letter grade for a squad from its average-power percentile within the roster.
+function gradeFromPercentile(pct: number): { grade: string; color: string } {
+  if (pct >= 0.9) return { grade: "S", color: "text-amber-300" };
+  if (pct >= 0.75) return { grade: "A", color: "text-emerald-400" };
+  if (pct >= 0.55) return { grade: "B", color: "text-sky-400" };
+  if (pct >= 0.35) return { grade: "C", color: "text-muted-foreground" };
+  return { grade: "D", color: "text-rose-400" };
 }
 
 // How aggressively the CPU drafts. "Fun cool picks" is the constant across all
@@ -296,6 +348,10 @@ export function Tournaments() {
   const [picks, setPicks] = useState<Pick[]>([]);
   const [cpuThinking, setCpuThinking] = useState(false);
   const draftSubmittedRef = useRef(false);
+  const [cpuRecord, setCpuRecord] = useState<CpuRecord>(() => loadCpuRecord());
+  // Only the cup the user just ran this session counts toward the vs-CPU record —
+  // reopening past/community cups from the recent feed must never move it.
+  const [sessionCupId, setSessionCupId] = useState<number | null>(null);
 
   // Reopen a past tournament from the recent list.
   const [reopenId, setReopenId] = useState<number | null>(null);
@@ -374,6 +430,55 @@ export function Tournaments() {
     return m;
   }, [characters]);
 
+  // Percentile of a power score within the whole roster — drives draft grades.
+  const powerPercentile = useMemo(() => {
+    const scores = (characters ?? []).map(powerScore).sort((a, b) => a - b);
+    return (s: number): number => {
+      if (scores.length === 0) return 0.5;
+      let lo = 0;
+      let hi = scores.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (scores[mid]! < s) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo / scores.length;
+    };
+  }, [characters]);
+
+  // Who took the cup in a draft tournament (used to record the vs-CPU streak).
+  const draftChampOwner = useMemo<Owner | null>(() => {
+    if (!tournament || tournament.mode !== "draft") return null;
+    let owner: Owner | null = null;
+    for (const r of tournament.bracket.rounds) {
+      for (const m of r.matches) {
+        if (m.a?.id === tournament.championId) owner = (m.a.owner as Owner | null) ?? null;
+        if (m.b?.id === tournament.championId) owner = (m.b.owner as Owner | null) ?? null;
+      }
+    }
+    return owner;
+  }, [tournament]);
+
+  // Record the result against the running vs-CPU record exactly once per cup,
+  // when the final match has been revealed.
+  useEffect(() => {
+    if (!tournament || !allRevealed) return;
+    // Only count the cup the user actually ran this session — reopened past or
+    // community cups (loaded via the recent feed) must not move the record.
+    if (tournament.id !== sessionCupId) return;
+    if (draftChampOwner !== "user" && draftChampOwner !== "cpu") return;
+    setCpuRecord((prev) => {
+      const next = applyOutcome(prev, tournament.id, draftChampOwner === "user");
+      if (next === prev) return prev;
+      try {
+        localStorage.setItem(RECORD_KEY, JSON.stringify(next));
+      } catch {
+        /* localStorage unavailable — record stays in memory only */
+      }
+      return next;
+    });
+  }, [tournament, allRevealed, draftChampOwner, sessionCupId]);
+
   // Developer Legends (Chris, Troy, Tim, Cory) have max stats and would trivially
   // win any bracket, so they're barred from tournaments. charById above still
   // includes them so old cups that contain them render correctly.
@@ -448,6 +553,7 @@ export function Tournaments() {
       });
       setReopenId(null);
       setTournament(result);
+      setSessionCupId(result.id);
       setPhase("config");
       setPicks([]);
       void refetchRecent();
@@ -530,6 +636,36 @@ export function Tournaments() {
     }
     const champOwner = ownerById.get(tournament.championId) ?? null;
 
+    // ── Draft grades + "steal of the draft" (draft cups only) ────────────────
+    // Round 0 competitors are in seed = pick order, so we can reconstruct each
+    // side's squad and the order fighters were drafted in.
+    const seedOrder: { id: number; owner: Owner | null; name: string }[] = [];
+    for (const m of rounds[0]?.matches ?? []) {
+      if (m.a) seedOrder.push({ id: m.a.id, owner: (m.a.owner as Owner | null) ?? null, name: m.a.name });
+      if (m.b) seedOrder.push({ id: m.b.id, owner: (m.b.owner as Owner | null) ?? null, name: m.b.name });
+    }
+    const sidePct = (owner: Owner) => {
+      const ids = seedOrder.filter((s) => s.owner === owner);
+      if (ids.length === 0) return 0.5;
+      const sum = ids.reduce((acc, s) => {
+        const c = charById.get(s.id);
+        return acc + (c ? powerPercentile(powerScore(c)) : 0.5);
+      }, 0);
+      return sum / ids.length;
+    };
+    const userGrade = gradeFromPercentile(sidePct("user"));
+    const cpuGrade = gradeFromPercentile(sidePct("cpu"));
+    // Steal of the draft: the strongest fighter taken in the back half of the
+    // draft (a late pick that punches above its slot). Only flag a real bargain.
+    let steal: { name: string; owner: Owner | null; pct: number } | null = null;
+    seedOrder.forEach((s, i) => {
+      if (i < seedOrder.length / 2) return;
+      const c = charById.get(s.id);
+      const pct = c ? powerPercentile(powerScore(c)) : 0;
+      if (pct >= 0.6 && (!steal || pct > steal.pct)) steal = { name: s.name, owner: s.owner, pct };
+    });
+    const stealPick = steal as { name: string; owner: Owner | null; pct: number } | null;
+
     return (
       <div className="min-h-full bg-background px-3 pt-4 pb-10">
         <div className="mx-auto max-w-5xl">
@@ -611,6 +747,36 @@ export function Tournaments() {
             </div>
           )}
 
+          {isDraft && allRevealed && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+              <div className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                Draft Report
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">You</span>
+                  <span className={`text-3xl font-black ${userGrade.color}`}>{userGrade.grade}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-sky-400/30 bg-sky-400/5 py-3">
+                  <Cpu className="h-4 w-4 text-sky-400" />
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-sky-400">CPU</span>
+                  <span className={`text-3xl font-black ${cpuGrade.color}`}>{cpuGrade.grade}</span>
+                </div>
+              </div>
+              {stealPick && (
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  <span>
+                    Steal of the draft:{" "}
+                    <span className="font-bold text-amber-300">{stealPick.name}</span>
+                    {stealPick.owner === "user" ? " (You)" : stealPick.owner === "cpu" ? " (CPU)" : ""}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 flex items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
               Bracket
@@ -632,12 +798,22 @@ export function Tournaments() {
                 <div className="flex flex-1 flex-col justify-around gap-3">
                   {round.matches.map((m) => {
                     const revealed = (matchOrder.get(m.matchId) ?? 0) < revealedMatches;
+                    // Upset = the lower-power fighter won. Power is looked up from
+                    // the roster so we can compare without extra payload.
+                    let isUpset = false;
+                    if (m.winnerId != null && m.a && m.b) {
+                      const loserId = m.winnerId === m.a.id ? m.b.id : m.a.id;
+                      const wc = charById.get(m.winnerId);
+                      const lc = charById.get(loserId);
+                      if (wc && lc) isUpset = powerScore(wc) < powerScore(lc);
+                    }
                     return (
                       <BracketMatchCard
                         key={m.matchId}
                         match={m}
                         revealed={revealed}
                         concealIdentity={ri > 0 && !revealed}
+                        isUpset={isUpset}
                         showOwners={isDraft}
                         onWatch={() => watchMatch(m)}
                       />
@@ -850,6 +1026,54 @@ export function Tournaments() {
         <p className="mt-1 text-sm text-muted-foreground">
           Draft against the CPU — you alternate picks, then your fighters battle through the bracket. Every round-one match is you vs the computer. Watch any match in full.
         </p>
+
+        {/* Running record vs CPU */}
+        {cpuRecord.wins + cpuRecord.losses > 0 && (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-400" />
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Your record vs CPU
+                </div>
+                <div className="text-lg font-black tabular-nums text-foreground">
+                  {cpuRecord.wins}
+                  <span className="text-muted-foreground"> – </span>
+                  {cpuRecord.losses}
+                  <span className="ml-1 text-xs font-bold text-muted-foreground">
+                    ({cpuRecord.wins + cpuRecord.losses} cups)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-right">
+              {cpuRecord.streak !== 0 && (
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Streak
+                  </div>
+                  <div
+                    className={`text-base font-black ${
+                      cpuRecord.streak > 0 ? "text-primary" : "text-sky-400"
+                    }`}
+                  >
+                    {cpuRecord.streak > 0
+                      ? `W${cpuRecord.streak}`
+                      : `L${Math.abs(cpuRecord.streak)}`}
+                  </div>
+                </div>
+              )}
+              {cpuRecord.best > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Best
+                  </div>
+                  <div className="text-base font-black text-amber-300">W{cpuRecord.best}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Recent tournaments */}
         {recent && recent.length > 0 && (
@@ -1206,12 +1430,14 @@ function BracketMatchCard({
   match,
   revealed,
   concealIdentity,
+  isUpset,
   showOwners,
   onWatch,
 }: {
   match: TournamentMatch;
   revealed: boolean;
   concealIdentity: boolean;
+  isUpset: boolean;
   showOwners: boolean;
   onWatch: () => void;
 }) {
@@ -1222,12 +1448,18 @@ function BracketMatchCard({
   // identity is the result of an earlier (still-hidden) match, so showing them
   // would spoil who already advanced.
   const showResult = revealed && match.winnerId != null;
+  const showUpset = showResult && isUpset;
   return (
     <div
-      className={`rounded-lg border bg-black/30 p-2 transition-all duration-300 ${
-        showResult ? "border-white/10" : "border-white/5"
+      className={`relative rounded-lg border bg-black/30 p-2 transition-all duration-300 ${
+        showUpset ? "border-amber-400/50" : showResult ? "border-white/10" : "border-white/5"
       } ${revealed ? "opacity-100 translate-y-0" : "opacity-40 translate-y-1"}`}
     >
+      {showUpset && (
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-black shadow-[0_0_12px_rgba(251,191,36,0.6)]">
+          ⚡ Upset
+        </div>
+      )}
       {concealIdentity ? (
         <>
           <PendingCompetitor />
