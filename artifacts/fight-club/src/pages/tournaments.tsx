@@ -1322,6 +1322,7 @@ function PvpDraftRoom({
   const [copied, setCopied] = useState(false);
   const completedRef = useRef(false);
   const joinAttemptedRef = useRef(false);
+  const shareInputRef = useRef<HTMLInputElement>(null);
 
   async function createDraft() {
     setBusy(true);
@@ -1454,15 +1455,55 @@ function PvpDraftRoom({
   }
 
   const shareUrl = code ? `${window.location.origin}${window.location.pathname}?draft=${code}` : "";
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  function flashCopied() {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  // Share/copy the invite. The clipboard API is blocked in some contexts
+  // (preview iframes, in-app webviews), so we degrade gracefully: native share
+  // sheet → clipboard → legacy execCommand on the selectable link → manual.
   async function copyShare() {
     if (!shareUrl) return;
+    setError(null);
+    if (canNativeShare) {
+      try {
+        await navigator.share({
+          title: "A.v.A — Draft a Friend",
+          text: `Join my draft${code ? ` (code ${code})` : ""} on Anyone vs Anyone`,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // User dismissed the sheet or it's unsupported — the link stays visible
+        // and copyable below, so just stop here without surfacing an error.
+        return;
+      }
+    }
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      flashCopied();
+      return;
     } catch {
-      setError("Copy failed — long-press the code to copy it manually.");
+      /* clipboard blocked — fall back to manual selection */
     }
+    try {
+      const el = shareInputRef.current;
+      if (el) {
+        el.focus();
+        el.select();
+        el.setSelectionRange(0, shareUrl.length);
+        if (document.execCommand("copy")) {
+          flashCopied();
+          return;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    setError("Couldn't copy automatically — tap the link to select it, then copy.");
   }
 
   const pickedIds = useMemo(() => new Set((session?.picks ?? []).map((p) => p.id)), [session]);
@@ -1577,21 +1618,42 @@ function PvpDraftRoom({
         </button>
 
         {/* Code + share */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3">
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Draft code</div>
-            <div className="font-mono text-2xl font-black tracking-[0.3em] text-sky-300" data-testid="text-pvp-code">
-              {code}
+        <div className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Draft code</div>
+              <div className="font-mono text-2xl font-black tracking-[0.3em] text-sky-300" data-testid="text-pvp-code">
+                {code}
+              </div>
             </div>
+            <button
+              onClick={() => void copyShare()}
+              data-testid="button-pvp-copy"
+              className="flex items-center gap-1.5 rounded-lg bg-sky-500/20 px-3 py-2 text-xs font-black uppercase tracking-widest text-sky-200 hover:bg-sky-500/30"
+            >
+              {canNativeShare ? (
+                <Share2 className="h-3.5 w-3.5" />
+              ) : copied ? (
+                <Check className="h-3.5 w-3.5" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              {canNativeShare ? "Share" : copied ? "Copied" : "Copy link"}
+            </button>
           </div>
-          <button
-            onClick={() => void copyShare()}
-            data-testid="button-pvp-copy"
-            className="flex items-center gap-1.5 rounded-lg bg-sky-500/20 px-3 py-2 text-xs font-black uppercase tracking-widest text-sky-200 hover:bg-sky-500/30"
-          >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Copied" : "Copy link"}
-          </button>
+          {/* Always-visible, selectable link so sharing works even where the
+              clipboard API is blocked (preview iframes / in-app webviews). */}
+          <input
+            ref={shareInputRef}
+            value={shareUrl}
+            readOnly
+            onFocus={(e) => e.currentTarget.select()}
+            data-testid="input-pvp-share-link"
+            className="mt-3 w-full select-all rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-center text-[11px] text-sky-200/90 focus:border-sky-400 focus:outline-none"
+          />
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
+            Send this link to a friend, or have them enter the code on the Tournament screen.
+          </p>
         </div>
 
         {error && (
