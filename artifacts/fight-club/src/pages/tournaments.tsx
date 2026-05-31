@@ -31,6 +31,8 @@ import { useSimulateFightStream } from "@/hooks/use-simulate-fight-stream";
 import { FightScreen } from "@/components/fight-screen";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
+import { UniverseCombobox, type UniverseOption } from "@/components/universe-combobox";
+import { DraftPickCard } from "@/components/draft-pick-card";
 
 type Size = 8 | 16 | 32;
 
@@ -504,10 +506,14 @@ export function Tournaments() {
     [characters],
   );
 
-  const universes = useMemo(() => {
-    const set = new Set<string>();
-    draftable.forEach((c) => c.universe && set.add(c.universe));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  const universeOptions = useMemo<UniverseOption[]>(() => {
+    const counts = new Map<string, number>();
+    draftable.forEach((c) => {
+      if (c.universe) counts.set(c.universe, (counts.get(c.universe) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [draftable]);
 
   // ── Draft derivations ──────────────────────────────────────────────────────
@@ -981,66 +987,60 @@ export function Tournaments() {
                 className="w-full rounded-lg border border-white/15 bg-black/40 py-2.5 pl-9 pr-3 text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
               />
             </div>
-            <select
+            <UniverseCombobox
               value={universeFilter}
-              onChange={(e) => setUniverseFilter(e.target.value)}
-              className="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-foreground focus:border-primary focus:outline-none"
-            >
-              <option value="all">All universes</option>
-              {universes.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
+              onChange={setUniverseFilter}
+              options={universeOptions}
+              totalCount={draftable.length}
+              className="sm:w-52"
+            />
           </div>
 
+          {(search.trim() || universeFilter !== "all") && (
+            <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>
+                {availableFiltered.length} fighter{availableFiltered.length === 1 ? "" : "s"} available
+              </span>
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setUniverseFilter("all");
+                }}
+                className="font-bold uppercase tracking-widest text-primary hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           {/* Roster grid — pick when it's your turn */}
-          <div className="mt-4">
+          <div className="mt-3">
             {isLoading ? (
               <div className="flex items-center justify-center py-16 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
+            ) : availableFiltered.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 py-12 text-center text-sm text-muted-foreground">
+                No fighters match your search.
+              </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
                 {availableFiltered.slice(0, 120).map((c) => {
                   const locked = currentOwner !== "user" || cpuThinking || draftComplete;
                   return (
-                    <button
+                    <DraftPickCard
                       key={c.id}
-                      onClick={() => userPick(c.id)}
-                      disabled={locked}
-                      className={`group relative overflow-hidden rounded-lg border text-left transition-all ${
-                        locked
-                          ? "border-white/10 opacity-50"
-                          : "border-white/10 hover:border-primary hover:ring-2 hover:ring-primary/40"
-                      }`}
-                    >
-                      <div className="aspect-square w-full bg-gradient-to-b from-white/5 to-black/40">
-                        {c.imageUrl ? (
-                          <img
-                            src={c.imageUrl}
-                            alt={c.name}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                            <Swords className="h-6 w-6" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="truncate px-1.5 py-1 text-[11px] font-semibold text-foreground">
-                        {c.name}
-                      </div>
-                    </button>
+                      char={c}
+                      locked={locked}
+                      onPick={() => userPick(c.id)}
+                    />
                   );
                 })}
               </div>
             )}
             {!isLoading && availableFiltered.length > 120 && (
               <div className="mt-3 text-center text-xs text-muted-foreground">
-                Showing first 120 — refine your search to see more.
+                Showing first 120 of {availableFiltered.length} — refine your search to see more.
               </div>
             )}
           </div>
@@ -1319,6 +1319,7 @@ function PvpDraftRoom({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
+  const [universeFilter, setUniverseFilter] = useState<string>("all");
   const [copied, setCopied] = useState(false);
   const completedRef = useRef(false);
   const joinAttemptedRef = useRef(false);
@@ -1512,13 +1513,30 @@ function PvpDraftRoom({
   const myTurn = session?.status === "drafting" && session.turn === role;
   const perSide = session ? session.size / 2 : 0;
 
+  const universeOptions = useMemo<UniverseOption[]>(() => {
+    const counts = new Map<string, number>();
+    characters.forEach((c) => {
+      if (c.universe && c.universe !== EXCLUDED_UNIVERSE) {
+        counts.set(c.universe, (counts.get(c.universe) ?? 0) + 1);
+      }
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [characters]);
+  const draftablePool = useMemo(
+    () => characters.filter((c) => c.universe !== EXCLUDED_UNIVERSE),
+    [characters],
+  );
+
   const available = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return characters
-      .filter((c) => c.universe !== EXCLUDED_UNIVERSE && !pickedIds.has(c.id))
+    return draftablePool
+      .filter((c) => !pickedIds.has(c.id))
+      .filter((c) => universeFilter === "all" || c.universe === universeFilter)
       .filter((c) => !q || c.name.toLowerCase().includes(q) || c.universe.toLowerCase().includes(q))
-      .slice(0, 60);
-  }, [characters, pickedIds, search]);
+      .slice(0, 90);
+  }, [draftablePool, pickedIds, search, universeFilter]);
 
   // ── MENU: create or join ─────────────────────────────────────────────────────
   if (view === "menu") {
@@ -1708,43 +1726,41 @@ function PvpDraftRoom({
         {/* Picker — only on your turn */}
         {myTurn && (
           <div className="mt-5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search fighters…"
-                data-testid="input-pvp-search"
-                className="w-full rounded-lg border border-white/15 bg-black/40 py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search fighters…"
+                  data-testid="input-pvp-search"
+                  className="w-full rounded-lg border border-white/15 bg-black/40 py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                />
+              </div>
+              <UniverseCombobox
+                value={universeFilter}
+                onChange={setUniverseFilter}
+                options={universeOptions}
+                totalCount={draftablePool.length}
+                className="sm:w-52"
               />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {available.length === 0 ? (
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/30 py-12 text-center text-sm text-muted-foreground">
+                No fighters match your search.
+              </div>
+            ) : (
+            <div className="mt-3 grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
               {available.map((c) => (
-                <button
+                <DraftPickCard
                   key={c.id}
-                  onClick={() => void placePick(c.id)}
-                  disabled={busy}
-                  data-testid={`button-pvp-pick-${c.id}`}
-                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-left transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50"
-                >
-                  <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-white/15 bg-black/40">
-                    {c.imageUrl ? (
-                      <img src={c.imageUrl} alt={c.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
-                        <Swords className="h-3.5 w-3.5" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-xs font-bold text-foreground">{c.name}</div>
-                    <div className="truncate text-[10px] text-muted-foreground">{c.universe}</div>
-                  </div>
-                </button>
+                  char={c}
+                  locked={busy}
+                  onPick={() => void placePick(c.id)}
+                  testId={`button-pvp-pick-${c.id}`}
+                />
               ))}
             </div>
-            {available.length === 0 && (
-              <p className="mt-4 text-center text-xs text-muted-foreground">No fighters match that search.</p>
             )}
           </div>
         )}
