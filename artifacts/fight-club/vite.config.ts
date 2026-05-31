@@ -44,7 +44,11 @@ export default defineConfig({
       includeAssets: ["app-icon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,woff2}"],
-        globIgnores: ["**/ava-cinematic-intro.html"],
+        // Character portraits are content images, not app-shell assets. They are
+        // fetched on demand, so they must not be precached: precaching ~1.5k
+        // images would bloat every service-worker install, and injectManifest
+        // hard-errors on any single asset over 2 MiB (some portraits exceed it).
+        globIgnores: ["**/ava-cinematic-intro.html", "characters/**"],
       },
       manifest: {
         name: "A.v.A — Anyone vs Anyone",
