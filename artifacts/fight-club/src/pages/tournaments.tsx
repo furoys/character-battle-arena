@@ -24,6 +24,10 @@ import {
   useGetTournament,
   getGetTournamentQueryKey,
   useCreateTournament,
+  useGetMyTournamentRecord,
+  getGetMyTournamentRecordQueryKey,
+  useRecordTournamentResult,
+  useGetTournamentLeaderboard,
   type Character,
   type Tournament,
   type TournamentMatch,
@@ -80,6 +84,31 @@ function powerScore(c: Character): number {
   return (
     num(c.strength) + num(c.speed) + num(c.intelligence) + num(c.durability)
   );
+}
+
+// ── Draft power budget ───────────────────────────────────────────────────────
+// Each fighter has a COST (1–10) from its summed stats on an ABSOLUTE scale
+// (fixed thresholds, no roster distribution) so the client and server always
+// agree. Each side gets budget = (size/2) * BUDGET_PER_PICK, forcing tradeoffs:
+// you can field one or two marquee monsters, but never a whole team of them.
+// KEEP IN SYNC with fighterCost()/draftBudget() in the API server
+// (artifacts/api-server/src/routes/tournaments.ts).
+const BUDGET_PER_PICK = 5;
+function fighterCost(c: Character): number {
+  const ps = powerScore(c);
+  if (ps < 50_000) return 1;
+  if (ps < 150_000) return 2;
+  if (ps < 400_000) return 3;
+  if (ps < 950_000) return 4;
+  if (ps < 2_500_000) return 5;
+  if (ps < 6_100_000) return 6;
+  if (ps < 12_000_000) return 7;
+  if (ps < 18_500_000) return 8;
+  if (ps < 35_000_000) return 9;
+  return 10;
+}
+function draftBudget(size: number): number {
+  return Math.floor(size / 2) * BUDGET_PER_PICK;
 }
 
 // ── Running record vs CPU (client-only, localStorage) ───────────────────────
@@ -214,24 +243,54 @@ function pickWeighted(items: { c: Character; w: number }[]): Character | null {
   return items[items.length - 1]!.c;
 }
 
-// The CPU drafts fun, recognizable fighters with real variety. It draws from a
-// "fun pool" (iconic names + popular universes) whenever that pool is big
-// enough, and difficulty only tilts how much power it chases inside that pool:
-//   chill → leans toward weaker fighters (easy to beat)
-//   rival → balanced, lots of spread
-//   boss  → hunts the strongest fun fighters (tough to beat)
-function cpuChoose(available: Character[], difficulty: CpuDifficulty): Character | null {
+// The CPU drafts under the SAME power budget as the player, so it can't just
+// hoard max-stat fighters. Difficulty controls intent:
+//   chill → leans toward weaker fun fighters (easy to beat)
+//   rival → balanced fun spread
+//   boss  → plays to win: when it picks AFTER you in a draft pair it counters the
+//           exact fighter it will face (cheapest affordable that still beats it,
+//           to conserve budget); otherwise it fields the strongest it can afford.
+function cpuChoose(
+  available: Character[],
+  difficulty: CpuDifficulty,
+  ctx: { remaining: number; slotsLeft: number; opponent: Character | null },
+): Character | null {
   if (available.length === 0) return null;
-  const fun = available.filter(isFunPick);
-  const pool = fun.length >= 3 ? fun : available;
+  // Reserve at least 1 budget point for every remaining slot after this one so
+  // the CPU never strands itself unable to fill its bracket.
+  const ceiling = ctx.remaining - Math.max(0, ctx.slotsLeft - 1);
+  const affordable = available.filter((c) => fighterCost(c) <= ceiling);
+  if (affordable.length === 0) {
+    return [...available].sort((a, b) => fighterCost(a) - fighterCost(b))[0] ?? null;
+  }
+
+  if (difficulty === "boss") {
+    const strongest = [...affordable].sort((a, b) => powerScore(b) - powerScore(a));
+    if (ctx.opponent) {
+      const oppPow = powerScore(ctx.opponent);
+      // Cheapest affordable fighter that still beats the known opponent — win the
+      // matchup while spending as little budget as possible. If nothing in budget
+      // can beat it, punt with the strongest affordable (best effort).
+      const beats = affordable
+        .filter((c) => powerScore(c) > oppPow)
+        .sort(
+          (a, b) => fighterCost(a) - fighterCost(b) || powerScore(b) - powerScore(a),
+        );
+      return beats[0] ?? strongest[0] ?? null;
+    }
+    // Picking first in the pair (you'll counter next): field the strongest it can
+    // afford so you have to spend to beat it.
+    return strongest[0] ?? null;
+  }
+
+  // chill / rival keep the "fun, recognizable" feel, constrained to affordable.
+  const fun = affordable.filter(isFunPick);
+  const pool = fun.length >= 3 ? fun : affordable;
   const ranked = [...pool].sort((a, b) => powerScore(b) - powerScore(a));
   const n = ranked.length;
   const weighted = ranked.map((c, i) => {
     const top = n - i; // strongest = n, weakest = 1
-    let w: number;
-    if (difficulty === "boss") w = top * top;
-    else if (difficulty === "chill") w = i + 1;
-    else w = n + top;
+    let w = difficulty === "chill" ? i + 1 : n + top;
     if (isIconicName(c.name)) w *= 1.6;
     return { c, w };
   });
@@ -466,6 +525,38 @@ export function Tournaments() {
     };
   }, [characters]);
 
+  // ── Server-side record + leaderboard (signed-in users persist across devices;
+  // guests keep the localStorage record). ──────────────────────────────────────
+  const { user, isSignedIn } = useUser();
+  const myRecordQuery = useGetMyTournamentRecord({
+    query: { enabled: !!isSignedIn, queryKey: getGetMyTournamentRecordQueryKey() },
+  });
+  const recordResult = useRecordTournamentResult();
+  const leaderboardQuery = useGetTournamentLeaderboard();
+
+  const displayName = useMemo(() => {
+    const name =
+      user?.firstName ||
+      user?.username ||
+      user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+      "Player";
+    return name.slice(0, 24);
+  }, [user]);
+
+  // The record shown in the UI: server record for signed-in users, else local.
+  const record = useMemo(() => {
+    if (isSignedIn && myRecordQuery.data) {
+      const r = myRecordQuery.data;
+      return { wins: r.wins, losses: r.losses, streak: r.streak, best: r.best };
+    }
+    return {
+      wins: cpuRecord.wins,
+      losses: cpuRecord.losses,
+      streak: cpuRecord.streak,
+      best: cpuRecord.best,
+    };
+  }, [isSignedIn, myRecordQuery.data, cpuRecord]);
+
   // Who took the cup in a draft tournament (used to record the vs-CPU streak).
   const draftChampOwner = useMemo<Owner | null>(() => {
     if (!tournament || tournament.mode !== "draft") return null;
@@ -480,15 +571,34 @@ export function Tournaments() {
   }, [tournament]);
 
   // Record the result against the running vs-CPU record exactly once per cup,
-  // when the final match has been revealed.
+  // when the final match has been revealed. Signed-in users persist to the
+  // server (cross-device + leaderboard); guests fall back to localStorage.
+  const recordedCupRef = useRef<Set<number>>(new Set());
   useEffect(() => {
     if (!tournament || !allRevealed) return;
     // Only count the cup the user actually ran this session — reopened past or
     // community cups (loaded via the recent feed) must not move the record.
     if (tournament.id !== sessionCupId) return;
     if (draftChampOwner !== "user" && draftChampOwner !== "cpu") return;
+    if (recordedCupRef.current.has(tournament.id)) return;
+    recordedCupRef.current.add(tournament.id);
+    const won = draftChampOwner === "user";
+
+    if (isSignedIn) {
+      recordResult.mutate(
+        { data: { tournamentId: tournament.id, won, displayName } },
+        {
+          onSuccess: () => {
+            void myRecordQuery.refetch();
+            void leaderboardQuery.refetch();
+          },
+        },
+      );
+      return;
+    }
+
     setCpuRecord((prev) => {
-      const next = applyOutcome(prev, tournament.id, draftChampOwner === "user");
+      const next = applyOutcome(prev, tournament.id, won);
       if (next === prev) return prev;
       try {
         localStorage.setItem(RECORD_KEY, JSON.stringify(next));
@@ -497,7 +607,8 @@ export function Tournaments() {
       }
       return next;
     });
-  }, [tournament, allRevealed, draftChampOwner, sessionCupId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournament, allRevealed, draftChampOwner, sessionCupId, isSignedIn]);
 
   // Developer Legends (Chris, Troy, Tim, Cory) have max stats and would trivially
   // win any bracket, so they're barred from tournaments. charById above still
@@ -548,6 +659,18 @@ export function Tournaments() {
   function userPick(id: number) {
     if (phase !== "drafting" || currentOwner !== "user" || cpuThinking) return;
     if (pickedIds.has(id) || picks.length >= size) return;
+    const c = charById.get(id);
+    if (!c) return;
+    // Enforce the power budget client-side too (server is the source of truth):
+    // reserve 1 point per remaining slot so the squad can always be filled.
+    const budget = draftBudget(size);
+    const userSpent = picks.reduce((s, p) => {
+      if (p.owner !== "user") return s;
+      const pc = charById.get(p.id);
+      return s + (pc ? fighterCost(pc) : 0);
+    }, 0);
+    const slotsAfter = Math.max(0, size / 2 - userPicks.length - 1);
+    if (fighterCost(c) > budget - userSpent - slotsAfter) return; // over budget
     setPicks((prev) => [...prev, { id, owner: "user" }]);
   }
 
@@ -556,13 +679,41 @@ export function Tournaments() {
     if (phase !== "drafting" || currentOwner !== "cpu" || draftComplete) return;
     setCpuThinking(true);
     const pool = draftable.filter((c) => !pickedIds.has(c.id));
-    const choice = cpuChoose(pool, cpuDifficulty);
+    const budget = draftBudget(size);
+    const cpuSpent = picks.reduce((s, p) => {
+      if (p.owner !== "cpu") return s;
+      const c = charById.get(p.id);
+      return s + (c ? fighterCost(c) : 0);
+    }, 0);
+    // When the CPU picks SECOND in a draft pair (odd index), it already knows the
+    // fighter it will face in round 1 (the previous, user-owned pick) and can
+    // counter it. When it picks first, the opponent is unknown.
+    const idx = picks.length;
+    const prevPick = idx % 2 === 1 ? picks[idx - 1] : undefined;
+    const opponent =
+      prevPick && prevPick.owner === "user" ? charById.get(prevPick.id) ?? null : null;
+    const choice = cpuChoose(pool, cpuDifficulty, {
+      remaining: budget - cpuSpent,
+      slotsLeft: size / 2 - cpuPicks.length,
+      opponent,
+    });
     const t = setTimeout(() => {
       if (choice) setPicks((prev) => [...prev, { id: choice.id, owner: "cpu" }]);
       setCpuThinking(false);
     }, 550 + Math.random() * 350);
     return () => clearTimeout(t);
-  }, [phase, currentOwner, draftComplete, draftable, pickedIds, cpuDifficulty]);
+  }, [
+    phase,
+    currentOwner,
+    draftComplete,
+    draftable,
+    pickedIds,
+    cpuDifficulty,
+    picks,
+    charById,
+    size,
+    cpuPicks.length,
+  ]);
 
   async function submitDraft() {
     try {
@@ -936,6 +1087,19 @@ export function Tournaments() {
     }, 0);
     const totalPow = userPower + cpuPower;
     const userPowerPct = totalPow > 0 ? userPower / totalPow : 0.5;
+    const budget = draftBudget(size);
+    const userSpent = userPicks.reduce((s, p) => {
+      const c = charById.get(p.id);
+      return s + (c ? fighterCost(c) : 0);
+    }, 0);
+    const cpuSpent = cpuPicks.reduce((s, p) => {
+      const c = charById.get(p.id);
+      return s + (c ? fighterCost(c) : 0);
+    }, 0);
+    // Most expensive fighter the user can still afford for the NEXT pick (reserve
+    // 1 point per remaining slot). Drives the gray-out of unaffordable cards.
+    const userSlotsAfter = Math.max(0, size / 2 - userPicks.length - 1);
+    const userCeiling = budget - userSpent - userSlotsAfter;
     return (
       <div className="min-h-full bg-background px-3 pt-4 pb-28">
         <div className="mx-auto max-w-3xl">
@@ -1058,6 +1222,17 @@ export function Tournaments() {
             />
           </div>
 
+          {/* Power budget meters */}
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <BudgetBar label="Your budget" spent={userSpent} total={budget} tone="user" />
+            <BudgetBar label="CPU budget" spent={cpuSpent} total={budget} tone="cpu" />
+          </div>
+          <p className="mt-1.5 text-center text-[11px] leading-snug text-muted-foreground">
+            Each fighter has a <span className="font-bold text-amber-300">cost</span> (1–10) by power.
+            Spend your <span className="font-bold text-foreground">{budget}</span>-point budget wisely —
+            you can't afford a whole team of titans, so counter the CPU's picks.
+          </p>
+
           {/* Search + filter */}
           <div className="mt-5 flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
@@ -1108,12 +1283,16 @@ export function Tournaments() {
             ) : (
               <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
                 {availableFiltered.map((c) => {
+                  const cost = fighterCost(c);
                   const locked = currentOwner !== "user" || cpuThinking || draftComplete;
+                  const unaffordable = !locked && cost > userCeiling;
                   return (
                     <DraftPickCard
                       key={c.id}
                       char={c}
+                      cost={cost}
                       locked={locked}
+                      unaffordable={unaffordable}
                       onPick={() => userPick(c.id)}
                     />
                   );
@@ -1195,50 +1374,85 @@ export function Tournaments() {
         </div>
 
         {/* Running record vs CPU */}
-        {cpuRecord.wins + cpuRecord.losses > 0 && (
+        {record.wins + record.losses > 0 && (
           <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
             <div className="flex items-center gap-2">
               <Trophy className="h-4 w-4 text-amber-400" />
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Your record vs CPU
+                  {isSignedIn ? (
+                    <span className="ml-1 text-emerald-400/80">· synced</span>
+                  ) : (
+                    <span className="ml-1 text-muted-foreground/60">· this device</span>
+                  )}
                 </div>
                 <div className="text-lg font-black tabular-nums text-foreground">
-                  {cpuRecord.wins}
+                  {record.wins}
                   <span className="text-muted-foreground"> – </span>
-                  {cpuRecord.losses}
+                  {record.losses}
                   <span className="ml-1 text-xs font-bold text-muted-foreground">
-                    ({cpuRecord.wins + cpuRecord.losses} cups)
+                    ({record.wins + record.losses} cups)
                   </span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4 text-right">
-              {cpuRecord.streak !== 0 && (
+              {record.streak !== 0 && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     Streak
                   </div>
                   <div
                     className={`text-base font-black ${
-                      cpuRecord.streak > 0 ? "text-primary" : "text-sky-400"
+                      record.streak > 0 ? "text-primary" : "text-sky-400"
                     }`}
                   >
-                    {cpuRecord.streak > 0
-                      ? `W${cpuRecord.streak}`
-                      : `L${Math.abs(cpuRecord.streak)}`}
+                    {record.streak > 0
+                      ? `W${record.streak}`
+                      : `L${Math.abs(record.streak)}`}
                   </div>
                 </div>
               )}
-              {cpuRecord.best > 0 && (
+              {record.best > 0 && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     Best
                   </div>
-                  <div className="text-base font-black text-amber-300">W{cpuRecord.best}</div>
+                  <div className="text-base font-black text-amber-300">W{record.best}</div>
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Global leaderboard — best vs-CPU streaks across all signed-in players */}
+        {leaderboardQuery.data && leaderboardQuery.data.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <Crown className="h-3.5 w-3.5 text-amber-400" /> Leaderboard — best streaks
+            </div>
+            <div className="mt-2 divide-y divide-white/5">
+              {leaderboardQuery.data.slice(0, 10).map((e, i) => (
+                <div key={i} className="flex items-center gap-3 py-1.5 text-sm">
+                  <span className="w-5 text-right font-black tabular-nums text-muted-foreground">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 truncate font-bold text-foreground">
+                    {e.displayName}
+                  </span>
+                  <span className="text-xs font-black text-amber-300">W{e.best}</span>
+                  <span className="w-16 text-right text-xs tabular-nums text-muted-foreground">
+                    {e.wins}–{e.losses}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {!isSignedIn && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Sign in to put your streak on the board.
+              </p>
+            )}
           </div>
         )}
 
@@ -1944,6 +2158,40 @@ function PvpDraftRoom({
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Compact spent/total budget meter for one side of the draft.
+function BudgetBar({
+  label,
+  spent,
+  total,
+  tone,
+}: {
+  label: string;
+  spent: number;
+  total: number;
+  tone: "user" | "cpu";
+}) {
+  const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+  const over = spent > total;
+  const bar = over ? "bg-rose-500" : tone === "user" ? "bg-primary" : "bg-sky-400";
+  const accent = tone === "user" ? "text-primary" : "text-sky-400";
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/30 p-2.5">
+      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+        <span className={accent}>{label}</span>
+        <span className={`tabular-nums ${over ? "text-rose-400" : "text-muted-foreground"}`}>
+          {spent}/{total}
+        </span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className={`h-full rounded-full transition-all ${bar}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );

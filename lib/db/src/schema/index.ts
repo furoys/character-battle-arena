@@ -3,5 +3,7 @@ export * from "./fights";
 export * from "./userProfiles";
 export * from "./daily";
 export * from "./tournaments";
+export * from "./tournamentRecords";
+export * from "./tournamentRecordEntries";
 export * from "./drafts";
 export * from "./wager";

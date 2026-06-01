@@ -4,6 +4,7 @@ import {
   db,
   charactersTable,
   tournamentsTable,
+  tournamentRecordsTable,
   fightCacheTable,
   type Character,
   type TournamentBracket,
@@ -51,6 +52,39 @@ function toCompetitor(
     imageUrl: c.imageUrl ?? null,
     owner: owner ?? null,
   };
+}
+
+// ── Draft power budget ───────────────────────────────────────────────────────
+// Each fighter has a COST (1–10) derived from its summed stats on an ABSOLUTE
+// scale (fixed thresholds, no roster distribution) so the client and server
+// always agree. Each side gets budget = (size/2) * BUDGET_PER_PICK, which forces
+// real tradeoffs: you can field one or two marquee monsters, but not a whole
+// team of them. KEEP IN SYNC with fighterCost()/draftBudget() in the frontend
+// (artifacts/fight-club/src/pages/tournaments.tsx).
+const BUDGET_PER_PICK = 5;
+
+export function fighterCost(c: {
+  strength: number | null;
+  speed: number | null;
+  intelligence: number | null;
+  durability: number | null;
+}): number {
+  const ps =
+    (c.strength ?? 0) + (c.speed ?? 0) + (c.intelligence ?? 0) + (c.durability ?? 0);
+  if (ps < 50_000) return 1;
+  if (ps < 150_000) return 2;
+  if (ps < 400_000) return 3;
+  if (ps < 950_000) return 4;
+  if (ps < 2_500_000) return 5;
+  if (ps < 6_100_000) return 6;
+  if (ps < 12_000_000) return 7;
+  if (ps < 18_500_000) return 8;
+  if (ps < 35_000_000) return 9;
+  return 10;
+}
+
+export function draftBudget(size: number): number {
+  return Math.floor(size / 2) * BUDGET_PER_PICK;
 }
 
 // Round names depend on bracket size.
@@ -191,6 +225,27 @@ router.get("/tournaments", async (_req, res): Promise<void> => {
   );
 });
 
+// Public leaderboard of the top Draft-vs-CPU records. Registered BEFORE the
+// "/tournaments/:id" route so "leaderboard" isn't swallowed as an id.
+router.get("/tournaments/leaderboard", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tournamentRecordsTable)
+    .orderBy(desc(tournamentRecordsTable.best), desc(tournamentRecordsTable.wins))
+    .limit(20);
+  res.json(
+    rows
+      .filter((r) => r.wins + r.losses > 0)
+      .map((r) => ({
+        displayName: (r.displayName ?? "").trim() || "Anonymous",
+        wins: r.wins,
+        losses: r.losses,
+        best: r.best,
+        streak: r.streak,
+      })),
+  );
+});
+
 router.get("/tournaments/:id", async (req, res): Promise<void> => {
   const parsed = GetTournamentParams.safeParse({ id: req.params["id"] });
   if (!parsed.success) {
@@ -295,6 +350,27 @@ router.post("/tournaments", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Developer Legends are not allowed in tournaments" });
     return;
   }
+  // Enforce the draft power budget server-side — never trust the client. Each
+  // side's drafted fighters must total <= budget for the bracket size.
+  if (mode === "draft") {
+    const budget = draftBudget(size);
+    let userCost = 0;
+    let cpuCost = 0;
+    for (const id of requestedIds) {
+      const c = charMap.get(id);
+      if (!c) continue;
+      const cost = fighterCost(c);
+      if (ownerById.get(id) === "user") userCost += cost;
+      else if (ownerById.get(id) === "cpu") cpuCost += cost;
+    }
+    if (userCost > budget || cpuCost > budget) {
+      res.status(400).json({
+        error: `Draft exceeds the power budget of ${budget} (you: ${userCost}, cpu: ${cpuCost})`,
+      });
+      return;
+    }
+  }
+
   const seeded: Character[] = [];
   for (const id of requestedIds) {
     const c = charMap.get(id);

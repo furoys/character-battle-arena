@@ -494,6 +494,69 @@ export const CreateTournamentBody = zod.object({
 });
 
 /**
+ * @summary Public leaderboard of top Draft-vs-CPU records
+ */
+export const GetTournamentLeaderboardResponseItem = zod.object({
+  displayName: zod
+    .string()
+    .describe("Player display name (falls back to 'Anonymous')"),
+  wins: zod.number(),
+  losses: zod.number(),
+  best: zod.number().describe("All-time best winning streak"),
+  streak: zod.number().describe("Signed current streak"),
+});
+export const GetTournamentLeaderboardResponse = zod.array(
+  GetTournamentLeaderboardResponseItem,
+);
+
+/**
+ * @summary Get the signed-in user's vs-CPU tournament record
+ */
+export const GetMyTournamentRecordResponse = zod.object({
+  wins: zod.number().describe("Total Draft-vs-CPU cups won"),
+  losses: zod.number().describe("Total Draft-vs-CPU cups lost"),
+  streak: zod
+    .number()
+    .describe(
+      "Signed current streak: positive = win streak, negative = loss streak",
+    ),
+  best: zod.number().describe("All-time best winning streak"),
+  lastTournamentId: zod
+    .number()
+    .nullable()
+    .describe("Last tournament id counted (for idempotent updates)"),
+});
+
+/**
+ * @summary Record the outcome of a completed Draft-vs-CPU cup
+ */
+export const RecordTournamentResultBody = zod.object({
+  tournamentId: zod.number().describe("Id of the completed cup"),
+  won: zod
+    .boolean()
+    .describe("True if the signed-in user's drafted champion won the cup"),
+  displayName: zod
+    .string()
+    .nullish()
+    .describe("Display name (from Clerk profile) for the leaderboard"),
+});
+
+export const RecordTournamentResultResponse = zod.object({
+  wins: zod.number().describe("Total Draft-vs-CPU cups won"),
+  losses: zod.number().describe("Total Draft-vs-CPU cups lost"),
+  streak: zod
+    .number()
+    .describe(
+      "Signed current streak: positive = win streak, negative = loss streak",
+    ),
+  best: zod.number().describe("All-time best winning streak"),
+  lastTournamentId: zod
+    .number()
+    .nullable()
+    .describe("Last tournament id counted (for idempotent updates)"),
+});
+
+/**
  * @summary Get a tournament by id
  */
 export const GetTournamentParams = zod.object({

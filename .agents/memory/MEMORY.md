@@ -1,5 +1,6 @@
 - [Audio engine vs intro overlay ownership](audio-engine-intro-ownership.md) — shared MusicEngine must defer to the intro overlay's audio; gate via beginIntro/endIntro called from useLayoutEffect (not useEffect) to win the mount race.
 - [Multiplayer session writes need row locks](pvp-session-row-locks.md) — token-claim/turn-gated flows (challenges, draft_sessions) must do read-check-write under SELECT…FOR UPDATE in a txn, or concurrent requests clobber.
+- [Leaderboard/record scoring integrity](leaderboard-scoring-integrity.md) — derive outcome server-side + verify ownership; dedup via per-(user,entity) ledger; claim+aggregate atomic under a per-user FOR UPDATE lock.
 - [Share/copy features need fallbacks](clipboard-share-fallback.md) — navigator.clipboard is blocked in preview iframes & webviews; use navigator.share → clipboard → execCommand and always show a selectable link.
 - [Betting on a deterministic engine](wager-deterministic-betting.md) — Wager Mode must settle via a probabilistic roll (favorite wins at its win-rate %), not the raw deterministic verdict, or revealed odds let users back the guaranteed winner forever.
 - [Drizzle migrations](drizzle-migrations.md) — `generate` is broken (snapshot collision); post-merge `migrate` is the real deploy path; hand-write idempotent SQL + journal entry.

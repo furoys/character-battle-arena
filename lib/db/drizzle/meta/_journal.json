@@ -120,6 +120,20 @@
       "when": 1779290000000,
       "tag": "0016_pvp_draft_names",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779300000000,
+      "tag": "0017_tournament_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779310000000,
+      "tag": "0018_tournament_record_entries",
+      "breakpoints": true
     }
   ]
 }

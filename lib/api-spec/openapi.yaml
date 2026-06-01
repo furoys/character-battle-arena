@@ -337,6 +337,55 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /tournaments/leaderboard:
+    get:
+      operationId: getTournamentLeaderboard
+      tags: [tournaments]
+      summary: Public leaderboard of top Draft-vs-CPU records
+      responses:
+        "200":
+          description: Top players by best winning streak
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /me/tournament-record:
+    get:
+      operationId: getMyTournamentRecord
+      tags: [me]
+      summary: Get the signed-in user's vs-CPU tournament record
+      responses:
+        "200":
+          description: The user's record (zeroed if none yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentRecord"
+        "401":
+          description: Not signed in
+    post:
+      operationId: recordTournamentResult
+      tags: [me]
+      summary: Record the outcome of a completed Draft-vs-CPU cup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordTournamentResultBody"
+      responses:
+        "200":
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentRecord"
+        "401":
+          description: Not signed in
+
   /tournaments/{id}:
     get:
       operationId: getTournament
@@ -1068,6 +1117,72 @@ components:
       required:
         - size
         - competitorIds
+
+    TournamentRecord:
+      type: object
+      properties:
+        wins:
+          type: integer
+          description: "Total Draft-vs-CPU cups won"
+        losses:
+          type: integer
+          description: "Total Draft-vs-CPU cups lost"
+        streak:
+          type: integer
+          description: "Signed current streak: positive = win streak, negative = loss streak"
+        best:
+          type: integer
+          description: "All-time best winning streak"
+        lastTournamentId:
+          type: integer
+          nullable: true
+          description: "Last tournament id counted (for idempotent updates)"
+      required:
+        - wins
+        - losses
+        - streak
+        - best
+        - lastTournamentId
+
+    RecordTournamentResultBody:
+      type: object
+      properties:
+        tournamentId:
+          type: integer
+          description: "Id of the completed cup"
+        won:
+          type: boolean
+          description: "True if the signed-in user's drafted champion won the cup"
+        displayName:
+          type: string
+          nullable: true
+          description: "Display name (from Clerk profile) for the leaderboard"
+      required:
+        - tournamentId
+        - won
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: "Player display name (falls back to 'Anonymous')"
+        wins:
+          type: integer
+        losses:
+          type: integer
+        best:
+          type: integer
+          description: "All-time best winning streak"
+        streak:
+          type: integer
+          description: "Signed current streak"
+      required:
+        - displayName
+        - wins
+        - losses
+        - best
+        - streak
 
     Wallet:
       type: object

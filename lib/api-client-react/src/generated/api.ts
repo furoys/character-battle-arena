@@ -28,13 +28,16 @@ import type {
   FightRecord,
   FightResult,
   HealthStatus,
+  LeaderboardEntry,
   PlaceWagerBody,
   QuoteWagerBody,
+  RecordTournamentResultBody,
   SaveTeamBody,
   SavedTeam,
   SimulateFightBody,
   Tournament,
   TournamentInput,
+  TournamentRecord,
   TournamentSummary,
   WagerQuote,
   WagerRecord,
@@ -1435,6 +1438,244 @@ export const useCreateTournament = <
   TContext
 > => {
   return useMutation(getCreateTournamentMutationOptions(options));
+};
+
+/**
+ * @summary Public leaderboard of top Draft-vs-CPU records
+ */
+export const getGetTournamentLeaderboardUrl = () => {
+  return `/api/tournaments/leaderboard`;
+};
+
+export const getTournamentLeaderboard = async (
+  options?: RequestInit,
+): Promise<LeaderboardEntry[]> => {
+  return customFetch<LeaderboardEntry[]>(getGetTournamentLeaderboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTournamentLeaderboardQueryKey = () => {
+  return [`/api/tournaments/leaderboard`] as const;
+};
+
+export const getGetTournamentLeaderboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTournamentLeaderboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTournamentLeaderboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTournamentLeaderboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTournamentLeaderboard>>
+  > = ({ signal }) => getTournamentLeaderboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTournamentLeaderboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTournamentLeaderboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTournamentLeaderboard>>
+>;
+export type GetTournamentLeaderboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Public leaderboard of top Draft-vs-CPU records
+ */
+
+export function useGetTournamentLeaderboard<
+  TData = Awaited<ReturnType<typeof getTournamentLeaderboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTournamentLeaderboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTournamentLeaderboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the signed-in user's vs-CPU tournament record
+ */
+export const getGetMyTournamentRecordUrl = () => {
+  return `/api/me/tournament-record`;
+};
+
+export const getMyTournamentRecord = async (
+  options?: RequestInit,
+): Promise<TournamentRecord> => {
+  return customFetch<TournamentRecord>(getGetMyTournamentRecordUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyTournamentRecordQueryKey = () => {
+  return [`/api/me/tournament-record`] as const;
+};
+
+export const getGetMyTournamentRecordQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyTournamentRecord>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyTournamentRecord>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyTournamentRecordQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMyTournamentRecord>>
+  > = ({ signal }) => getMyTournamentRecord({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyTournamentRecord>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyTournamentRecordQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyTournamentRecord>>
+>;
+export type GetMyTournamentRecordQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the signed-in user's vs-CPU tournament record
+ */
+
+export function useGetMyTournamentRecord<
+  TData = Awaited<ReturnType<typeof getMyTournamentRecord>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyTournamentRecord>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyTournamentRecordQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record the outcome of a completed Draft-vs-CPU cup
+ */
+export const getRecordTournamentResultUrl = () => {
+  return `/api/me/tournament-record`;
+};
+
+export const recordTournamentResult = async (
+  recordTournamentResultBody: RecordTournamentResultBody,
+  options?: RequestInit,
+): Promise<TournamentRecord> => {
+  return customFetch<TournamentRecord>(getRecordTournamentResultUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordTournamentResultBody),
+  });
+};
+
+export const getRecordTournamentResultMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordTournamentResult>>,
+    TError,
+    { data: BodyType<RecordTournamentResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordTournamentResult>>,
+  TError,
+  { data: BodyType<RecordTournamentResultBody> },
+  TContext
+> => {
+  const mutationKey = ["recordTournamentResult"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordTournamentResult>>,
+    { data: BodyType<RecordTournamentResultBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return recordTournamentResult(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordTournamentResultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordTournamentResult>>
+>;
+export type RecordTournamentResultMutationBody =
+  BodyType<RecordTournamentResultBody>;
+export type RecordTournamentResultMutationError = ErrorType<void>;
+
+/**
+ * @summary Record the outcome of a completed Draft-vs-CPU cup
+ */
+export const useRecordTournamentResult = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordTournamentResult>>,
+    TError,
+    { data: BodyType<RecordTournamentResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordTournamentResult>>,
+  TError,
+  { data: BodyType<RecordTournamentResultBody> },
+  TContext
+> => {
+  return useMutation(getRecordTournamentResultMutationOptions(options));
 };
 
 /**

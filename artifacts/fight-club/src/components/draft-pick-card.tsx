@@ -9,26 +9,46 @@ import { Swords } from "lucide-react";
 export function DraftPickCard({
   char,
   locked,
+  unaffordable,
+  cost,
   onPick,
   testId,
 }: {
   char: Character;
   locked?: boolean;
+  unaffordable?: boolean;
+  cost?: number;
   onPick: () => void;
   testId?: string;
 }) {
+  const disabled = locked || unaffordable;
   return (
     <button
       onClick={onPick}
-      disabled={locked}
+      disabled={disabled}
       data-testid={testId}
-      title={char.name}
+      title={
+        unaffordable && cost != null ? `${char.name} — costs ${cost}, over budget` : char.name
+      }
       className={`group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl border bg-black/40 text-left transition-all ${
-        locked
-          ? "cursor-not-allowed border-white/10 opacity-50"
+        disabled
+          ? `cursor-not-allowed border-white/10 ${unaffordable && !locked ? "opacity-40 grayscale" : "opacity-50"}`
           : "border-white/10 hover:-translate-y-0.5 hover:border-primary hover:ring-2 hover:ring-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
       }`}
     >
+      {cost != null && (
+        <div className="absolute left-1.5 top-1.5 z-10 flex items-center">
+          <span
+            className={`rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums shadow ${
+              unaffordable
+                ? "bg-rose-500/90 text-white"
+                : "bg-amber-400/95 text-black"
+            }`}
+          >
+            {cost}
+          </span>
+        </div>
+      )}
       {char.imageUrl ? (
         <img
           src={char.imageUrl}

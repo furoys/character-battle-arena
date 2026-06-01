@@ -335,6 +335,39 @@ export interface TournamentInput {
   owners?: TournamentInputOwnersItem[];
 }
 
+export interface TournamentRecord {
+  /** Total Draft-vs-CPU cups won */
+  wins: number;
+  /** Total Draft-vs-CPU cups lost */
+  losses: number;
+  /** Signed current streak: positive = win streak, negative = loss streak */
+  streak: number;
+  /** All-time best winning streak */
+  best: number;
+  /** Last tournament id counted (for idempotent updates) */
+  lastTournamentId: number | null;
+}
+
+export interface RecordTournamentResultBody {
+  /** Id of the completed cup */
+  tournamentId: number;
+  /** True if the signed-in user's drafted champion won the cup */
+  won: boolean;
+  /** Display name (from Clerk profile) for the leaderboard */
+  displayName?: string | null;
+}
+
+export interface LeaderboardEntry {
+  /** Player display name (falls back to 'Anonymous') */
+  displayName: string;
+  wins: number;
+  losses: number;
+  /** All-time best winning streak */
+  best: number;
+  /** Signed current streak */
+  streak: number;
+}
+
 export interface Wallet {
   /** Current virtual coin balance */
   balance: number;
