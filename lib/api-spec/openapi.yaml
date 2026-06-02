@@ -971,6 +971,9 @@ components:
           type: string
           nullable: true
           description: "Short win-condition / turning point line"
+        upset:
+          type: boolean
+          description: "Draft mode: true when a cheap underdog slew a stronger favorite. Omitted on older brackets."
       required:
         - matchId
         - a

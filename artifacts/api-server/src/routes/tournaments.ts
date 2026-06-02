@@ -87,6 +87,49 @@ export function draftBudget(size: number): number {
   return Math.floor(size / 2) * BUDGET_PER_PICK;
 }
 
+// ── Risk/reward draft traits ─────────────────────────────────────────────────
+// Cheap "underdogs" (low cost) are Giant Slayers that can topple far stronger
+// fighters; expensive "legends" (high cost) carry a front-runner weakness that
+// makes them upsettable. This is what turns the draft into a risk/reward bet:
+// marquee monsters win most fights but can be slain, while a cheap flier might
+// punch wildly above its cost. KEEP IN SYNC with fighterTrait() in the frontend
+// (artifacts/fight-club/src/pages/tournaments.tsx).
+const UNDERDOG_MAX_COST = 3;
+const LEGEND_MIN_COST = 8;
+
+export type FighterTrait = "underdog" | "legend" | null;
+export function fighterTrait(cost: number): FighterTrait {
+  if (cost <= UNDERDOG_MAX_COST) return "underdog";
+  if (cost >= LEGEND_MIN_COST) return "legend";
+  return null;
+}
+
+// Stable pseudo-random in [0,1) from a matchup's two fighter ids, so a bracket's
+// upset rolls are deterministic and any later "watch this fight" replays agree.
+function matchSeed(idA: number, idB: number): number {
+  const lo = Math.min(idA, idB);
+  const hi = Math.max(idA, idB);
+  let h = (2166136261 ^ lo) >>> 0;
+  h = (Math.imul(h, 16777619) ^ hi) >>> 0;
+  h = Math.imul(h, 16777619) >>> 0;
+  return (h % 100000) / 100000;
+}
+
+// Chance the lower-cost fighter pulls a risk/reward upset over the favorite.
+// Only fighters with a trait in play can swing it (a Giant Slayer underdog or a
+// vulnerable Legend favorite), and favorites still win the majority of the time
+// (capped well under 50%). KEEP IN SYNC with the frontend.
+export function tournamentUpsetChance(costA: number, costB: number): number {
+  const favCost = Math.max(costA, costB);
+  const dogCost = Math.min(costA, costB);
+  let chance = 0;
+  if (dogCost <= UNDERDOG_MAX_COST) chance += 0.2; // Giant Slayer upside
+  if (favCost >= LEGEND_MIN_COST) chance += 0.2; // Front-runner weakness
+  if (chance === 0) return 0; // no trait in play → deterministic, no upset
+  chance += Math.min(favCost - dogCost, 6) * 0.02; // bigger gap = more dramatic
+  return Math.min(chance, 0.45);
+}
+
 // Round names depend on bracket size.
 export function roundNames(size: number): string[] {
   if (size === 32)
@@ -101,7 +144,7 @@ export function roundNames(size: number): string[] {
 async function resolveMatch(
   charA: Character,
   charB: Character,
-): Promise<{ winnerSide: 1 | 2; difficulty: string; fightType: string; blurb: string }> {
+): Promise<{ winnerSide: 1 | 2; difficulty: string; fightType: string; blurb: string; upset: boolean }> {
   const aIds = [charA.id];
   const bIds = [charB.id];
   const { cacheKey, teamAIsTeam1 } = getCacheKey(aIds, bIds);
@@ -112,49 +155,75 @@ async function resolveMatch(
     .where(eq(fightCacheTable.cacheKey, cacheKey))
     .limit(1);
 
+  // Base verdict — the raw power outcome (favorite wins), read from / written to
+  // the shared composition cache so the Arena and a normal "watch" stay aligned.
+  let winnerSide: 1 | 2;
+  let difficulty: string;
+  let fightType: string;
+  let blurb: string;
+
   if (existing) {
     // existing.winnerTeam is canonical (1 = teamA, the lower-sorted side).
-    const winnerSide: 1 | 2 =
+    winnerSide =
       (existing.winnerTeam === 1 && teamAIsTeam1) || (existing.winnerTeam === 2 && !teamAIsTeam1)
         ? 1
         : 2;
-    return {
-      winnerSide,
-      difficulty: existing.difficulty,
-      fightType: existing.fightType,
-      blurb: existing.turningPoint,
-    };
+    difficulty = existing.difficulty;
+    fightType = existing.fightType;
+    blurb = existing.turningPoint;
+  } else {
+    const { winner, resolution } = resolveFightVerdict([charA], [charB]);
+    const winnerTeamCanonical = teamAIsTeam1 ? winner : winner === 1 ? 2 : 1;
+    winnerSide = winner;
+    difficulty = resolution.difficulty;
+    fightType = resolution.fightType;
+    blurb = resolution.turningPoint;
+
+    try {
+      await db.insert(fightCacheTable).values({
+        cacheKey,
+        teamAIds: teamAIsTeam1 ? aIds : bIds,
+        teamBIds: teamAIsTeam1 ? bIds : aIds,
+        winnerTeam: winnerTeamCanonical,
+        winRate: difficultyToWinRate(resolution.difficulty),
+        difficulty: resolution.difficulty,
+        fightType: resolution.fightType,
+        keyFactors: resolution.keyFactors,
+        turningPoint: resolution.turningPoint,
+        loserShowcase: resolution.loserShowcase,
+        winnerProof: resolution.winnerProof,
+        rematchCount: 0,
+      });
+    } catch {
+      // Unique-constraint race — another request seeded it first. The verdict is
+      // deterministic, so our computed winner already matches the stored one.
+    }
   }
 
-  const { winner, resolution } = resolveFightVerdict([charA], [charB]);
-  const winnerTeamCanonical = teamAIsTeam1 ? winner : winner === 1 ? 2 : 1;
-
-  try {
-    await db.insert(fightCacheTable).values({
-      cacheKey,
-      teamAIds: teamAIsTeam1 ? aIds : bIds,
-      teamBIds: teamAIsTeam1 ? bIds : aIds,
-      winnerTeam: winnerTeamCanonical,
-      winRate: difficultyToWinRate(resolution.difficulty),
-      difficulty: resolution.difficulty,
-      fightType: resolution.fightType,
-      keyFactors: resolution.keyFactors,
-      turningPoint: resolution.turningPoint,
-      loserShowcase: resolution.loserShowcase,
-      winnerProof: resolution.winnerProof,
-      rematchCount: 0,
-    });
-  } catch {
-    // Unique-constraint race — another request seeded it first. The verdict is
-    // deterministic, so our computed winner already matches the stored one.
+  // ── Risk/reward upset (tournament-only) ────────────────────────────────────
+  // Layered ON TOP of the raw verdict and NEVER written back to the shared
+  // cache, so it can't poison Arena fights. The roll is deterministic per
+  // matchup, so the persisted bracket and a later replay (which re-derives the
+  // same upset and passes the Underdog modifier) always agree.
+  const costA = fighterCost(charA);
+  const costB = fighterCost(charB);
+  const underdogSide: 1 | 2 = costA < costB ? 1 : 2;
+  let upset = false;
+  if (
+    costA !== costB && // a real favorite/underdog gap must exist
+    underdogSide !== winnerSide && // the favorite was predicted to win
+    matchSeed(charA.id, charB.id) < tournamentUpsetChance(costA, costB)
+  ) {
+    winnerSide = underdogSide;
+    upset = true;
+    difficulty = "hard";
+    fightType = "close";
+    const dogName = underdogSide === 1 ? charA.name : charB.name;
+    const favName = underdogSide === 1 ? charB.name : charA.name;
+    blurb = `${dogName} pulls off a giant-slaying upset over ${favName}.`;
   }
 
-  return {
-    winnerSide: winner,
-    difficulty: resolution.difficulty,
-    fightType: resolution.fightType,
-    blurb: resolution.turningPoint,
-  };
+  return { winnerSide, difficulty, fightType, blurb, upset };
 }
 
 // Auto-run a full single-elim bracket round-by-round (deterministic, no AI).
@@ -174,7 +243,7 @@ export async function runBracket(
     for (let i = 0; i < current.length; i += 2) {
       const a = current[i]!;
       const b = current[i + 1]!;
-      const { winnerSide, difficulty, fightType, blurb } = await resolveMatch(a, b);
+      const { winnerSide, difficulty, fightType, blurb, upset } = await resolveMatch(a, b);
       const winnerChar = winnerSide === 1 ? a : b;
       winners.push(winnerChar);
       matches.push({
@@ -186,6 +255,7 @@ export async function runBracket(
         difficulty,
         fightType,
         blurb,
+        upset,
       });
     }
     rounds.push({ name: names[roundIdx]!, matches });

@@ -242,6 +242,8 @@ export interface TournamentMatch {
   fightType: string | null;
   /** Short win-condition / turning point line */
   blurb: string | null;
+  /** Draft mode: true when a cheap underdog slew a stronger favorite. Omitted on older brackets. */
+  upset?: boolean;
 }
 
 export interface TournamentRound {

@@ -1,6 +1,8 @@
 import type { Character } from "@workspace/api-client-react";
 import { Swords } from "lucide-react";
 
+export type DraftTrait = "underdog" | "legend" | null;
+
 /**
  * Portrait card used in the tournament draft pickers (PvE and PvP). Shows the
  * fighter's art with name + universe in a readable gradient overlay, so names
@@ -11,6 +13,7 @@ export function DraftPickCard({
   locked,
   unaffordable,
   cost,
+  trait,
   onPick,
   testId,
 }: {
@@ -18,6 +21,7 @@ export function DraftPickCard({
   locked?: boolean;
   unaffordable?: boolean;
   cost?: number;
+  trait?: DraftTrait;
   onPick: () => void;
   testId?: string;
 }) {
@@ -46,6 +50,24 @@ export function DraftPickCard({
             }`}
           >
             {cost}
+          </span>
+        </div>
+      )}
+      {trait && (
+        <div className="absolute right-1.5 top-1.5 z-10 flex items-center">
+          <span
+            title={
+              trait === "underdog"
+                ? "Giant Slayer — can upset much stronger fighters"
+                : "Legend — a front-runner that can be slain by underdogs"
+            }
+            className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide shadow ${
+              trait === "underdog"
+                ? "bg-emerald-400/95 text-black"
+                : "bg-violet-500/90 text-white"
+            }`}
+          >
+            {trait === "underdog" ? "Slayer" : "Legend"}
           </span>
         </div>
       )}

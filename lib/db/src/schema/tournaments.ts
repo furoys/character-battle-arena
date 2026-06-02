@@ -25,6 +25,9 @@ export type TournamentMatch = {
   difficulty: string | null; // easy | moderate | hard
   fightType: string | null; // stomp | one-sided | close
   blurb: string | null; // short win-condition / turning point line
+  // Risk/reward (draft mode): true when a cheap underdog slew a stronger
+  // favorite. Optional — older persisted brackets predate the field.
+  upset?: boolean;
 };
 
 export type TournamentRound = {

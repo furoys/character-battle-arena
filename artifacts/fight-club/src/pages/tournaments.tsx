@@ -37,13 +37,16 @@ import { FightScreen } from "@/components/fight-screen";
 import { useAgeMode } from "@/hooks/use-age-mode";
 import { censorFightResult } from "@/lib/profanity-filter";
 import { UniverseCombobox, type UniverseOption } from "@/components/universe-combobox";
-import { DraftPickCard } from "@/components/draft-pick-card";
+import { DraftPickCard, type DraftTrait } from "@/components/draft-pick-card";
 
 type Size = 8 | 16 | 32;
 
 type WatchTarget = {
   a: { id: number; name: string; imageUrl: string | null };
   b: { id: number; name: string; imageUrl: string | null };
+  // When the bracket recorded a risk/reward upset, the replay forces the
+  // Underdog modifier so the watched narrative ends the same way it did live.
+  upset: boolean;
 };
 
 const SIZE_OPTIONS: Size[] = [8, 16, 32];
@@ -106,6 +109,13 @@ function fighterCost(c: Character): number {
   if (ps < 18_500_000) return 8;
   if (ps < 35_000_000) return 9;
   return 10;
+}
+// Risk/reward trait by cost. KEEP IN SYNC with fighterTrait() in the API server
+// (artifacts/api-server/src/routes/tournaments.ts).
+function fighterTrait(cost: number): DraftTrait {
+  if (cost <= 3) return "underdog";
+  if (cost >= 8) return "legend";
+  return null;
 }
 function draftBudget(size: number): number {
   return Math.floor(size / 2) * BUDGET_PER_PICK;
@@ -761,9 +771,11 @@ export function Tournaments() {
 
   function watchMatch(match: TournamentMatch) {
     if (!match.a || !match.b) return;
+    const upset = match.upset === true;
     const target: WatchTarget = {
       a: { id: match.a.id, name: match.a.name, imageUrl: match.a.imageUrl },
       b: { id: match.b.id, name: match.b.name, imageUrl: match.b.imageUrl },
+      upset,
     };
     setWatchTarget(target);
     setWatchOpen(true);
@@ -773,7 +785,9 @@ export function Tournaments() {
         team2: [target.b.id],
         mode: "cinematic",
         upset: false,
-        modifierId: null,
+        // Force the bracket's recorded result: on an upset the Underdog modifier
+        // re-points the win to the weaker fighter (and skips the shared cache).
+        modifierId: upset ? "underdog" : null,
       },
     });
   }
@@ -997,10 +1011,11 @@ export function Tournaments() {
                 <div className="flex flex-1 flex-col justify-around gap-2">
                   {round.matches.map((m) => {
                     const revealed = (matchOrder.get(m.matchId) ?? 0) < revealedMatches;
-                    // Upset = the lower-power fighter won. Power is looked up from
-                    // the roster so we can compare without extra payload.
-                    let isUpset = false;
-                    if (m.winnerId != null && m.a && m.b) {
+                    // Prefer the bracket's authoritative risk/reward upset flag.
+                    // Fall back to a power comparison for older brackets that
+                    // predate the field (lower-power fighter won = upset).
+                    let isUpset = m.upset === true;
+                    if (!isUpset && m.upset == null && m.winnerId != null && m.a && m.b) {
                       const loserId = m.winnerId === m.a.id ? m.b.id : m.a.id;
                       const wc = charById.get(m.winnerId);
                       const lc = charById.get(loserId);
@@ -1039,7 +1054,7 @@ export function Tournaments() {
                 team2: [watchTarget.b.id],
                 mode: "cinematic",
                 upset: false,
-                modifierId: null,
+                modifierId: watchTarget.upset ? "underdog" : null,
               },
             });
           }}
@@ -1232,6 +1247,12 @@ export function Tournaments() {
             Spend your <span className="font-bold text-foreground">{budget}</span>-point budget wisely —
             you can't afford a whole team of titans, so counter the CPU's picks.
           </p>
+          <p className="mt-1 text-center text-[11px] leading-snug text-muted-foreground">
+            Risk vs reward: cheap <span className="font-bold text-emerald-300">Slayers</span> (cost ≤3)
+            can pull off giant-slaying upsets, while pricey{" "}
+            <span className="font-bold text-violet-300">Legends</span> (cost ≥8) are front-runners that
+            can be toppled. Mid-tier fighters are the safe, reliable picks.
+          </p>
 
           {/* Search + filter */}
           <div className="mt-5 flex flex-col gap-2 sm:flex-row">
@@ -1291,6 +1312,7 @@ export function Tournaments() {
                       key={c.id}
                       char={c}
                       cost={cost}
+                      trait={fighterTrait(cost)}
                       locked={locked}
                       unaffordable={unaffordable}
                       onPick={() => userPick(c.id)}

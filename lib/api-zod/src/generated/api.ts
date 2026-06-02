@@ -641,6 +641,12 @@ export const GetTournamentResponse = zod.object({
               .string()
               .nullable()
               .describe("Short win-condition \/ turning point line"),
+            upset: zod
+              .boolean()
+              .optional()
+              .describe(
+                "Draft mode: true when a cheap underdog slew a stronger favorite. Omitted on older brackets.",
+              ),
           }),
         ),
       }),
