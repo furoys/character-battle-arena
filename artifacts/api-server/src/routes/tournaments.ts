@@ -123,11 +123,14 @@ export function tournamentUpsetChance(costA: number, costB: number): number {
   const favCost = Math.max(costA, costB);
   const dogCost = Math.min(costA, costB);
   let chance = 0;
-  if (dogCost <= UNDERDOG_MAX_COST) chance += 0.2; // Giant Slayer upside
-  if (favCost >= LEGEND_MIN_COST) chance += 0.2; // Front-runner weakness
+  if (dogCost <= UNDERDOG_MAX_COST) chance += 0.16; // Giant Slayer upside
+  if (favCost >= LEGEND_MIN_COST) chance += 0.14; // Front-runner weakness
   if (chance === 0) return 0; // no trait in play → deterministic, no upset
-  chance += Math.min(favCost - dogCost, 6) * 0.02; // bigger gap = more dramatic
-  return Math.min(chance, 0.45);
+  // Bigger power gap = more dramatic giant-slaying, so the marquee Slayer-vs-
+  // Legend matchup peaks while a slayer punching at a barely-stronger foe stays
+  // modest. Capped at 0.40 so the favorite ALWAYS clearly remains the favorite.
+  chance += Math.min(favCost - dogCost, 7) * 0.015;
+  return Math.min(chance, 0.4);
 }
 
 // Round names depend on bracket size.
