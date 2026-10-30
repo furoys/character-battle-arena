@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
   appName: 'A.V.A',
   webDir: 'artifacts/fight-club/dist/public',
   server: {
-    url: 'https://AnyoneVsAnyone.replit.app',
+     url: 'https://character-battle-arena--furoys.replit.app',
     androidScheme: 'https',
   },
 };
